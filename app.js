@@ -1,7 +1,7 @@
 document.documentElement.classList.add('js');
 
 (() => {
-  const version = '20260825-1958';
+  const version = '20260825-2000';
   ['mobile-lobby.css', 'mobile-entry.css', 'mobile-shell-fix.css', 'mobile-lobby-cleanup.css'].forEach((href) => {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
@@ -9,7 +9,7 @@ document.documentElement.classList.add('js');
     document.head.appendChild(css);
   });
 
-  ['mobile-lobby.js', 'login-landing-fix.js'].forEach((href) => {
+  ['mobile-lobby.js', 'login-landing-fix.js', 'persistent-session-fix.js'].forEach((href) => {
     const script = document.createElement('script');
     script.src = `${href}?v=${version}`;
     script.defer = true;
