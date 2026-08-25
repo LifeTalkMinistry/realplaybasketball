@@ -162,8 +162,8 @@
       return null;
     }
 
-    if (adminAccessToken === token && adminAccess !== null) {
-      return adminAccess ? paymentConfig : null;
+    if (adminAccessToken === token && adminAccess === true) {
+      return { admin: true, paymentConfig };
     }
 
     adminAccessToken = token;
@@ -327,6 +327,7 @@
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext('2d');
+    if (!context) throw new Error('Your browser could not prepare that QR image.');
     context.drawImage(image, 0, 0, width, height);
 
     let dataUrl = canvas.toDataURL('image/png');
