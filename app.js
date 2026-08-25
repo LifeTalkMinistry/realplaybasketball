@@ -1,8 +1,8 @@
 document.documentElement.classList.add('js');
 
 (() => {
-  const version = '20260825-1714';
-  ['mobile-lobby.css', 'mobile-entry.css'].forEach((href) => {
+  const version = '20260825-1716';
+  ['mobile-lobby.css', 'mobile-entry.css', 'mobile-shell-fix.css'].forEach((href) => {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
     css.href = `${href}?v=${version}`;
