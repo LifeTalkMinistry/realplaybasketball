@@ -27,6 +27,10 @@
 
   if (!panel || !accountCard) return;
 
+  // The monthly lock status already lives inside Manage Player Number.
+  // Keep the player identity card focused only on identity.
+  if (accountNumberLock) accountNumberLock.remove();
+
   const identityLabel = accountCard.querySelector('.auth-account-label');
   if (identityLabel) identityLabel.textContent = 'REAL PLAY PLAYER';
 
@@ -204,7 +208,7 @@
   markNumberNotice();
 
   const identityObserver = new MutationObserver(syncIdentity);
-  [accountName, accountNumber, accountNumberLock].forEach((node) => {
+  [accountName, accountNumber].forEach((node) => {
     if (node) identityObserver.observe(node, { childList: true, characterData: true, subtree: true });
   });
 
