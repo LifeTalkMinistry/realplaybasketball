@@ -9,17 +9,17 @@ body.rp-lobby-active .rp-entry{display:none}
 .rp-entry-mark{width:52px;height:52px;display:grid;place-items:center;border:1px solid rgba(24,217,255,.38);border-radius:16px;background:linear-gradient(145deg,rgba(25,118,255,.22),rgba(6,13,23,.94));box-shadow:0 0 30px rgba(25,118,255,.16);font-family:var(--rp-display);font-size:1.3rem;font-weight:900;font-style:italic}
 .rp-entry-brand p{margin:0;color:#f7fbff;font-family:var(--rp-display);font-size:1rem;font-weight:900;letter-spacing:.13em}
 .rp-entry-hero{position:relative;z-index:2;margin:auto 0;padding:48px 0 42px;text-align:center;display:flex;flex-direction:column;align-items:center;isolation:isolate}
-.rp-entry-hero::before{content:'REAL PLAY';position:relative;z-index:3;display:block;margin:0 0 4px;font-family:var(--rp-display);font-size:clamp(4.8rem,22vw,7.5rem);font-style:italic;font-weight:900;line-height:.78;letter-spacing:-.045em;text-transform:uppercase;color:#fff;text-shadow:0 6px 22px rgba(0,0,0,.58),0 0 24px rgba(25,118,255,.14)}
-.rp-entry-hero::after{content:'BASKETBALL';position:relative;z-index:3;order:1;display:block;margin:4px 0 64px;color:#1db7ff;font-family:var(--rp-display);font-size:1rem;font-weight:900;letter-spacing:.34em;text-indent:.34em}
+.rp-entry-hero::before{content:'REAL PLAY';position:relative;z-index:3;display:block;margin:0;font-family:var(--rp-display);font-size:clamp(4.8rem,22vw,7.5rem);font-style:italic;font-weight:900;line-height:.78;letter-spacing:-.045em;text-transform:uppercase;color:#fff;text-shadow:0 6px 22px rgba(0,0,0,.58),0 0 24px rgba(25,118,255,.14)}
+.rp-entry-hero::after{content:'BASKETBALL';position:relative;z-index:3;order:1;display:block;margin:7px 0 0;color:#1db7ff;font-family:var(--rp-display);font-size:1rem;font-weight:900;line-height:1;letter-spacing:.34em;text-indent:.34em}
 .rp-entry-ball{display:none!important}
 .rp-entry-kicker{display:none}
-.rp-entry-hero h1{position:relative;z-index:3;order:3;margin:0;font-family:var(--rp-display);font-size:clamp(1.55rem,7vw,2.35rem);font-style:italic;font-weight:900;line-height:.98;letter-spacing:-.01em;text-transform:uppercase;color:#fff;text-shadow:0 3px 14px rgba(0,0,0,.9)}
+.rp-entry-hero h1{position:relative;z-index:3;order:2;margin:13px 0 0;font-family:var(--rp-display);font-size:clamp(1.55rem,7vw,2.35rem);font-style:italic;font-weight:900;line-height:.98;letter-spacing:-.01em;text-transform:uppercase;color:#fff;text-shadow:0 3px 14px rgba(0,0,0,.9)}
 .rp-entry-hero h1 br{display:none}
 .rp-entry-hero h1 span{color:var(--rp-cyan)}
-.rp-entry-copy{position:relative;z-index:3;order:4;max-width:330px;margin:13px auto 0;color:#94a4b8;font-size:.86rem;line-height:1.45}
+.rp-entry-copy{position:absolute;z-index:3;left:50%;bottom:-82px;width:min(330px,90vw);transform:translateX(-50%);margin:0;color:#94a4b8;font-size:.86rem;line-height:1.45}
 .rp-entry-actions{position:relative;z-index:2;display:grid;gap:11px}
 .rp-entry-actions button{min-height:58px;border-radius:17px;font-family:var(--rp-display);font-size:1.2rem;font-weight:900;font-style:italic;letter-spacing:.09em}
 .rp-entry-primary{border:0;color:#fff;background:linear-gradient(105deg,#115cff,#147dff 56%,#16d8ff);box-shadow:0 16px 34px rgba(18,108,255,.27)}
 .rp-entry-secondary{border:1px solid rgba(117,176,255,.26);color:#eef5ff;background:rgba(7,16,27,.76)}
 .rp-entry-foot{position:relative;z-index:2;margin:16px 0 0;text-align:center;color:#56677b;font-family:var(--rp-display);font-size:.6rem;font-weight:800;letter-spacing:.12em;line-height:1.55}
-@media(max-width:380px){.rp-app.rp-guest .rp-entry{padding-inline:18px}.rp-entry-hero{padding:42px 0 34px}.rp-entry-hero::before{font-size:4.35rem}.rp-entry-hero::after{margin-bottom:54px}.rp-entry-hero h1{font-size:1.45rem}.rp-entry-copy{font-size:.8rem}.rp-app.rp-guest::after{width:312px;height:312px}}
+@media(max-width:380px){.rp-app.rp-guest .rp-entry{padding-inline:18px}.rp-entry-hero{padding:42px 0 34px}.rp-entry-hero::before{font-size:4.35rem}.rp-entry-hero::after{margin-top:6px}.rp-entry-hero h1{margin-top:11px;font-size:1.45rem}.rp-entry-copy{bottom:-72px;font-size:.8rem}.rp-app.rp-guest::after{width:312px;height:312px}}
