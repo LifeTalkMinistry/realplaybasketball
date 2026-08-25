@@ -1,5 +1,6 @@
 (() => {
-  const ENDPOINT = 'https://aydgnziueszxxhusatsv.supabase.co/functions/v1/real-play-support';
+  const ENDPOINT = 'https://api.clarapmc.com/api/real-play/support/plans';
+  const TOKEN_KEY = 'real_play_access_token';
   const form = document.querySelector('[data-support-form]');
   if (!form) return;
 
@@ -143,7 +144,6 @@
     }
 
     const payload = {
-      action: 'create',
       email,
       amount_php: amount,
       frequency,
@@ -158,13 +158,17 @@
     submit.textContent = 'SAVING...';
 
     try {
+      const token = window.localStorage.getItem(TOKEN_KEY) || '';
+      const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
       const response = await fetch(ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data?.ok) throw new Error(data?.error || 'Support plan could not be saved.');
+      if (!response.ok || !data?.ok) throw new Error(data?.message || 'Support plan could not be saved.');
 
       if (frequency === 'one_time') {
         if (paymentMethod === 'cash_on_hand') {
