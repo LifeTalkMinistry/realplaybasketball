@@ -133,6 +133,50 @@
   font-weight: 800;
 }
 
+/* Hero RP trademark placement — uses the official circle from the full brand lockup. */
+.hero-copy,
+.hero-visual {
+  position: relative;
+}
+
+.hero-copy {
+  z-index: 3;
+}
+
+.hero-visual::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: -50%;
+  top: 54%;
+  width: clamp(330px, 31vw, 430px);
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  clip-path: circle(49% at 50% 50%);
+  background-image: url('assets/real-play-brand.webp');
+  background-repeat: no-repeat;
+  background-size: auto 151%;
+  background-position: 3% center;
+  filter: drop-shadow(0 0 26px rgba(18,108,255,.16));
+  pointer-events: none;
+}
+
+.hero-visual .scoreboard-card,
+.hero-visual .basketball {
+  z-index: 2;
+}
+
+@media (max-width: 900px) {
+  .hero-visual::after {
+    left: 50%;
+    top: 56%;
+    width: min(360px, 58vw);
+    transform: translate(-50%, -50%);
+    opacity: .92;
+  }
+}
+
 @media (max-width: 760px) {
   .mission-copy > .mission-intro {
     margin-bottom: 22px;
@@ -150,5 +194,13 @@
 
   .mission-simple {
     line-height: 1.6;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-visual::after {
+    top: 58%;
+    width: min(270px, 72vw);
+    opacity: .86;
   }
 }
