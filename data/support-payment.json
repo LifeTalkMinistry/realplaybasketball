@@ -1,0 +1,17 @@
+{
+  "gcash": {
+    "enabled": false,
+    "account_name": "",
+    "number": "",
+    "qr_image": ""
+  },
+  "maya": {
+    "enabled": false,
+    "account_name": "",
+    "number": "",
+    "qr_image": ""
+  },
+  "cash_on_hand": {
+    "enabled": true
+  }
+}
