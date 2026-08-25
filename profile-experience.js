@@ -10,6 +10,7 @@
     document.head.appendChild(link);
   }
 
+  const overlay = document.querySelector('[data-auth-overlay]');
   const panel = document.querySelector('.auth-panel');
   const panelTitle = document.querySelector('#real-play-auth-title');
   const panelSubtitle = document.querySelector('.auth-panel > .auth-subtitle');
@@ -134,6 +135,13 @@
     }
   }
 
+  function restoreAccessHeader() {
+    if (panelTitle) panelTitle.textContent = 'YOUR COURT ID.';
+    if (panelSubtitle) {
+      panelSubtitle.textContent = 'Log in to your Real Play account or create the player identity that will hold your official on-court history.';
+    }
+  }
+
   function showProfile() {
     welcomeActive = false;
     welcome.hidden = true;
@@ -159,9 +167,17 @@
     }
   }
 
+  function retireWelcome() {
+    if (!welcomeActive) return;
+    welcomeActive = false;
+    welcome.hidden = true;
+    profileShell.hidden = false;
+  }
+
   function syncPanelMode() {
     if (accountView.hidden) {
       panel.classList.remove('profile-mode', 'welcome-mode');
+      restoreAccessHeader();
       return;
     }
     if (welcomeActive) showWelcome();
@@ -192,10 +208,7 @@
     if (node) identityObserver.observe(node, { childList: true, characterData: true, subtree: true });
   });
 
-  const viewObserver = new MutationObserver(() => {
-    if (!accountView.hidden && !welcomeActive) showProfile();
-    else syncPanelMode();
-  });
+  const viewObserver = new MutationObserver(syncPanelMode);
   viewObserver.observe(accountView, { attributes: true, attributeFilter: ['hidden'] });
 
   if (status) {
@@ -219,13 +232,20 @@
     });
   }
 
+  if (overlay) {
+    const overlayObserver = new MutationObserver(() => {
+      if (!overlay.classList.contains('open')) retireWelcome();
+    });
+    overlayObserver.observe(overlay, { attributes: true, attributeFilter: ['class'] });
+  }
+
   if (enterProfileButton) {
     enterProfileButton.addEventListener('click', showProfile);
   }
 
   if (playButton) {
     playButton.addEventListener('click', () => {
-      welcomeActive = false;
+      retireWelcome();
       if (closeButton) closeButton.click();
       window.setTimeout(() => {
         window.location.hash = 'play';
