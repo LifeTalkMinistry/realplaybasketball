@@ -151,6 +151,8 @@
   }
 
   loadScript('auth-core.js', () => {
-    loadScript('profile-experience.js', () => loadScript('support.js'));
+    loadScript('profile-experience.js', () => {
+      loadScript('support.js', () => loadScript('support-admin.js'));
+    });
   });
 })();
