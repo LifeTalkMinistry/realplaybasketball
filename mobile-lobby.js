@@ -18,7 +18,11 @@
         <div class="rp-entry-ball" aria-hidden="true"></div>
         <p class="rp-entry-kicker">REAL-WORLD BASKETBALL CAREER</p>
         <h1>LESS SCREEN.<br><span>REAL POINTS.</span></h1>
-        <p class="rp-entry-copy">Your player. Your games. Your real basketball history.</p>
+        <div class="rp-entry-copy" aria-label="Real Play features">
+          <div class="rp-entry-feature"><span class="rp-entry-feature-icon" aria-hidden="true">◉</span><strong>REAL COURTS.</strong></div>
+          <div class="rp-entry-feature"><span class="rp-entry-feature-icon" aria-hidden="true">⌁</span><strong>REAL GAMES.</strong></div>
+          <div class="rp-entry-feature"><span class="rp-entry-feature-icon" aria-hidden="true">♕</span><strong>REAL HISTORY.</strong></div>
+        </div>
       </div>
       <div class="rp-entry-actions">
         <button class="rp-entry-primary" type="button" data-rp-entry-login>LOG IN</button>
