@@ -19,7 +19,6 @@
   const originalSubmitText = 'CONTINUE TO PAYMENT';
 
   let paymentConfig = null;
-
   submit.textContent = originalSubmitText;
 
   function setStatus(message = '', type = '') {
@@ -37,9 +36,12 @@
   }
 
   function isMethodReady(method) {
+    return ['gcash', 'maya', 'cash_on_hand'].includes(method);
+  }
+
+  function hasDigitalDestination(method) {
     const config = methodConfig(method);
-    if (method === 'cash_on_hand') return config.enabled !== false;
-    return Boolean(config.enabled && (config.qr_image || config.number));
+    return Boolean(config.qr_image || config.number);
   }
 
   function syncChoiceStates() {
@@ -79,11 +81,7 @@
       : nextMonthly(form.monthly_day.value);
     preview.hidden = false;
     previewValue.textContent = new Intl.DateTimeFormat('en-PH', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      timeZone: 'Asia/Manila',
+      weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'Asia/Manila',
     }).format(target);
   }
 
@@ -99,33 +97,20 @@
     syncChoiceStates();
   }
 
-  function updateMethodLabel(method, ready, readyText, unavailableText) {
+  function updateMethodLabel(method, readyText) {
     const input = form.querySelector(`input[name="payment_method"][value="${method}"]`);
     const label = input?.closest('.support-method');
     if (!input || !label) return;
-
-    input.disabled = !ready;
-    label.classList.toggle('support-method-coming', !ready);
+    input.disabled = false;
+    label.classList.remove('support-method-coming');
     const small = label.querySelector('small');
-    if (small) small.textContent = ready ? readyText : unavailableText;
+    if (small) small.textContent = readyText;
   }
 
   function syncPaymentAvailability() {
-    const gcashReady = isMethodReady('gcash');
-    const mayaReady = isMethodReady('maya');
-    const cashReady = isMethodReady('cash_on_hand');
-
-    updateMethodLabel('gcash', gcashReady, 'Digital transfer', 'Setup required');
-    updateMethodLabel('maya', mayaReady, 'Digital transfer', 'Coming soon');
-    updateMethodLabel('cash_on_hand', cashReady, 'Give personally', 'Unavailable');
-
-    const current = form.querySelector('input[name="payment_method"]:checked');
-    if (!current || current.disabled) {
-      const preferred = form.querySelector('input[name="payment_method"][value="cash_on_hand"]:not(:disabled)')
-        || form.querySelector('input[name="payment_method"]:not(:disabled)');
-      if (preferred) preferred.checked = true;
-    }
-
+    updateMethodLabel('gcash', 'Digital transfer');
+    updateMethodLabel('maya', 'Digital transfer');
+    updateMethodLabel('cash_on_hand', 'Give personally');
     syncMethod();
   }
 
@@ -136,11 +121,9 @@
     if (method === 'cash_on_hand') {
       methodNote.innerHTML = '<strong>CASH ON HAND</strong><span>Continue to the handoff step. Cash becomes official support only after an authorized Real Play organizer confirms it was physically received.</span>';
     } else if (method === 'maya') {
-      methodNote.innerHTML = '<strong>MAYA</strong><span>Maya is not available yet. Choose an active payment method to continue.</span>';
-    } else if (method === 'gcash' && isMethodReady('gcash')) {
-      methodNote.innerHTML = '<strong>GCASH</strong><span>Continue to payment. The verified Real Play GCash QR or recipient details will be shown in Step 2 before you send anything.</span>';
+      methodNote.innerHTML = '<strong>MAYA</strong><span>Continue to payment. Maya stays available as a support option; the verified recipient details will be shown whenever they are configured.</span>';
     } else {
-      methodNote.innerHTML = '<strong>GCASH</strong><span>GCash is not active yet because verified receiving details have not been configured. Choose Cash on Hand to continue for now.</span>';
+      methodNote.innerHTML = '<strong>GCASH</strong><span>Continue to payment. GCash stays available as a support option; the verified recipient details will be shown whenever they are configured.</span>';
     }
     syncChoiceStates();
   }
@@ -152,8 +135,8 @@
       paymentConfig = await response.json();
     } catch (_error) {
       paymentConfig = {
-        gcash: { enabled: false },
-        maya: { enabled: false },
+        gcash: { enabled: true },
+        maya: { enabled: true },
         cash_on_hand: { enabled: true },
       };
     }
@@ -161,9 +144,7 @@
 
   function peso(amount) {
     return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP',
-      maximumFractionDigits: 0,
+      style: 'currency', currency: 'PHP', maximumFractionDigits: 0,
     }).format(Number(amount || 0));
   }
 
@@ -200,7 +181,6 @@
     `;
 
     form.append(step);
-
     step.querySelector('[data-support-payment-back]').addEventListener('click', () => {
       form.classList.remove('support-payment-mode');
       step.hidden = true;
@@ -209,15 +189,51 @@
       submit.disabled = false;
       form.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
-
     return step;
+  }
+
+  function renderDigitalPayment(body, payload, method) {
+    const config = methodConfig(method);
+    const label = method === 'maya' ? 'MAYA' : 'GCASH';
+
+    if (hasDigitalDestination(method)) {
+      const qr = config.qr_image
+        ? `<img class="support-gcash-qr" src="${config.qr_image}" alt="Real Play verified ${label} QR code" />`
+        : '';
+      const recipient = config.number
+        ? `<div class="support-recipient"><span>${label} NUMBER</span><strong>${config.number}</strong></div>`
+        : '';
+      const accountName = config.account_name
+        ? `<div class="support-recipient"><span>ACCOUNT NAME</span><strong>${config.account_name}</strong></div>`
+        : '';
+
+      body.innerHTML = `
+        <div class="support-pay-state ready">
+          <span>PAY WITH ${label}</span>
+          <h4>Send ${peso(payload.amount_php)} now.</h4>
+          <p>Use the verified Real Play ${label} details below and verify the recipient before sending.</p>
+          ${qr}
+          <div class="support-recipient-grid">${accountName}${recipient}</div>
+          <div class="support-pay-callout">AFTER SENDING, KEEP YOUR ${label} REFERENCE NUMBER. REAL PLAY COUNTS SUPPORT ONLY AFTER THE MONEY IS RECEIVED AND VERIFIED.</div>
+        </div>
+      `;
+      return;
+    }
+
+    body.innerHTML = `
+      <div class="support-pay-state pending">
+        <span>${label} SELECTED</span>
+        <h4>Your ${label} support plan is saved.</h4>
+        <p>${label} remains an available support method. The verified receiving number or QR has not been entered on the site yet, so no destination is shown here today.</p>
+        <div class="support-pay-callout">YOU CAN KEEP THIS SUPPORT PLAN. ONCE THE VERIFIED ${label} DETAILS ARE ADDED, THIS PAYMENT STEP WILL SHOW THEM.</div>
+      </div>
+    `;
   }
 
   function renderPaymentStep(payload) {
     const step = ensurePaymentStep();
     const summary = step.querySelector('[data-support-payment-summary]');
     const body = step.querySelector('[data-support-payment-body]');
-    const config = methodConfig(payload.payment_method);
 
     summary.innerHTML = `
       <div><span>AMOUNT</span><strong>${peso(payload.amount_php)}</strong></div>
@@ -234,55 +250,8 @@
           <div class="support-pay-callout">NO DIGITAL PAYMENT IS REQUIRED FOR CASH ON HAND.</div>
         </div>
       `;
-    } else if (payload.payment_method === 'gcash' && isMethodReady('gcash')) {
-      const qr = config.qr_image
-        ? `<img class="support-gcash-qr" src="${config.qr_image}" alt="Real Play verified GCash QR code" />`
-        : '';
-      const recipient = config.number
-        ? `<div class="support-recipient"><span>GCASH NUMBER</span><strong>${config.number}</strong></div>`
-        : '';
-      const accountName = config.account_name
-        ? `<div class="support-recipient"><span>ACCOUNT NAME</span><strong>${config.account_name}</strong></div>`
-        : '';
-
-      body.innerHTML = `
-        <div class="support-pay-state ready">
-          <span>PAY WITH GCASH</span>
-          <h4>Send ${peso(payload.amount_php)} now.</h4>
-          <p>Open GCash and scan or upload the verified QR below, or use the displayed recipient number. Always verify the recipient before sending.</p>
-          ${qr}
-          <div class="support-recipient-grid">${accountName}${recipient}</div>
-          <div class="support-pay-callout">AFTER SENDING, KEEP YOUR GCASH REFERENCE NUMBER. REAL PLAY COUNTS THE SUPPORT ONLY AFTER THE MONEY IS RECEIVED AND VERIFIED.</div>
-        </div>
-      `;
-    } else if (payload.payment_method === 'maya' && isMethodReady('maya')) {
-      const qr = config.qr_image
-        ? `<img class="support-gcash-qr" src="${config.qr_image}" alt="Real Play verified Maya QR code" />`
-        : '';
-      const recipient = config.number
-        ? `<div class="support-recipient"><span>MAYA NUMBER</span><strong>${config.number}</strong></div>`
-        : '';
-      const accountName = config.account_name
-        ? `<div class="support-recipient"><span>ACCOUNT NAME</span><strong>${config.account_name}</strong></div>`
-        : '';
-
-      body.innerHTML = `
-        <div class="support-pay-state ready">
-          <span>PAY WITH MAYA</span>
-          <h4>Send ${peso(payload.amount_php)} now.</h4>
-          <p>Use the verified Maya receiving details below and verify the recipient before sending.</p>
-          ${qr}
-          <div class="support-recipient-grid">${accountName}${recipient}</div>
-        </div>
-      `;
     } else {
-      body.innerHTML = `
-        <div class="support-pay-state blocked">
-          <span>PAYMENT UNAVAILABLE</span>
-          <h4>This method cannot be completed right now.</h4>
-          <p>Go back and choose an active payment method. Your money should never be sent to an unverified destination.</p>
-        </div>
-      `;
+      renderDigitalPayment(body, payload, payload.payment_method);
     }
 
     step.hidden = false;
@@ -326,7 +295,7 @@
     const emailOptIn = Boolean(form.querySelector('input[name="email_opt_in"]')?.checked);
 
     if (!paymentMethod || !isMethodReady(paymentMethod)) {
-      setStatus('Choose an active payment method before continuing. GCash and Maya cannot be selected until verified receiving details are configured.', 'error');
+      setStatus('Choose GCash, Maya, or Cash on Hand to continue.', 'error');
       return;
     }
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -361,9 +330,7 @@
       if (token) headers.Authorization = `Bearer ${token}`;
 
       const response = await fetch(ENDPOINT, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
+        method: 'POST', headers, body: JSON.stringify(payload),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data?.ok) throw new Error(data?.message || 'Support plan could not be saved.');
