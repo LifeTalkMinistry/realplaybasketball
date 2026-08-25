@@ -1,8 +1,16 @@
 (() => {
   const accountView = document.querySelector('[data-auth-view="account"]');
-  if (!accountView || accountView.dataset.missionRefined === 'true') return;
-  accountView.dataset.missionRefined = 'true';
+  if (!accountView || accountView.dataset.profileExperienceV2 === 'true') return;
+  accountView.dataset.profileExperienceV2 = 'true';
 
+  if (!document.querySelector('link[href="profile-experience.css"]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'profile-experience.css';
+    document.head.appendChild(link);
+  }
+
+  const panel = document.querySelector('.auth-panel');
   const panelTitle = document.querySelector('#real-play-auth-title');
   const panelSubtitle = document.querySelector('.auth-panel > .auth-subtitle');
   const closeButton = document.querySelector('[data-auth-close]');
@@ -16,35 +24,60 @@
   const notificationsWrap = accountView.querySelector('[data-auth-notifications-wrap]');
   const logoutButton = accountView.querySelector('[data-auth-logout]');
 
-  if (!accountCard) return;
+  if (!panel || !accountCard) return;
 
   const identityLabel = accountCard.querySelector('.auth-account-label');
-  if (identityLabel) identityLabel.textContent = 'YOUR PLAYER IDENTITY';
+  if (identityLabel) identityLabel.textContent = 'REAL PLAY PLAYER';
 
   const welcome = document.createElement('section');
-  welcome.className = 'auth-mission-welcome';
+  welcome.className = 'auth-welcome-screen';
+  welcome.hidden = true;
   welcome.innerHTML = `
-    <span class="auth-account-label">YOU'RE PART OF THE MOVEMENT</span>
-    <h3><span data-auth-welcome-name>PLAYER</span>, NOW MAKE IT REAL.</h3>
-    <p>Real Play exists to get kids and adults moving, competing, connecting, and playing basketball in real life. Your account is only the record. <strong>The court is the point.</strong></p>
-    <div class="auth-mission-footer">
-      <span>LESS SCREEN. REAL POINTS.</span>
-      <button type="button" class="auth-court-cta" data-auth-go-play>COME PLAY</button>
+    <span class="auth-welcome-kicker">YOU'RE IN</span>
+    <h3>WELCOME TO REAL PLAY,<br><span data-auth-welcome-name>PLAYER</span>.</h3>
+    <p>You just joined a community built to get people off the sidelines and back into real play — moving, competing, connecting, and playing basketball in real life.</p>
+    <strong class="auth-welcome-tagline">LESS SCREEN. REAL POINTS.</strong>
+    <div class="auth-welcome-actions">
+      <button type="button" class="auth-welcome-primary" data-auth-enter-profile>VIEW MY PROFILE</button>
+      <button type="button" class="auth-welcome-secondary" data-auth-go-play>COME PLAY</button>
     </div>
   `;
-  accountView.insertBefore(welcome, accountCard);
+
+  const profileShell = document.createElement('div');
+  profileShell.className = 'auth-profile-shell';
+
+  const profileIntro = document.createElement('div');
+  profileIntro.className = 'auth-profile-intro';
+  profileIntro.innerHTML = `
+    <span>YOUR REAL PLAY IDENTITY</span>
+    <strong>THE COURT CREATES THE RECORD.</strong>
+  `;
 
   const record = document.createElement('section');
-  record.className = 'auth-record-card';
+  record.className = 'auth-record-card-v2';
   record.innerHTML = `
-    <span class="auth-account-label">YOUR REAL PLAY RECORD</span>
-    <strong>GAMES CREATE STATS.</strong>
-    <p>Confirmed games will build your wins, points, assists, rebounds, and MVP history here. What happens on the court becomes your record.</p>
+    <div class="auth-record-head">
+      <div>
+        <span class="auth-account-label">YOUR REAL PLAY RECORD</span>
+        <strong>GAMES CREATE STATS.</strong>
+      </div>
+      <small>OFFICIAL GAMES ONLY</small>
+    </div>
+    <div class="auth-record-stats" aria-label="Official player record placeholders">
+      <article><strong>—</strong><span>Games</span></article>
+      <article><strong>—</strong><span>Wins</span></article>
+      <article><strong>—</strong><span>PTS</span></article>
+      <article><strong>—</strong><span>AST</span></article>
+      <article><strong>—</strong><span>REB</span></article>
+    </div>
+    <div class="auth-record-empty">
+      <strong>YOUR RECORD STARTS ON THE COURT.</strong>
+      <p>Confirmed Real Play games will build your wins, points, assists, rebounds, recent-game history, and monthly MVP performance here.</p>
+    </div>
   `;
-  accountCard.insertAdjacentElement('afterend', record);
 
   const numberManager = document.createElement('details');
-  numberManager.className = 'auth-number-manager';
+  numberManager.className = 'auth-number-manager auth-number-manager-v2';
   numberManager.innerHTML = `
     <summary>
       <span>
@@ -60,9 +93,13 @@
   [nextCard, numberRequestForm, notificationsWrap].forEach((node) => {
     if (node) managerBody.appendChild(node);
   });
-  record.insertAdjacentElement('afterend', numberManager);
+
+  accountView.insertBefore(welcome, accountCard);
+  accountView.insertBefore(profileShell, accountCard);
+  profileShell.append(profileIntro, accountCard, record, numberManager);
 
   [...accountView.children].forEach((child) => {
+    if (child === welcome || child === profileShell) return;
     if (child.classList?.contains('auth-divider') || child.classList?.contains('auth-note')) {
       child.remove();
     }
@@ -70,21 +107,24 @@
 
   if (logoutButton) {
     const footer = document.createElement('div');
-    footer.className = 'auth-account-footer';
+    footer.className = 'auth-account-footer auth-account-footer-v2';
     footer.appendChild(logoutButton);
-    accountView.appendChild(footer);
+    profileShell.appendChild(footer);
   }
 
   const welcomeName = welcome.querySelector('[data-auth-welcome-name]');
   const numberSummary = numberManager.querySelector('[data-auth-number-summary]');
+  const enterProfileButton = welcome.querySelector('[data-auth-enter-profile]');
+  const playButton = welcome.querySelector('[data-auth-go-play]');
+
+  let welcomeActive = false;
 
   function playerName() {
     return (accountName?.textContent || 'PLAYER').trim().toUpperCase();
   }
 
   function syncIdentity() {
-    const name = playerName();
-    if (welcomeName) welcomeName.textContent = name;
+    if (welcomeName) welcomeName.textContent = playerName();
 
     const number = (accountNumber?.textContent || '#--').trim();
     if (numberSummary) {
@@ -94,45 +134,72 @@
     }
   }
 
-  function syncHeader() {
-    const showingAccount = !accountView.hidden;
-    if (panelTitle) {
-      panelTitle.textContent = showingAccount ? 'WELCOME TO REAL PLAY.' : 'YOUR COURT ID.';
-    }
+  function showProfile() {
+    welcomeActive = false;
+    welcome.hidden = true;
+    profileShell.hidden = false;
+    panel.classList.remove('welcome-mode');
+    panel.classList.add('profile-mode');
+    if (panelTitle) panelTitle.textContent = 'MY REAL PLAY PROFILE.';
     if (panelSubtitle) {
-      panelSubtitle.textContent = showingAccount
-        ? 'Less screen. Real points. Your profile is here to record what you actually do on the court.'
-        : 'Log in to your Real Play account or create the player identity that will hold your official on-court history.';
+      panelSubtitle.textContent = 'Your digital profile records what you earn in real games. The game itself still happens on the court.';
     }
   }
 
-  function refocusSuccessMessage() {
+  function showWelcome() {
+    if (accountView.hidden) return;
+    welcomeActive = true;
+    welcome.hidden = false;
+    profileShell.hidden = true;
+    panel.classList.remove('profile-mode');
+    panel.classList.add('welcome-mode');
+    if (panelTitle) panelTitle.textContent = 'WELCOME TO REAL PLAY.';
+    if (panelSubtitle) {
+      panelSubtitle.textContent = 'Less screen. Real points. You are officially part of the movement.';
+    }
+  }
+
+  function syncPanelMode() {
+    if (accountView.hidden) {
+      panel.classList.remove('profile-mode', 'welcome-mode');
+      return;
+    }
+    if (welcomeActive) showWelcome();
+    else showProfile();
+  }
+
+  function maybeTriggerWelcome() {
     if (!status || accountView.hidden || !status.classList.contains('success')) return;
     const message = status.textContent || '';
-    const numberFocused = /account created|player profile created|is yours for this month/i.test(message);
-    if (!numberFocused) return;
-    status.textContent = `WELCOME TO REAL PLAY, ${playerName()}. Your player profile is ready. Now get on the court and make it real.`;
+    if (!/real play account created|player profile created/i.test(message)) return;
+    syncIdentity();
+    showWelcome();
+    status.textContent = '';
+    status.className = 'auth-status';
+  }
+
+  function markNumberNotice() {
+    const hasUnread = Boolean(notificationsWrap?.querySelector('.auth-notification.unread'));
+    numberManager.classList.toggle('has-notice', hasUnread);
   }
 
   syncIdentity();
-  syncHeader();
+  syncPanelMode();
+  markNumberNotice();
 
-  const identityObserver = new MutationObserver(() => {
-    syncIdentity();
-    refocusSuccessMessage();
-  });
+  const identityObserver = new MutationObserver(syncIdentity);
   [accountName, accountNumber, accountNumberLock].forEach((node) => {
     if (node) identityObserver.observe(node, { childList: true, characterData: true, subtree: true });
   });
 
   const viewObserver = new MutationObserver(() => {
-    syncHeader();
-    window.setTimeout(refocusSuccessMessage, 0);
+    if (!accountView.hidden && !welcomeActive) showProfile();
+    else syncPanelMode();
   });
   viewObserver.observe(accountView, { attributes: true, attributeFilter: ['hidden'] });
 
   if (status) {
-    const statusObserver = new MutationObserver(refocusSuccessMessage);
+    const statusObserver = new MutationObserver(() => window.setTimeout(maybeTriggerWelcome, 0));
     statusObserver.observe(status, {
       childList: true,
       characterData: true,
@@ -142,11 +209,8 @@
     });
   }
 
-  const notificationsObserver = new MutationObserver(() => {
-    const hasUnread = Boolean(notificationsWrap?.querySelector('.auth-notification.unread'));
-    numberManager.classList.toggle('has-notice', hasUnread);
-  });
   if (notificationsWrap) {
+    const notificationsObserver = new MutationObserver(markNumberNotice);
     notificationsObserver.observe(notificationsWrap, {
       attributes: true,
       attributeFilter: ['hidden'],
@@ -155,9 +219,13 @@
     });
   }
 
-  const playButton = welcome.querySelector('[data-auth-go-play]');
+  if (enterProfileButton) {
+    enterProfileButton.addEventListener('click', showProfile);
+  }
+
   if (playButton) {
     playButton.addEventListener('click', () => {
+      welcomeActive = false;
       if (closeButton) closeButton.click();
       window.setTimeout(() => {
         window.location.hash = 'play';
