@@ -4,6 +4,14 @@
   "description": "Less Screen. Real Points.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#090909",
-  "theme_color": "#090909"
+  "background_color": "#020306",
+  "theme_color": "#0647d6",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
