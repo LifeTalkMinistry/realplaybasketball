@@ -1,10 +1,12 @@
 document.documentElement.classList.add('js');
 
 (() => {
-  const css = document.createElement('link');
-  css.rel = 'stylesheet';
-  css.href = 'mobile-lobby.css';
-  document.head.appendChild(css);
+  ['mobile-lobby.css', 'mobile-entry.css'].forEach((href) => {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = href;
+    document.head.appendChild(css);
+  });
 
   const script = document.createElement('script');
   script.src = 'mobile-lobby.js';
