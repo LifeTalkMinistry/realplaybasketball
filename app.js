@@ -1,7 +1,15 @@
 document.documentElement.classList.add('js');
 
 (() => {
-  const version = '20260825-2000';
+  const version = '20260825-2006';
+
+  // Load the session guard immediately so auth-core cannot erase a valid
+  // persisted login because one protected API request temporarily returns 401.
+  const sessionGuard = document.createElement('script');
+  sessionGuard.src = `auth-session-guard.js?v=${version}`;
+  sessionGuard.async = false;
+  document.head.appendChild(sessionGuard);
+
   ['mobile-lobby.css', 'mobile-entry.css', 'mobile-shell-fix.css', 'mobile-lobby-cleanup.css'].forEach((href) => {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
