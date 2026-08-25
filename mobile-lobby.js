@@ -84,6 +84,7 @@
   const profileChip = app.querySelector('[data-rp-profile]');
   const playerName = app.querySelector('[data-rp-name]');
   const playerNumber = app.querySelector('[data-rp-number]');
+  const bottomNav = app.querySelector('[data-rp-bottom-nav]');
   const track = app.querySelector('[data-rp-mode-track]');
   const cards = [...app.querySelectorAll('.rp-mode-card')];
   const dotsWrap = app.querySelector('[data-rp-dots]');
@@ -99,6 +100,8 @@
     const loggedIn = isLoggedIn();
     app.classList.toggle('rp-authenticated', loggedIn);
     app.classList.toggle('rp-guest', !loggedIn);
+    body.classList.toggle('rp-guest-active', !loggedIn);
+    if (bottomNav) bottomNav.style.display = loggedIn ? 'grid' : 'none';
     if (loggedIn) {
       const name = (authName?.textContent || 'PLAYER').trim();
       const number = (authNumber?.textContent || '#--').trim();
