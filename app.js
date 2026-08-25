@@ -1,7 +1,7 @@
 document.documentElement.classList.add('js');
 
 (() => {
-  const version = '20260825-1952';
+  const version = '20260825-1958';
   ['mobile-lobby.css', 'mobile-entry.css', 'mobile-shell-fix.css', 'mobile-lobby-cleanup.css'].forEach((href) => {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
