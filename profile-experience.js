@@ -6,6 +6,7 @@
   const panelTitle = document.querySelector('#real-play-auth-title');
   const panelSubtitle = document.querySelector('.auth-panel > .auth-subtitle');
   const closeButton = document.querySelector('[data-auth-close]');
+  const status = document.querySelector('[data-auth-status]');
   const accountCard = accountView.querySelector('.auth-account-card');
   const accountName = accountView.querySelector('[data-auth-account-name]');
   const accountNumber = accountView.querySelector('[data-auth-player-number]');
@@ -77,8 +78,12 @@
   const welcomeName = welcome.querySelector('[data-auth-welcome-name]');
   const numberSummary = numberManager.querySelector('[data-auth-number-summary]');
 
+  function playerName() {
+    return (accountName?.textContent || 'PLAYER').trim().toUpperCase();
+  }
+
   function syncIdentity() {
-    const name = (accountName?.textContent || 'PLAYER').trim().toUpperCase();
+    const name = playerName();
     if (welcomeName) welcomeName.textContent = name;
 
     const number = (accountNumber?.textContent || '#--').trim();
@@ -101,16 +106,41 @@
     }
   }
 
+  function refocusSuccessMessage() {
+    if (!status || accountView.hidden || !status.classList.contains('success')) return;
+    const message = status.textContent || '';
+    const numberFocused = /account created|player profile created|is yours for this month/i.test(message);
+    if (!numberFocused) return;
+    status.textContent = `WELCOME TO REAL PLAY, ${playerName()}. Your player profile is ready. Now get on the court and make it real.`;
+  }
+
   syncIdentity();
   syncHeader();
 
-  const identityObserver = new MutationObserver(syncIdentity);
+  const identityObserver = new MutationObserver(() => {
+    syncIdentity();
+    refocusSuccessMessage();
+  });
   [accountName, accountNumber, accountNumberLock].forEach((node) => {
     if (node) identityObserver.observe(node, { childList: true, characterData: true, subtree: true });
   });
 
-  const viewObserver = new MutationObserver(syncHeader);
+  const viewObserver = new MutationObserver(() => {
+    syncHeader();
+    window.setTimeout(refocusSuccessMessage, 0);
+  });
   viewObserver.observe(accountView, { attributes: true, attributeFilter: ['hidden'] });
+
+  if (status) {
+    const statusObserver = new MutationObserver(refocusSuccessMessage);
+    statusObserver.observe(status, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+  }
 
   const notificationsObserver = new MutationObserver(() => {
     const hasUnread = Boolean(notificationsWrap?.querySelector('.auth-notification.unread'));
