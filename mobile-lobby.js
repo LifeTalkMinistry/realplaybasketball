@@ -34,28 +34,70 @@
     <div class="rp-app-inner" data-rp-lobby>
       <header class="rp-topbar">
         <div class="rp-brandmark" aria-hidden="true">RP</div>
-        <div class="rp-brandcopy"><strong>REAL PLAY</strong><span>LESS SCREEN. REAL POINTS.</span></div>
-        <button class="rp-profile-chip" type="button" data-rp-profile aria-label="Open player account">PROFILE</button>
+        <div class="rp-brandcopy"><strong>REAL PLAY</strong></div>
+        <button class="rp-profile-chip" type="button" data-rp-profile aria-label="Open player account">●</button>
       </header>
 
       <section class="rp-player-strip" aria-label="Player identity">
         <div class="rp-player-id">
           <div class="rp-player-number" data-rp-number>#--</div>
-          <div class="rp-player-name"><strong data-rp-name>YOUR PLAYER</strong><span>REAL PLAY IDENTITY</span></div>
+          <div class="rp-player-name"><strong data-rp-name>YOUR PLAYER</strong><span>REAL PLAY PLAYER</span></div>
         </div>
-        <div class="rp-player-rating"><strong data-rp-ovr>UNRANKED</strong><span>OVR</span></div>
+        <div class="rp-player-rating"><strong data-rp-ovr>UNRANKED</strong><span>COMPLETE PLACEMENT</span></div>
       </section>
 
-      <section class="rp-lobby-head"><p class="rp-kicker">CHOOSE HOW YOU PLAY</p><h1>GET ON THE COURT.</h1><p>Pick a mode. Real Play handles the system. You handle the basketball.</p></section>
+      <section class="rp-lobby-head" aria-label="Choose game mode">
+        <span>PLAY</span>
+        <h1>Choose your game.</h1>
+      </section>
 
       <section class="rp-mode-stage" aria-label="Game modes">
         <div class="rp-mode-track" data-rp-mode-track>
-          <article class="rp-mode-card rp-mode-career" data-mode="Career Mode"><div class="rp-mode-art" aria-hidden="true"></div><div class="rp-mode-card-content"><div class="rp-mode-type">RANKED COMPETITIVE</div><h2>Career Mode</h2><p>Build your official Real Play career through verified competitive games.</p><div class="rp-mode-tags"><span>PTS · AST · REB · TO</span><span>OVR</span><span>MVP</span><span>W/L</span></div><button class="rp-play-button" type="button" data-rp-select-mode="Career Mode">COME PLAY</button></div></article>
-          <article class="rp-mode-card rp-mode-open" data-mode="Open Game"><div class="rp-mode-art" aria-hidden="true"></div><div class="rp-mode-card-content"><div class="rp-mode-type">NO RANKING PRESSURE</div><h2>Open Game</h2><p>Official Real Play basketball when you simply want to show up and play.</p><div class="rp-mode-tags"><span>PLAY TIME</span><span>NO OVR</span><span>NO MVP</span></div><button class="rp-play-button" type="button" data-rp-select-mode="Open Game">COME PLAY</button></div></article>
-          <article class="rp-mode-card rp-mode-placement" data-mode="Placement"><div class="rp-mode-art" aria-hidden="true"></div><div class="rp-mode-card-content"><div class="rp-mode-type">START YOUR COMPETITIVE CAREER</div><h2>Placement</h2><p>Play official placement games so Real Play can establish your first OVR.</p><div class="rp-mode-tags"><span>UNRANKED → OVR</span><span>VERIFIED</span></div><button class="rp-play-button" type="button" data-rp-select-mode="Placement">START PLACEMENT</button></div></article>
-          <article class="rp-mode-card rp-mode-practice" data-mode="Self-Practice"><div class="rp-mode-art" aria-hidden="true"></div><div class="rp-mode-card-content"><div class="rp-mode-type">PUT IN REAL TIME</div><h2>Self-Practice</h2><p>Track legitimate basketball participation outside organized competitive games.</p><div class="rp-mode-tags"><span>PLAY TIME ONLY</span><span>NO OVR</span></div><button class="rp-play-button" type="button" data-rp-select-mode="Self-Practice">START PRACTICE</button></div></article>
+          <article class="rp-mode-card rp-mode-career" data-mode="Career Mode">
+            <div class="rp-mode-art" aria-hidden="true"></div>
+            <div class="rp-mode-card-content">
+              <div class="rp-mode-type">RANKED</div>
+              <h2>Career</h2>
+              <p>Build your official Real Play career through verified competitive games.</p>
+              <div class="rp-mode-meta">OVR · PTS/AST/REB · W/L · MVP</div>
+              <button class="rp-play-button" type="button" data-rp-select-mode="Career Mode">PLAY CAREER <span>→</span></button>
+            </div>
+          </article>
+
+          <article class="rp-mode-card rp-mode-open" data-mode="Open Game">
+            <div class="rp-mode-art" aria-hidden="true"></div>
+            <div class="rp-mode-card-content">
+              <div class="rp-mode-type">CASUAL OFFICIAL PLAY</div>
+              <h2>Open</h2>
+              <p>Show up and play official Real Play basketball without ranking pressure.</p>
+              <div class="rp-mode-meta">PLAY TIME · NO OVR · NO MVP</div>
+              <button class="rp-play-button" type="button" data-rp-select-mode="Open Game">PLAY OPEN <span>→</span></button>
+            </div>
+          </article>
+
+          <article class="rp-mode-card rp-mode-placement" data-mode="Placement">
+            <div class="rp-mode-art" aria-hidden="true"></div>
+            <div class="rp-mode-card-content">
+              <div class="rp-mode-type">GET YOUR FIRST OVR</div>
+              <h2>Placement</h2>
+              <p>Complete official placement games so Real Play can establish your competitive level.</p>
+              <div class="rp-mode-meta">UNRANKED → OVR · VERIFIED</div>
+              <button class="rp-play-button" type="button" data-rp-select-mode="Placement">START PLACEMENT <span>→</span></button>
+            </div>
+          </article>
+
+          <article class="rp-mode-card rp-mode-practice" data-mode="Self-Practice">
+            <div class="rp-mode-art" aria-hidden="true"></div>
+            <div class="rp-mode-card-content">
+              <div class="rp-mode-type">VERIFIED PLAY TIME</div>
+              <h2>Practice</h2>
+              <p>Record legitimate basketball participation outside organized competitive games.</p>
+              <div class="rp-mode-meta">PLAY TIME ONLY · NO OVR</div>
+              <button class="rp-play-button" type="button" data-rp-select-mode="Self-Practice">START PRACTICE <span>→</span></button>
+            </div>
+          </article>
         </div>
-        <div class="rp-dots" data-rp-dots aria-label="Game mode position"></div>
+        <div class="rp-mode-tabs" data-rp-dots aria-label="Choose game mode"></div>
       </section>
 
       <section class="rp-quick-row" aria-label="Quick access">
@@ -68,7 +110,7 @@
     <nav class="rp-bottom-nav" data-rp-bottom-nav aria-label="App navigation">
       <button class="rp-nav-item active" type="button" data-rp-nav="play"><span>◉</span>PLAY</button>
       <button class="rp-nav-item" type="button" data-rp-nav="career"><span>▰</span>CAREER</button>
-      <button class="rp-nav-item" type="button" data-rp-nav="player"><span>●</span>PLAYER</button>
+      <button class="rp-nav-item" type="button" data-rp-nav="player"><span>●</span>PROFILE</button>
       <button class="rp-nav-item" type="button" data-rp-nav="more"><span>•••</span>MORE</button>
     </nav>
 
@@ -107,7 +149,7 @@
       const number = (authNumber?.textContent || '#--').trim();
       playerName.textContent = name.toUpperCase();
       playerNumber.textContent = number || '#--';
-      profileChip.textContent = 'PROFILE';
+      profileChip.textContent = '●';
     }
   }
 
@@ -136,8 +178,24 @@
 
   function closeSheet(){ sheet.classList.remove('open'); sheet.setAttribute('aria-hidden','true'); }
 
-  cards.forEach((card,index)=>{ const dot=document.createElement('button'); dot.type='button'; dot.className=`rp-dot${index===0?' active':''}`; dot.setAttribute('aria-label',`Show ${card.dataset.mode}`); dot.addEventListener('click',()=>card.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'})); dotsWrap.appendChild(dot); });
-  function syncDots(){ if(!track)return; const center=track.scrollLeft+track.clientWidth/2; let active=0,best=Infinity; cards.forEach((card,index)=>{const d=Math.abs(card.offsetLeft+card.offsetWidth/2-center);if(d<best){best=d;active=index;}}); [...dotsWrap.children].forEach((dot,index)=>dot.classList.toggle('active',index===active)); }
+  const modeLabels = ['CAREER','OPEN','PLACEMENT','PRACTICE'];
+  cards.forEach((card,index)=>{
+    const tab=document.createElement('button');
+    tab.type='button';
+    tab.className=`rp-mode-tab${index===0?' active':''}`;
+    tab.textContent=modeLabels[index];
+    tab.setAttribute('aria-label',`Show ${card.dataset.mode}`);
+    tab.addEventListener('click',()=>track?.scrollTo({left:card.offsetLeft-track.offsetLeft,behavior:'smooth'}));
+    dotsWrap.appendChild(tab);
+  });
+
+  function syncDots(){
+    if(!track)return;
+    const center=track.scrollLeft+track.clientWidth/2;
+    let active=0,best=Infinity;
+    cards.forEach((card,index)=>{const d=Math.abs(card.offsetLeft+card.offsetWidth/2-center);if(d<best){best=d;active=index;}});
+    [...dotsWrap.children].forEach((dot,index)=>dot.classList.toggle('active',index===active));
+  }
 
   track?.addEventListener('scroll',syncDots,{passive:true});
   app.querySelector('[data-rp-entry-login]')?.addEventListener('click',()=>openAuth('login'));
