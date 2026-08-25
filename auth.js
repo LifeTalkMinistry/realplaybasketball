@@ -150,5 +150,7 @@
         </div>`;
   }
 
-  loadScript('auth-core.js', () => loadScript('support.js'));
+  loadScript('auth-core.js', () => {
+    loadScript('profile-experience.js', () => loadScript('support.js'));
+  });
 })();
