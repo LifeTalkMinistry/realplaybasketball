@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0a0a0a" />
-  <meta name="description" content="Real Play Basketball brings kids and adults onto the court for physical play, competition, movement, and real-world connection." />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#020306" />
+  <meta name="description" content="Real Play Basketball — a real-world basketball movement and player platform. Less Screen. Real Points." />
   <title>Real Play Basketball — Less Screen. Real Points.</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="site.webmanifest" />
@@ -18,220 +18,234 @@
   <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="site-header" data-header>
-    <div class="shell nav-wrap">
-      <a class="brand" href="#top" aria-label="Real Play Basketball home">
+    <div class="app-header shell">
+      <a class="brand" href="#home" aria-label="Real Play Basketball home">
         <span class="brand-main">REAL PLAY</span>
         <span class="brand-sub">BASKETBALL</span>
       </a>
-
+      <button class="account-button" type="button" data-auth-open aria-label="Open Real Play account">
+        <span class="account-dot"></span>
+        <span>PLAYER</span>
+      </button>
       <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button>
         <span class="sr-only">Open menu</span>
         <span></span><span></span><span></span>
       </button>
-
       <nav id="site-nav" class="site-nav" aria-label="Primary" data-nav>
-        <a href="#mission">Mission</a>
-        <a href="#impact">Impact</a>
-        <a href="#transparency">Transparency</a>
+        <a href="#home">Home</a>
         <a href="#play">Play</a>
-        <a class="nav-cta" href="#support">Support</a>
+        <a href="#career">Career</a>
+        <a href="#mission">Mission</a>
+        <a href="#support">Support</a>
         <a class="auth-nav-link" href="#account" data-auth-open>Log In</a>
       </nav>
     </div>
   </header>
 
   <main id="main">
-    <section class="hero" id="top">
+    <section class="mobile-home" id="home">
       <div class="court-lines" aria-hidden="true">
         <div class="court-circle"></div>
         <div class="court-key"></div>
       </div>
 
-      <div class="shell hero-grid">
-        <div class="hero-copy reveal">
-          <p class="eyebrow">COMMUNITY BASKETBALL MOVEMENT</p>
-          <h1><span>REAL PLAY</span><small>BASKETBALL</small></h1>
+      <div class="shell home-shell">
+        <div class="home-intro reveal">
+          <p class="eyebrow">REAL-WORLD BASKETBALL CAREER</p>
+          <h1>REAL PLAY<span>BASKETBALL</span></h1>
           <p class="tagline">LESS SCREEN. <strong>REAL POINTS.</strong></p>
-          <p class="hero-lede">We create opportunities for kids and adults to get on the court, move, compete, connect, and play basketball in real life.</p>
-          <div class="hero-actions">
-            <a class="button button-primary" href="#play">COME PLAY</a>
-            <a class="button button-secondary" href="#support">SUPPORT REAL PLAY</a>
-          </div>
-          <p class="hero-note">Pro-play. Not anti-screen.</p>
+          <p class="home-lede">Find a game, secure your spot, show up, play real basketball, and build a history that only the court can create.</p>
         </div>
 
-        <div class="hero-visual reveal" aria-label="Basketball court graphic">
-          <div class="scoreboard-card">
-            <div class="scoreboard-topline">
-              <span>REAL PLAY</span>
-              <span>GAME ON</span>
-            </div>
-            <div class="scoreboard-score">
-              <span class="score-label">SCREEN</span>
-              <span class="score-number muted">00</span>
-              <span class="score-divider">:</span>
-              <span class="score-number">11</span>
-              <span class="score-label">COURT</span>
-            </div>
-            <div class="scoreboard-bottom">FIRST TO 11 · WINNER STAYS</div>
+        <section class="next-play-card reveal" aria-labelledby="next-play-title">
+          <div class="card-kicker-row">
+            <span class="live-pip"></span>
+            <p>YOUR NEXT REAL PLAY</p>
           </div>
-          <div class="basketball" aria-hidden="true">
-            <span class="seam seam-one"></span>
-            <span class="seam seam-two"></span>
-            <span class="seam seam-three"></span>
+          <div class="next-play-empty">
+            <span class="next-play-label">NEXT SESSION</span>
+            <h2 id="next-play-title">TO BE ANNOUNCED</h2>
+            <p>Official locations and schedules will appear here when confirmed.</p>
           </div>
+          <a class="primary-action" href="#play">COME PLAY</a>
+        </section>
+
+        <div class="quick-stats reveal" aria-label="Real Play player system preview">
+          <article><span>PLAYER</span><strong>YOUR ID</strong></article>
+          <article><span>OVR</span><strong>UNRANKED</strong></article>
+          <article><span>PLAY TIME</span><strong>0h</strong></article>
         </div>
+
+        <button class="profile-entry reveal" type="button" data-auth-open>
+          <span>
+            <small>YOUR REAL PLAY IDENTITY</small>
+            <strong>OPEN PLAYER PROFILE</strong>
+          </span>
+          <b>→</b>
+        </button>
       </div>
     </section>
 
-    <section class="section section-light" id="mission">
-      <div class="shell mission-grid">
-        <div class="section-heading reveal">
-          <p class="eyebrow dark">WHY REAL PLAY EXISTS</p>
-          <h2>Keep real-world play alive.</h2>
-        </div>
-        <div class="mission-copy reveal">
-          <p class="mission-intro"><strong>Excessive screen time is taking up more of everyday life.</strong> It is not just a kids’ problem — it follows us from childhood into adulthood.</p>
-
-          <p class="audience-kicker">WHO THIS AFFECTS — TAP TO SEE WHY</p>
-          <div class="audience-accordion" aria-label="How excessive screen time affects different ages">
-            <details class="audience-item">
-              <summary>KIDS</summary>
-              <p class="audience-answer">Screens can easily replace time once spent moving, playing outside, and interacting face to face. Real Play gives kids a reason to get on the court and physically play.</p>
-            </details>
-            <details class="audience-item">
-              <summary>TEENS</summary>
-              <p class="audience-answer">Scrolling, gaming, streaming, and social media can consume hours of free time. Real Play gives teens somewhere real to move, compete, connect, and belong.</p>
-            </details>
-            <details class="audience-item">
-              <summary>ADULTS</summary>
-              <p class="audience-answer">Work happens on screens. Entertainment happens on screens. Even rest often returns to a screen. Real Play reminds working adults, parents, and former players that physical recreation still belongs in adult life.</p>
-            </details>
-          </div>
-
-          <p class="mission-simple">A BALL. A HOOP. A COURT. PEOPLE. <strong>A GAME.</strong></p>
-          <p class="mission-close">You do not have to be young. You do not have to be good. You just have to come play.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section impact-section" id="impact">
+    <section class="app-section play-section" id="play">
       <div class="shell">
-        <div class="section-heading split-heading reveal">
-          <div>
-            <p class="eyebrow">REAL-WORLD IMPACT</p>
-            <h2>Measure what happens on the court.</h2>
-          </div>
-          <p>Followers are not the main scoreboard. Real Play grows when people actually play.</p>
+        <div class="section-top reveal">
+          <p class="eyebrow">CHOOSE HOW YOU PLAY</p>
+          <h2>GET ON THE COURT.</h2>
+          <p>The mode determines what counts. You can simply play, establish your rating, compete for your career, or put in verified practice time.</p>
         </div>
 
+        <div class="mode-grid">
+          <article class="mode-card mode-open reveal">
+            <div class="mode-number">01</div>
+            <div class="mode-copy">
+              <span>OPEN GAME</span>
+              <h3>JUST PLAY.</h3>
+              <p>Official Real Play basketball without competitive ranking pressure.</p>
+            </div>
+            <div class="mode-meta">PLAY TIME · NO OVR</div>
+          </article>
+
+          <article class="mode-card mode-placement reveal">
+            <div class="mode-number">02</div>
+            <div class="mode-copy">
+              <span>PLACEMENT</span>
+              <h3>FIND YOUR LEVEL.</h3>
+              <p>Competitive games used to establish an Unranked player’s first OVR.</p>
+            </div>
+            <div class="mode-meta">WORKING RULE · 5 GAMES</div>
+          </article>
+
+          <article class="mode-card mode-career featured reveal">
+            <div class="mode-number">03</div>
+            <div class="mode-copy">
+              <span>CAREER MODE</span>
+              <h3>BUILD YOUR CAREER.</h3>
+              <p>Verified games with official stats, wins and losses, OVR movement, monthly MVP impact, and permanent history.</p>
+            </div>
+            <div class="mode-meta">PTS · AST · REB · TO · W/L · OVR</div>
+          </article>
+
+          <article class="mode-card mode-practice reveal">
+            <div class="mode-number">04</div>
+            <div class="mode-copy">
+              <span>SELF-PRACTICE</span>
+              <h3>PUT IN REAL TIME.</h3>
+              <p>Verified personal basketball participation outside organized games.</p>
+            </div>
+            <div class="mode-meta">PLAY TIME ONLY</div>
+          </article>
+        </div>
+
+        <div class="play-rule reveal">
+          <span>REAL PLAY RULE</span>
+          <strong>THE PLAYER CHOOSES THE MODE.<br>THE MODE DETERMINES WHAT COUNTS.</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="app-section career-section" id="career">
+      <div class="shell">
+        <div class="section-top reveal">
+          <p class="eyebrow">YOUR REAL PLAY CAREER</p>
+          <h2>THE PLAYER IS PERMANENT.</h2>
+          <p>East and West can change every game. Your player identity, OVR, Play Time, verified stats, highlights, and history stay with you.</p>
+        </div>
+
+        <div class="career-preview reveal">
+          <div class="career-player">
+            <span class="career-number">#--</span>
+            <div>
+              <small>REAL PLAY PLAYER</small>
+              <strong>YOUR CAREER STARTS ON THE COURT</strong>
+            </div>
+          </div>
+          <div class="career-stat-grid">
+            <article><span>OVR</span><strong>—</strong></article>
+            <article><span>PTS</span><strong>—</strong></article>
+            <article><span>AST</span><strong>—</strong></article>
+            <article><span>REB</span><strong>—</strong></article>
+            <article><span>W/L</span><strong>—</strong></article>
+            <article><span>PLAY TIME</span><strong>—</strong></article>
+          </div>
+          <button class="secondary-action" type="button" data-auth-open>OPEN MY PROFILE</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="app-section mission-section" id="mission">
+      <div class="shell mission-mobile">
+        <p class="eyebrow">WHY REAL PLAY EXISTS</p>
+        <h2>TECHNOLOGY SHOULD SEND YOU BACK TO THE COURT.</h2>
+        <p>Real Play is not anti-technology. The system organizes, records, preserves, and strengthens activity that happens in the physical world.</p>
+        <blockquote>
+          <strong>THE GAME HAPPENS ON THE COURT.</strong>
+          <span>THE SYSTEM RECORDS IT.</span>
+        </blockquote>
+        <p class="mission-note">Against excessive screen time. Not against technology.</p>
+      </div>
+    </section>
+
+    <section class="app-section impact-section" id="impact">
+      <div class="shell">
+        <div class="section-top compact reveal">
+          <p class="eyebrow">REAL-WORLD IMPACT</p>
+          <h2>COUNT WHAT ACTUALLY HAPPENS.</h2>
+        </div>
         <div class="impact-grid" data-impact-grid aria-live="polite">
           <article class="metric-card"><strong data-impact="players">—</strong><span>Players</span></article>
-          <article class="metric-card"><strong data-impact="games">—</strong><span>Games Played</span></article>
-          <article class="metric-card"><strong data-impact="hours">—</strong><span>Hours of Play</span></article>
-          <article class="metric-card"><strong data-impact="courts">—</strong><span>Courts Activated</span></article>
+          <article class="metric-card"><strong data-impact="games">—</strong><span>Games</span></article>
+          <article class="metric-card"><strong data-impact="hours">—</strong><span>Play Time</span></article>
+          <article class="metric-card"><strong data-impact="courts">—</strong><span>Courts</span></article>
         </div>
         <p class="data-status" data-impact-status>Loading public impact records…</p>
       </div>
     </section>
 
-    <section class="section fund-section" id="transparency">
+    <section class="app-section fund-section" id="transparency">
       <div class="shell">
-        <div class="section-heading split-heading reveal">
-          <div>
-            <p class="eyebrow">REAL PLAY COMMUNITY FUND</p>
-            <h2>See where the money goes.</h2>
-          </div>
-          <p>The public fund view is calculated from recorded ledger entries. No invented donations. No fake “live” counter.</p>
+        <div class="section-top compact reveal">
+          <p class="eyebrow">COMMUNITY FUND</p>
+          <h2>SEE WHERE SUPPORT GOES.</h2>
         </div>
-
         <div class="fund-board reveal" aria-live="polite">
-          <div class="fund-board-head">
-            <span>PUBLIC FUND POSITION</span>
-            <span data-ledger-asof>NO ENTRIES YET</span>
-          </div>
+          <div class="fund-board-head"><span>PUBLIC FUND POSITION</span><span data-ledger-asof>NO ENTRIES YET</span></div>
           <div class="fund-totals">
-            <article>
-              <span>Total Support</span>
-              <strong data-total-support>₱0</strong>
-            </article>
-            <article class="highlight">
-              <span>Put Into Play</span>
-              <strong data-put-into-play>₱0</strong>
-            </article>
-            <article>
-              <span>Available for Play</span>
-              <strong data-available>₱0</strong>
-            </article>
+            <article><span>Total Support</span><strong data-total-support>₱0</strong></article>
+            <article class="highlight"><span>Put Into Play</span><strong data-put-into-play>₱0</strong></article>
+            <article><span>Available</span><strong data-available>₱0</strong></article>
           </div>
-          <div class="fund-formula">SUPPORT → FUND → PROJECT → EXPENSE → PROOF → IMPACT</div>
         </div>
-
-        <div class="ledger-layout">
-          <div class="ledger-intro reveal">
-            <p class="eyebrow">PUBLIC LEDGER</p>
-            <h3>Every recorded peso should have a trail.</h3>
-            <p>Support received and money put into play will appear here as official records are added.</p>
-          </div>
-          <div class="ledger-list reveal" data-ledger-list>
-            <div class="empty-state">
-              <span>00</span>
-              <h4>No public fund entries yet.</h4>
-              <p>The ledger is ready. Real transactions will appear here once they are officially recorded.</p>
-            </div>
-          </div>
+        <div class="ledger-list reveal" data-ledger-list>
+          <div class="empty-state"><span>00</span><h4>No public fund entries yet.</h4><p>Real transactions will appear here once officially recorded.</p></div>
         </div>
       </div>
     </section>
 
-    <section class="section section-light" id="play">
-      <div class="shell play-grid">
-        <div class="section-heading reveal">
-          <p class="eyebrow dark">JOIN THE NEXT RUN</p>
-          <h2>Want to play?<br />Come.</h2>
-        </div>
-        <div class="play-card reveal">
-          <p class="play-kicker">BEGINNER. RUSTY. COMPETITIVE. CASUAL.</p>
-          <h3>You belong on the court.</h3>
-          <p>Real Play sessions are built to be welcoming enough to join and competitive enough to enjoy. Upcoming session details will be published here when confirmed.</p>
-          <div class="status-chip">NEXT SESSION · TO BE ANNOUNCED</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section support-section" id="support">
-      <div class="shell support-grid">
-        <div class="support-copy reveal">
-          <p class="eyebrow">SUPPORT MORE REAL PLAY</p>
-          <h2>Help put the next ball on the court.</h2>
-          <p>The Real Play Community Fund can support basketballs, court access, basic session supplies, youth participation, equipment, and direct community basketball costs.</p>
-          <p class="support-trust">Official payment channels will only appear here after they are intentionally configured and verified.</p>
-        </div>
-        <div class="support-card reveal">
-          <span class="support-card-number">01</span>
-          <h3>Want to help?</h3>
-          <p>Donation details are not public yet. This protects the project from displaying unverified payment information.</p>
-          <a class="button button-primary disabled" href="mailto:?subject=Support%20Real%20Play%20Basketball" aria-disabled="true" tabindex="-1">SUPPORT CHANNELS COMING SOON</a>
-        </div>
+    <section class="app-section support-section" id="support">
+      <div class="shell support-mobile">
+        <p class="eyebrow">SUPPORT REAL PLAY</p>
+        <h2>HELP CREATE MORE REASONS TO PLAY.</h2>
+        <p>Support can help fund court access, equipment, facilitators, youth programs, media, transportation, and more real basketball.</p>
+        <a class="secondary-action" href="mailto:?subject=Support%20Real%20Play%20Basketball">SUPPORT REAL PLAY</a>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div class="shell footer-grid">
-      <div>
-        <div class="brand footer-brand">
-          <span class="brand-main">REAL PLAY</span>
-          <span class="brand-sub">BASKETBALL</span>
-        </div>
-        <p>LESS SCREEN. REAL POINTS.</p>
-      </div>
-      <div class="footer-note">
-        <p>Real Play Basketball is presented as a community basketball movement and community initiative. No registered charity or nonprofit status is claimed on this site unless formally established and verified.</p>
-        <span>COME PLAY.</span>
-      </div>
+    <div class="shell">
+      <a class="brand footer-brand" href="#home" aria-label="Real Play Basketball home"><span class="brand-main">REAL PLAY</span><span class="brand-sub">BASKETBALL</span></a>
+      <p>LESS SCREEN. REAL POINTS.</p>
+      <span>COME PLAY.</span>
     </div>
   </footer>
+
+  <nav class="mobile-tabbar" aria-label="Mobile app navigation">
+    <a href="#home" class="mobile-tab active"><span class="tab-icon">⌂</span><small>HOME</small></a>
+    <a href="#play" class="mobile-tab play-tab"><span class="tab-icon">●</span><small>PLAY</small></a>
+    <a href="#career" class="mobile-tab"><span class="tab-icon">▥</span><small>CAREER</small></a>
+    <button type="button" class="mobile-tab" data-auth-open><span class="tab-icon">◉</span><small>PROFILE</small></button>
+    <a href="#mission" class="mobile-tab"><span class="tab-icon">≡</span><small>MORE</small></a>
+  </nav>
 
   <div class="auth-overlay" data-auth-overlay aria-hidden="true">
     <section class="auth-panel" role="dialog" aria-modal="true" aria-labelledby="real-play-auth-title">
@@ -247,41 +261,19 @@
 
       <div class="auth-view" data-auth-view="login">
         <form class="auth-form" data-auth-login-form>
-          <div class="auth-field">
-            <label for="real-play-login-email">Email</label>
-            <input id="real-play-login-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
-          </div>
-          <div class="auth-field">
-            <label for="real-play-login-password">Password</label>
-            <input id="real-play-login-password" name="password" type="password" autocomplete="current-password" placeholder="Your password" required />
-          </div>
+          <div class="auth-field"><label for="real-play-login-email">Email</label><input id="real-play-login-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required /></div>
+          <div class="auth-field"><label for="real-play-login-password">Password</label><input id="real-play-login-password" name="password" type="password" autocomplete="current-password" placeholder="Your password" required /></div>
           <button class="auth-submit" type="submit">LOG IN TO REAL PLAY</button>
         </form>
       </div>
 
       <div class="auth-view" data-auth-view="signup" hidden>
         <form class="auth-form" data-auth-signup-form>
-          <div class="auth-field">
-            <label for="real-play-player-name">Player Name</label>
-            <input id="real-play-player-name" name="player_name" type="text" minlength="2" maxlength="40" autocomplete="nickname" placeholder="Name shown on your profile" required />
-          </div>
-          <div class="auth-field">
-            <label for="real-play-player-number">Player Number</label>
-            <input id="real-play-player-number" name="player_number" type="number" min="0" max="99" inputmode="numeric" placeholder="0–99" required data-player-number-input="signup" />
-            <p class="auth-number-status" data-number-status="signup">Choose 0–99. If it is available, it becomes yours for the rest of this month.</p>
-          </div>
-          <div class="auth-field">
-            <label for="real-play-signup-email">Email</label>
-            <input id="real-play-signup-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
-          </div>
-          <div class="auth-field">
-            <label for="real-play-signup-password">Password</label>
-            <input id="real-play-signup-password" name="password" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required />
-          </div>
-          <div class="auth-field">
-            <label for="real-play-signup-confirm">Confirm Password</label>
-            <input id="real-play-signup-confirm" name="confirm_password" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat your password" required />
-          </div>
+          <div class="auth-field"><label for="real-play-player-name">Player Name</label><input id="real-play-player-name" name="player_name" type="text" minlength="2" maxlength="40" autocomplete="nickname" placeholder="Name shown on your profile" required /></div>
+          <div class="auth-field"><label for="real-play-player-number">Player Number</label><input id="real-play-player-number" name="player_number" type="number" min="0" max="99" inputmode="numeric" placeholder="0–99" required data-player-number-input="signup" /><p class="auth-number-status" data-number-status="signup">Choose 0–99. If it is available, it becomes yours for the rest of this month.</p></div>
+          <div class="auth-field"><label for="real-play-signup-email">Email</label><input id="real-play-signup-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required /></div>
+          <div class="auth-field"><label for="real-play-signup-password">Password</label><input id="real-play-signup-password" name="password" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required /></div>
+          <div class="auth-field"><label for="real-play-signup-confirm">Confirm Password</label><input id="real-play-signup-confirm" name="confirm_password" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat your password" required /></div>
           <button class="auth-submit" type="submit">CREATE MY REAL PLAY ACCOUNT</button>
         </form>
         <div class="auth-divider"></div>
@@ -291,15 +283,8 @@
       <div class="auth-view" data-auth-view="complete" hidden>
         <p class="auth-subtitle">Your Real Play account is active. Finish your separate player profile by choosing your player name and number.</p>
         <form class="auth-form" data-auth-complete-form>
-          <div class="auth-field">
-            <label for="real-play-complete-name">Player Name</label>
-            <input id="real-play-complete-name" name="player_name" type="text" minlength="2" maxlength="40" autocomplete="nickname" placeholder="Name shown on your Real Play profile" required />
-          </div>
-          <div class="auth-field">
-            <label for="real-play-complete-number">Player Number</label>
-            <input id="real-play-complete-number" name="player_number" type="number" min="0" max="99" inputmode="numeric" placeholder="0–99" required data-player-number-input="complete" />
-            <p class="auth-number-status" data-number-status="complete">Choose 0–99. If it is available, it becomes yours for the rest of this month.</p>
-          </div>
+          <div class="auth-field"><label for="real-play-complete-name">Player Name</label><input id="real-play-complete-name" name="player_name" type="text" minlength="2" maxlength="40" autocomplete="nickname" placeholder="Name shown on your Real Play profile" required /></div>
+          <div class="auth-field"><label for="real-play-complete-number">Player Number</label><input id="real-play-complete-number" name="player_number" type="number" min="0" max="99" inputmode="numeric" placeholder="0–99" required data-player-number-input="complete" /><p class="auth-number-status" data-number-status="complete">Choose 0–99. If it is available, it becomes yours for the rest of this month.</p></div>
           <button class="auth-submit" type="submit">CREATE REAL PLAY PLAYER PROFILE</button>
         </form>
       </div>
@@ -307,46 +292,21 @@
       <div class="auth-view" data-auth-view="account" hidden>
         <div class="auth-account-card">
           <span class="auth-account-label">REAL PLAY PLAYER</span>
-          <div class="auth-player-identity">
-            <strong class="auth-player-number" data-auth-player-number>#--</strong>
-            <div>
-              <strong class="auth-account-name" data-auth-account-name>REAL PLAY PLAYER</strong>
-              <span class="auth-account-email" data-auth-account-email></span>
-            </div>
-          </div>
+          <div class="auth-player-identity"><strong class="auth-player-number" data-auth-player-number>#--</strong><div><strong class="auth-account-name" data-auth-account-name>REAL PLAY PLAYER</strong><span class="auth-account-email" data-auth-account-email></span></div></div>
           <span class="auth-number-lock" data-auth-number-lock></span>
           <span class="auth-support-tier" data-auth-support-tier hidden></span>
         </div>
-
-        <div class="auth-next-card" data-auth-next-card>
-          <span class="auth-account-label">NEXT MONTH</span>
-          <strong data-auth-next-number>No number change scheduled.</strong>
-          <p data-auth-next-status>Your current number remains protected through the end of this month.</p>
-        </div>
-
+        <div class="auth-next-card" data-auth-next-card><span class="auth-account-label">NEXT MONTH</span><strong data-auth-next-number>No number change scheduled.</strong><p data-auth-next-status>Your current number remains protected through the end of this month.</p></div>
         <form class="auth-number-request" data-auth-number-request-form>
-          <div class="auth-field">
-            <label for="real-play-request-number">Want a different number next month?</label>
-            <div class="auth-number-request-row">
-              <input id="real-play-request-number" name="player_number" type="number" min="0" max="99" inputmode="numeric" placeholder="#" required />
-              <button class="auth-secondary-action" type="submit">CHECK / REQUEST</button>
-            </div>
-          </div>
+          <div class="auth-field"><label for="real-play-request-number">Want a different number next month?</label><div class="auth-number-request-row"><input id="real-play-request-number" name="player_number" type="number" min="0" max="99" inputmode="numeric" placeholder="#" required /><button class="auth-secondary-action" type="submit">CHECK / REQUEST</button></div></div>
           <p class="auth-note">If the number is owned, the current player keeps it through month-end. Higher confirmed Real Play support can earn next-month priority. Exact support amounts are never shown to other players.</p>
         </form>
-
-        <div class="auth-notifications-wrap" data-auth-notifications-wrap hidden>
-          <div class="auth-divider"></div>
-          <span class="auth-account-label">NUMBER NOTICES</span>
-          <div class="auth-notifications" data-auth-notifications></div>
-        </div>
-
+        <div class="auth-notifications-wrap" data-auth-notifications-wrap hidden><div class="auth-divider"></div><span class="auth-account-label">NUMBER NOTICES</span><div class="auth-notifications" data-auth-notifications></div></div>
         <div class="auth-divider"></div>
         <p class="auth-note">Your basketball stats still come only from confirmed Real Play games. Number priority never changes points, assists, rebounds, wins, losses, or MVP results.</p>
         <div class="auth-divider"></div>
         <button class="auth-logout" type="button" data-auth-logout>LOG OUT</button>
       </div>
-
       <p class="auth-status" data-auth-status aria-live="polite"></p>
     </section>
   </div>
