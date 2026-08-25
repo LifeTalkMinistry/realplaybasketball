@@ -11,7 +11,6 @@
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="mission.css" />
   <link rel="stylesheet" href="auth.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="app.js" defer></script>
   <script src="auth.js" defer></script>
 </head>
@@ -267,21 +266,26 @@
             <input id="real-play-player-name" name="player_name" type="text" minlength="2" maxlength="40" autocomplete="nickname" placeholder="Name shown on your profile" required />
           </div>
           <div class="auth-field">
+            <label for="real-play-player-number">Player Number</label>
+            <input id="real-play-player-number" name="player_number" type="number" min="0" max="99" inputmode="numeric" placeholder="0–99" required data-player-number-input="signup" />
+            <p class="auth-number-status" data-number-status="signup">Choose 0–99. If it is available, it becomes yours for the rest of this month.</p>
+          </div>
+          <div class="auth-field">
             <label for="real-play-signup-email">Email</label>
             <input id="real-play-signup-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
           </div>
           <div class="auth-field">
             <label for="real-play-signup-password">Password</label>
-            <input id="real-play-signup-password" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="At least 6 characters" required />
+            <input id="real-play-signup-password" name="password" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required />
           </div>
           <div class="auth-field">
             <label for="real-play-signup-confirm">Confirm Password</label>
-            <input id="real-play-signup-confirm" name="confirm_password" type="password" minlength="6" autocomplete="new-password" placeholder="Repeat your password" required />
+            <input id="real-play-signup-confirm" name="confirm_password" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat your password" required />
           </div>
           <button class="auth-submit" type="submit">CREATE MY REAL PLAY ACCOUNT</button>
         </form>
         <div class="auth-divider"></div>
-        <p class="auth-note">Already use the same email with another LifeTalk app? Log in instead. Real Play will create its own basketball profile without using that app's data.</p>
+        <p class="auth-note">Already use the same email with CLARA or Ekklesia? Log in instead. Your account can be shared while your Real Play basketball profile stays separate.</p>
       </div>
 
       <div class="auth-view" data-auth-view="complete" hidden>
@@ -291,6 +295,11 @@
             <label for="real-play-complete-name">Player Name</label>
             <input id="real-play-complete-name" name="player_name" type="text" minlength="2" maxlength="40" autocomplete="nickname" placeholder="Name shown on your Real Play profile" required />
           </div>
+          <div class="auth-field">
+            <label for="real-play-complete-number">Player Number</label>
+            <input id="real-play-complete-number" name="player_number" type="number" min="0" max="99" inputmode="numeric" placeholder="0–99" required data-player-number-input="complete" />
+            <p class="auth-number-status" data-number-status="complete">Choose 0–99. If it is available, it becomes yours for the rest of this month.</p>
+          </div>
           <button class="auth-submit" type="submit">CREATE REAL PLAY PLAYER PROFILE</button>
         </form>
       </div>
@@ -298,10 +307,42 @@
       <div class="auth-view" data-auth-view="account" hidden>
         <div class="auth-account-card">
           <span class="auth-account-label">REAL PLAY PLAYER</span>
-          <strong class="auth-account-name" data-auth-account-name>REAL PLAY PLAYER</strong>
-          <span class="auth-account-email" data-auth-account-email></span>
+          <div class="auth-player-identity">
+            <strong class="auth-player-number" data-auth-player-number>#--</strong>
+            <div>
+              <strong class="auth-account-name" data-auth-account-name>REAL PLAY PLAYER</strong>
+              <span class="auth-account-email" data-auth-account-email></span>
+            </div>
+          </div>
+          <span class="auth-number-lock" data-auth-number-lock></span>
+          <span class="auth-support-tier" data-auth-support-tier hidden></span>
         </div>
-        <p class="auth-note">Your basketball stats will come from confirmed Real Play games. Players cannot manually add official points, assists, rebounds, wins, or losses.</p>
+
+        <div class="auth-next-card" data-auth-next-card>
+          <span class="auth-account-label">NEXT MONTH</span>
+          <strong data-auth-next-number>No number change scheduled.</strong>
+          <p data-auth-next-status>Your current number remains protected through the end of this month.</p>
+        </div>
+
+        <form class="auth-number-request" data-auth-number-request-form>
+          <div class="auth-field">
+            <label for="real-play-request-number">Want a different number next month?</label>
+            <div class="auth-number-request-row">
+              <input id="real-play-request-number" name="player_number" type="number" min="0" max="99" inputmode="numeric" placeholder="#" required />
+              <button class="auth-secondary-action" type="submit">CHECK / REQUEST</button>
+            </div>
+          </div>
+          <p class="auth-note">If the number is owned, the current player keeps it through month-end. Higher confirmed Real Play support can earn next-month priority. Exact support amounts are never shown to other players.</p>
+        </form>
+
+        <div class="auth-notifications-wrap" data-auth-notifications-wrap hidden>
+          <div class="auth-divider"></div>
+          <span class="auth-account-label">NUMBER NOTICES</span>
+          <div class="auth-notifications" data-auth-notifications></div>
+        </div>
+
+        <div class="auth-divider"></div>
+        <p class="auth-note">Your basketball stats still come only from confirmed Real Play games. Number priority never changes points, assists, rebounds, wins, losses, or MVP results.</p>
         <div class="auth-divider"></div>
         <button class="auth-logout" type="button" data-auth-logout>LOG OUT</button>
       </div>
