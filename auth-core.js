@@ -312,7 +312,7 @@
   }
 
   async function login(email, password) {
-    const result = await api('/api/login', {
+    const result = await api('/api/real-play/auth/login', {
       method: 'POST',
       body: { email, password },
     });
@@ -456,12 +456,12 @@
         return;
       }
 
-      await api('/api/users', {
+      const registration = await api('/api/real-play/auth/register', {
         method: 'POST',
         body: { name: playerName, email, password },
       });
-
-      await login(email, password);
+      saveToken(registration?.token || '');
+      currentUser = registration?.user || null;
 
       try {
         await api('/api/real-play/profile', {
@@ -476,7 +476,7 @@
           if (completeName) completeName.value = playerName;
           if (completeNumber) completeNumber.value = playerNumber;
           showView('complete');
-          setStatus(`Your account was created, but #${playerNumber} was just claimed by another player. Choose another available number to finish your profile.`, 'error');
+          setStatus(`Your Real Play account was created, but #${playerNumber} was just claimed by another player. Choose another available number to finish your profile.`, 'error');
           return;
         }
         throw error;
@@ -485,10 +485,10 @@
       await loadRealPlayState();
       signupForm.reset();
       showView('account');
-      setStatus(`Account created. #${playerNumber} is yours for this month.`, 'success');
+      setStatus(`Real Play account created. #${playerNumber} is yours for this month.`, 'success');
     } catch (error) {
-      if (error.status === 409 && /email/i.test(error.message || '')) {
-        setStatus('That email already has a LifeTalk account. Use LOG IN, then create your separate Real Play profile.', 'error');
+      if (error.code === 'EMAIL_ALREADY_REGISTERED') {
+        setStatus('That email already has a Real Play account. Use LOG IN instead.', 'error');
       } else {
         setStatus(error.message, 'error');
       }
