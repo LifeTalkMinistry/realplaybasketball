@@ -214,11 +214,11 @@
 
 .auth-account-card {
   display: grid;
-  gap: 6px;
-  margin: 22px 0;
-  padding: 20px;
-  border: 1px solid rgba(0, 214, 255, 0.22);
-  background: rgba(0, 214, 255, 0.045);
+  gap: 8px;
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .auth-account-label {
@@ -231,13 +231,14 @@
 
 .auth-account-name {
   color: #fff;
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   font-weight: 900;
   text-transform: uppercase;
 }
 
 .auth-account-email {
-  color: #aab9c9;
+  color: #7f91a5;
+  font-size: 0.76rem;
   overflow-wrap: anywhere;
 }
 
@@ -275,73 +276,235 @@
 }
 
 .auth-player-identity {
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 7px;
 }
 
 .auth-player-identity > div {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
+  flex: 1;
+  order: 1;
 }
 
 .auth-player-number {
-  min-width: 82px;
+  order: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid rgba(0, 214, 255, 0.34);
   color: #00d6ff;
-  font-size: clamp(2.8rem, 12vw, 4.3rem);
+  background: rgba(0, 214, 255, 0.06);
+  font-size: 1.05rem;
   font-weight: 950;
-  line-height: 0.86;
-  letter-spacing: -0.07em;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .auth-number-lock,
 .auth-support-tier {
   display: inline-flex;
   width: fit-content;
-  margin-top: 7px;
-  padding: 5px 8px;
-  border: 1px solid rgba(0, 214, 255, 0.22);
-  color: #9dc8d8;
-  font-size: 0.65rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  margin-top: 3px;
+  padding: 4px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #75899d;
+  font-size: 0.6rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
 .auth-support-tier {
-  border-color: rgba(255, 255, 255, 0.14);
-  color: #c7d3df;
+  color: #9faebd;
+}
+
+.auth-mission-welcome {
+  position: relative;
+  display: grid;
+  gap: 11px;
+  margin: 4px 0 18px;
+  padding: 21px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 214, 255, 0.28);
+  background:
+    linear-gradient(135deg, rgba(0, 214, 255, 0.09), rgba(6, 16, 29, 0.72) 58%),
+    rgba(0, 0, 0, 0.2);
+}
+
+.auth-mission-welcome::after {
+  content: '';
+  position: absolute;
+  right: -46px;
+  bottom: -70px;
+  width: 150px;
+  height: 150px;
+  border: 1px solid rgba(0, 214, 255, 0.12);
+  border-radius: 50%;
+}
+
+.auth-mission-welcome h3 {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.45rem, 6vw, 2rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+.auth-mission-welcome p {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: #9eb0c3;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.auth-mission-welcome p strong {
+  color: #fff;
+}
+
+.auth-mission-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 5px;
+}
+
+.auth-mission-footer > span {
+  color: #00d6ff;
+  font-size: 0.65rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.auth-court-cta {
+  min-height: 37px;
+  padding: 0 14px;
+  border: 0;
+  color: #001018;
+  background: linear-gradient(90deg, #00d8ff, #0c8bff);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.auth-record-card {
+  display: grid;
+  gap: 7px;
+  margin: 16px 0;
+  padding: 17px 18px;
+  border-left: 2px solid #00d6ff;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.auth-record-card > strong {
+  color: #fff;
+  font-size: 1rem;
+  letter-spacing: 0.015em;
+}
+
+.auth-record-card p {
+  margin: 0;
+  color: #8194a8;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.auth-number-manager {
+  margin: 18px 0 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.auth-number-manager summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 0;
+  list-style: none;
+  cursor: pointer;
+}
+
+.auth-number-manager summary::-webkit-details-marker {
+  display: none;
+}
+
+.auth-number-manager summary > span {
+  display: grid;
+  gap: 3px;
+}
+
+.auth-number-manager summary small {
+  color: #61758a;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.auth-number-manager summary strong {
+  color: #d9e4ed;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+
+.auth-number-manager summary b {
+  color: #00d6ff;
+  font-size: 0.67rem;
+  letter-spacing: 0.1em;
+}
+
+.auth-number-manager.has-notice summary b::before {
+  content: '• ';
+  color: #ffca5c;
+}
+
+.auth-number-manager-body {
+  padding: 2px 0 18px;
 }
 
 .auth-next-card {
   display: grid;
   gap: 8px;
-  margin: 0 0 20px;
-  padding: 16px;
-  border-left: 2px solid #00d6ff;
-  background: rgba(255, 255, 255, 0.035);
+  margin: 0 0 16px;
+  padding: 14px;
+  border-left: 2px solid rgba(0, 214, 255, 0.45);
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .auth-next-card strong {
   color: #fff;
-  font-size: 1rem;
+  font-size: 0.9rem;
   text-transform: uppercase;
 }
 
 .auth-next-card p {
   margin: 0;
-  color: #8396a9;
-  font-size: 0.78rem;
+  color: #7f91a5;
+  font-size: 0.75rem;
   line-height: 1.5;
 }
 
 .auth-number-request {
   display: grid;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .auth-number-request-row {
@@ -400,6 +563,19 @@
   font-size: 0.66rem;
 }
 
+.auth-account-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.auth-account-footer .auth-logout {
+  min-height: 42px;
+  padding-inline: 15px;
+  color: #8495a7;
+  font-size: 0.72rem;
+}
+
 .site-nav .auth-nav-link {
   cursor: pointer;
 }
@@ -423,14 +599,19 @@ body.auth-open {
   }
 
   .auth-player-identity {
-    gap: 12px;
+    gap: 9px;
   }
 
   .auth-player-number {
-    min-width: 68px;
+    min-width: 52px;
   }
 
   .auth-number-request-row {
     grid-template-columns: 92px 1fr;
+  }
+
+  .auth-mission-footer {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
