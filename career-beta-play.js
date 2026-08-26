@@ -103,6 +103,12 @@
       }
     }
 
+    function refreshAuthoritativeState() {
+      refresh();
+      window.setTimeout(refresh, 180);
+      window.setTimeout(refresh, 550);
+    }
+
     async function play() {
       if (loading || !currentSession) return;
       const token = localStorage.getItem(TOKEN_KEY);
@@ -135,15 +141,15 @@
     action.addEventListener('click', play);
 
     const observer = new MutationObserver(() => {
-      if (panel.classList.contains('open')) refresh();
+      if (panel.classList.contains('open')) refreshAuthoritativeState();
     });
     observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
 
     window.addEventListener('focus', () => {
-      if (panel.classList.contains('open')) refresh();
+      if (panel.classList.contains('open')) refreshAuthoritativeState();
     });
 
-    refresh();
+    refreshAuthoritativeState();
     return true;
   }
 
