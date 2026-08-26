@@ -1,0 +1,197 @@
+/* Real Play Beta Career Hub */
+.rp-mode-card.rp-beta-locked{
+  opacity:.48;
+  filter:saturate(.45);
+}
+.rp-mode-card.rp-beta-locked::after{
+  content:'COMING SOON';
+  position:absolute;
+  z-index:4;
+  top:18px;
+  right:18px;
+  padding:7px 10px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:999px;
+  color:#c9d4e1;
+  background:rgba(2,5,11,.72);
+  backdrop-filter:blur(10px);
+  font-family:var(--rp-display);
+  font-size:.58rem;
+  font-weight:900;
+  letter-spacing:.13em;
+}
+.rp-mode-card.rp-beta-locked .rp-play-button{
+  color:#718096;
+  background:#0a111c;
+  box-shadow:none;
+  cursor:not-allowed;
+}
+.rp-mode-card.rp-beta-live{
+  border-color:rgba(29,220,255,.3);
+  box-shadow:0 24px 70px rgba(0,0,0,.35),0 0 0 1px rgba(23,108,255,.08),0 0 42px rgba(23,108,255,.12);
+}
+.rp-beta-live .rp-mode-type{color:#4ee7ff}
+
+.rp-career-beta{
+  position:fixed;
+  z-index:500;
+  inset:0;
+  display:none;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:0 0 max(32px,env(safe-area-inset-bottom));
+  color:#f8fbff;
+  background:
+    radial-gradient(circle at 50% -4%,rgba(23,108,255,.22),transparent 27%),
+    linear-gradient(180deg,#040914 0%,#02050b 42%,#010308 100%);
+  font-family:var(--rp-body);
+}
+.rp-career-beta.open{display:block}
+body.rp-career-open{overflow:hidden}
+.rp-career-shell{width:min(100%,560px);margin:0 auto;padding:0 18px 34px}
+.rp-career-topbar{
+  position:sticky;
+  z-index:4;
+  top:0;
+  min-height:68px;
+  margin:0 -18px;
+  padding:12px 18px;
+  display:grid;
+  grid-template-columns:42px 1fr auto;
+  align-items:center;
+  gap:10px;
+  border-bottom:1px solid rgba(126,173,232,.09);
+  background:rgba(3,7,14,.88);
+  backdrop-filter:blur(18px);
+}
+.rp-career-back{
+  width:40px;
+  height:40px;
+  border:1px solid rgba(126,173,232,.12);
+  border-radius:13px;
+  color:#fff;
+  background:#07101b;
+  font-size:1.12rem;
+}
+.rp-career-title strong{
+  display:block;
+  font-family:var(--rp-display);
+  font-size:1rem;
+  font-style:italic;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+.rp-career-title span{display:block;margin-top:2px;color:#718096;font-size:.54rem;font-weight:800;letter-spacing:.12em}
+.rp-beta-pill{
+  padding:7px 9px;
+  border:1px solid rgba(29,220,255,.25);
+  border-radius:999px;
+  color:#62eaff;
+  background:rgba(29,220,255,.06);
+  font-family:var(--rp-display);
+  font-size:.58rem;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+
+.rp-career-hero{
+  margin-top:22px;
+  padding:22px;
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(126,173,232,.15);
+  border-radius:25px;
+  background:
+    radial-gradient(circle at 86% 10%,rgba(29,220,255,.14),transparent 28%),
+    linear-gradient(145deg,#0a1830,#06101d 64%);
+  box-shadow:0 22px 55px rgba(0,0,0,.3);
+}
+.rp-career-hero::after{
+  content:'';
+  position:absolute;
+  width:190px;
+  height:190px;
+  right:-66px;
+  top:-65px;
+  border:1px solid rgba(255,255,255,.045);
+  border-radius:50%;
+  box-shadow:0 0 0 38px rgba(255,255,255,.01),0 0 0 76px rgba(255,255,255,.008);
+}
+.rp-career-identity{position:relative;z-index:1;display:flex;align-items:center;gap:13px}
+.rp-career-number{
+  min-width:54px;
+  height:54px;
+  padding:0 9px;
+  display:grid;
+  place-items:center;
+  border-radius:15px;
+  background:linear-gradient(145deg,#1476ff,#1251c4);
+  font-family:var(--rp-display);
+  font-size:1.42rem;
+  font-weight:900;
+}
+.rp-career-name{min-width:0;flex:1}
+.rp-career-name small{display:block;color:#70e8ff;font-size:.54rem;font-weight:900;letter-spacing:.13em}
+.rp-career-name strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px;font-family:var(--rp-display);font-size:1.35rem;font-weight:900;letter-spacing:.02em}
+.rp-career-ovr{text-align:right;position:relative;z-index:1}
+.rp-career-ovr strong{display:block;font-family:var(--rp-display);font-size:2.3rem;font-style:italic;font-weight:900;line-height:.86}
+.rp-career-ovr span{display:block;margin-top:6px;color:#6f8298;font-size:.5rem;font-weight:900;letter-spacing:.12em}
+.rp-career-rankline{position:relative;z-index:1;margin:19px 0 0;padding-top:15px;border-top:1px solid rgba(126,173,232,.12);color:#95a5b8;font-size:.66rem;font-weight:800;letter-spacing:.05em}
+.rp-career-rankline strong{color:#fff}
+.rp-career-record{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.rp-career-record article{padding:11px 8px;border:1px solid rgba(126,173,232,.1);border-radius:13px;background:rgba(2,5,11,.28);text-align:center}
+.rp-career-record span{display:block;color:#718096;font-size:.5rem;font-weight:900;letter-spacing:.11em}
+.rp-career-record strong{display:block;margin-top:4px;font-family:var(--rp-display);font-size:1.24rem;font-weight:900}
+
+.rp-career-section{margin-top:26px}
+.rp-career-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:11px}
+.rp-career-section-head small{display:block;color:#4ee7ff;font-size:.52rem;font-weight:900;letter-spacing:.14em}
+.rp-career-section-head h2{margin:3px 0 0;font-family:var(--rp-display);font-size:1.45rem;font-style:italic;font-weight:900;line-height:1;text-transform:uppercase}
+.rp-career-section-head span{color:#607188;font-size:.57rem;font-weight:800;letter-spacing:.07em}
+
+.rp-career-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rp-career-stat{padding:15px 6px;border:1px solid rgba(126,173,232,.11);border-radius:15px;background:#07101b;text-align:center}
+.rp-career-stat span{display:block;color:#6c7d91;font-size:.5rem;font-weight:900;letter-spacing:.1em}
+.rp-career-stat strong{display:block;margin-top:5px;font-family:var(--rp-display);font-size:1.45rem;font-weight:900}
+
+.rp-next-game{
+  padding:19px;
+  border:1px solid rgba(126,173,232,.14);
+  border-radius:20px;
+  background:linear-gradient(145deg,#0a1422,#050a12);
+}
+.rp-next-game-status{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.rp-next-game-status span{color:#59e9ff;font-size:.54rem;font-weight:900;letter-spacing:.12em}
+.rp-next-game-status b{padding:5px 8px;border-radius:999px;color:#91a1b4;background:rgba(255,255,255,.04);font-size:.5rem;letter-spacing:.08em}
+.rp-next-game h3{margin:14px 0 5px;font-family:var(--rp-display);font-size:2rem;font-style:italic;font-weight:900;line-height:.9;text-transform:uppercase}
+.rp-next-game p{margin:0;color:#8091a5;font-size:.72rem;line-height:1.45}
+.rp-next-game button{width:100%;min-height:50px;margin-top:16px;border:0;border-radius:14px;color:#6f8095;background:#0a111c;font-family:var(--rp-display);font-size:1rem;font-style:italic;font-weight:900;letter-spacing:.07em}
+.rp-next-game.has-session button{color:#fff;background:linear-gradient(105deg,#155dff,#167cff 58%,#1ddcff);box-shadow:0 15px 34px rgba(18,108,255,.2)}
+
+.rp-leaderboard-tabs{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
+.rp-leaderboard-tabs::-webkit-scrollbar{display:none}
+.rp-board-tab{flex:0 0 auto;padding:7px 10px;border:1px solid rgba(126,173,232,.1);border-radius:999px;color:#67798e;background:#07101b;font-family:var(--rp-display);font-size:.6rem;font-weight:900;letter-spacing:.08em}
+.rp-board-tab.active{color:#fff;border-color:rgba(29,220,255,.22);background:rgba(23,108,255,.13)}
+.rp-empty-career{padding:22px 18px;border:1px solid rgba(126,173,232,.1);border-radius:18px;background:#050b13;text-align:center}
+.rp-empty-career strong{display:block;font-family:var(--rp-display);font-size:1.08rem;font-style:italic;font-weight:900}
+.rp-empty-career p{max-width:330px;margin:7px auto 0;color:#6f8093;font-size:.7rem;line-height:1.45}
+.rp-board-list,.rp-game-list{display:grid;gap:8px}
+.rp-board-row,.rp-game-row{display:grid;align-items:center;gap:10px;padding:12px 13px;border:1px solid rgba(126,173,232,.1);border-radius:15px;background:#07101b}
+.rp-board-row{grid-template-columns:28px 1fr auto}
+.rp-board-row em{font-style:normal;color:#67798d;font-family:var(--rp-display);font-size:.9rem;font-weight:900}
+.rp-board-row strong{font-family:var(--rp-display);font-size:.98rem;font-weight:900}
+.rp-board-row span{color:#fff;font-family:var(--rp-display);font-size:1.05rem;font-weight:900}
+.rp-game-row{grid-template-columns:1fr auto}
+.rp-game-row small{display:block;color:#5feaff;font-size:.5rem;font-weight:900;letter-spacing:.09em}
+.rp-game-row strong{display:block;margin-top:3px;font-family:var(--rp-display);font-size:.98rem;font-weight:900}
+.rp-game-row p{margin:3px 0 0;color:#6f8093;font-size:.62rem}
+.rp-game-row b{font-family:var(--rp-display);font-size:.95rem}
+
+@media(max-width:380px){
+  .rp-career-shell{padding-inline:14px}
+  .rp-career-topbar{margin-inline:-14px;padding-inline:14px}
+  .rp-career-hero{padding:18px}
+  .rp-career-ovr strong{font-size:2rem}
+  .rp-career-stats{gap:6px}
+  .rp-career-stat strong{font-size:1.25rem}
+}
