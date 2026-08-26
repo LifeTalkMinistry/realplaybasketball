@@ -28,6 +28,7 @@
 
     let currentSession = null;
     let loading = false;
+    let pollTimer = null;
 
     function render(session) {
       currentSession = session || null;
@@ -48,35 +49,53 @@
       const confirmed = Number(session.confirmedCount ?? session.confirmed_count ?? 0) || 0;
       const capacityValue = session.capacity === null || session.capacity === undefined ? null : Number(session.capacity);
       const joined = Boolean(session.joined);
+      const gameStatus = session.gameStatus || 'setup';
       const full = capacityValue !== null && confirmed >= capacityValue;
-      const available = session.available !== false && !full;
+      const available = session.available !== false && !full && gameStatus === 'setup';
 
       card.classList.add('has-session');
       card.classList.toggle('rp-session-joined', joined);
-      if (status) status.textContent = joined ? 'YOU’RE IN' : full ? 'SESSION FULL' : 'SESSION OPEN';
-      if (title) title.textContent = session.title || 'BETA CAREER SESSION';
 
-      const details = [];
-      if (session.locationName) details.push(session.locationName);
-      if (session.startsAt) {
-        const date = new Date(session.startsAt);
-        if (!Number.isNaN(date.getTime())) {
-          details.push(new Intl.DateTimeFormat('en-PH', {
-            month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-            timeZone: 'Asia/Manila',
-          }).format(date));
+      if (gameStatus === 'live') {
+        if (status) status.textContent = 'GAME LIVE';
+        if (title) title.textContent = `WEST ${Number(session.westScore || 0)} — ${Number(session.eastScore || 0)} EAST`;
+        if (copy) copy.textContent = joined ? 'Your Career game is live. Score updates automatically.' : 'This Beta Career game is already live.';
+      } else if (gameStatus === 'final') {
+        if (status) status.textContent = 'FINAL SCORE';
+        if (title) title.textContent = `WEST ${Number(session.westScore || 0)} — ${Number(session.eastScore || 0)} EAST`;
+        if (copy) copy.textContent = 'This Career game has been finalized by Real Play.';
+      } else {
+        if (status) status.textContent = joined ? 'YOU’RE IN' : full ? 'SESSION FULL' : 'SESSION OPEN';
+        if (title) title.textContent = session.title || 'BETA CAREER SESSION';
+
+        const details = [];
+        if (session.locationName) details.push(session.locationName);
+        if (session.startsAt) {
+          const date = new Date(session.startsAt);
+          if (!Number.isNaN(date.getTime())) {
+            details.push(new Intl.DateTimeFormat('en-PH', {
+              month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+              timeZone: 'Asia/Manila',
+            }).format(date));
+          }
         }
+        if (copy) copy.textContent = details.length
+          ? details.join(' · ')
+          : joined
+            ? 'You are confirmed for this Beta Career session.'
+            : 'Tap PLAY once and you’ll be added to the confirmed player count.';
       }
-      if (copy) copy.textContent = details.length
-        ? details.join(' · ')
-        : joined
-          ? 'You are confirmed for this Beta Career session.'
-          : 'Tap PLAY once and you’ll be added to the confirmed player count.';
 
       countWrap.hidden = false;
       if (countNode) countNode.textContent = capacityValue === null ? String(confirmed) : `${confirmed}/${capacityValue}`;
 
-      if (joined) {
+      if (gameStatus === 'live') {
+        action.disabled = true;
+        action.textContent = '● LIVE';
+      } else if (gameStatus === 'final') {
+        action.disabled = true;
+        action.textContent = 'FINAL';
+      } else if (joined) {
         action.disabled = true;
         action.textContent = '✓ YOU’RE IN';
       } else if (full || !available) {
@@ -109,8 +128,15 @@
       window.setTimeout(refresh, 550);
     }
 
+    function startPolling() {
+      if (pollTimer) window.clearInterval(pollTimer);
+      pollTimer = window.setInterval(() => {
+        if (panel.classList.contains('open')) refresh();
+      }, 2000);
+    }
+
     async function play() {
-      if (loading || !currentSession) return;
+      if (loading || !currentSession || (currentSession.gameStatus || 'setup') !== 'setup') return;
       const token = localStorage.getItem(TOKEN_KEY);
       if (!token) return;
       loading = true;
@@ -149,6 +175,7 @@
       if (panel.classList.contains('open')) refreshAuthoritativeState();
     });
 
+    startPolling();
     refreshAuthoritativeState();
     return true;
   }
