@@ -1,20 +1,20 @@
 (() => {
-  if (window.__realPlayBetaLeaderboardInstalledV2) return;
-  window.__realPlayBetaLeaderboardInstalledV2 = true;
+  if (window.__realPlayBetaLeaderboardInstalled) return;
+  window.__realPlayBetaLeaderboardInstalled = true;
 
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
   const categories = [
+    { key: 'ovr', label: 'OVR' },
     { key: 'pts', label: 'PTS' },
     { key: 'ast', label: 'AST' },
     { key: 'reb', label: 'REB' },
-    { key: 'wins', label: 'WINS' },
   ];
 
-  let activeKey = 'pts';
-  let leaderboards = { pts: [], ast: [], reb: [], wins: [] };
+  let activeKey = 'ovr';
+  let leaderboards = { ovr: [], pts: [], ast: [], reb: [] };
   let refreshing = false;
-  let mountedRoot = null;
+  let mounted = false;
 
   function esc(value) {
     return String(value ?? '')
@@ -38,13 +38,13 @@
     return rows.map((row, index) => ({
       ...row,
       rank: Number(row.rank || index + 1),
-      value: Number(row.value ?? row[key] ?? row.points ?? 0),
+      value: Number(row.value ?? row[key] ?? 0),
       playerName: row.playerName || row.player_name || row.name || 'PLAYER',
     }));
   }
 
   function render() {
-    const root = mountedRoot || panel();
+    const root = panel();
     if (!root) return;
     const host = root.querySelector('[data-career-board]');
     const rankNode = root.querySelector('[data-career-rank]');
@@ -55,7 +55,8 @@
     const me = currentName(root);
 
     root.querySelectorAll('.rp-board-tab').forEach((tab) => {
-      tab.classList.toggle('active', tab.dataset.boardStat === activeKey);
+      const key = tab.dataset.boardStat;
+      tab.classList.toggle('active', key === activeKey);
       tab.disabled = false;
     });
 
@@ -67,14 +68,17 @@
 
     host.innerHTML = rows.slice(0, 10).map((row) => {
       const mine = String(row.playerName).trim().toLowerCase() === me;
-      return `<article class="rp-board-row"><em>#${esc(row.rank)}</em><strong>${esc(row.playerName)}${mine ? ' · YOU' : ''}</strong><span>${esc(row.value)} ${esc(config.label)}</span></article>`;
+      const suffix = config.key === 'ovr' ? ' OVR' : ` ${config.label}`;
+      return `<article class="rp-board-row"><em>#${esc(row.rank)}</em><strong>${esc(row.playerName)}${mine ? ' · YOU' : ''}</strong><span>${esc(row.value)}${esc(suffix)}</span></article>`;
     }).join('');
 
     const mine = rows.find((row) => String(row.playerName).trim().toLowerCase() === me);
     if (rankNode) rankNode.textContent = mine ? `${config.label} RANK #${mine.rank}` : `${config.label} RANK —`;
   }
 
-  function setupTabs(root) {
+  function setupTabs() {
+    const root = panel();
+    if (!root) return false;
     const tabs = [...root.querySelectorAll('.rp-board-tab')];
     if (tabs.length < 4) return false;
 
@@ -95,10 +99,9 @@
   }
 
   async function refresh() {
-    const root = mountedRoot || panel();
+    const root = panel();
     const token = window.localStorage.getItem(TOKEN_KEY) || '';
-    if (!root || !root.classList.contains('open') || !token || refreshing) return;
-
+    if (!root || !token || refreshing || !root.classList.contains('open')) return;
     refreshing = true;
     try {
       const response = await fetch(`${API_BASE_URL}/api/real-play/me`, {
@@ -109,58 +112,49 @@
       const state = await response.json().catch(() => ({}));
       const next = state?.leaderboards || {};
       leaderboards = {
-        pts: Array.isArray(next.pts) ? next.pts : (Array.isArray(state?.leaderboard) ? state.leaderboard : []),
+        ovr: Array.isArray(next.ovr) ? next.ovr : (Array.isArray(state?.leaderboard) ? state.leaderboard : []),
+        pts: Array.isArray(next.pts) ? next.pts : [],
         ast: Array.isArray(next.ast) ? next.ast : [],
         reb: Array.isArray(next.reb) ? next.reb : [],
-        wins: Array.isArray(next.wins) ? next.wins : [],
       };
       render();
     } catch (_error) {
-      // Keep Career responsive if the leaderboard request fails.
+      // Career remains usable if the leaderboard request temporarily fails.
     } finally {
       refreshing = false;
     }
   }
 
-  function mount(root) {
-    if (!root || mountedRoot === root) return Boolean(root);
-    if (!setupTabs(root)) return false;
-    mountedRoot = root;
+  function mount() {
+    if (mounted) return true;
+    if (!setupTabs()) return false;
+    mounted = true;
     render();
-
-    // Watch ONLY the Career panel's own open/closed state. Do not observe the
-    // whole document or descendant class changes; that created a render/fetch loop.
-    const stateObserver = new MutationObserver(() => {
-      if (root.classList.contains('open')) refresh();
-    });
-    stateObserver.observe(root, { attributes: true, attributeFilter: ['class'] });
-
-    if (root.classList.contains('open')) refresh();
     return true;
   }
 
-  function boot() {
-    const existing = panel();
-    if (existing && mount(existing)) return;
-
-    // Observe only until Career is inserted, then disconnect permanently.
-    const mountObserver = new MutationObserver(() => {
-      const root = panel();
-      if (!root || !mount(root)) return;
-      mountObserver.disconnect();
-    });
-    mountObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
+  function tryMount() {
+    if (mount()) return true;
+    return false;
   }
 
+  const mountTimer = window.setInterval(() => {
+    if (tryMount()) window.clearInterval(mountTimer);
+  }, 100);
+  window.setTimeout(() => window.clearInterval(mountTimer), 5000);
+  tryMount();
+
   document.addEventListener('click', (event) => {
-    if (!event.target.closest('[data-rp-select-mode="Career Mode"], [data-rp-nav="career"]')) return;
-    window.setTimeout(refresh, 80);
+    if (event.target.closest('[data-rp-select-mode="Career Mode"], [data-rp-nav="career"]')) {
+      window.setTimeout(() => {
+        tryMount();
+        refresh();
+      }, 120);
+    }
   }, true);
 
   window.addEventListener('focus', () => {
-    if (mountedRoot?.classList.contains('open')) refresh();
+    const root = panel();
+    if (root?.classList.contains('open')) refresh();
   });
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
-  else boot();
 })();
