@@ -1,65 +1,71 @@
 (() => {
-  if (window.__realPlayAdminDomScoreSyncInstalled) return;
-  window.__realPlayAdminDomScoreSyncInstalled = true;
+  if (window.__realPlayAdminDomScoreSyncInstalledV2) return;
+  window.__realPlayAdminDomScoreSyncInstalledV2 = true;
 
-  function number(value) {
-    const parsed = Number.parseInt(String(value || '').replace(/[^0-9-]/g, ''), 10);
+  function readNumber(value) {
+    const parsed = Number.parseInt(String(value ?? '').replace(/[^0-9-]/g, ''), 10);
     return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
   }
 
-  function deriveVisibleScores(root) {
-    const scores = { west: 0, east: 0 };
-    root.querySelectorAll('.rp-admin-stat-player').forEach((card) => {
-      const team = String(card.querySelector('.rp-admin-stat-player-head .rp-admin-pill')?.textContent || '')
-        .trim()
-        .toLowerCase();
-      if (team !== 'west' && team !== 'east') return;
-
-      const stats = card.querySelectorAll('.rp-admin-stat');
-      if (!stats.length) return;
-      const pts = number(stats[0].querySelector('strong')?.textContent);
-      scores[team] += pts;
-    });
-    return scores;
+  function playerCardPoints(card) {
+    const ptsControl = card.querySelector('[data-control-action="stat"][data-stat="pts"]');
+    const ptsBox = ptsControl?.closest('.rp-admin-stat') || card.querySelector('.rp-admin-stat');
+    return readNumber(ptsBox?.querySelector('strong')?.textContent);
   }
 
-  function setText(node, value) {
-    if (!node) return;
-    const next = String(value);
-    if (node.textContent !== next) node.textContent = next;
+  function playerCardTeam(card) {
+    return String(card.querySelector('.rp-admin-stat-player-head .rp-admin-pill')?.textContent || '')
+      .trim()
+      .toLowerCase();
   }
 
-  function sync() {
+  function calculate() {
     const root = document.querySelector('.rp-admin-control.open');
-    if (!root) return;
+    if (!root) return null;
 
-    const playerCards = root.querySelectorAll('.rp-admin-stat-player');
-    if (!playerCards.length) return;
+    const scores = { west: 0, east: 0 };
+    let players = 0;
 
-    const scores = deriveVisibleScores(root);
-    const scoreSides = root.querySelectorAll('.rp-admin-scoreboard .rp-admin-score-side strong');
-    if (scoreSides.length >= 2) {
-      setText(scoreSides[0], scores.west);
-      setText(scoreSides[1], scores.east);
-    }
+    root.querySelectorAll('.rp-admin-stat-player').forEach((card) => {
+      const team = playerCardTeam(card);
+      if (team !== 'west' && team !== 'east') return;
+      scores[team] += playerCardPoints(card);
+      players += 1;
+    });
 
-    const livebarScore = root.querySelector('.rp-admin-livebar > span:last-child');
-    if (livebarScore && /\d+\s*[–-]\s*\d+/.test(livebarScore.textContent || '')) {
-      setText(livebarScore, `${scores.west}–${scores.east}`);
+    return players ? { root, scores } : null;
+  }
+
+  function writeScore() {
+    const state = calculate();
+    if (!state) return;
+
+    const { root, scores } = state;
+    const scoreboards = root.querySelectorAll('.rp-admin-scoreboard');
+    scoreboards.forEach((scoreboard) => {
+      const sides = scoreboard.querySelectorAll('.rp-admin-score-side strong');
+      if (sides.length < 2) return;
+      if (sides[0].textContent !== String(scores.west)) sides[0].textContent = String(scores.west);
+      if (sides[1].textContent !== String(scores.east)) sides[1].textContent = String(scores.east);
+    });
+
+    const livebar = root.querySelector('.rp-admin-livebar > span:last-child');
+    if (livebar && /\d+\s*[–-]\s*\d+/.test(livebar.textContent || '')) {
+      const next = `${scores.west}–${scores.east}`;
+      if (livebar.textContent !== next) livebar.textContent = next;
     }
   }
 
-  let queued = false;
-  function queueSync() {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(() => {
-      queued = false;
-      sync();
+  let raf = 0;
+  function queue() {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      writeScore();
     });
   }
 
-  const observer = new MutationObserver(queueSync);
+  const observer = new MutationObserver(queue);
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
@@ -67,13 +73,17 @@
   });
 
   document.addEventListener('click', (event) => {
-    if (event.target.closest('[data-control-action="stat"]')) {
-      window.setTimeout(queueSync, 0);
-      window.setTimeout(queueSync, 150);
-      window.setTimeout(queueSync, 500);
-    }
+    if (!event.target.closest('[data-control-action="stat"]')) return;
+    queue();
+    window.setTimeout(writeScore, 50);
+    window.setTimeout(writeScore, 250);
+    window.setTimeout(writeScore, 750);
   }, true);
 
-  window.addEventListener('focus', queueSync);
-  queueSync();
+  // The admin screen refreshes itself every two seconds. Keep the visible
+  // scoreboard derived from the visible player PTS even if an older backend
+  // response still contains stale team-score counters.
+  window.setInterval(writeScore, 250);
+  window.addEventListener('focus', writeScore);
+  queue();
 })();
