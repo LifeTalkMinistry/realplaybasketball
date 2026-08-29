@@ -1,6 +1,6 @@
 (() => {
-  if (!window.__realPlayAdminDomScoreSyncInstalledV2) {
-    window.__realPlayAdminDomScoreSyncInstalledV2 = true;
+  if (!window.__realPlayAdminDomScoreSyncInstalledV3) {
+    window.__realPlayAdminDomScoreSyncInstalledV3 = true;
 
     function readNumber(value) {
       const parsed = Number.parseInt(String(value ?? '').replace(/[^0-9-]/g, ''), 10);
@@ -41,8 +41,7 @@
       if (!state) return;
 
       const { root, scores } = state;
-      const scoreboards = root.querySelectorAll('.rp-admin-scoreboard');
-      scoreboards.forEach((scoreboard) => {
+      root.querySelectorAll('.rp-admin-scoreboard').forEach((scoreboard) => {
         const sides = scoreboard.querySelectorAll('.rp-admin-score-side strong');
         if (sides.length < 2) return;
         if (sides[0].textContent !== String(scores.west)) sides[0].textContent = String(scores.west);
@@ -85,14 +84,35 @@
     queue();
   }
 
-  // This file is already loaded directly by index.html. Use it as a stable
-  // bootstrap point for the Career leaderboard patch so the board can receive
-  // a fresh cache-busted script even while older app.js bundles are cached.
-  if (!document.querySelector('script[data-beta-leaderboard-loader]')) {
-    const leaderboardScript = document.createElement('script');
-    leaderboardScript.src = 'career-beta-leaderboard.js?v=20260829-1024';
-    leaderboardScript.async = false;
-    leaderboardScript.dataset.betaLeaderboardLoader = 'true';
-    document.head.appendChild(leaderboardScript);
+  // Startup safety net. If the newer mobile lobby has not mounted, reload only
+  // that critical layer instead of leaving the user on the hidden legacy page.
+  function rescueLobby() {
+    if (document.querySelector('[data-rp-app]')) return;
+
+    const version = '20260829-1014-rescue';
+    ['mobile-lobby.css', 'mobile-entry.css', 'mobile-shell-fix.css', 'mobile-lobby-cleanup.css'].forEach((href) => {
+      const alreadyLoaded = [...document.querySelectorAll('link[rel="stylesheet"]')]
+        .some((link) => String(link.href || '').includes(href));
+      if (alreadyLoaded) return;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = `${href}?v=${version}`;
+      document.head.appendChild(link);
+    });
+
+    if (!document.querySelector('script[data-rp-lobby-rescue]')) {
+      const script = document.createElement('script');
+      script.src = `mobile-lobby.js?v=${version}`;
+      script.async = false;
+      script.dataset.rpLobbyRescue = 'true';
+      document.head.appendChild(script);
+    }
   }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => window.setTimeout(rescueLobby, 350), { once: true });
+  } else {
+    window.setTimeout(rescueLobby, 350);
+  }
+  window.setTimeout(rescueLobby, 1200);
 })();
