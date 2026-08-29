@@ -1,6 +1,7 @@
 (() => {
   let formOpen = false;
   let lastSessionTitle = '';
+  let openedAgainstTitle = null;
 
   function nextTitle(title) {
     const match = String(title || '').match(/#\s*(\d+)/);
@@ -65,6 +66,11 @@
       lastSessionTitle = '';
     }
 
+    if (formOpen && openedAgainstTitle !== null && sessionTitle !== openedAgainstTitle) {
+      formOpen = false;
+      openedAgainstTitle = null;
+    }
+
     if (!form || !formCard) return;
 
     const titleInput = form.querySelector('input[name="title"]');
@@ -83,7 +89,7 @@
     formCard.classList.add('rp-admin-new-session-card');
     formCard.hidden = !formOpen;
     const formHeading = formCard.querySelector('.rp-admin-card-head strong');
-    if (formHeading) formHeading.textContent = 'NEW SESSION';
+    if (formHeading && formHeading.textContent !== 'NEW SESSION') formHeading.textContent = 'NEW SESSION';
 
     let toggle = body.querySelector('[data-admin-new-session-toggle]');
     if (!toggle) {
@@ -94,14 +100,25 @@
       formCard.before(toggle);
       toggle.onclick = () => {
         formOpen = !formOpen;
+        openedAgainstTitle = formOpen ? sessionTitle : null;
         apply();
       };
     }
-    toggle.textContent = formOpen ? '− CLOSE NEW SESSION' : (sessionTitle ? '+ OPEN NEXT SESSION' : '+ OPEN SESSION');
+
+    const toggleText = formOpen ? '− CLOSE NEW SESSION' : (sessionTitle ? '+ OPEN NEXT SESSION' : '+ OPEN SESSION');
+    if (toggle.textContent !== toggleText) toggle.textContent = toggleText;
     toggle.classList.toggle('open', formOpen);
   }
 
-  const observer = new MutationObserver(() => window.requestAnimationFrame(apply));
+  let scheduled = false;
+  const observer = new MutationObserver(() => {
+    if (scheduled) return;
+    scheduled = true;
+    window.requestAnimationFrame(() => {
+      scheduled = false;
+      apply();
+    });
+  });
   observer.observe(document.body, { childList: true, subtree: true });
   apply();
 })();
