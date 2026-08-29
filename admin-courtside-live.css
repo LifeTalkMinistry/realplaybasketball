@@ -1,0 +1,341 @@
+.rp-admin-control.rp-courtside-locked .rp-admin-topbar,
+.rp-admin-control.rp-courtside-locked .rp-admin-tabs,
+.rp-admin-control.rp-courtside-locked .rp-admin-livebar{
+  display:none!important;
+}
+
+.rp-admin-control.rp-courtside-locked .rp-admin-shell{
+  padding-top:0;
+}
+
+.rp-admin-control.rp-courtside-locked .rp-admin-body{
+  padding-top:12px;
+}
+
+.rp-courtside-view{
+  display:grid;
+  gap:12px;
+  padding-bottom:18px;
+}
+
+.rp-courtside-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:34px;
+}
+
+.rp-courtside-head-left{
+  min-width:0;
+}
+
+.rp-courtside-state{
+  display:block;
+  color:#43e8ff;
+  font-size:.52rem;
+  font-weight:950;
+  letter-spacing:.14em;
+}
+
+.rp-courtside-title{
+  display:block;
+  margin-top:2px;
+  overflow:hidden;
+  color:#f7fbff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.95rem;
+  font-style:italic;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.rp-courtside-live-dot{
+  display:inline-block;
+  width:7px;
+  height:7px;
+  margin-right:6px;
+  border-radius:999px;
+  background:#ff385c;
+  box-shadow:0 0 12px rgba(255,56,92,.5);
+}
+
+.rp-courtside-view .rp-admin-scoreboard{
+  padding:12px 14px;
+  border-radius:16px;
+}
+
+.rp-courtside-view .rp-admin-score-side strong{
+  margin-top:3px;
+  font-size:2.25rem;
+}
+
+.rp-courtside-view .rp-admin-score-side small{
+  font-size:.5rem;
+}
+
+.rp-courtside-roster{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:10px;
+}
+
+.rp-courtside-team{
+  min-width:0;
+  overflow:hidden;
+  border:1px solid rgba(126,173,232,.12);
+  border-radius:15px;
+  background:#07111d;
+}
+
+.rp-courtside-team-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-height:34px;
+  padding:0 11px;
+  border-bottom:1px solid rgba(126,173,232,.09);
+  color:#7f93aa;
+  font:950 .53rem var(--rp-display,Arial,sans-serif);
+  letter-spacing:.1em;
+}
+
+.rp-courtside-team-head span:last-child{
+  color:#52677d;
+  font-size:.48rem;
+}
+
+.rp-courtside-player-list{
+  display:grid;
+  gap:0;
+}
+
+.rp-courtside-player{
+  width:100%;
+  min-width:0;
+  min-height:45px;
+  padding:0 11px;
+  overflow:hidden;
+  border:0;
+  border-bottom:1px solid rgba(126,173,232,.07);
+  color:#f4f8fd;
+  background:transparent;
+  font:850 .68rem var(--rp-body,Arial,sans-serif);
+  text-align:left;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.rp-courtside-player:last-child{
+  border-bottom:0;
+}
+
+.rp-courtside-player:active{
+  background:rgba(29,220,255,.08);
+}
+
+.rp-courtside-empty{
+  min-height:45px;
+  display:flex;
+  align-items:center;
+  padding:0 11px;
+  color:#53677d;
+  font-size:.62rem;
+  font-weight:800;
+}
+
+.rp-courtside-finish{
+  width:100%;
+  min-height:50px;
+  border:1px solid rgba(255,96,118,.24);
+  border-radius:14px;
+  color:#fff;
+  background:linear-gradient(105deg,#8f1831,#d52b49);
+  font:950 .72rem var(--rp-display,Arial,sans-serif);
+  font-style:italic;
+  letter-spacing:.09em;
+}
+
+.rp-courtside-player-panel{
+  padding:14px;
+  border:1px solid rgba(126,173,232,.14);
+  border-radius:18px;
+  background:#07111d;
+}
+
+.rp-courtside-player-panel-head{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  margin-bottom:12px;
+}
+
+.rp-courtside-player-panel-head strong{
+  min-width:0;
+  overflow:hidden;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:1.05rem;
+  font-style:italic;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.rp-courtside-close{
+  width:38px;
+  height:38px;
+  border:1px solid rgba(126,173,232,.14);
+  border-radius:10px;
+  color:#c8d6e4;
+  background:#091521;
+  font-size:1.1rem;
+  font-weight:900;
+}
+
+.rp-courtside-stats{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;
+}
+
+.rp-courtside-stat{
+  min-width:0;
+  padding:9px 4px 7px;
+  border:1px solid rgba(126,173,232,.09);
+  border-radius:11px;
+  background:#030a12;
+  text-align:center;
+}
+
+.rp-courtside-stat label{
+  display:block;
+  color:#65798f;
+  font-size:.47rem;
+  font-weight:950;
+  letter-spacing:.08em;
+}
+
+.rp-courtside-stat strong{
+  display:block;
+  margin:4px 0 7px;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:1.22rem;
+  font-weight:950;
+}
+
+.rp-courtside-stat-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+}
+
+.rp-courtside-stat-actions.points{
+  grid-template-columns:1fr 1fr;
+}
+
+.rp-courtside-stat-actions button{
+  min-width:0;
+  min-height:34px;
+  padding:0 3px;
+  border:1px solid rgba(126,173,232,.12);
+  border-radius:8px;
+  color:#fff;
+  background:#0a1725;
+  font:900 .75rem var(--rp-display,Arial,sans-serif);
+}
+
+.rp-courtside-stat-actions button:disabled{
+  opacity:.35;
+}
+
+.rp-courtside-pregame{
+  display:grid;
+  gap:12px;
+}
+
+.rp-courtside-pregame-head{
+  margin:4px 0 0;
+}
+
+.rp-courtside-pregame-head small{
+  display:block;
+  color:#43e8ff;
+  font-size:.52rem;
+  font-weight:950;
+  letter-spacing:.14em;
+}
+
+.rp-courtside-pregame-head strong{
+  display:block;
+  margin-top:4px;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:1.5rem;
+  font-style:italic;
+  font-weight:950;
+}
+
+.rp-courtside-pregame .rp-admin-primary{
+  margin-top:2px;
+}
+
+.rp-courtside-review-card{
+  padding:14px;
+  border:1px solid rgba(126,173,232,.13);
+  border-radius:16px;
+  background:#07111d;
+}
+
+.rp-courtside-review-card strong{
+  display:block;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:1rem;
+  font-style:italic;
+  font-weight:950;
+}
+
+.rp-courtside-review-list{
+  display:grid;
+  gap:6px;
+  margin-top:10px;
+}
+
+.rp-courtside-review-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  padding:9px 10px;
+  border-radius:10px;
+  background:#050c15;
+  color:#8092a7;
+  font-size:.61rem;
+}
+
+.rp-courtside-review-row b{
+  min-width:0;
+  overflow:hidden;
+  color:#fff;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.rp-courtside-review-actions{
+  display:grid;
+  grid-template-columns:1fr 1.3fr;
+  gap:8px;
+}
+
+.rp-courtside-review-actions button{
+  min-height:48px;
+}
+
+@media(max-width:380px){
+  .rp-courtside-roster{gap:7px}
+  .rp-courtside-team-head{padding-inline:9px}
+  .rp-courtside-player{padding-inline:9px;font-size:.64rem}
+  .rp-courtside-stats{gap:4px}
+  .rp-courtside-stat{padding-inline:2px}
+  .rp-courtside-stat-actions button{font-size:.7rem}
+}
