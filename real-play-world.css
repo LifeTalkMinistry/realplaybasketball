@@ -1,0 +1,81 @@
+/* Real Play World — community / league activity screen */
+.rp-world{
+  position:fixed;
+  z-index:540;
+  inset:0;
+  display:none;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:0 0 max(34px,env(safe-area-inset-bottom));
+  color:#f8fbff;
+  background:
+    radial-gradient(circle at 82% 2%,rgba(29,220,255,.12),transparent 23%),
+    radial-gradient(circle at 15% 16%,rgba(23,108,255,.18),transparent 30%),
+    linear-gradient(180deg,#040914 0%,#02050b 45%,#010308 100%);
+  font-family:var(--rp-body,Arial,sans-serif);
+}
+.rp-world.open{display:block}
+body.rp-world-open{overflow:hidden}
+.rp-world-shell{width:min(100%,560px);margin:0 auto;padding:0 18px 36px}
+.rp-world-topbar{
+  position:sticky;top:0;z-index:5;
+  min-height:68px;margin:0 -18px;padding:12px 18px;
+  display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:10px;
+  border-bottom:1px solid rgba(126,173,232,.09);
+  background:rgba(3,7,14,.9);backdrop-filter:blur(18px)
+}
+.rp-world-back{width:40px;height:40px;border:1px solid rgba(126,173,232,.13);border-radius:13px;color:#fff;background:#07101b;font-size:1.12rem}
+.rp-world-title strong{display:block;font-family:var(--rp-display,Arial,sans-serif);font-size:1rem;font-style:italic;font-weight:900;letter-spacing:.12em}
+.rp-world-title span{display:block;margin-top:2px;color:#718096;font-size:.54rem;font-weight:800;letter-spacing:.12em}
+.rp-world-live{padding:7px 9px;border:1px solid rgba(29,220,255,.25);border-radius:999px;color:#62eaff;background:rgba(29,220,255,.06);font-family:var(--rp-display,Arial,sans-serif);font-size:.57rem;font-weight:900;letter-spacing:.1em}
+
+.rp-world-hero{position:relative;overflow:hidden;margin-top:22px;padding:22px;border:1px solid rgba(126,173,232,.14);border-radius:25px;background:linear-gradient(145deg,#0a1930,#06101c 68%);box-shadow:0 22px 55px rgba(0,0,0,.28)}
+.rp-world-hero::after{content:'';position:absolute;width:210px;height:210px;right:-92px;top:-90px;border:1px solid rgba(255,255,255,.045);border-radius:50%;box-shadow:0 0 0 40px rgba(255,255,255,.01),0 0 0 80px rgba(255,255,255,.008)}
+.rp-world-kicker{position:relative;z-index:1;color:#4ee7ff;font-size:.53rem;font-weight:900;letter-spacing:.15em}
+.rp-world-hero h1{position:relative;z-index:1;margin:7px 0 7px;font-family:var(--rp-display,Arial,sans-serif);font-size:2rem;font-style:italic;font-weight:900;line-height:.92;text-transform:uppercase}
+.rp-world-hero p{position:relative;z-index:1;max-width:390px;margin:0;color:#8b9cb0;font-size:.71rem;line-height:1.5}
+.rp-world-metrics{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:17px}
+.rp-world-metrics article{min-width:0;padding:12px 8px;border:1px solid rgba(126,173,232,.1);border-radius:14px;background:rgba(2,5,11,.34);text-align:center}
+.rp-world-metrics span{display:block;color:#687b91;font-size:.46rem;font-weight:900;letter-spacing:.1em}
+.rp-world-metrics strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:5px;font-family:var(--rp-display,Arial,sans-serif);font-size:1.08rem;font-weight:900}
+
+.rp-world-section{margin-top:27px}
+.rp-world-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:11px}
+.rp-world-section-head small{display:block;color:#4ee7ff;font-size:.51rem;font-weight:900;letter-spacing:.14em}
+.rp-world-section-head h2{margin:3px 0 0;font-family:var(--rp-display,Arial,sans-serif);font-size:1.45rem;font-style:italic;font-weight:900;line-height:1;text-transform:uppercase}
+.rp-world-section-head>span{color:#607188;font-size:.55rem;font-weight:800;letter-spacing:.08em}
+.rp-world-tabs{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
+.rp-world-tabs::-webkit-scrollbar{display:none}
+.rp-world-tab{flex:0 0 auto;padding:8px 11px;border:1px solid rgba(126,173,232,.11);border-radius:999px;color:#697c91;background:#07101b;font-family:var(--rp-display,Arial,sans-serif);font-size:.6rem;font-weight:900;letter-spacing:.08em}
+.rp-world-tab.active{color:#fff;border-color:rgba(29,220,255,.26);background:rgba(23,108,255,.15)}
+.rp-world-board,.rp-world-feed{display:grid;gap:8px}
+.rp-world-row{display:grid;grid-template-columns:32px 1fr auto;align-items:center;gap:10px;padding:13px 14px;border:1px solid rgba(126,173,232,.1);border-radius:15px;background:#07101b}
+.rp-world-row.you{border-color:rgba(29,220,255,.24);background:linear-gradient(120deg,rgba(23,108,255,.14),#07101b 62%)}
+.rp-world-row em{font-style:normal;color:#687c91;font-family:var(--rp-display,Arial,sans-serif);font-size:.92rem;font-weight:900}
+.rp-world-player{min-width:0}
+.rp-world-player strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--rp-display,Arial,sans-serif);font-size:.98rem;font-weight:900}
+.rp-world-player small{display:block;margin-top:3px;color:#66798e;font-size:.5rem;font-weight:800;letter-spacing:.07em}
+.rp-world-value{text-align:right}
+.rp-world-value strong{display:block;font-family:var(--rp-display,Arial,sans-serif);font-size:1.12rem;font-weight:900}
+.rp-world-value span{display:block;margin-top:2px;color:#5ceaff;font-size:.46rem;font-weight:900;letter-spacing:.08em}
+.rp-world-feed-item{display:grid;grid-template-columns:38px 1fr;gap:11px;align-items:start;padding:14px;border:1px solid rgba(126,173,232,.1);border-radius:16px;background:#07101b}
+.rp-world-feed-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;color:#64eaff;background:rgba(23,108,255,.14);font-family:var(--rp-display,Arial,sans-serif);font-weight:900}
+.rp-world-feed-item small{display:block;color:#5ceaff;font-size:.49rem;font-weight:900;letter-spacing:.1em}
+.rp-world-feed-item strong{display:block;margin-top:3px;font-family:var(--rp-display,Arial,sans-serif);font-size:.95rem;font-weight:900;line-height:1.15}
+.rp-world-feed-item p{margin:5px 0 0;color:#74879c;font-size:.65rem;line-height:1.42}
+.rp-world-empty{padding:24px 18px;border:1px solid rgba(126,173,232,.1);border-radius:17px;background:#050b13;text-align:center}
+.rp-world-empty strong{display:block;font-family:var(--rp-display,Arial,sans-serif);font-size:1.02rem;font-style:italic;font-weight:900}
+.rp-world-empty p{margin:7px auto 0;color:#708195;font-size:.68rem;line-height:1.45}
+.rp-world-loading{opacity:.7}
+
+/* Once World is installed, the third bottom-nav position belongs to World. */
+.rp-nav-item[data-rp-nav="world"] span{color:#54e9ff}
+
+@media(max-width:380px){
+  .rp-world-shell{padding-inline:14px}
+  .rp-world-topbar{margin-inline:-14px;padding-inline:14px}
+  .rp-world-hero{padding:18px}
+  .rp-world-hero h1{font-size:1.8rem}
+  .rp-world-metrics{gap:6px}
+  .rp-world-metrics strong{font-size:.96rem}
+}
