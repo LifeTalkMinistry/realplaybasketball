@@ -37,8 +37,7 @@
       <nav class="rp-admin-tabs" aria-label="Game control sections">
         <button type="button" class="rp-admin-tab active" data-admin-tab="session">SESSION</button>
         <button type="button" class="rp-admin-tab" data-admin-tab="players">PLAYERS</button>
-        <button type="button" class="rp-admin-tab" data-admin-tab="game">GAME</button>
-        <button type="button" class="rp-admin-tab" data-admin-tab="stats">STATS</button>
+        <button type="button" class="rp-admin-tab" data-admin-tab="live">LIVE</button>
         <button type="button" class="rp-admin-tab" data-admin-tab="finalize">FINALIZE</button>
       </nav>
       <div class="rp-admin-body" data-admin-body></div>
@@ -225,14 +224,30 @@
     return players.length ? players.map((player) => `<span>${esc(playerLabel(player))}</span>`).join('') : '<span>NO PLAYERS</span>';
   }
 
+  function statBox(player, key, label) {
+    const value = Number(player.stats?.[key] || 0);
+    const live = control.session?.gameStatus === 'live';
+    const controls = key === 'pts'
+      ? `<button type="button" data-control-action="stat" data-user-id="${player.userId}" data-stat="${key}" data-delta="-1" ${!live || busy ? 'disabled' : ''}>−</button><button type="button" data-control-action="stat" data-user-id="${player.userId}" data-stat="${key}" data-delta="1" ${!live || busy ? 'disabled' : ''}>+1</button><button type="button" data-control-action="stat" data-user-id="${player.userId}" data-stat="${key}" data-delta="2" ${!live || busy ? 'disabled' : ''}>+2</button><button type="button" data-control-action="stat" data-user-id="${player.userId}" data-stat="${key}" data-delta="3" ${!live || busy ? 'disabled' : ''}>+3</button>`
+      : `<button type="button" data-control-action="stat" data-user-id="${player.userId}" data-stat="${key}" data-delta="-1" ${!live || busy ? 'disabled' : ''}>−</button><button type="button" data-control-action="stat" data-user-id="${player.userId}" data-stat="${key}" data-delta="1" ${!live || busy ? 'disabled' : ''}>+</button>`;
+    return `<div class="rp-admin-stat"><label>${label}</label><strong>${value}</strong><div class="rp-admin-stat-controls">${controls}</div></div>`;
+  }
+
   function renderGame() {
     const session = control.session;
     if (!session) return `<div class="rp-admin-title"><span class="rp-admin-kicker">COURTSIDE</span><h1>LIVE GAME</h1></div>${messageHtml()}<div class="rp-admin-empty"><strong>NO ACTIVE SESSION</strong><p>Open a session and check players in first.</p></div>`;
     const live = session.gameStatus === 'live';
     const final = session.gameStatus === 'final';
     const canStart = session.gameStatus === 'setup' && roster('west').length > 0 && roster('east').length > 0;
+    const players = control.players.filter((player) => player.checkedIn && player.team);
+    const rows = players.length ? players.map((player) => `
+      <article class="rp-admin-stat-player">
+        <div class="rp-admin-stat-player-head"><strong>${esc(playerLabel(player))}</strong><span class="rp-admin-pill">${esc(player.team)}</span></div>
+        <div class="rp-admin-stat-grid">${statBox(player,'pts','PTS')}${statBox(player,'ast','AST')}${statBox(player,'reb','REB')}${statBox(player,'tov','TO')}</div>
+      </article>`).join('') : '<div class="rp-admin-empty"><strong>NO PLAYERS IN GAME</strong><p>Check players in and assign teams before tracking stats.</p></div>';
+
     return `
-      <div class="rp-admin-title"><span class="rp-admin-kicker">${esc(sessionStatus(session))}</span><h1>LIVE GAME</h1><p>Control the official Real Play score from courtside.</p></div>
+      <div class="rp-admin-title"><span class="rp-admin-kicker">${esc(sessionStatus(session))}</span><h1>LIVE GAME</h1><p>Record the player. Real Play builds the team score automatically from PTS.</p></div>
       ${messageHtml()}
       <div class="rp-admin-scoreboard">
         <div class="rp-admin-score-side"><small>WEST</small><strong>${Number(session.westScore || 0)}</strong></div>
@@ -244,41 +259,14 @@
         <div class="rp-admin-roster"><h3>EAST</h3>${renderRoster('east')}</div>
       </div>
       ${session.gameStatus === 'setup' ? `<div class="rp-admin-card soft"><button type="button" class="rp-admin-primary" data-control-action="start" ${!canStart || busy ? 'disabled' : ''}>START GAME</button>${!canStart ? '<div class="rp-admin-alert">Check in players and assign at least one player to both West and East.</div>' : ''}</div>` : ''}
-      <div class="rp-admin-card ${live ? '' : 'soft'}">
-        <div class="rp-admin-card-head"><strong>WEST SCORE</strong><span class="rp-admin-pill">POINTS</span></div>
-        <div class="rp-admin-score-actions">
-          <button type="button" data-control-action="score" data-team="west" data-points="1" ${!live || busy ? 'disabled' : ''}>+1</button>
-          <button type="button" data-control-action="score" data-team="west" data-points="2" ${!live || busy ? 'disabled' : ''}>+2</button>
-          <button type="button" data-control-action="score" data-team="west" data-points="3" ${!live || busy ? 'disabled' : ''}>+3</button>
-        </div>
-      </div>
-      <div class="rp-admin-card ${live ? '' : 'soft'}">
-        <div class="rp-admin-card-head"><strong>EAST SCORE</strong><span class="rp-admin-pill">POINTS</span></div>
-        <div class="rp-admin-score-actions">
-          <button type="button" data-control-action="score" data-team="east" data-points="1" ${!live || busy ? 'disabled' : ''}>+1</button>
-          <button type="button" data-control-action="score" data-team="east" data-points="2" ${!live || busy ? 'disabled' : ''}>+2</button>
-          <button type="button" data-control-action="score" data-team="east" data-points="3" ${!live || busy ? 'disabled' : ''}>+3</button>
-        </div>
-      </div>
-      <div class="rp-admin-card soft"><button type="button" class="rp-admin-secondary" data-control-action="undo-score" ${!live || busy ? 'disabled' : ''}>UNDO LAST SCORE</button>${final ? '<div class="rp-admin-success">This game is final. Score controls are locked.</div>' : ''}</div>`;
-  }
-
-  function statBox(player, key, label) {
-    const value = Number(player.stats?.[key] || 0);
-    const live = control.session?.gameStatus === 'live';
-    return `<div class="rp-admin-stat"><label>${label}</label><strong>${value}</strong><div class="rp-admin-stat-controls"><button type="button" data-control-action="stat" data-user-id="${player.userId}" data-stat="${key}" data-delta="-1" ${!live || busy ? 'disabled' : ''}>−</button><button type="button" data-control-action="stat" data-user-id="${player.userId}" data-stat="${key}" data-delta="1" ${!live || busy ? 'disabled' : ''}>+</button></div></div>`;
+      <div class="rp-admin-title"><span class="rp-admin-kicker">OFFICIAL STATS</span><h1>PLAYER STATS</h1><p>PTS changes the scoreboard automatically. AST, REB, and TO remain player stats only.</p></div>
+      ${!live && !final ? '<div class="rp-admin-success">Stat controls unlock when the game is LIVE.</div>' : ''}
+      ${final ? '<div class="rp-admin-success">This game is final. Score and stat controls are locked.</div>' : ''}
+      <div class="rp-admin-stat-list">${rows}</div>`;
   }
 
   function renderStats() {
-    const session = control.session;
-    if (!session) return `<div class="rp-admin-title"><span class="rp-admin-kicker">OFFICIAL STATS</span><h1>PLAYER STATS</h1></div>${messageHtml()}<div class="rp-admin-empty"><strong>NO ACTIVE SESSION</strong></div>`;
-    const players = control.players.filter((player) => player.checkedIn && player.team);
-    const rows = players.length ? players.map((player) => `
-      <article class="rp-admin-stat-player">
-        <div class="rp-admin-stat-player-head"><strong>${esc(playerLabel(player))}</strong><span class="rp-admin-pill">${esc(player.team)}</span></div>
-        <div class="rp-admin-stat-grid">${statBox(player,'pts','PTS')}${statBox(player,'ast','AST')}${statBox(player,'reb','REB')}${statBox(player,'tov','TO')}</div>
-      </article>`).join('') : '<div class="rp-admin-empty"><strong>NO PLAYERS IN GAME</strong><p>Check players in and assign teams before tracking stats.</p></div>';
-    return `<div class="rp-admin-title"><span class="rp-admin-kicker">${esc(sessionStatus(session))}</span><h1>PLAYER STATS</h1><p>Track the Beta essentials: points, assists, rebounds, and turnovers.</p></div>${messageHtml()}${session.gameStatus !== 'live' ? '<div class="rp-admin-success">Stat controls unlock when the game is LIVE.</div>' : ''}<div class="rp-admin-stat-list">${rows}</div>`;
+    return renderGame();
   }
 
   function renderFinalize() {
@@ -305,8 +293,7 @@
     renderLivebar();
     tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.adminTab === activeTab));
     if (activeTab === 'players') body.innerHTML = renderPlayers();
-    else if (activeTab === 'game') body.innerHTML = renderGame();
-    else if (activeTab === 'stats') body.innerHTML = renderStats();
+    else if (activeTab === 'live' || activeTab === 'game' || activeTab === 'stats') body.innerHTML = renderGame();
     else if (activeTab === 'finalize') body.innerHTML = renderFinalize();
     else body.innerHTML = renderSession();
   }
@@ -403,10 +390,6 @@
       await postControl({ action, userId: Number(button.dataset.userId), team: button.dataset.team });
     } else if (action === 'start') {
       if (window.confirm('Start this official Beta Career game? Attendance and teams will lock.')) await postControl({ action });
-    } else if (action === 'score') {
-      await postControl({ action, team: button.dataset.team, points: Number(button.dataset.points) });
-    } else if (action === 'undo-score') {
-      await postControl({ action });
     } else if (action === 'stat') {
       await postControl({ action, userId: Number(button.dataset.userId), stat: button.dataset.stat, delta: Number(button.dataset.delta) });
     } else if (action === 'finalize') {
