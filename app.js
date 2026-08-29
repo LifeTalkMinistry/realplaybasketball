@@ -1,7 +1,7 @@
 document.documentElement.classList.add('js');
 
 (() => {
-  const version = '20260829-1018';
+  const version = '20260829-1032';
 
   // Load the session guard immediately so auth-core cannot erase a valid
   // persisted login because one protected API request temporarily returns 401.
