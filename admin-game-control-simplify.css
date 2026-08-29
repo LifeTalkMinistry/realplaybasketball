@@ -1,0 +1,82 @@
+.rp-admin-livebar{display:none!important}
+.rp-admin-tabs{padding-top:12px}
+.rp-admin-body{padding-top:12px}
+
+.rp-admin-session-summary{
+  margin-top:0;
+  padding:15px 16px;
+  border-radius:17px;
+}
+.rp-admin-session-summary .rp-admin-card-head{align-items:center}
+.rp-admin-session-summary .rp-admin-card-head strong{
+  font-size:1rem;
+  letter-spacing:.01em;
+}
+.rp-admin-session-summary .rp-admin-meta{
+  display:grid;
+  gap:8px;
+  margin-top:13px;
+}
+.rp-admin-session-summary .rp-admin-meta span{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  min-height:22px;
+  color:#d9e4ef;
+  font-size:.69rem;
+}
+.rp-admin-session-summary .rp-admin-meta b{
+  flex:0 0 auto;
+  color:#70849a;
+  font-size:.53rem;
+  font-weight:900;
+  letter-spacing:.11em;
+}
+.rp-admin-session-summary .rp-admin-meta em{
+  min-width:0;
+  overflow:hidden;
+  color:#eaf2fb;
+  font-style:normal;
+  font-weight:800;
+  text-align:right;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.rp-admin-session-summary .rp-admin-count{display:none!important}
+
+.rp-admin-new-session-toggle{
+  width:100%;
+  min-height:46px;
+  margin-top:12px;
+  border:1px solid rgba(126,173,232,.13);
+  border-radius:13px;
+  color:#8ddfff;
+  background:#050b14;
+  font:900 .66rem var(--rp-display,Arial,sans-serif);
+  font-style:italic;
+  letter-spacing:.08em;
+}
+.rp-admin-new-session-toggle.open{
+  color:#dce8f5;
+  border-color:rgba(62,234,255,.22);
+  background:#07111d;
+}
+.rp-admin-new-session-card{
+  margin-top:9px;
+  padding:15px;
+}
+.rp-admin-new-session-card[hidden]{display:none!important}
+.rp-admin-new-session-card .rp-admin-card-head{align-items:center}
+.rp-admin-new-session-card .rp-admin-card-head strong{font-size:.9rem}
+.rp-admin-new-session-card .rp-admin-pill{display:none!important}
+.rp-admin-hidden-field{display:none!important}
+
+.rp-admin-new-session-card .rp-admin-form{gap:9px}
+.rp-admin-new-session-card .rp-admin-form input{min-height:44px}
+.rp-admin-new-session-card .rp-admin-primary{min-height:47px;margin-top:2px}
+
+@media(max-width:380px){
+  .rp-admin-session-summary{padding:14px}
+  .rp-admin-session-summary .rp-admin-meta span{gap:10px}
+}
