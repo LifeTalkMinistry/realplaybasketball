@@ -1,7 +1,7 @@
 document.documentElement.classList.add('js');
 
 (() => {
-  const version = '20260829-1453';
+  const version = '20260829-1518';
 
   // Load the session guard immediately so auth-core cannot erase a valid
   // persisted login because one protected API request temporarily returns 401.
@@ -10,15 +10,15 @@ document.documentElement.classList.add('js');
   sessionGuard.async = false;
   document.head.appendChild(sessionGuard);
 
-  ['mobile-lobby.css', 'mobile-entry.css', 'mobile-shell-fix.css', 'mobile-lobby-cleanup.css', 'career-beta.css', 'career-beta-play.css', 'admin-game-control.css', 'admin-launcher-mobile-fix.css', 'admin-game-control-simplify.css'].forEach((href) => {
+  ['mobile-lobby.css', 'mobile-entry.css', 'mobile-shell-fix.css', 'mobile-lobby-cleanup.css', 'career-beta.css', 'career-beta-play.css', 'real-play-world.css', 'admin-game-control.css', 'admin-launcher-mobile-fix.css', 'admin-game-control-simplify.css'].forEach((href) => {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
     css.href = `${href}?v=${version}`;
     document.head.appendChild(css);
   });
 
-  // Keep startup order deterministic: the lobby must exist before Career,
-  // and Career must exist before the leaderboard enhancement mounts.
+  // Keep startup order deterministic: the lobby exists first, then Career and
+  // World enhance the two main identity/community destinations.
   [
     'mobile-lobby.js',
     'login-landing-fix.js',
@@ -26,6 +26,7 @@ document.documentElement.classList.add('js');
     'career-beta.js',
     'career-beta-play.js',
     'career-beta-leaderboard.js',
+    'real-play-world.js',
     'admin-score-sync.js',
     'admin-game-control.js',
     'admin-game-control-simplify.js',
