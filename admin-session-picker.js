@@ -1,6 +1,6 @@
 (() => {
-  if (window.__realPlayAdminSessionPickerInstalledV2) return;
-  window.__realPlayAdminSessionPickerInstalledV2 = true;
+  if (window.__realPlayAdminSessionPickerInstalledV3) return;
+  window.__realPlayAdminSessionPickerInstalledV3 = true;
 
   let savedDate = '';
   let savedTime = '';
@@ -69,7 +69,7 @@
   }
 
   function enhanceForm(form) {
-    if (!form || form.dataset.dateTimePickerReadyV2 === 'true') return;
+    if (!form || form.dataset.dateTimePickerReadyV3 === 'true') return;
 
     const oldInput = form.querySelector('input[type="datetime-local"][name="startsAt"]');
     if (!oldInput) return;
@@ -93,13 +93,13 @@
           <span class="rp-admin-picker-value-v2" data-session-time-value>CHOOSE TIME</span>
           <span class="rp-admin-picker-mark-v2" aria-hidden="true">▾</span>
         </button>
-        <input class="rp-admin-native-picker-v2" type="time" data-session-time step="900" aria-label="Session time" tabindex="-1">
+        <input class="rp-admin-native-picker-v2" type="time" data-session-time step="60" aria-label="Session time" tabindex="-1">
       </div>
       <input type="hidden" name="startsAt">
     `;
 
     oldLabel.replaceWith(group);
-    form.dataset.dateTimePickerReadyV2 = 'true';
+    form.dataset.dateTimePickerReadyV3 = 'true';
 
     const dateInput = form.querySelector('[data-session-date]');
     const timeInput = form.querySelector('[data-session-time]');
