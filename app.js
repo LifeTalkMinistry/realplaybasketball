@@ -1,7 +1,7 @@
 document.documentElement.classList.add('js');
 
 (() => {
-  const version = '20260829-1425';
+  const version = '20260829-1427';
 
   // Load the session guard immediately so auth-core cannot erase a valid
   // persisted login because one protected API request temporarily returns 401.
@@ -28,6 +28,7 @@ document.documentElement.classList.add('js');
     'career-beta-leaderboard.js',
     'admin-score-sync.js',
     'admin-game-control.js',
+    'admin-manual-open.js',
     'admin-score-dom-sync.js',
   ].forEach((href) => {
     const script = document.createElement('script');
