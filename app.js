@@ -1,7 +1,7 @@
 document.documentElement.classList.add('js');
 
 (() => {
-  const version = '20260829-1003';
+  const version = '20260829-1014';
 
   // Load the session guard immediately so auth-core cannot erase a valid
   // persisted login because one protected API request temporarily returns 401.
@@ -17,7 +17,19 @@ document.documentElement.classList.add('js');
     document.head.appendChild(css);
   });
 
-  ['mobile-lobby.js', 'login-landing-fix.js', 'persistent-session-fix.js', 'career-beta.js', 'career-beta-play.js', 'admin-score-sync.js', 'admin-game-control.js', 'admin-score-dom-sync.js'].forEach((href) => {
+  // Keep startup order deterministic: the lobby must exist before Career,
+  // and Career must exist before the leaderboard enhancement mounts.
+  [
+    'mobile-lobby.js',
+    'login-landing-fix.js',
+    'persistent-session-fix.js',
+    'career-beta.js',
+    'career-beta-play.js',
+    'career-beta-leaderboard.js',
+    'admin-score-sync.js',
+    'admin-game-control.js',
+    'admin-score-dom-sync.js',
+  ].forEach((href) => {
     const script = document.createElement('script');
     script.src = `${href}?v=${version}`;
     script.async = false;
