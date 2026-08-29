@@ -1,7 +1,7 @@
 document.documentElement.classList.add('js');
 
 (() => {
-  const version = '20260829-1436';
+  const version = '20260829-1438';
 
   // Load the session guard immediately so auth-core cannot erase a valid
   // persisted login because one protected API request temporarily returns 401.
@@ -10,7 +10,7 @@ document.documentElement.classList.add('js');
   sessionGuard.async = false;
   document.head.appendChild(sessionGuard);
 
-  ['mobile-lobby.css', 'mobile-entry.css', 'mobile-shell-fix.css', 'mobile-lobby-cleanup.css', 'career-beta.css', 'career-beta-play.css', 'admin-game-control.css', 'admin-launcher-mobile-fix.css'].forEach((href) => {
+  ['mobile-lobby.css', 'mobile-entry.css', 'mobile-shell-fix.css', 'mobile-lobby-cleanup.css', 'career-beta.css', 'career-beta-play.css', 'admin-game-control.css', 'admin-launcher-mobile-fix.css', 'admin-game-control-simplify.css'].forEach((href) => {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
     css.href = `${href}?v=${version}`;
@@ -28,6 +28,7 @@ document.documentElement.classList.add('js');
     'career-beta-leaderboard.js',
     'admin-score-sync.js',
     'admin-game-control.js',
+    'admin-game-control-simplify.js',
     'admin-manual-open.js',
     'admin-session-picker.js',
     'admin-score-dom-sync.js',
