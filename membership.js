@@ -63,15 +63,35 @@
     return state?.membership || { status: 'free', active: false, amountPhp: MEMBERSHIP_PRICE };
   }
 
+  function setText(node, value) {
+    if (node && node.textContent !== value) node.textContent = value;
+  }
+
   function relabelAuth() {
     const kicker = document.querySelector('.auth-kicker');
+    const subtitle = document.querySelector('.auth-subtitle');
     const signupTab = document.querySelector('[data-auth-tab="signup"]');
     const signupSubmit = document.querySelector('[data-auth-signup-form] button[type="submit"]');
     const completeSubmit = document.querySelector('[data-auth-complete-form] button[type="submit"]');
-    if (kicker) kicker.textContent = 'REAL PLAY PLAYER ACCESS';
-    if (signupTab) signupTab.textContent = 'CREATE FREE PLAYER';
-    if (signupSubmit) signupSubmit.textContent = 'CREATE MY PLAYER';
-    if (completeSubmit) completeSubmit.textContent = 'CREATE MY PLAYER';
+    const supportTier = document.querySelector('[data-auth-support-tier]');
+    const nextCard = document.querySelector('[data-auth-next-card]');
+    const numberRequestForm = document.querySelector('[data-auth-number-request-form]');
+    const noticeLabel = document.querySelector('[data-auth-notifications-wrap] .auth-account-label');
+
+    setText(kicker, 'REAL PLAY PLAYER ACCESS');
+    if (subtitle && !subtitle.closest('[data-auth-view="complete"]')) {
+      setText(subtitle, 'Log in or create your free Real Play player identity. Membership is only required when you secure an official weekly game slot.');
+    }
+    setText(signupTab, 'CREATE FREE PLAYER');
+    setText(signupSubmit, 'CREATE MY PLAYER');
+    setText(completeSubmit, 'CREATE MY PLAYER');
+    if (supportTier && !supportTier.hidden) supportTier.hidden = true;
+    if (nextCard && !nextCard.hidden) nextCard.hidden = true;
+    if (numberRequestForm && !numberRequestForm.hidden) numberRequestForm.hidden = true;
+    setText(noticeLabel, 'REAL PLAY NOTICES');
+    document.querySelectorAll('[data-auth-view="account"] .auth-note').forEach((note) => {
+      if (/number priority/i.test(note.textContent || '') && !note.hidden) note.hidden = true;
+    });
   }
 
   function ensureAccountMembershipCard() {
@@ -99,7 +119,8 @@
       : m.status === 'pending'
         ? 'WE’LL UNLOCK SCHEDULE BOOKING AFTER VERIFICATION'
         : 'ACTIVATE ₱399/MONTH TO SECURE OFFICIAL SUNDAY SLOTS';
-    card.innerHTML = `<span>${status}</span><strong>${detail}</strong><b>→</b>`;
+    const markup = `<span>${status}</span><strong>${detail}</strong><b>→</b>`;
+    if (card.innerHTML !== markup) card.innerHTML = markup;
     card.classList.toggle('active', Boolean(m.active));
     card.classList.toggle('pending', m.status === 'pending');
   }
@@ -148,7 +169,7 @@
       action.insertAdjacentElement('afterend', prompt);
       prompt.addEventListener('click', () => openMembership(true));
     }
-    prompt.textContent = state?.plusOne ? `PLUS 1 · ${state.plusOne.toUpperCase()} ✓` : '+ ADD YOUR PLUS 1 SUBSTITUTE';
+    setText(prompt, state?.plusOne ? `PLUS 1 · ${state.plusOne.toUpperCase()} ✓` : '+ ADD YOUR PLUS 1 SUBSTITUTE');
   }
 
   function syncUI() {
@@ -428,9 +449,15 @@
     openMembership();
   }, true);
 
+  let syncScheduled = false;
   const observer = new MutationObserver(() => {
-    relabelAuth();
-    syncUI();
+    if (syncScheduled) return;
+    syncScheduled = true;
+    queueMicrotask(() => {
+      syncScheduled = false;
+      relabelAuth();
+      syncUI();
+    });
   });
   observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] });
 
