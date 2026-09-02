@@ -27,6 +27,12 @@
 
   function token() { return localStorage.getItem(TOKEN_KEY) || ''; }
 
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[char]);
+  }
+
   async function api(path, options = {}) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method: options.method || 'GET',
@@ -57,9 +63,9 @@
     }
     list.innerHTML = pending.map((item) => `
       <article class="rp-membership-review-card" data-payment-id="${item.id}">
-        <div class="rp-membership-review-head"><div><strong>${item.playerName}</strong><span>${item.email}</span></div><b>₱${item.amountPhp}</b></div>
+        <div class="rp-membership-review-head"><div><strong>${escapeHtml(item.playerName)}</strong><span>${escapeHtml(item.email)}</span></div><b>₱${Number(item.amountPhp || 399)}</b></div>
         <div class="rp-membership-review-meta"><span>${String(item.paymentMethod || '').toUpperCase()}</span><span>${formatDate(item.submittedAt)}</span></div>
-        <button class="rp-membership-proof-open" type="button" data-proof-open><img src="${item.proofImageDataUrl}" alt="Payment proof for ${item.playerName}"></button>
+        <button class="rp-membership-proof-open" type="button" data-proof-open><img src="${item.proofImageDataUrl}" alt="Payment proof for ${escapeHtml(item.playerName)}"></button>
         <div class="rp-membership-review-actions"><button class="approve" type="button" data-review="approve">APPROVE ₱399</button><button class="reject" type="button" data-review="reject">REJECT</button></div>
         <p data-review-status></p>
       </article>
