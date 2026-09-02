@@ -17,16 +17,16 @@ document.documentElement.classList.add('js');
     document.head.appendChild(css);
   });
 
-  // Keep startup order deterministic: the lobby exists first, then Career and
-  // World enhance the two main identity/community destinations. Membership sits
-  // on top of the existing Career session UI and never hides upcoming schedules.
+  // Keep startup order deterministic. The membership bootstrap feature-detects
+  // the production API before loading the booking gate, so the current Career
+  // flow stays usable until the backend deployment has actually been activated.
   [
     'mobile-lobby.js',
     'login-landing-fix.js',
     'persistent-session-fix.js',
     'career-beta.js',
     'career-beta-play.js',
-    'membership.js',
+    'membership-bootstrap.js',
     'career-beta-leaderboard.js',
     'real-play-world.js',
     'admin-score-sync.js',
