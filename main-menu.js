@@ -47,10 +47,16 @@
         <span>PLAYERS · COMMUNITY · CHAT</span>
       </button>
 
+      <button id="rp-main-choice-profile" class="rp-main-menu-item" type="button" data-rp-main-action="profile">
+        <small>YOUR IDENTITY</small>
+        <strong>PROFILE</strong>
+        <span>PLAYER CARD · STATS · HISTORY</span>
+      </button>
+
       <button id="rp-main-choice-settings" class="rp-main-menu-item" type="button" data-rp-main-action="settings">
         <small>ACCOUNT</small>
         <strong>SETTINGS</strong>
-        <span>ACCOUNT · LOG OUT</span>
+        <span>MEMBERSHIP · COMMUNITY · LOG OUT</span>
       </button>
     </div>
   `;
@@ -150,6 +156,10 @@
   }
 
   function openWorld() {
+    if (window.RealPlayWorld?.open) {
+      window.RealPlayWorld.open();
+      return;
+    }
     const trigger = document.querySelector('[data-rp-nav="world"], [data-rp-action="world"]');
     if (trigger) {
       trigger.click();
@@ -159,6 +169,18 @@
       kicker: 'REAL PLAY WORLD',
       title: 'WORLD IS LOADING.',
       copy: 'The community layer is still loading. Try World again in a moment.',
+    });
+  }
+
+  function openProfile() {
+    if (window.RealPlayProfile?.open) {
+      window.RealPlayProfile.open();
+      return;
+    }
+    showNotice({
+      kicker: 'REAL PLAY PROFILE',
+      title: 'PROFILE IS LOADING.',
+      copy: 'Your player profile layer is still loading. Try Profile again in a moment.',
     });
   }
 
@@ -200,13 +222,16 @@
         copy: 'Full-court 5V5 is visible in the Real Play roadmap, but 3V3 remains the active Beta Season format for now.',
       });
     } else if (action === 'updates') {
-      showNotice({
+      if (window.RealPlayUpdates?.open) window.RealPlayUpdates.open();
+      else showNotice({
         kicker: 'REAL PLAY UPDATES',
         title: 'THE UPDATE CENTER.',
         copy: 'Official schedules, game results, club announcements and Beta Season changes will live here as Real Play grows.',
       });
     } else if (action === 'world') {
       openWorld();
+    } else if (action === 'profile') {
+      openProfile();
     } else if (action === 'settings') {
       openSettings();
     }
