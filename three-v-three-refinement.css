@@ -132,9 +132,9 @@
 .rp-3v3-session-cancel{min-height:38px;margin-top:7px;font-size:.64rem}
 .rp-3v3-session-message{margin-top:6px;font-size:.54rem}
 
-/* League rules are supporting information, not another hero section. */
+/* League rules stay quiet, but anchor the bottom so the page does not end halfway down the phone. */
 .rp-3v3-league-format{
-  margin-top:9px!important;
+  margin-top:auto!important;
   padding:10px 2px max(10px,env(safe-area-inset-bottom));
   border-top:1px solid rgba(126,173,232,.08);
   border-bottom:0;
@@ -151,7 +151,7 @@
   .rp-team-fixed-card strong{margin-top:24px;font-size:2.05rem}
   .rp-3v3-session{margin-top:9px;padding:11px}
   .rp-3v3-session-action{min-height:44px;margin-top:9px}
-  .rp-3v3-league-format{margin-top:7px!important;padding-top:8px}
+  .rp-3v3-league-format{margin-top:auto!important;padding-top:8px}
 }
 
 @media(max-width:360px){
