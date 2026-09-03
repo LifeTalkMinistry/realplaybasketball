@@ -22,33 +22,33 @@
       <small>LESS SCREEN. REAL POINTS.</small>
     </div>
 
-    <div class="rp-main-menu-list" role="menu" aria-label="Choose where to go">
-      <button class="rp-main-menu-item active" type="button" role="menuitem" data-rp-main-action="3v3">
+    <div class="rp-main-menu-list" data-rp-main-menu-list aria-label="Choose where to go" tabindex="0">
+      <button id="rp-main-choice-3v3" class="rp-main-menu-item" type="button" data-rp-main-action="3v3">
         <small>BETA SEASON · LIVE</small>
         <strong>3V3</strong>
         <span>FOUNDING FOUR · RACE TO 8</span>
       </button>
 
-      <button class="rp-main-menu-item muted" type="button" role="menuitem" data-rp-main-action="5v5">
+      <button id="rp-main-choice-5v5" class="rp-main-menu-item" type="button" data-rp-main-action="5v5">
         <small>COMING SOON</small>
         <strong>5V5</strong>
         <span>UNDER CONSTRUCTION</span>
       </button>
 
-      <button class="rp-main-menu-item" type="button" role="menuitem" data-rp-main-action="updates">
+      <button id="rp-main-choice-updates" class="rp-main-menu-item" type="button" data-rp-main-action="updates">
         <small>REAL PLAY</small>
         <strong>UPDATES</strong>
         <span>SCHEDULES · RESULTS · ANNOUNCEMENTS</span>
       </button>
 
-      <button class="rp-main-menu-item" type="button" role="menuitem" data-rp-main-action="world" data-rp-action="world">
+      <button id="rp-main-choice-world" class="rp-main-menu-item" type="button" data-rp-main-action="world">
         <small>COMMUNITY</small>
         <strong>WORLD</strong>
         <span>PLAYERS · COMMUNITY · CHAT</span>
       </button>
     </div>
 
-    <p class="rp-main-menu-foot">SELECT YOUR NEXT MOVE.</p>
+    <p class="rp-main-menu-foot">SWIPE TO CHOOSE · TAP CENTER TO ENTER</p>
   `;
   playerStrip.insertAdjacentElement('afterend', menu);
 
@@ -66,13 +66,47 @@
   `;
   document.body.appendChild(notice);
 
+  const list = menu.querySelector('[data-rp-main-menu-list]');
   const items = [...menu.querySelectorAll('[data-rp-main-action]')];
   const noticeKicker = notice.querySelector('[data-rp-main-notice-kicker]');
   const noticeTitle = notice.querySelector('[data-rp-main-notice-title]');
   const noticeCopy = notice.querySelector('[data-rp-main-notice-copy]');
+  let activeIndex = 0;
+  let pointerStartY = null;
+  let suppressClickUntil = 0;
+  let lastWheelAt = 0;
 
-  function setActive(item) {
-    items.forEach((button) => button.classList.toggle('active', button === item));
+  function normalizeIndex(index) {
+    return (index + items.length) % items.length;
+  }
+
+  function renderSelector() {
+    const prevIndex = normalizeIndex(activeIndex - 1);
+    const nextIndex = normalizeIndex(activeIndex + 1);
+
+    items.forEach((item, index) => {
+      const active = index === activeIndex;
+      const previous = index === prevIndex;
+      const next = index === nextIndex;
+      item.classList.toggle('slot-active', active);
+      item.classList.toggle('slot-prev', previous);
+      item.classList.toggle('slot-next', next);
+      item.classList.toggle('slot-hidden', !active && !previous && !next);
+      item.setAttribute('aria-current', active ? 'true' : 'false');
+      item.setAttribute('aria-hidden', !active && !previous && !next ? 'true' : 'false');
+      item.tabIndex = active || previous || next ? 0 : -1;
+    });
+
+    list?.setAttribute('aria-activedescendant', items[activeIndex]?.id || '');
+  }
+
+  function selectIndex(index) {
+    activeIndex = normalizeIndex(index);
+    renderSelector();
+  }
+
+  function moveSelection(direction) {
+    selectIndex(activeIndex + direction);
   }
 
   function showNotice({ kicker, title, copy }) {
@@ -105,28 +139,90 @@
     });
   }
 
-  items.forEach((item) => {
-    item.addEventListener('focus', () => setActive(item));
-    item.addEventListener('pointerenter', () => setActive(item));
-    item.addEventListener('click', () => {
-      setActive(item);
-      const action = item.dataset.rpMainAction;
-      if (action === '3v3') {
-        openThreeVThree();
-      } else if (action === '5v5') {
-        showNotice({
-          kicker: 'REAL PLAY 5V5',
-          title: 'UNDER CONSTRUCTION.',
-          copy: 'Full-court 5V5 is visible in the Real Play roadmap, but 3V3 remains the active Beta Season format for now.',
-        });
-      } else if (action === 'updates') {
-        showNotice({
-          kicker: 'REAL PLAY UPDATES',
-          title: 'THE UPDATE CENTER.',
-          copy: 'Official schedules, game results, club announcements and Beta Season changes will live here as Real Play grows.',
-        });
-      }
+  function openWorld() {
+    const trigger = document.querySelector('[data-rp-nav="world"], [data-rp-action="world"]');
+    if (trigger) {
+      trigger.click();
+      return;
+    }
+    showNotice({
+      kicker: 'REAL PLAY WORLD',
+      title: 'WORLD IS LOADING.',
+      copy: 'The community layer is still loading. Try World again in a moment.',
     });
+  }
+
+  function enterSelected() {
+    const action = items[activeIndex]?.dataset.rpMainAction;
+    if (action === '3v3') {
+      openThreeVThree();
+    } else if (action === '5v5') {
+      showNotice({
+        kicker: 'REAL PLAY 5V5',
+        title: 'UNDER CONSTRUCTION.',
+        copy: 'Full-court 5V5 is visible in the Real Play roadmap, but 3V3 remains the active Beta Season format for now.',
+      });
+    } else if (action === 'updates') {
+      showNotice({
+        kicker: 'REAL PLAY UPDATES',
+        title: 'THE UPDATE CENTER.',
+        copy: 'Official schedules, game results, club announcements and Beta Season changes will live here as Real Play grows.',
+      });
+    } else if (action === 'world') {
+      openWorld();
+    }
+  }
+
+  items.forEach((item, index) => {
+    item.addEventListener('click', () => {
+      if (Date.now() < suppressClickUntil) return;
+      if (index !== activeIndex) {
+        selectIndex(index);
+        return;
+      }
+      enterSelected();
+    });
+  });
+
+  list?.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    pointerStartY = event.clientY;
+  });
+
+  list?.addEventListener('pointerup', (event) => {
+    if (pointerStartY === null) return;
+    const deltaY = event.clientY - pointerStartY;
+    pointerStartY = null;
+    if (Math.abs(deltaY) < 28) return;
+    suppressClickUntil = Date.now() + 350;
+    moveSelection(deltaY < 0 ? 1 : -1);
+  });
+
+  list?.addEventListener('pointercancel', () => {
+    pointerStartY = null;
+  });
+
+  list?.addEventListener('wheel', (event) => {
+    const now = Date.now();
+    if (Math.abs(event.deltaY) < 12 || now - lastWheelAt < 220) return;
+    lastWheelAt = now;
+    event.preventDefault();
+    moveSelection(event.deltaY > 0 ? 1 : -1);
+  }, { passive: false });
+
+  list?.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      moveSelection(-1);
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      moveSelection(1);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      if (event.target === list) {
+        event.preventDefault();
+        enterSelected();
+      }
+    }
   });
 
   notice.querySelector('[data-rp-main-notice-close]')?.addEventListener('click', closeNotice);
@@ -174,6 +270,7 @@
     }
   }
 
+  renderSelector();
   refreshOvr();
   window.addEventListener('focus', refreshOvr);
 })();
