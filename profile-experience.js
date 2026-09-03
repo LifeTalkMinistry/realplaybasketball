@@ -27,8 +27,6 @@
 
   if (!panel || !accountCard) return;
 
-  // The monthly lock status already lives inside Manage Player Number.
-  // Keep the player identity card focused only on identity.
   if (accountNumberLock) accountNumberLock.remove();
 
   const identityLabel = accountCard.querySelector('.auth-account-label');
@@ -48,37 +46,14 @@
     </div>
   `;
 
-  const profileShell = document.createElement('div');
-  profileShell.className = 'auth-profile-shell';
+  const accountShell = document.createElement('div');
+  accountShell.className = 'auth-profile-shell';
 
-  const profileIntro = document.createElement('div');
-  profileIntro.className = 'auth-profile-intro';
-  profileIntro.innerHTML = `
-    <span>YOUR REAL PLAY IDENTITY</span>
-    <strong>THE COURT CREATES THE RECORD.</strong>
-  `;
-
-  const record = document.createElement('section');
-  record.className = 'auth-record-card-v2';
-  record.innerHTML = `
-    <div class="auth-record-head">
-      <div>
-        <span class="auth-account-label">YOUR REAL PLAY RECORD</span>
-        <strong>GAMES CREATE STATS.</strong>
-      </div>
-      <small>OFFICIAL GAMES ONLY</small>
-    </div>
-    <div class="auth-record-stats" aria-label="Official player record placeholders">
-      <article><strong>—</strong><span>Games</span></article>
-      <article><strong>—</strong><span>Wins</span></article>
-      <article><strong>—</strong><span>PTS</span></article>
-      <article><strong>—</strong><span>AST</span></article>
-      <article><strong>—</strong><span>REB</span></article>
-    </div>
-    <div class="auth-record-empty">
-      <strong>YOUR RECORD STARTS ON THE COURT.</strong>
-      <p>Confirmed Real Play games will build your wins, points, assists, rebounds, recent-game history, and monthly MVP performance here.</p>
-    </div>
+  const accountIntro = document.createElement('div');
+  accountIntro.className = 'auth-profile-intro';
+  accountIntro.innerHTML = `
+    <span>PLAYER ACCOUNT</span>
+    <strong>IDENTITY & NUMBER MANAGEMENT.</strong>
   `;
 
   const numberManager = document.createElement('details');
@@ -100,21 +75,19 @@
   });
 
   accountView.insertBefore(welcome, accountCard);
-  accountView.insertBefore(profileShell, accountCard);
-  profileShell.append(profileIntro, accountCard, record, numberManager);
+  accountView.insertBefore(accountShell, accountCard);
+  accountShell.append(accountIntro, accountCard, numberManager);
 
   [...accountView.children].forEach((child) => {
-    if (child === welcome || child === profileShell) return;
-    if (child.classList?.contains('auth-divider') || child.classList?.contains('auth-note')) {
-      child.remove();
-    }
+    if (child === welcome || child === accountShell) return;
+    if (child.classList?.contains('auth-divider') || child.classList?.contains('auth-note')) child.remove();
   });
 
   if (logoutButton) {
     const footer = document.createElement('div');
     footer.className = 'auth-account-footer auth-account-footer-v2';
     footer.appendChild(logoutButton);
-    profileShell.appendChild(footer);
+    accountShell.appendChild(footer);
   }
 
   const welcomeName = welcome.querySelector('[data-auth-welcome-name]');
@@ -130,52 +103,41 @@
 
   function syncIdentity() {
     if (welcomeName) welcomeName.textContent = playerName();
-
     const number = (accountNumber?.textContent || '#--').trim();
-    if (numberSummary) {
-      numberSummary.textContent = number === '#--'
-        ? 'NOT ASSIGNED'
-        : `${number} · SECURED THIS MONTH`;
-    }
+    if (numberSummary) numberSummary.textContent = number === '#--' ? 'NOT ASSIGNED' : `${number} · SECURED THIS MONTH`;
   }
 
   function restoreAccessHeader() {
     if (panelTitle) panelTitle.textContent = 'YOUR COURT ID.';
-    if (panelSubtitle) {
-      panelSubtitle.textContent = 'Log in to your Real Play account or create the player identity that will hold your official on-court history.';
-    }
+    if (panelSubtitle) panelSubtitle.textContent = 'Log in to your Real Play account or create the player identity that will hold your official on-court history.';
   }
 
-  function showProfile() {
+  function showAccount() {
     welcomeActive = false;
     welcome.hidden = true;
-    profileShell.hidden = false;
+    accountShell.hidden = false;
     panel.classList.remove('welcome-mode');
     panel.classList.add('profile-mode');
-    if (panelTitle) panelTitle.textContent = 'MY REAL PLAY PROFILE.';
-    if (panelSubtitle) {
-      panelSubtitle.textContent = 'Your digital profile records what you earn in real games. The game itself still happens on the court.';
-    }
+    if (panelTitle) panelTitle.textContent = 'PLAYER ACCOUNT.';
+    if (panelSubtitle) panelSubtitle.textContent = 'Manage your Real Play identity and player number. Your full player Profile lives in the main menu.';
   }
 
   function showWelcome() {
     if (accountView.hidden) return;
     welcomeActive = true;
     welcome.hidden = false;
-    profileShell.hidden = true;
+    accountShell.hidden = true;
     panel.classList.remove('profile-mode');
     panel.classList.add('welcome-mode');
     if (panelTitle) panelTitle.textContent = 'WELCOME TO REAL PLAY.';
-    if (panelSubtitle) {
-      panelSubtitle.textContent = 'Less screen. Real points. You are officially part of the movement.';
-    }
+    if (panelSubtitle) panelSubtitle.textContent = 'Less screen. Real points. You are officially part of the movement.';
   }
 
   function retireWelcome() {
     if (!welcomeActive) return;
     welcomeActive = false;
     welcome.hidden = true;
-    profileShell.hidden = false;
+    accountShell.hidden = false;
   }
 
   function syncPanelMode() {
@@ -185,7 +147,7 @@
       return;
     }
     if (welcomeActive) showWelcome();
-    else showProfile();
+    else showAccount();
   }
 
   function maybeTriggerWelcome() {
@@ -244,16 +206,21 @@
   }
 
   if (enterProfileButton) {
-    enterProfileButton.addEventListener('click', showProfile);
+    enterProfileButton.addEventListener('click', () => {
+      retireWelcome();
+      closeButton?.click();
+      window.setTimeout(() => {
+        if (window.RealPlayProfile?.open) window.RealPlayProfile.open();
+        else showAccount();
+      }, 40);
+    });
   }
 
   if (playButton) {
     playButton.addEventListener('click', () => {
       retireWelcome();
-      if (closeButton) closeButton.click();
-      window.setTimeout(() => {
-        window.location.hash = 'play';
-      }, 30);
+      closeButton?.click();
+      window.setTimeout(() => { window.location.hash = 'play'; }, 30);
     });
   }
 })();
