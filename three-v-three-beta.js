@@ -121,38 +121,40 @@
       </header>
 
       <section class="rp-3v3-select-head">
-        <p>THE FOUNDING FOUR</p>
-        <h1>SELECT YOUR TEAM.</h1>
-        <span>Choose the team you would most like to represent this Beta Season.</span>
+        <h1 data-rp-team-heading>SELECT YOUR TEAM.</h1>
       </section>
 
-      <section class="rp-3v3-team-picker" aria-label="Choose your preferred Real Play team">
-        <button class="rp-team-arrow rp-team-arrow-left" type="button" aria-label="Previous team" data-rp-team-prev>‹</button>
-        <div class="rp-team-carousel" data-rp-team-carousel tabindex="0" aria-live="polite">
-          ${CLUBS.map((club) => `
-            <button class="rp-team-card" id="rp-team-${club.id}" type="button" data-rp-three-club="${club.id}">
-              <small>REAL PLAY CLUB</small>
-              <strong>${club.name}</strong>
-              <span>${club.verse}</span>
-              <em data-rp-team-badge></em>
-            </button>
-          `).join('')}
+      <div data-rp-team-browse>
+        <section class="rp-3v3-team-picker" aria-label="Choose your preferred Real Play team">
+          <button class="rp-team-arrow rp-team-arrow-left" type="button" aria-label="Previous team" data-rp-team-prev>‹</button>
+          <div class="rp-team-carousel" data-rp-team-carousel tabindex="0" aria-live="polite">
+            ${CLUBS.map((club) => `
+              <button class="rp-team-card" id="rp-team-${club.id}" type="button" data-rp-three-club="${club.id}">
+                <small>REAL PLAY CLUB</small>
+                <strong>${club.name}</strong>
+                <span>${club.verse}</span>
+              </button>
+            `).join('')}
+          </div>
+          <button class="rp-team-arrow rp-team-arrow-right" type="button" aria-label="Next team" data-rp-team-next>›</button>
+        </section>
+
+        <div class="rp-team-dots" data-rp-team-dots aria-hidden="true">
+          ${CLUBS.map(() => '<i></i>').join('')}
         </div>
-        <button class="rp-team-arrow rp-team-arrow-right" type="button" aria-label="Next team" data-rp-team-next>›</button>
-      </section>
-
-      <div class="rp-team-dots" data-rp-team-dots aria-hidden="true">
-        ${CLUBS.map(() => '<i></i>').join('')}
       </div>
 
-      <p class="rp-team-center-label" data-rp-team-center-label>TAP TEAM TO CHOOSE</p>
-      <p class="rp-3v3-status" data-rp-3v3-status aria-live="polite"></p>
-
-      <section class="rp-3v3-compact-state" data-rp-3v3-compact-state>
-        <small>YOUR BETA STATUS</small>
-        <strong data-rp-3v3-state-title>NO PREFERENCE YET</strong>
-        <p data-rp-3v3-state-copy>Your #1 preference will be reviewed before final team assignment.</p>
+      <section class="rp-team-fixed" data-rp-team-fixed hidden>
+        <div class="rp-team-fixed-card" data-rp-team-fixed-card>
+          <small data-rp-fixed-kicker>YOUR PREFERRED TEAM</small>
+          <strong data-rp-fixed-name>TEAM</strong>
+          <span data-rp-fixed-verse></span>
+          <em data-rp-fixed-badge>TOP 1 PREFERENCE</em>
+        </div>
+        <button class="rp-team-change" type="button" data-rp-team-change>CHANGE TEAM</button>
       </section>
+
+      <p class="rp-3v3-status" data-rp-3v3-status aria-live="polite"></p>
 
       <div class="rp-3v3-format">
         <div><small>BETA CONTEST FORMAT</small><strong>4 CLUBS · 2 SEMIFINALS · 1 FINAL</strong></div>
@@ -164,10 +166,9 @@
       <section class="rp-team-confirm-card" role="dialog" aria-modal="true" aria-labelledby="rp-team-confirm-title">
         <small>TOP 1 PREFERENCE</small>
         <h2 id="rp-team-confirm-title">CHOOSE <span data-rp-confirm-team>TEAM</span>?</h2>
-        <p>Do you want to make <strong data-rp-confirm-team-copy>this team</strong> your #1 preferred team for the Beta Season?</p>
+        <p>Make <strong data-rp-confirm-team-copy>this team</strong> your #1 preferred team?</p>
         <div class="rp-team-confirm-note">
-          <b>IMPORTANT</b>
-          <span>This is your preference, not your final assignment. Real Play may still place you on a different team based on balance and Beta Season needs.</span>
+          <span>This is a preference only. Real Play may still assign you to a different team based on balance and Beta Season needs.</span>
         </div>
         <button class="rp-team-confirm-primary" type="button" data-rp-team-confirm-save>YES, MAKE THIS MY TOP 1</button>
         <button class="rp-team-confirm-secondary" type="button" data-rp-team-confirm-close>NOT YET</button>
@@ -177,14 +178,19 @@
   document.body.appendChild(view);
 
   const back = view.querySelector('[data-rp-3v3-back]');
+  const heading = view.querySelector('[data-rp-team-heading]');
+  const browse = view.querySelector('[data-rp-team-browse]');
   const carousel = view.querySelector('[data-rp-team-carousel]');
   const clubButtons = [...view.querySelectorAll('[data-rp-three-club]')];
   const dots = [...view.querySelectorAll('[data-rp-team-dots] i')];
+  const fixed = view.querySelector('[data-rp-team-fixed]');
+  const fixedCard = view.querySelector('[data-rp-team-fixed-card]');
+  const fixedKicker = view.querySelector('[data-rp-fixed-kicker]');
+  const fixedName = view.querySelector('[data-rp-fixed-name]');
+  const fixedVerse = view.querySelector('[data-rp-fixed-verse]');
+  const fixedBadge = view.querySelector('[data-rp-fixed-badge]');
+  const changeTeam = view.querySelector('[data-rp-team-change]');
   const status = view.querySelector('[data-rp-3v3-status]');
-  const centerLabel = view.querySelector('[data-rp-team-center-label]');
-  const stateTitle = view.querySelector('[data-rp-3v3-state-title]');
-  const stateCopy = view.querySelector('[data-rp-3v3-state-copy]');
-  const compactState = view.querySelector('[data-rp-3v3-compact-state]');
   const confirm = view.querySelector('[data-rp-team-confirm]');
   const confirmName = view.querySelector('[data-rp-confirm-team]');
   const confirmCopyName = view.querySelector('[data-rp-confirm-team-copy]');
@@ -197,9 +203,14 @@
   let pointerStartX = null;
   let pendingClub = null;
   let suppressClickUntil = 0;
+  let changingPreference = false;
+
+  function clubById(id) {
+    return CLUBS.find((club) => club.id === id) || null;
+  }
 
   function clubName(id) {
-    return CLUBS.find((club) => club.id === id)?.name || '';
+    return clubById(id)?.name || '';
   }
 
   function clubIndex(id) {
@@ -222,58 +233,51 @@
     const next = normalizeIndex(activeIndex + 1);
 
     clubButtons.forEach((button, index) => {
-      const id = button.dataset.rpThreeClub;
       const isActive = index === activeIndex;
       const isPrevious = index === previous;
       const isNext = index === next;
       const isHidden = !isActive && !isPrevious && !isNext;
-      const badge = button.querySelector('[data-rp-team-badge]');
 
       button.classList.toggle('slot-active', isActive);
       button.classList.toggle('slot-prev', isPrevious);
       button.classList.toggle('slot-next', isNext);
       button.classList.toggle('slot-hidden', isHidden);
-      button.classList.toggle('saved', id === savedClub);
-      button.classList.toggle('assigned', id === assignedClub);
       button.setAttribute('aria-current', isActive ? 'true' : 'false');
       button.setAttribute('aria-hidden', isHidden ? 'true' : 'false');
       button.tabIndex = isHidden ? -1 : 0;
-
-      if (badge) {
-        if (id === assignedClub) badge.textContent = 'OFFICIAL TEAM';
-        else if (id === savedClub) badge.textContent = 'YOUR #1 PREFERENCE';
-        else badge.textContent = '';
-      }
     });
 
     dots.forEach((dot, index) => dot.classList.toggle('active', index === activeIndex));
     carousel?.setAttribute('aria-activedescendant', clubButtons[activeIndex]?.id || '');
+  }
 
-    const activeClub = CLUBS[activeIndex];
-    if (assignedClub) {
-      centerLabel.textContent = activeClub.id === assignedClub ? 'OFFICIAL TEAM CONFIRMED' : 'TEAM ASSIGNMENT LOCKED';
-    } else if (activeClub.id === savedClub) {
-      centerLabel.textContent = 'YOUR CURRENT #1 PREFERENCE';
-    } else {
-      centerLabel.textContent = 'TAP TEAM TO CHOOSE';
-    }
+  function renderFixedTeam(id, official) {
+    const club = clubById(id);
+    if (!club) return;
+
+    fixedName.textContent = club.name;
+    fixedVerse.textContent = club.verse;
+    fixedKicker.textContent = official ? 'YOUR TEAM' : 'YOUR PREFERRED TEAM';
+    fixedBadge.textContent = official ? 'OFFICIAL' : 'TOP 1 PREFERENCE';
+    fixedCard.classList.toggle('official', official);
+    changeTeam.hidden = official;
   }
 
   function renderState() {
-    compactState.classList.toggle('assigned', Boolean(assignedClub));
+    const showFixed = Boolean(assignedClub || (savedClub && !changingPreference));
+    browse.hidden = showFixed;
+    fixed.hidden = !showFixed;
 
     if (assignedClub) {
-      stateTitle.textContent = `${clubName(assignedClub)} · OFFICIAL`;
-      stateCopy.textContent = `Real Play has confirmed your Beta Season team. You are officially representing ${clubName(assignedClub)}.`;
-    } else if (savedClub) {
-      stateTitle.textContent = `${clubName(savedClub)} · TOP 1 SAVED`;
-      stateCopy.textContent = 'Your preference is saved. Final team assignment is still confirmed by Real Play.';
+      heading.textContent = 'YOUR TEAM.';
+      renderFixedTeam(assignedClub, true);
+    } else if (savedClub && !changingPreference) {
+      heading.textContent = 'YOUR PREFERRED TEAM.';
+      renderFixedTeam(savedClub, false);
     } else {
-      stateTitle.textContent = 'NO PREFERENCE YET';
-      stateCopy.textContent = 'Your #1 preference will be reviewed before final team assignment.';
+      heading.textContent = savedClub ? 'CHANGE YOUR TEAM.' : 'SELECT YOUR TEAM.';
+      renderCarousel();
     }
-
-    renderCarousel();
   }
 
   function selectIndex(index) {
@@ -304,14 +308,13 @@
   async function loadState({ quiet = false } = {}) {
     if (loading) return;
     loading = true;
-    if (!quiet) setStatus('LOADING YOUR 3V3 STATUS…');
+    if (!quiet) setStatus('');
     try {
       const data = await api('/api/real-play/3v3/me');
       assignedClub = data.assignedClub || null;
       savedClub = data.preferredClub || null;
       activeIndex = clubIndex(assignedClub || savedClub || CLUBS[0].id);
-      if (assignedClub) setStatus(`Official team confirmed: ${clubName(assignedClub)}.`, 'success');
-      else if (!quiet) setStatus('');
+      if (assignedClub) changingPreference = false;
     } catch (error) {
       if (error.status === 401) {
         closeView();
@@ -341,8 +344,8 @@
       savedClub = data.preferredClub || club;
       assignedClub = data.assignedClub || null;
       activeIndex = clubIndex(assignedClub || savedClub);
+      changingPreference = false;
       closeConfirmation();
-      setStatus(`${clubName(savedClub)} is now your #1 preferred team.`, 'success');
     } catch (error) {
       setStatus(error.message || 'Could not save your preferred team.', 'error');
       confirmSave.disabled = false;
@@ -363,6 +366,7 @@
       document.querySelector('[data-auth-open]')?.click();
       return;
     }
+    changingPreference = false;
     view.classList.add('open');
     view.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-3v3-open');
@@ -372,6 +376,7 @@
 
   function closeView() {
     closeConfirmation();
+    changingPreference = false;
     view.classList.remove('open');
     view.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-3v3-open');
@@ -422,6 +427,13 @@
 
   view.querySelector('[data-rp-team-prev]')?.addEventListener('click', () => selectIndex(activeIndex - 1));
   view.querySelector('[data-rp-team-next]')?.addEventListener('click', () => selectIndex(activeIndex + 1));
+  changeTeam?.addEventListener('click', () => {
+    if (!savedClub || assignedClub) return;
+    changingPreference = true;
+    activeIndex = clubIndex(savedClub);
+    setStatus('');
+    renderState();
+  });
   view.querySelector('[data-rp-team-confirm-close]')?.addEventListener('click', closeConfirmation);
   confirmSave?.addEventListener('click', savePreference);
   confirm?.addEventListener('click', (event) => {
