@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-lobby-topbar-cleanup-v1';
+  const version = '20260903-public-details-compact-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -32,6 +32,7 @@
     'mobile-entry.css',
     'public-landing.css',
     'ambient-brand-glow.css',
+    'public-details-compact.css',
     'mobile-shell-fix.css',
     'mobile-lobby-cleanup.css',
     'three-v-three-beta.css',
