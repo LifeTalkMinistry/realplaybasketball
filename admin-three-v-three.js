@@ -74,21 +74,21 @@
     }
 
     list.innerHTML = players.map((player) => `
-      <article class="rp-3v3-admin-player" data-rp-3v3-player="${player.userId}">
+      <article class="rp-3v3-admin-player" data-rp-three-player="${player.userId}">
         <div class="rp-3v3-admin-player-head">
           <div><strong>${escapeHtml(player.playerName)}</strong><span>${escapeHtml(player.email)}</span></div>
           <span class="rp-3v3-admin-current">${clubName(player.assignedClub)}</span>
         </div>
         <div class="rp-3v3-admin-pref">PREFERRED: <b>${clubName(player.preferredClub)}</b></div>
         <div class="rp-3v3-admin-actions">
-          ${CLUBS.map((club) => `<button type="button" class="${player.assignedClub === club.id ? 'active' : ''}" data-rp-3v3-assign="${club.id}">${club.name}</button>`).join('')}
+          ${CLUBS.map((club) => `<button type="button" class="${player.assignedClub === club.id ? 'active' : ''}" data-rp-three-assign="${club.id}">${club.name}</button>`).join('')}
         </div>
-        <button class="rp-3v3-admin-clear" type="button" data-rp-3v3-assign="">RETURN TO UNASSIGNED</button>
+        <button class="rp-3v3-admin-clear" type="button" data-rp-three-assign="">RETURN TO UNASSIGNED</button>
         <p class="rp-3v3-admin-status" data-rp-3v3-admin-status></p>
       </article>
     `).join('');
 
-    list.querySelectorAll('[data-rp-3v3-assign]').forEach((button) => {
+    list.querySelectorAll('[data-rp-three-assign]').forEach((button) => {
       button.addEventListener('click', () => assign(button));
     });
   }
@@ -106,11 +106,11 @@
   }
 
   async function assign(button) {
-    const card = button.closest('[data-rp-3v3-player]');
-    const userId = Number(card?.dataset.rp3v3Player);
+    const card = button.closest('[data-rp-three-player]');
+    const userId = Number(card?.dataset.rpThreePlayer);
     const player = players.find((item) => Number(item.userId) === userId);
     if (!player) return;
-    const club = button.dataset.rp3v3Assign || null;
+    const club = button.dataset.rpThreeAssign || null;
     const wording = club ? `${player.playerName} to ${clubName(club)}` : `${player.playerName} back to Unassigned`;
     if (!window.confirm(`Confirm ${wording}?`)) return;
 
