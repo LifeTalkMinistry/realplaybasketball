@@ -156,10 +156,18 @@
 
       <p class="rp-3v3-status" data-rp-3v3-status aria-live="polite"></p>
 
-      <div class="rp-3v3-format">
-        <div><small>BETA CONTEST FORMAT</small><strong>4 CLUBS · 2 SEMIFINALS · 1 FINAL</strong></div>
-        <b>RACE TO 8</b>
-      </div>
+      <section class="rp-3v3-session" data-rp-3v3-session>
+        <div class="rp-3v3-session-head">
+          <div>
+            <small>NEXT 3V3 SESSION</small>
+            <strong data-rp-session-title>CHECKING SCHEDULE…</strong>
+            <span data-rp-session-meta></span>
+          </div>
+          <b data-rp-session-count>—</b>
+        </div>
+        <button class="rp-3v3-session-action" type="button" data-rp-session-action disabled>CHECKING…</button>
+        <p class="rp-3v3-session-message" data-rp-session-message aria-live="polite"></p>
+      </section>
     </div>
 
     <div class="rp-team-confirm" data-rp-team-confirm aria-hidden="true">
@@ -195,6 +203,12 @@
   const confirmName = view.querySelector('[data-rp-confirm-team]');
   const confirmCopyName = view.querySelector('[data-rp-confirm-team-copy]');
   const confirmSave = view.querySelector('[data-rp-team-confirm-save]');
+  const sessionPanel = view.querySelector('[data-rp-3v3-session]');
+  const sessionTitle = view.querySelector('[data-rp-session-title]');
+  const sessionMeta = view.querySelector('[data-rp-session-meta]');
+  const sessionCount = view.querySelector('[data-rp-session-count]');
+  const sessionAction = view.querySelector('[data-rp-session-action]');
+  const sessionMessage = view.querySelector('[data-rp-session-message]');
 
   let activeIndex = 0;
   let assignedClub = null;
@@ -204,6 +218,9 @@
   let pendingClub = null;
   let suppressClickUntil = 0;
   let changingPreference = false;
+  let currentSession = null;
+  let sessionLoading = false;
+  let sessionTimer = null;
 
   function clubById(id) {
     return CLUBS.find((club) => club.id === id) || null;
@@ -226,6 +243,118 @@
     status.textContent = message;
     status.classList.toggle('success', type === 'success');
     status.classList.toggle('error', type === 'error');
+  }
+
+  function setSessionMessage(message = '', type = '') {
+    sessionMessage.textContent = message;
+    sessionMessage.classList.toggle('success', type === 'success');
+    sessionMessage.classList.toggle('error', type === 'error');
+  }
+
+  function formatSessionDate(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat('en-PH', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: 'Asia/Manila',
+    }).format(date).toUpperCase();
+  }
+
+  function renderSession(session) {
+    currentSession = session || null;
+    sessionPanel.classList.remove('secured', 'full', 'live');
+    setSessionMessage('');
+
+    if (!session) {
+      sessionTitle.textContent = 'TO BE ANNOUNCED';
+      sessionMeta.textContent = '';
+      sessionCount.textContent = '—';
+      sessionAction.disabled = true;
+      sessionAction.textContent = 'NO SESSION YET';
+      return;
+    }
+
+    const confirmed = Number(session.confirmedCount ?? session.confirmed_count ?? 0) || 0;
+    const capacity = session.capacity === null || session.capacity === undefined ? null : Number(session.capacity);
+    const joined = Boolean(session.joined);
+    const gameStatus = session.gameStatus || session.game_status || 'setup';
+    const full = capacity !== null && confirmed >= capacity;
+    const available = session.available !== false && gameStatus === 'setup' && !full;
+    const details = [];
+    const dateText = formatSessionDate(session.startsAt || session.starts_at);
+    if (dateText) details.push(dateText);
+    if (session.locationName || session.location_name) details.push(session.locationName || session.location_name);
+
+    sessionTitle.textContent = session.title || 'REAL PLAY 3V3';
+    sessionMeta.textContent = details.join(' · ');
+    sessionCount.textContent = capacity === null ? `${confirmed} SECURED` : `${confirmed}/${capacity}`;
+
+    if (gameStatus === 'live') {
+      sessionPanel.classList.add('live');
+      sessionAction.disabled = true;
+      sessionAction.textContent = joined ? '● GAME LIVE · YOU’RE IN' : '● GAME LIVE';
+      return;
+    }
+
+    if (gameStatus === 'final') {
+      sessionAction.disabled = true;
+      sessionAction.textContent = 'SESSION COMPLETE';
+      return;
+    }
+
+    if (joined) {
+      sessionPanel.classList.add('secured');
+      sessionAction.disabled = true;
+      sessionAction.textContent = 'SPOT SECURED ✓';
+      return;
+    }
+
+    if (full || !available) {
+      sessionPanel.classList.add('full');
+      sessionAction.disabled = true;
+      sessionAction.textContent = 'SESSION FULL';
+      return;
+    }
+
+    sessionAction.disabled = sessionLoading;
+    sessionAction.textContent = sessionLoading ? 'SECURING…' : 'SECURE SPOT';
+  }
+
+  async function refreshSession({ quiet = false } = {}) {
+    if (sessionLoading || !token()) return;
+    try {
+      const data = await api('/api/real-play/career/session');
+      renderSession(data?.session || null);
+    } catch (error) {
+      if (!quiet) setSessionMessage(error.message || 'Could not load the next session.', 'error');
+    }
+  }
+
+  async function secureSpot() {
+    if (sessionLoading || !currentSession || currentSession.joined) return;
+    const gameStatus = currentSession.gameStatus || currentSession.game_status || 'setup';
+    if (gameStatus !== 'setup') return;
+
+    sessionLoading = true;
+    sessionAction.disabled = true;
+    sessionAction.textContent = 'SECURING…';
+    setSessionMessage('');
+
+    try {
+      const data = await api('/api/real-play/career/play', { method: 'POST' });
+      renderSession(data?.session || currentSession);
+      setSessionMessage('YOUR PLACE IS SECURED.', 'success');
+    } catch (error) {
+      setSessionMessage(error.message || 'Could not secure your spot.', 'error');
+    } finally {
+      sessionLoading = false;
+      if (currentSession) renderSession(currentSession);
+    }
   }
 
   function renderCarousel() {
@@ -357,8 +486,16 @@
   }
 
   function refreshIfOpen() {
-    if (!view.classList.contains('open') || !token() || loading) return;
-    loadState({ quiet: true });
+    if (!view.classList.contains('open') || !token()) return;
+    if (!loading) loadState({ quiet: true });
+    if (!sessionLoading) refreshSession({ quiet: true });
+  }
+
+  function startSessionPolling() {
+    if (sessionTimer) window.clearInterval(sessionTimer);
+    sessionTimer = window.setInterval(() => {
+      if (view.classList.contains('open')) refreshSession({ quiet: true });
+    }, 5000);
   }
 
   function openView() {
@@ -372,6 +509,7 @@
     document.body.classList.add('rp-3v3-open');
     view.scrollTop = 0;
     loadState();
+    refreshSession();
   }
 
   function closeView() {
@@ -439,6 +577,7 @@
   confirm?.addEventListener('click', (event) => {
     if (event.target === confirm) closeConfirmation();
   });
+  sessionAction?.addEventListener('click', secureSpot);
 
   stage.querySelector('[data-rp-enter-3v3]')?.addEventListener('click', openView);
   back?.addEventListener('click', closeView);
@@ -455,4 +594,6 @@
     if (confirm.classList.contains('open')) closeConfirmation();
     else if (view.classList.contains('open')) closeView();
   });
+
+  startSessionPolling();
 })();
