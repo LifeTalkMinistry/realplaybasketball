@@ -30,123 +30,117 @@
       <section class="rp-public-section rp-public-intro">
         <p class="rp-public-eyebrow">WHAT IS REAL PLAY?</p>
         <h2>REAL BASKETBALL.<br><span>ORGANIZED.</span></h2>
-        <p>Scheduled games, teams, player profiles, and verified game history — built around what actually happens on the court.</p>
+        <p>Real Play turns scheduled basketball into a real player and team history. You show up, play on the court, and the system records what actually happened.</p>
         <blockquote><strong>THE GAME HAPPENS ON THE COURT.</strong><span>THE SYSTEM RECORDS IT.</span></blockquote>
       </section>
 
-      <div class="rp-public-journey" aria-label="How Real Play competition works">
-        <section class="rp-public-journey-page">
-          <div class="rp-public-journey-inner">
-            <p class="rp-public-journey-step"><strong>01</strong> · BEFORE THE SEASON</p>
-            <h2>FIND YOUR<br><span>LEVEL.</span></h2>
-            <p class="rp-public-journey-copy">Start Unranked. Play at least 5 official Placement Games so Real Play can establish your initial OVR and understand your competitive level.</p>
-            <div class="rp-public-journey-meta">
+      <div class="rp-public-story" aria-label="The Real Play journey">
+        <section class="rp-public-story-chapter">
+          <div class="rp-public-story-inner">
+            <p class="rp-public-story-step"><strong>01</strong> · START AS A PLAYER</p>
+            <h2>CREATE YOUR PLAYER.<br><span>FIND YOUR LEVEL.</span></h2>
+            <p class="rp-public-story-copy">Your Real Play identity starts Unranked. Play at least 5 official Placement Games so Real Play can establish your first OVR from verified basketball.</p>
+            <div class="rp-public-story-facts">
               <span>5 Placement Games</span>
               <span>Initial OVR</span>
             </div>
+            <p class="rp-public-story-bridge">YOUR LEVEL HELPS REAL PLAY KNOW WHERE YOU BELONG.<span>↓</span></p>
+          </div>
+        </section>
+
+        <section class="rp-public-story-chapter">
+          <div class="rp-public-story-inner">
+            <p class="rp-public-story-step"><strong>02</strong> · JOIN A TEAM</p>
+            <h2>YOUR SEASON STARTS<br><span>WITH A TEAM.</span></h2>
             <div class="rp-public-team-list" aria-label="Real Play teams">
               <span>Lions</span>
               <span>Valiant</span>
               <span>Watchmen</span>
               <span>Conquerors</span>
             </div>
-            <p class="rp-public-journey-copy">Real Play uses that player data to build balanced teams before the season begins.</p>
-            <span class="rp-public-journey-arrow" aria-hidden="true"></span>
+            <p class="rp-public-story-copy">Real Play uses available player data to build balanced teams before the season begins. Once the season starts, your team stays together.</p>
+            <p class="rp-public-story-note">Current Beta competition starts with 3V3 across four Real Play teams.</p>
+            <p class="rp-public-story-bridge">NOW YOU HAVE SOMETHING TO PLAY FOR.<span>↓</span></p>
           </div>
         </section>
 
-        <section class="rp-public-journey-page">
-          <div class="rp-public-journey-inner">
-            <p class="rp-public-journey-step"><strong>02</strong> · REGULAR SEASON</p>
-            <h2>BUILD YOUR<br><span>RECORD.</span></h2>
-            <p class="rp-public-journey-copy">Your team stays together for the season. Every scheduled Real Play session gives each team 3 games, and every win or loss adds to the standings.</p>
-            <div class="rp-public-journey-meta">
+        <section class="rp-public-story-chapter">
+          <div class="rp-public-story-inner">
+            <p class="rp-public-story-step"><strong>03</strong> · PLAY THE SEASON</p>
+            <h2>EVERY GAME BUILDS<br><span>THE STANDINGS.</span></h2>
+            <p class="rp-public-story-copy">Every scheduled Real Play session gives each team 3 games. Wins and losses keep building your team's record throughout the season.</p>
+            <div class="rp-public-story-facts">
               <span>3 Games Per Schedule</span>
               <span>36 Regular-Season Games</span>
-              <span>Season Standings</span>
             </div>
-            <p class="rp-public-journey-copy">Your team can rise or fall through the season. Your personal OVR, stats, and history continue to stay with you as a player.</p>
-            <span class="rp-public-journey-arrow" aria-hidden="true"></span>
+            <div class="rp-public-standing-line" aria-label="Season standings"><span>#1</span><span>#2</span><span>#3</span><span>#4</span></div>
+            <p class="rp-public-story-bridge">WHERE YOU FINISH DECIDES WHAT HAPPENS NEXT.<span>↓</span></p>
           </div>
         </section>
 
-        <section class="rp-public-journey-page">
-          <div class="rp-public-journey-inner">
-            <p class="rp-public-journey-step"><strong>03</strong> · PLAYOFFS & FINAL</p>
-            <h2>EARN THE<br><span>CHAMPIONSHIP.</span></h2>
-            <p class="rp-public-journey-copy">When the regular season ends, the standings decide the playoff matchups.</p>
+        <section class="rp-public-story-chapter">
+          <div class="rp-public-story-inner">
+            <p class="rp-public-story-step"><strong>04</strong> · PLAYOFFS</p>
+            <h2>THE SEASON EARNS<br><span>YOUR POSITION.</span></h2>
+            <p class="rp-public-story-copy">When the regular season ends, the standings set the playoff matchups.</p>
             <div class="rp-public-playoff-pair" aria-label="Playoff matchups">
               <article><small>PLAYOFF 1</small><strong>#1 vs #4</strong></article>
-              <b>+</b>
               <article><small>PLAYOFF 2</small><strong>#2 vs #3</strong></article>
             </div>
-            <p class="rp-public-journey-copy">The two playoff winners advance. One final game decides the title.</p>
+            <p class="rp-public-story-copy">Two winners move forward.</p>
+            <p class="rp-public-story-bridge">THEN THERE ARE ONLY TWO.<span>↓</span></p>
+          </div>
+        </section>
+
+        <section class="rp-public-story-chapter rp-public-story-final">
+          <div class="rp-public-story-inner">
+            <p class="rp-public-story-step"><strong>05</strong> · THE FINAL</p>
+            <h2>ONE GAME.<br><span>ONE TITLE.</span></h2>
+            <p class="rp-public-story-copy">The two playoff winners meet in the Final. The winner becomes the one official champion of the season.</p>
             <div class="rp-public-champion-mark">
-              <small>ONE TITLE</small>
+              <small>THE TITLE</small>
               <strong>REAL PLAY <span>CHAMPION</span></strong>
+            </div>
+            <p class="rp-public-story-bridge">THE SEASON ENDS. YOUR CAREER DOESN'T.<span>↓</span></p>
+          </div>
+        </section>
+
+        <section class="rp-public-story-chapter">
+          <div class="rp-public-story-inner">
+            <p class="rp-public-story-step"><strong>06</strong> · YOUR CAREER CONTINUES</p>
+            <h2>TEAMS COMPETE.<br><span>YOUR HISTORY STAYS YOURS.</span></h2>
+            <p class="rp-public-story-copy">Your OVR, verified stats, games, Play Time, achievements, and Real Play history stay connected to you as a player. A season can end. Your Real Play career keeps going.</p>
+            <div class="rp-public-player-card rp-public-story-player-card">
+              <div><small>REAL PLAY PLAYER</small><strong>YOUR NAME</strong></div>
+              <b>#--</b>
+              <div class="rp-public-stat-row"><span>OVR</span><span>GAMES</span><span>STATS</span><span>HISTORY</span></div>
             </div>
           </div>
         </section>
       </div>
 
-      <section class="rp-public-section">
-        <p class="rp-public-eyebrow">YOUR ₱100 MEMBERSHIP</p>
+      <section class="rp-public-section rp-public-membership-story">
+        <p class="rp-public-eyebrow">WHAT YOUR MEMBERSHIP SUPPORTS</p>
         <h2>SHOW UP.<br><span>KEEP PLAYING.</span></h2>
+        <p>Your ₱100 Beta Membership helps Real Play build the repeatable basketball experience you just saw.</p>
         <div class="rp-public-benefits">
-          <article><b>01</b><div><strong>SCHEDULED GAMES</strong><p>Court, date, time, and available player slots.</p></div></article>
-          <article><b>02</b><div><strong>4 REAL PLAY TEAMS</strong><p>Compete as part of the starting Beta community.</p></div></article>
-          <article><b>03</b><div><strong>YOUR PLAYER PROFILE</strong><p>Your number, games, stats, and Real Play history.</p></div></article>
-        </div>
-        <p class="rp-public-note">Beta team assignments are handled by Real Play.</p>
-      </section>
-
-      <section class="rp-public-section rp-public-how">
-        <p class="rp-public-eyebrow">HOW IT WORKS</p>
-        <h2>FROM YOUR PHONE<br><span>TO THE COURT.</span></h2>
-        <div class="rp-public-steps">
-          <article><span>01</span><strong>CREATE YOUR PLAYER</strong></article>
-          <article><span>02</span><strong>ACTIVATE ₱100 MEMBERSHIP</strong></article>
-          <article><span>03</span><strong>SECURE YOUR SPOT</strong></article>
-          <article><span>04</span><strong>SHOW UP & PLAY</strong></article>
+          <article><b>01</b><div><strong>SCHEDULED GAMES</strong><p>Court, date, time, and player spots organized around real play.</p></div></article>
+          <article><b>02</b><div><strong>REAL PLAY OPERATIONS</strong><p>Team organization, check-in, verified games, and official records.</p></div></article>
+          <article><b>03</b><div><strong>YOUR PLAYER HISTORY</strong><p>Your identity, OVR, stats, games, and career remain yours.</p></div></article>
         </div>
       </section>
 
-      <section class="rp-public-section rp-public-now">
-        <p class="rp-public-eyebrow">BETA SEASON</p>
-        <h2>STARTING WITH<br><span>3V3.</span></h2>
-        <div class="rp-public-now-grid">
-          <article class="active"><small>AVAILABLE NOW</small><strong>3V3</strong><span>4 REAL PLAY TEAMS</span></article>
-          <article><small>UNDER CONSTRUCTION</small><strong>5V5</strong><span>COMING LATER</span></article>
-        </div>
-      </section>
-
-      <section class="rp-public-section rp-public-player">
-        <p class="rp-public-eyebrow">YOUR PLAYER. YOUR HISTORY.</p>
-        <h2>YOU ARE THE<br><span>PLAYER.</span></h2>
-        <p>Your profile follows you across Real Play. Membership gives access; your actual performance earns the record.</p>
-        <div class="rp-public-player-card">
-          <div><small>REAL PLAY PLAYER</small><strong>YOUR NAME</strong></div>
-          <b>#--</b>
-          <div class="rp-public-stat-row"><span>GAMES</span><span>PLAY TIME</span><span>STATS</span><span>OVR</span></div>
-        </div>
-      </section>
-
-      <section class="rp-public-section rp-public-faith">
-        <p class="rp-public-eyebrow">OUR COMMUNITY</p>
+      <section class="rp-public-section rp-public-community-story">
+        <p class="rp-public-eyebrow">THE COMMUNITY YOU'RE JOINING</p>
         <h2>OPEN TO EVERYONE.<br><span>ROOTED IN CHRIST.</span></h2>
         <p>Everyone can join. Real Play is openly Christian, so expect prayer, Biblical encouragement, Gospel sharing, and invitations to Christian community.</p>
-      </section>
-
-      <section class="rp-public-section rp-public-standard">
-        <p class="rp-public-eyebrow">COMMUNITY STANDARD</p>
-        <h2>COMPETE HARD.<br><span>RESPECT PEOPLE.</span></h2>
+        <div class="rp-public-community-divider"></div>
+        <h3>COMPETE HARD. <span>RESPECT PEOPLE.</span></h3>
         <div class="rp-public-rules">
           <article><strong>NO DIRECT TRASH TALK</strong><p>Personal insults, threats, or humiliation are not allowed.</p></article>
-          <article><strong>GESTURES ARE ALLOWED</strong><p>Celebrate and react — just don't turn it into disrespect.</p></article>
-          <article><strong>CUSSING GETS CALLED OUT</strong><p>Respect the reminder and move forward.</p></article>
-          <article><strong>REPEATED DISRESPECT</strong><p>May lead to removal, suspension, or a community ban.</p></article>
+          <article><strong>CELEBRATE WITHOUT DISRESPECT</strong><p>React, compete, and enjoy the game without turning it personal.</p></article>
+          <article><strong>BE TEACHABLE</strong><p>If Real Play calls something out, respect the reminder and move forward.</p></article>
         </div>
-        <p class="rp-public-standard-close">WE DON'T EXPECT PERFECT PEOPLE. WE EXPECT PEOPLE TO BE <strong>TEACHABLE.</strong></p>
       </section>
 
       <section class="rp-public-final">
