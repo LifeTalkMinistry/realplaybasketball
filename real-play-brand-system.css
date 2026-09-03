@@ -1,0 +1,397 @@
+/*
+  REAL PLAY BASKETBALL — GLOBAL BRAND SYSTEM
+  Landing-page visual language applied across the app:
+  black-first surfaces, metallic white/silver typography, electric blue,
+  and restrained red accents. Loaded LAST so feature-specific CSS can keep
+  its layout/behavior while this file normalizes the visual system.
+*/
+
+:root{
+  --rp-bg:#020204;
+  --rp-panel:#07090d;
+  --rp-panel-2:#0a0d12;
+  --rp-panel-3:#0d1118;
+  --rp-line:rgba(205,216,230,.12);
+  --rp-line-strong:rgba(205,216,230,.2);
+  --rp-text:#f7f8fa;
+  --rp-silver:#c9ced6;
+  --rp-muted:#858f9e;
+  --rp-blue:#086cff;
+  --rp-cyan:#18a9ff;
+  --rp-red:#ff2028;
+}
+
+/* ---------- APP CANVAS ---------- */
+body.rp-lobby-active{background:#020204;color:var(--rp-text)}
+.rp-app:not(.rp-guest){
+  background:
+    radial-gradient(72% 42% at -14% 8%,rgba(8,108,255,.20),transparent 70%),
+    radial-gradient(58% 38% at 112% 28%,rgba(255,32,40,.11),transparent 72%),
+    linear-gradient(180deg,#030407 0%,#020204 52%,#040507 100%);
+}
+.rp-app:not(.rp-guest)::before{opacity:.035}
+
+/* ---------- SHARED TYPOGRAPHY ---------- */
+.rp-lobby-head h1,
+.rp-mode-card h2,
+.rp-sheet h3,
+.rp-membership-panel h2,
+.rp-3v3-select-head h1,
+.rp-team-confirm-card h2,
+.rp-career-title strong,
+.rp-career-hero strong,
+.rp-career-section-head h2,
+.rp-next-game h3,
+.rp-world-title strong,
+.rp-world-hero h1,
+.rp-world-section-head h2,
+.rp-admin-brand strong,
+.rp-admin-title h1,
+.auth-title,
+.auth-account-name,
+.auth-mission-welcome h3{
+  font-family:var(--rp-display,Impact,'Arial Narrow',sans-serif);
+}
+
+/* Small labels must remain readable. */
+.rp-lobby-head>span,
+.rp-mode-type,
+.rp-sheet small,
+.rp-membership-kicker,
+.rp-payment-label,
+.rp-3v3-select-head>p,
+.rp-team-confirm-card>small,
+.rp-career-name small,
+.rp-career-section-head small,
+.rp-world-kicker,
+.rp-world-section-head small,
+.rp-admin-brand small,
+.rp-admin-kicker,
+.auth-kicker,
+.auth-field label{
+  color:var(--rp-cyan);
+  letter-spacing:.12em;
+}
+
+/* ---------- AUTH / CREATE PLAYER ---------- */
+.auth-overlay{
+  background:rgba(1,2,5,.9);
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+}
+.auth-panel{
+  width:min(100%,470px);
+  padding:30px 24px 28px;
+  color:var(--rp-text);
+  background:
+    radial-gradient(72% 48% at -14% 0%,rgba(8,108,255,.14),transparent 72%),
+    radial-gradient(62% 44% at 112% 34%,rgba(255,32,40,.08),transparent 74%),
+    linear-gradient(160deg,#090c12 0%,#040507 68%);
+  border:1px solid rgba(201,206,214,.18);
+  border-radius:18px;
+  clip-path:none;
+  box-shadow:0 28px 90px rgba(0,0,0,.66);
+}
+.auth-panel::before{
+  left:20px;
+  right:20px;
+  height:2px;
+  background:linear-gradient(90deg,var(--rp-blue) 0 82%,var(--rp-red) 82% 100%);
+}
+.auth-close{
+  top:17px;
+  right:17px;
+  border:1px solid rgba(201,206,214,.18);
+  border-radius:10px;
+  background:#0a0d12;
+  color:#f1f3f6;
+}
+.auth-close:hover,.auth-close:focus-visible{border-color:var(--rp-blue);box-shadow:0 0 0 2px rgba(8,108,255,.1)}
+.auth-kicker{margin-bottom:9px;font-size:.78rem;font-weight:900}
+.auth-title{font-size:clamp(2.1rem,8vw,3.2rem);font-style:italic;line-height:.92;color:#fff}
+.auth-subtitle{margin:13px 0 22px;color:#aab3bf;font-size:.98rem;line-height:1.55}
+.auth-tabs{gap:8px;margin-bottom:22px}
+.auth-tab{
+  min-height:46px;
+  border:1px solid rgba(201,206,214,.15);
+  border-radius:0;
+  background:#06080c;
+  color:#8993a1;
+  font-family:var(--rp-display,Impact,sans-serif);
+  font-size:.86rem;
+  font-weight:900;
+}
+.auth-tab.active{
+  position:relative;
+  border-color:rgba(255,255,255,.78);
+  background:linear-gradient(180deg,#fff,#e7eaee);
+  color:#07090d;
+}
+.auth-tab.active::after{
+  content:'';
+  position:absolute;
+  left:-1px;right:-1px;bottom:-1px;height:2px;
+  background:linear-gradient(90deg,var(--rp-blue) 0 82%,var(--rp-red) 82% 100%);
+}
+.auth-form{gap:16px}
+.auth-field{gap:8px}
+.auth-field label{font-size:.78rem;color:#c3cad3}
+.auth-field input{
+  min-height:52px;
+  padding:0 15px;
+  border:1px solid rgba(201,206,214,.16);
+  background:#020307;
+  color:#fff;
+  font-size:.96rem;
+}
+.auth-field input::placeholder{color:#647080}
+.auth-field input:focus{border-color:var(--rp-blue);box-shadow:0 0 0 3px rgba(8,108,255,.10)}
+.auth-submit,.auth-court-cta{
+  position:relative;
+  overflow:hidden;
+  color:#07090d;
+  background:linear-gradient(180deg,#fff,#e7eaee);
+  border:1px solid rgba(255,255,255,.8);
+  font-family:var(--rp-display,Impact,sans-serif);
+  font-style:italic;
+  font-size:.94rem;
+  letter-spacing:.07em;
+  box-shadow:0 14px 32px rgba(0,0,0,.28);
+}
+.auth-submit::after,.auth-court-cta::after{
+  content:'';
+  position:absolute;
+  left:0;right:0;bottom:0;height:3px;
+  background:linear-gradient(90deg,var(--rp-blue) 0 82%,var(--rp-red) 82% 100%);
+}
+.auth-secondary-action,.auth-logout{
+  border-color:rgba(201,206,214,.18);
+  background:#07090d;
+  color:#dce1e8;
+}
+.auth-secondary-action:hover,.auth-logout:hover{border-color:rgba(8,108,255,.7)}
+.auth-status,.auth-note,.auth-number-status{color:#8792a1;font-size:.82rem}
+.auth-status.error,.auth-number-status.taken{color:#ff6d79}
+.auth-status.success,.auth-number-status.available{color:#5ebcff}
+.auth-account-card,.auth-record-card,.auth-next-card{
+  border-color:rgba(201,206,214,.12);
+  background:#07090d;
+}
+.auth-player-number{
+  border-color:rgba(8,108,255,.42);
+  background:rgba(8,108,255,.09);
+  color:#46b6ff;
+}
+.auth-mission-welcome{
+  border-color:rgba(8,108,255,.24);
+  background:linear-gradient(135deg,rgba(8,108,255,.10),rgba(8,10,14,.94) 60%);
+}
+.auth-mission-welcome::after{border-color:rgba(255,32,40,.10)}
+.auth-mission-footer>span,.auth-number-manager summary b{color:#46b6ff}
+
+/* ---------- MAIN LOBBY ---------- */
+.rp-brandmark{
+  border-color:rgba(8,108,255,.28);
+  background:linear-gradient(145deg,rgba(8,108,255,.14),#07090d 72%);
+  border-radius:11px;
+}
+.rp-profile-chip{background:#0a0d12;box-shadow:inset 0 0 0 1px rgba(201,206,214,.12)}
+.rp-player-strip{border-bottom-color:rgba(201,206,214,.10)}
+.rp-player-number,.rp-career-number{
+  background:linear-gradient(145deg,#1177ff,#0753c9);
+  border-radius:10px;
+}
+.rp-player-rating span,.rp-mode-type{color:#46b6ff}
+.rp-mode-card{
+  border-color:rgba(201,206,214,.12);
+  border-radius:20px;
+  background:#07090d;
+  box-shadow:0 22px 62px rgba(0,0,0,.42);
+}
+.rp-mode-card::before{background:linear-gradient(0deg,#030407 0%,rgba(3,4,7,.97) 40%,rgba(3,4,7,.52) 70%,transparent 100%)}
+.rp-mode-career .rp-mode-art,.rp-mode-open .rp-mode-art,.rp-beta-mode-stage .rp-mode-3v3 .rp-mode-art{
+  background:radial-gradient(circle at 60% 22%,rgba(8,108,255,.28),transparent 34%),radial-gradient(circle at 95% 70%,rgba(255,32,40,.08),transparent 32%),linear-gradient(145deg,#0b111c,#05070b 68%);
+}
+.rp-play-button,.rp-sheet-primary{
+  position:relative;
+  overflow:hidden;
+  border-radius:13px;
+  background:linear-gradient(105deg,#075de5,#086cff 65%,#159cff);
+  color:#fff;
+  box-shadow:0 14px 30px rgba(8,108,255,.18);
+}
+.rp-play-button::after,.rp-sheet-primary::after{
+  content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--rp-red);opacity:.9;
+}
+.rp-mode-tab.active{border-bottom-color:var(--rp-blue)}
+.rp-bottom-nav{border-top-color:rgba(201,206,214,.10);background:rgba(2,2,4,.96)}
+.rp-nav-item.active{background:rgba(8,108,255,.09);color:#fff}
+.rp-sheet{
+  border-color:rgba(201,206,214,.15);
+  border-radius:20px 20px 14px 14px;
+  background:linear-gradient(180deg,#0a0d12,#050609);
+}
+.rp-sheet-secondary{border-color:rgba(201,206,214,.16);background:#080b10}
+
+/* ---------- MEMBERSHIP ---------- */
+.rp-membership-overlay{background:rgba(1,2,5,.88);backdrop-filter:blur(22px)}
+.rp-membership-panel{
+  border:1px solid rgba(201,206,214,.16);
+  border-radius:20px;
+  background:
+    radial-gradient(70% 42% at -12% 0%,rgba(8,108,255,.16),transparent 72%),
+    radial-gradient(56% 38% at 112% 30%,rgba(255,32,40,.08),transparent 74%),
+    linear-gradient(165deg,#090c12,#040507 72%);
+}
+.rp-membership-kicker{font-size:.76rem}
+.rp-membership-panel h2{font-family:var(--rp-display);font-size:2.25rem;color:#fff}
+.rp-membership-panel h2 span{color:#46b6ff}
+.rp-membership-lede{color:#a1acba;font-size:.94rem}
+.rp-membership-price,.rp-membership-status-card,.rp-plus-one-box,.auth-membership-card{
+  border-color:rgba(201,206,214,.12);
+  background:#07090d;
+  border-radius:14px;
+}
+.rp-membership-price{position:relative;overflow:hidden}
+.rp-membership-price::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,var(--rp-blue) 0 84%,var(--rp-red) 84% 100%)}
+.rp-membership-price small,.rp-membership-status-card span,.rp-plus-one-box>span,.auth-membership-card.active span{color:#46b6ff}
+.rp-membership-inclusions>div{border-color:rgba(201,206,214,.10);background:#080a0e;border-radius:12px}
+.rp-membership-inclusions b{color:#46b6ff;font-size:.72rem}
+.rp-membership-inclusions strong{font-size:.82rem}
+.rp-membership-inclusions small{font-size:.76rem;color:#929daa}
+.rp-payment-label{font-size:.7rem;color:#9aa4b1}
+.rp-pay-method{border-color:rgba(201,206,214,.13);border-radius:12px;background:#05070a}
+.rp-pay-method.selected{border-color:rgba(8,108,255,.7);box-shadow:inset 0 0 0 1px rgba(8,108,255,.12)}
+.rp-pay-method span{color:#46b6ff}
+.rp-pay-detail,.rp-proof-drop{border-color:rgba(8,108,255,.20);background:#05070a;border-radius:12px}
+.rp-membership-primary{
+  position:relative;overflow:hidden;border-radius:13px;background:linear-gradient(180deg,#fff,#e6e9ed);color:#07090d;box-shadow:0 14px 30px rgba(0,0,0,.28)
+}
+.rp-membership-primary::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--rp-blue) 0 82%,var(--rp-red) 82% 100%)}
+.rp-membership-alert{border-color:rgba(255,32,40,.26);background:rgba(255,32,40,.06)}
+.rp-membership-active-mark,.rp-membership-pending-mark{border-color:rgba(8,108,255,.34);background:rgba(8,108,255,.08);color:#46b6ff}
+
+/* ---------- 3V3 / TEAM ASSIGNMENT ---------- */
+.rp-3v3-view{
+  background:
+    radial-gradient(68% 42% at -10% 0%,rgba(8,108,255,.18),transparent 72%),
+    radial-gradient(58% 40% at 110% 54%,rgba(255,32,40,.10),transparent 74%),
+    linear-gradient(180deg,#030407,#020204 62%,#040507);
+}
+.rp-3v3-topbar{background:linear-gradient(180deg,rgba(2,2,4,.98),rgba(2,2,4,.9) 78%,transparent)}
+.rp-3v3-back,.rp-3v3-topmark,.rp-team-arrow{border-color:rgba(201,206,214,.12);background:#080b10;border-radius:11px}
+.rp-3v3-brand span,.rp-3v3-select-head>p,.rp-team-card em,.rp-3v3-format b{color:#46b6ff}
+.rp-3v3-select-head>span{color:#9aa5b3;font-size:.78rem}
+.rp-team-card{
+  border-color:rgba(201,206,214,.12);
+  border-radius:20px;
+  background:linear-gradient(155deg,#0a0d13,#050609);
+}
+.rp-team-card::before{background:radial-gradient(circle at 50% 20%,rgba(8,108,255,.17),transparent 36%),radial-gradient(circle at 100% 82%,rgba(255,32,40,.055),transparent 34%)}
+.rp-team-card.slot-active{border-color:rgba(8,108,255,.55);box-shadow:0 28px 68px rgba(0,0,0,.42),0 0 38px rgba(8,108,255,.09)}
+.rp-team-card.saved,.rp-team-card.assigned{border-color:rgba(8,108,255,.72)}
+.rp-team-dots i.active{background:var(--rp-blue)}
+.rp-team-confirm{background:rgba(1,2,5,.88)}
+.rp-team-confirm-card{border-color:rgba(201,206,214,.15);border-radius:20px;background:linear-gradient(155deg,#0a0d12,#040507 72%)}
+.rp-team-confirm-card>small{color:#46b6ff;font-size:.68rem}
+.rp-team-confirm-primary{position:relative;overflow:hidden;background:linear-gradient(105deg,#075de5,#086cff 70%,#159cff);border-radius:12px}
+.rp-team-confirm-primary::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--rp-red)}
+.rp-team-confirm-secondary{border-color:rgba(201,206,214,.14);background:#080b10;border-radius:12px}
+
+/* ---------- CAREER ---------- */
+.rp-career-beta{
+  background:
+    radial-gradient(70% 42% at -10% 0%,rgba(8,108,255,.17),transparent 70%),
+    radial-gradient(54% 38% at 108% 26%,rgba(255,32,40,.07),transparent 72%),
+    linear-gradient(180deg,#030407,#020204 45%,#040507);
+}
+.rp-career-topbar{border-bottom-color:rgba(201,206,214,.09);background:rgba(2,2,4,.92)}
+.rp-career-back{border-color:rgba(201,206,214,.12);background:#080b10;border-radius:11px}
+.rp-beta-pill{border-color:rgba(8,108,255,.28);background:rgba(8,108,255,.07);color:#46b6ff}
+.rp-career-hero,.rp-next-game,.rp-career-stat,.rp-board-row,.rp-game-row,.rp-empty-career{
+  border-color:rgba(201,206,214,.11);
+  background:#07090d;
+}
+.rp-career-hero{
+  border-radius:18px;
+  background:radial-gradient(circle at 92% 0%,rgba(8,108,255,.15),transparent 36%),radial-gradient(circle at 100% 100%,rgba(255,32,40,.055),transparent 32%),#07090d;
+}
+.rp-career-name small,.rp-career-section-head small,.rp-next-game-status span,.rp-game-row small{color:#46b6ff;font-size:.64rem}
+.rp-career-section-head span{font-size:.65rem;color:#838e9c}
+.rp-career-stat,.rp-board-row,.rp-game-row{border-radius:12px}
+.rp-board-tab{border-color:rgba(201,206,214,.10);background:#07090d}
+.rp-board-tab.active{border-color:rgba(8,108,255,.32);background:rgba(8,108,255,.11)}
+.rp-next-game.has-session button,.rp-next-game button[data-session-action]:not(:disabled){position:relative;overflow:hidden;background:linear-gradient(105deg,#075de5,#086cff 68%,#159cff)}
+.rp-next-game.rp-session-joined button,.rp-next-game.rp-session-joined button:disabled{color:#46b6ff;border-color:rgba(8,108,255,.25);background:rgba(8,108,255,.07)}
+
+/* ---------- WORLD / COMMUNITY ---------- */
+.rp-world{
+  background:
+    radial-gradient(72% 42% at -10% 4%,rgba(8,108,255,.18),transparent 72%),
+    radial-gradient(56% 38% at 110% 30%,rgba(255,32,40,.075),transparent 72%),
+    linear-gradient(180deg,#030407,#020204 48%,#040507);
+}
+.rp-world-topbar{border-bottom-color:rgba(201,206,214,.09);background:rgba(2,2,4,.92)}
+.rp-world-back{border-color:rgba(201,206,214,.12);border-radius:11px;background:#080b10}
+.rp-world-live{border-color:rgba(8,108,255,.28);background:rgba(8,108,255,.07);color:#46b6ff}
+.rp-world-hero,.rp-world-row,.rp-world-feed-item,.rp-world-empty,.rp-world-metrics article{
+  border-color:rgba(201,206,214,.11);
+  background:#07090d;
+}
+.rp-world-hero{border-radius:18px;background:radial-gradient(circle at 92% 0%,rgba(8,108,255,.15),transparent 36%),radial-gradient(circle at 100% 100%,rgba(255,32,40,.05),transparent 32%),#07090d}
+.rp-world-kicker,.rp-world-section-head small,.rp-world-value span,.rp-world-feed-item small,.rp-nav-item[data-rp-nav="world"] span{color:#46b6ff}
+.rp-world-row.you{border-color:rgba(8,108,255,.30);background:linear-gradient(120deg,rgba(8,108,255,.10),#07090d 64%)}
+.rp-world-tab{border-color:rgba(201,206,214,.10);background:#07090d}
+.rp-world-tab.active{border-color:rgba(8,108,255,.30);background:rgba(8,108,255,.11)}
+.rp-world-feed-icon{color:#46b6ff;background:rgba(8,108,255,.10)}
+
+/* ---------- ADMIN / GAME OPERATIONS ---------- */
+.rp-admin-control{
+  background:
+    radial-gradient(70% 42% at -12% 0%,rgba(8,108,255,.16),transparent 72%),
+    radial-gradient(54% 38% at 112% 24%,rgba(255,32,40,.065),transparent 72%),
+    #020204;
+}
+.rp-admin-topbar,.rp-admin-tabs{background:rgba(2,2,4,.95);border-color:rgba(201,206,214,.09)}
+.rp-admin-brand small,.rp-admin-kicker{color:#46b6ff;font-size:.66rem}
+.rp-admin-exit,.rp-admin-tab,.rp-admin-card,.rp-admin-player,.rp-admin-stat-player,.rp-admin-scoreboard,.rp-admin-roster{
+  border-color:rgba(201,206,214,.11);
+  background:#07090d;
+}
+.rp-admin-exit{border-radius:10px}
+.rp-admin-card{border-radius:15px}
+.rp-admin-card.soft,.rp-admin-roster{background:#05070a}
+.rp-admin-status-dot{background:var(--rp-blue);box-shadow:0 0 14px rgba(8,108,255,.46)}
+.rp-admin-status-dot.live{background:var(--rp-red);box-shadow:0 0 14px rgba(255,32,40,.42)}
+.rp-admin-tab.active,.rp-admin-team.active{border-color:rgba(8,108,255,.35);background:rgba(8,108,255,.11)}
+.rp-admin-form label{color:#aeb7c3;font-size:.68rem}
+.rp-admin-form input{border-color:rgba(201,206,214,.14);background:#020307;border-radius:10px}
+.rp-admin-form input:focus{border-color:var(--rp-blue);box-shadow:0 0 0 3px rgba(8,108,255,.08)}
+.rp-admin-primary{position:relative;overflow:hidden;background:linear-gradient(105deg,#075de5,#086cff 68%,#159cff);border-radius:11px}
+.rp-admin-primary::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--rp-red)}
+.rp-admin-secondary{border-color:rgba(201,206,214,.14);background:#080b10;border-radius:11px}
+.rp-admin-danger{background:linear-gradient(105deg,#a40f22,#e32837);border-radius:11px}
+.rp-admin-pill.final,.rp-admin-check.in{color:#46b6ff;border-color:rgba(8,108,255,.28);background:rgba(8,108,255,.07)}
+.rp-admin-number{background:#0b1c31;border-radius:10px}
+.rp-admin-alert{border-color:rgba(255,32,40,.24);background:rgba(255,32,40,.055);color:#ff7b85}
+.rp-admin-success{border-color:rgba(8,108,255,.24);background:rgba(8,108,255,.055);color:#64bcff}
+.rp-admin-launcher{border-color:rgba(8,108,255,.28);background:#07090d}
+
+/* ---------- READABILITY / MOBILE ---------- */
+@media(max-width:520px){
+  .auth-overlay{padding:10px}
+  .auth-panel{max-height:calc(100svh - 20px);padding:27px 20px 24px;border-radius:15px}
+  .auth-kicker{font-size:.76rem}
+  .auth-title{font-size:2.15rem}
+  .auth-subtitle{font-size:.95rem}
+  .auth-field label{font-size:.76rem}
+  .auth-field input{font-size:1rem}
+
+  .rp-membership-panel{border-radius:17px;padding:27px 19px 24px}
+  .rp-membership-kicker{font-size:.72rem}
+  .rp-membership-inclusions strong{font-size:.82rem}
+  .rp-membership-inclusions small{font-size:.74rem}
+
+  .rp-career-section-head small,.rp-world-section-head small{font-size:.62rem}
+  .rp-admin-brand small,.rp-admin-kicker{font-size:.64rem}
+}
