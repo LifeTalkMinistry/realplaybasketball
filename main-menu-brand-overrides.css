@@ -1,0 +1,43 @@
+/* Main menu alignment with the Real Play landing-page brand. */
+body.rp-lobby-active .rp-app:not(.rp-guest){
+  background:
+    radial-gradient(82% 44% at -18% 14%,rgba(8,108,255,.20),transparent 72%),
+    radial-gradient(66% 40% at 116% 55%,rgba(255,32,40,.11),transparent 74%),
+    linear-gradient(180deg,#030407 0%,#020204 52%,#040507 100%);
+}
+
+.rp-main-menu::before{
+  background:
+    radial-gradient(circle at 12% 42%,rgba(8,108,255,.09),transparent 29%),
+    radial-gradient(circle at 94% 64%,rgba(255,32,40,.065),transparent 32%);
+}
+
+.rp-main-menu-brand strong{color:#f7f8fa}
+.rp-main-menu-brand>span{color:#18a9ff}
+.rp-main-menu-brand i{background:linear-gradient(90deg,#086cff 0 82%,#ff2028 82% 100%);box-shadow:0 0 16px rgba(8,108,255,.22)}
+.rp-main-menu-brand small{color:#8b95a3;font-size:.58rem}
+
+.rp-main-menu-item{color:#7d8795}
+.rp-main-menu-item small{color:#697382;font-size:.54rem}
+.rp-main-menu-item span{color:#667180;font-size:.54rem}
+.rp-main-menu-item.slot-active small{color:#46b6ff;font-size:.64rem}
+.rp-main-menu-item.slot-active strong{color:#fff;text-shadow:0 0 28px rgba(8,108,255,.10)}
+.rp-main-menu-item.slot-active span{color:#a8b0bb;font-size:.6rem}
+.rp-main-menu-item.slot-active::before{background:radial-gradient(circle,rgba(8,108,255,.10),transparent 68%)}
+.rp-main-menu-item:focus-visible{outline-color:rgba(8,108,255,.48)}
+
+.rp-main-notice{background:rgba(1,2,5,.86);backdrop-filter:blur(18px)}
+.rp-main-notice-card{
+  border-color:rgba(201,206,214,.15);
+  border-radius:18px;
+  background:radial-gradient(circle at 100% 0%,rgba(255,32,40,.055),transparent 36%),linear-gradient(160deg,#0a0d12,#040507);
+}
+.rp-main-notice-card small{color:#46b6ff;font-size:.68rem}
+.rp-main-notice-card p{color:#9aa4b2;font-size:.78rem}
+.rp-main-notice-card button{
+  position:relative;
+  overflow:hidden;
+  border-radius:12px;
+  background:linear-gradient(105deg,#075de5,#086cff 68%,#159cff);
+}
+.rp-main-notice-card button::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:#ff2028}
