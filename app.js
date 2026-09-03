@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-real-play-own-backend-v1';
+  const version = '20260903-updates-header-cleanup-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -42,6 +42,7 @@
     'career-beta.css',
     'career-beta-play.css',
     'real-play-updates.css',
+    'real-play-updates-cleanup.css',
     'real-play-world.css',
     'real-play-world-chat-cleanup.css',
     'membership.css',
