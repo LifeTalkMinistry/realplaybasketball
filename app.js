@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-ambient-glow-v3';
+  const version = '20260903-lobby-topbar-cleanup-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -28,6 +28,7 @@
 
   [
     'mobile-lobby.css',
+    'lobby-topbar-cleanup.css',
     'mobile-entry.css',
     'public-landing.css',
     'ambient-brand-glow.css',
