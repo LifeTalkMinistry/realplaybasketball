@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-3v3-team-carousel-v1';
+  const version = '20260903-settings-carousel-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
