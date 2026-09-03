@@ -6,16 +6,40 @@ body.rp-lobby-active .rp-app:not(.rp-guest){
     linear-gradient(180deg,#030407 0%,#020204 52%,#040507 100%);
 }
 
+/* Mobile-first: keep the player header clean and let the brand own the open space. */
+body.rp-lobby-active .rp-player-strip{border-bottom:0}
+
 .rp-main-menu::before{
   background:
     radial-gradient(circle at 12% 42%,rgba(8,108,255,.09),transparent 29%),
     radial-gradient(circle at 94% 64%,rgba(255,32,40,.065),transparent 32%);
 }
 
-.rp-main-menu-brand strong{color:#f7f8fa}
-.rp-main-menu-brand>span{color:#18a9ff}
-.rp-main-menu-brand i{background:linear-gradient(90deg,#086cff 0 82%,#ff2028 82% 100%);box-shadow:0 0 16px rgba(8,108,255,.22)}
-.rp-main-menu-brand small{color:#8b95a3;font-size:.58rem}
+.rp-main-menu-brand{
+  width:min(100%,380px);
+  min-height:132px;
+  justify-content:center;
+  padding:4px 0 8px;
+}
+.rp-main-menu-brand strong{
+  color:#f7f8fa;
+  font-size:clamp(2.75rem,13vw,4.25rem);
+  line-height:.84;
+  letter-spacing:-.05em;
+}
+.rp-main-menu-brand>span{
+  margin-top:10px;
+  color:#18a9ff;
+  font-size:clamp(.92rem,4vw,1.12rem);
+  letter-spacing:.25em;
+}
+.rp-main-menu-brand i{display:none}
+.rp-main-menu-brand small{
+  margin-top:15px;
+  color:#8b95a3;
+  font-size:clamp(.62rem,2.7vw,.72rem);
+  letter-spacing:.19em;
+}
 
 .rp-main-menu-item{color:#7d8795}
 .rp-main-menu-item small{color:#697382;font-size:.54rem}
@@ -41,3 +65,10 @@ body.rp-lobby-active .rp-app:not(.rp-guest){
   background:linear-gradient(105deg,#075de5,#086cff 68%,#159cff);
 }
 .rp-main-notice-card button::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:#ff2028}
+
+@media(max-height:720px){
+  .rp-main-menu-brand{min-height:104px;padding:0 0 4px}
+  .rp-main-menu-brand strong{font-size:2.45rem}
+  .rp-main-menu-brand>span{margin-top:6px;font-size:.76rem}
+  .rp-main-menu-brand small{margin-top:9px;font-size:.55rem}
+}
