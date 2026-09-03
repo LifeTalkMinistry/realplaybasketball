@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-ambient-glow-v2';
+  const version = '20260903-ambient-glow-v3';
   const html = document.documentElement;
   html.classList.add('js');
 
