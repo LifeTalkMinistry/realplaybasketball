@@ -18,9 +18,11 @@ body.rp-lobby-active .rp-app::before{opacity:.035}
 body.rp-lobby-active .rp-app-inner{min-height:100svh;display:flex;flex-direction:column}
 
 body.rp-lobby-active .rp-player-strip{
+  flex:0 0 68px;
+  box-sizing:border-box;
   margin:0 20px;
-  padding:19px 0 16px;
-  min-height:66px;
+  padding:14px 0 12px;
+  min-height:68px;
   border-bottom:1px solid rgba(136,176,222,.11);
 }
 
@@ -32,12 +34,16 @@ body.rp-lobby-active .rp-player-rating strong{font-size:1rem}
 
 .rp-main-menu{
   position:relative;
-  flex:1;
-  min-height:0;
+  flex:0 0 auto;
+  box-sizing:border-box;
+  width:100%;
+  height:calc(100vh - 68px);
+  height:calc(100dvh - 68px);
+  min-height:calc(100svh - 68px);
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  padding:18px 20px max(16px,env(safe-area-inset-bottom));
+  padding:14px 20px max(12px,env(safe-area-inset-bottom));
   overflow:hidden;
 }
 
@@ -58,7 +64,7 @@ body.rp-lobby-active .rp-player-rating strong{font-size:1rem}
   flex-direction:column;
   align-items:center;
   flex:0 0 auto;
-  margin:0 auto 4px;
+  margin:0 auto 0;
   text-align:center;
 }
 
@@ -102,10 +108,10 @@ body.rp-lobby-active .rp-player-rating strong{font-size:1rem}
 .rp-main-menu-list{
   position:relative;
   z-index:1;
-  flex:1 1 auto;
+  flex:1 1 0;
   width:100%;
   max-width:390px;
-  min-height:390px;
+  min-height:0;
   margin:0 auto;
   outline:none;
   touch-action:pan-x;
@@ -162,14 +168,14 @@ body.rp-lobby-active .rp-player-rating strong{font-size:1rem}
 
 .rp-main-menu-item.slot-prev,
 .rp-main-menu-item.slot-next{
-  opacity:.26;
+  opacity:.25;
   pointer-events:auto;
-  filter:saturate(.45);
-  transform:translateY(-50%) scale(.66);
+  filter:saturate(.42);
+  transform:translateY(-50%) scale(.64);
 }
 
-.rp-main-menu-item.slot-prev{top:18%}
-.rp-main-menu-item.slot-next{top:82%}
+.rp-main-menu-item.slot-prev{top:16%}
+.rp-main-menu-item.slot-next{top:84%}
 
 .rp-main-menu-item.slot-prev span,
 .rp-main-menu-item.slot-next span{opacity:0}
@@ -192,8 +198,8 @@ body.rp-lobby-active .rp-player-rating strong{font-size:1rem}
   position:absolute;
   left:50%;
   top:50%;
-  width:260px;
-  height:150px;
+  width:270px;
+  height:160px;
   border-radius:50%;
   background:radial-gradient(circle,rgba(21,119,255,.12),transparent 68%);
   transform:translate(-50%,-50%);
@@ -201,8 +207,8 @@ body.rp-lobby-active .rp-player-rating strong{font-size:1rem}
   z-index:-1;
 }
 
-.rp-main-menu-item.slot-active small{color:#1bc9ff;font-size:.54rem}
-.rp-main-menu-item.slot-active strong{font-size:clamp(3.7rem,17vw,5.5rem);text-shadow:0 0 30px rgba(29,220,255,.09)}
+.rp-main-menu-item.slot-active small{color:#1bc9ff;font-size:.56rem}
+.rp-main-menu-item.slot-active strong{font-size:clamp(4rem,18vw,5.8rem);text-shadow:0 0 30px rgba(29,220,255,.09)}
 .rp-main-menu-item.slot-active span{color:#a2b0c2;font-size:.52rem;opacity:1}
 .rp-main-menu-item.slot-hidden{opacity:0;pointer-events:none}
 
@@ -244,16 +250,14 @@ body.rp-lobby-active .rp-player-rating strong{font-size:1rem}
 .rp-main-notice-card button{width:100%;min-height:48px;margin-top:20px;border:0;border-radius:13px;background:linear-gradient(100deg,#176cff,#1ddcff);color:#fff;font-family:var(--rp-display);font-size:.8rem;font-style:italic;font-weight:900;letter-spacing:.04em}
 
 @media(max-height:720px){
-  .rp-main-menu{padding-top:12px;overflow:hidden}
-  .rp-main-menu-brand{margin-bottom:0}
-  .rp-main-menu-brand strong{font-size:1.8rem}
-  .rp-main-menu-brand>span{font-size:.7rem;margin-top:5px}
-  .rp-main-menu-brand i{margin-top:9px}
-  .rp-main-menu-brand small{margin-top:7px}
-  .rp-main-menu-list{min-height:320px}
-  .rp-main-menu-item.slot-prev{top:19%}
-  .rp-main-menu-item.slot-next{top:81%}
-  .rp-main-menu-item.slot-active strong{font-size:3.5rem}
+  .rp-main-menu{padding-top:8px;padding-bottom:8px}
+  .rp-main-menu-brand strong{font-size:1.75rem}
+  .rp-main-menu-brand>span{font-size:.66rem;margin-top:4px}
+  .rp-main-menu-brand i{margin-top:8px}
+  .rp-main-menu-brand small{margin-top:6px;font-size:.46rem}
+  .rp-main-menu-item.slot-prev{top:15%}
+  .rp-main-menu-item.slot-next{top:85%}
+  .rp-main-menu-item.slot-active strong{font-size:3.8rem}
 }
 
 @media(prefers-reduced-motion:reduce){
