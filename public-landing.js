@@ -9,29 +9,27 @@
   entry.innerHTML = `
     <div class="rp-public-nav">
       <div class="rp-public-brand" aria-label="Real Play Basketball">
-        <span class="rp-public-mark">RP</span>
-        <span><strong>REAL PLAY</strong><small>BASKETBALL</small></span>
+        <img class="rp-public-brand-logo" src="assets/real-play-brand.webp" alt="Real Play Basketball" />
       </div>
       <button class="rp-public-login" type="button" data-public-login>LOG IN</button>
     </div>
 
     <section class="rp-public-hero" id="real-play-top">
       <div class="rp-public-hero-glow" aria-hidden="true"></div>
-      <p class="rp-public-kicker">REAL-WORLD BASKETBALL COMMUNITY</p>
       <h1>LESS SCREEN.<br><span>REAL POINTS.</span></h1>
-      <p class="rp-public-lede">Organized real-world basketball. Join a team, show up, play, and build your own Real Play history.</p>
+      <p class="rp-public-lede">Organized basketball. Real teams. Real games.</p>
 
-      <div class="rp-public-mode-pill"><span></span>3V3 · NOW PLAYING</div>
+      <div class="rp-public-status"><span></span>BETA SEASON · 3V3</div>
 
       <div class="rp-public-price">
         <strong>₱100</strong>
         <span>/ MONTH</span>
-        <small>BETA MEMBERSHIP</small>
+        <small>FOUNDING BETA MEMBERSHIP</small>
       </div>
 
-      <button class="rp-public-cta" type="button" data-public-create>CREATE MY PLAYER <span>→</span></button>
-      <p class="rp-public-micro">Creating your player account is free. Membership is activated separately before joining eligible games.</p>
-      <a class="rp-public-discover" href="#what-is-real-play">DISCOVER REAL PLAY <span>↓</span></a>
+      <button class="rp-public-cta" type="button" data-public-create>JOIN REAL PLAY <span>→</span></button>
+      <button class="rp-public-existing" type="button" data-public-login>ALREADY A PLAYER? <strong>LOG IN</strong></button>
+      <a class="rp-public-discover" href="#what-is-real-play" aria-label="Discover Real Play">↓</a>
     </section>
 
     <section class="rp-public-section rp-public-intro" id="what-is-real-play">
@@ -112,7 +110,7 @@
       <p class="rp-public-eyebrow">READY TO PLAY?</p>
       <h2>COME BUILD THE FIRST<br><span>REAL PLAY COMMUNITY.</span></h2>
       <div class="rp-public-final-price"><strong>₱100</strong><span>/ MONTH · BETA MEMBERSHIP</span></div>
-      <button class="rp-public-cta" type="button" data-public-create>CREATE MY PLAYER <span>→</span></button>
+      <button class="rp-public-cta" type="button" data-public-create>JOIN REAL PLAY <span>→</span></button>
       <button class="rp-public-text-button" type="button" data-public-login>ALREADY A PLAYER? LOG IN</button>
       <p>LESS SCREEN. REAL POINTS.</p>
     </section>
