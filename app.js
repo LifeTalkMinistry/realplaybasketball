@@ -1,7 +1,7 @@
 document.documentElement.classList.add('js');
 
 (() => {
-  const version = '20260903-3v3-beta-v1';
+  const version = '20260903-3v3-beta-v2';
 
   // Load the session guard immediately so auth-core cannot erase a valid
   // persisted login because one protected API request temporarily returns 401.
@@ -17,18 +17,17 @@ document.documentElement.classList.add('js');
     document.head.appendChild(css);
   });
 
-  // Keep startup order deterministic. The 3v3 beta layer replaces the public
-  // game-format carousel after the base mobile lobby mounts, while the existing
-  // Career operations remain available underneath for current beta tooling.
+  // Existing Career beta setup mounts first so its stats/admin tooling remains
+  // available. The 3v3 layer then replaces only the public game-format carousel.
   [
     'mobile-lobby.js',
-    'three-v-three-beta.js',
     'login-landing-fix.js',
     'persistent-session-fix.js',
     'career-beta.js',
     'career-beta-play.js',
     'membership-bootstrap.js',
     'career-beta-leaderboard.js',
+    'three-v-three-beta.js',
     'real-play-world.js',
     'admin-score-sync.js',
     'admin-game-control.js',
