@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-console-cleanup-v1';
+  const version = '20260903-3v3-session-format-order-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -83,6 +83,7 @@
       'membership-bootstrap.js',
       'career-beta-leaderboard.js',
       'three-v-three-beta.js',
+      'three-v-three-layout-order.js',
       'real-play-world.js',
       'main-menu.js',
       'overlay-focus-release.js',
