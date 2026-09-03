@@ -8,7 +8,7 @@
   if (!menu || !settingsChoice) return;
 
   const settingsSummary = settingsChoice.querySelector('span');
-  if (settingsSummary) settingsSummary.textContent = 'PROFILE · MEMBERSHIP · COMMUNITY';
+  if (settingsSummary) settingsSummary.textContent = 'MEMBERSHIP · COMMUNITY · LOG OUT';
 
   const panel = document.createElement('div');
   panel.className = 'rp-settings-overlay';
@@ -30,9 +30,6 @@
       </div>
 
       <div class="rp-settings-list">
-        <button type="button" class="rp-settings-row" data-rp-settings-action="account">
-          <span><strong>PLAYER ACCOUNT</strong><small>Name, email and player number</small></span><b>→</b>
-        </button>
         <button type="button" class="rp-settings-row" data-rp-settings-action="membership">
           <span><strong>MEMBERSHIP</strong><small>View status and membership access</small></span><b>→</b>
         </button>
@@ -104,11 +101,6 @@
     communityPanel?.querySelector('[data-rp-community-back]')?.focus();
   }
 
-  function openAccount() {
-    closeSettings();
-    window.setTimeout(() => document.querySelector('[data-auth-open]')?.click(), 20);
-  }
-
   function openMembership() {
     closeSettings();
     window.setTimeout(() => {
@@ -117,9 +109,7 @@
         membershipCard.click();
         return;
       }
-
-      const authOpen = document.querySelector('[data-auth-open]');
-      authOpen?.click();
+      document.querySelector('[data-auth-open]')?.click();
       window.setTimeout(() => document.querySelector('[data-auth-membership-card]')?.click(), 350);
     }, 20);
   }
@@ -150,9 +140,7 @@
   }, true);
 
   menuList?.addEventListener('keydown', (event) => {
-    if ((event.key === 'Enter' || event.key === ' ') && settingsChoice.classList.contains('slot-active')) {
-      interceptSettingsSelection(event);
-    }
+    if ((event.key === 'Enter' || event.key === ' ') && settingsChoice.classList.contains('slot-active')) interceptSettingsSelection(event);
   }, true);
 
   panel.querySelector('[data-rp-settings-back]')?.addEventListener('click', closeSettings);
@@ -161,8 +149,7 @@
   panel.querySelectorAll('[data-rp-settings-action]').forEach((button) => {
     button.addEventListener('click', () => {
       const action = button.dataset.rpSettingsAction;
-      if (action === 'account') openAccount();
-      else if (action === 'membership') openMembership();
+      if (action === 'membership') openMembership();
       else if (action === 'community') showCommunity();
       else if (action === 'logout') logout();
     });
