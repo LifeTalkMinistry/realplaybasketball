@@ -109,6 +109,25 @@
   border:1px solid rgba(47,220,255,.25);
 }
 
+.rp-3v3-session-cancel{
+  width:100%;
+  min-height:42px;
+  margin-top:8px;
+  border:1px solid rgba(255,100,120,.20);
+  border-radius:14px;
+  color:#ff9aa7;
+  background:rgba(87,16,28,.10);
+  font-family:var(--rp-display);
+  font-size:.72rem;
+  font-style:italic;
+  font-weight:900;
+  letter-spacing:.08em;
+  cursor:pointer;
+}
+
+.rp-3v3-session-cancel[hidden]{display:none}
+.rp-3v3-session-cancel:disabled{cursor:default;opacity:.58}
+
 .rp-3v3-session.full .rp-3v3-session-head b{
   color:#70849b;
 }
@@ -137,4 +156,5 @@
 @media(max-height:760px){
   .rp-3v3-session{margin-top:12px;padding-top:13px;padding-bottom:12px}
   .rp-3v3-session-action{min-height:52px}
+  .rp-3v3-session-cancel{min-height:40px}
 }
