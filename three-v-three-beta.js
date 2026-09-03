@@ -136,7 +136,7 @@
 
       <div class="rp-3v3-section-head">
         <div><span>REAL PLAY CLUBS</span><h2>Preferred Club</h2></div>
-        <span>FINAL ASSIGNMENT: ADMIN</span>
+        <span>REAL PLAY CONFIRMS</span>
       </div>
 
       <div class="rp-3v3-clubs" data-rp-3v3-clubs>
@@ -197,10 +197,10 @@
     if (assignedClub) {
       playerState.classList.add('assigned');
       stateTitle.textContent = clubName(assignedClub);
-      statePill.textContent = 'ASSIGNED';
-      stateCopy.textContent = `Real Play has confirmed your Beta Season club. You are representing ${clubName(assignedClub)}.`;
+      statePill.textContent = 'OFFICIAL';
+      stateCopy.textContent = `Real Play has confirmed your Beta Season club. You are officially representing ${clubName(assignedClub)}.`;
       save.disabled = true;
-      save.innerHTML = 'ASSIGNMENT CONFIRMED <span>✓</span>';
+      save.innerHTML = 'OFFICIAL CLUB CONFIRMED <span>✓</span>';
       return;
     }
 
@@ -216,26 +216,25 @@
       : 'SAVE PREFERRED CLUB <span>→</span>';
   }
 
-  async function loadState() {
-    selectedClub = null;
-    assignedClub = null;
-    savedClub = null;
+  async function loadState({ quiet = false } = {}) {
+    if (loading) return;
     loading = true;
-    setStatus('LOADING YOUR 3V3 STATUS…');
+    if (!quiet) setStatus('LOADING YOUR 3V3 STATUS…');
     render();
     try {
       const data = await api('/api/real-play/3v3/me');
       assignedClub = data.assignedClub || null;
       savedClub = data.preferredClub || null;
       selectedClub = assignedClub || savedClub || null;
-      setStatus(assignedClub ? 'Your club assignment is confirmed.' : '', assignedClub ? 'success' : '');
+      if (assignedClub) setStatus(`Official club confirmed: ${clubName(assignedClub)}.`, 'success');
+      else if (!quiet) setStatus('');
     } catch (error) {
       if (error.status === 401) {
         closeView();
         document.querySelector('[data-auth-open]')?.click();
         return;
       }
-      setStatus(error.message || 'Could not load your 3v3 club status.', 'error');
+      if (!quiet) setStatus(error.message || 'Could not load your 3v3 club status.', 'error');
     } finally {
       loading = false;
       render();
@@ -263,6 +262,11 @@
       loading = false;
       render();
     }
+  }
+
+  function refreshIfOpen() {
+    if (!view.classList.contains('open') || !token() || loading) return;
+    loadState({ quiet: true });
   }
 
   function openView() {
@@ -295,6 +299,13 @@
   stage.querySelector('[data-rp-enter-3v3]')?.addEventListener('click', openView);
   back?.addEventListener('click', closeView);
   save?.addEventListener('click', savePreference);
+
+  window.addEventListener('focus', refreshIfOpen);
+  window.addEventListener('pageshow', refreshIfOpen);
+  window.addEventListener('realplay:3v3-assignment', refreshIfOpen);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refreshIfOpen();
+  });
 
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && view.classList.contains('open')) closeView();
