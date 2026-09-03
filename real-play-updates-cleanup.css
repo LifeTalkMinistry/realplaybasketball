@@ -1,0 +1,13 @@
+.rp-updates-title span,
+.rp-updates-head > p {
+  display: none !important;
+}
+
+.rp-updates-title {
+  display: flex;
+  align-items: center;
+}
+
+.rp-updates-head {
+  padding-bottom: 2px;
+}
