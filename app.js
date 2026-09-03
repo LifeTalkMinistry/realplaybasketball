@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-three-slot-main-menu-v2';
+  const version = '20260903-expanded-three-slot-menu-v3';
   const html = document.documentElement;
   html.classList.add('js');
 
