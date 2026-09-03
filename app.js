@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-public-details-compact-v1';
+  const version = '20260903-public-details-compact-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -48,18 +48,13 @@
     'admin-three-v-three.css',
   ].forEach(addStylesheet);
 
-  // Never allow the loader to leave the whole public page hidden. If the
-  // mobile shell cannot mount for any reason, reveal the original site again.
   const shellWatchdog = window.setTimeout(() => {
     if (!document.querySelector('[data-rp-app]')) restoreBaseSite();
   }, 3500);
 
   (async () => {
-    // Session guard is useful but must never be capable of blocking rendering.
     await loadScript('auth-session-guard.js');
 
-    // The lobby is the only critical script. Mount it first, verify that it
-    // actually rendered, then load all optional beta layers afterwards.
     const lobbyLoaded = await loadScript('mobile-lobby.js');
     const lobbyMounted = Boolean(document.querySelector('[data-rp-app]'));
 
@@ -94,8 +89,6 @@
       'admin-three-v-three.js',
     ];
 
-    // Enhancement failures are isolated: one unfinished beta feature should
-    // never stop the core Real Play lobby from appearing.
     for (const href of enhancements) {
       const loaded = await loadScript(href);
       if (!loaded) console.warn(`[Real Play] Optional layer failed to load: ${href}`);
