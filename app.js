@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-public-story-flow-v2';
+  const version = '20260903-public-story-readable-type-v3';
   const html = document.documentElement;
   html.classList.add('js');
 
