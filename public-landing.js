@@ -34,6 +34,20 @@
         <blockquote><strong>THE GAME HAPPENS ON THE COURT.</strong><span>THE SYSTEM RECORDS IT.</span></blockquote>
       </section>
 
+      <section class="rp-public-section rp-public-competition">
+        <p class="rp-public-eyebrow">REAL PLAY COMPETITION</p>
+        <h2>PLAY FOR<br><span>SOMETHING.</span></h2>
+        <p>Four teams compete through a season. Verified games build the standings, the standings set the playoffs, and the season ends with one Real Play Champion.</p>
+        <div class="rp-public-steps">
+          <article><span>01</span><strong>GET RATED</strong><p>Play at least 5 official Placement Games to establish your initial OVR.</p></article>
+          <article><span>02</span><strong>JOIN YOUR TEAM</strong><p>Lions · Valiant · Watchmen · Conquerors. Real Play uses player data to build balanced teams before the season.</p></article>
+          <article><span>03</span><strong>PLAY THE SEASON</strong><p>Each team plays 3 games in every scheduled Real Play session. Wins and losses build the standings.</p></article>
+          <article><span>04</span><strong>MAKE THE PLAYOFFS</strong><p>#1 vs #4 · #2 vs #3. The winners advance to the Final.</p></article>
+          <article><span>05</span><strong>WIN THE FINAL</strong><p>One team earns the title: Real Play Champion.</p></article>
+        </div>
+        <p class="rp-public-note">Your team stays locked for the season. Your OVR, stats, and history stay with you as a player.</p>
+      </section>
+
       <section class="rp-public-section">
         <p class="rp-public-eyebrow">YOUR ₱100 MEMBERSHIP</p>
         <h2>SHOW UP.<br><span>KEEP PLAYING.</span></h2>
