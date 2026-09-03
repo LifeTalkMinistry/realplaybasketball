@@ -166,6 +166,7 @@
           <b data-rp-session-count>—</b>
         </div>
         <button class="rp-3v3-session-action" type="button" data-rp-session-action disabled>CHECKING…</button>
+        <button class="rp-3v3-session-cancel" type="button" data-rp-session-cancel hidden>CANCEL SPOT</button>
         <p class="rp-3v3-session-message" data-rp-session-message aria-live="polite"></p>
       </section>
     </div>
@@ -208,6 +209,7 @@
   const sessionMeta = view.querySelector('[data-rp-session-meta]');
   const sessionCount = view.querySelector('[data-rp-session-count]');
   const sessionAction = view.querySelector('[data-rp-session-action]');
+  const sessionCancel = view.querySelector('[data-rp-session-cancel]');
   const sessionMessage = view.querySelector('[data-rp-session-message]');
 
   let activeIndex = 0;
@@ -268,6 +270,8 @@
   function renderSession(session) {
     currentSession = session || null;
     sessionPanel.classList.remove('secured', 'full', 'live');
+    sessionCancel.hidden = true;
+    sessionCancel.disabled = true;
     setSessionMessage('');
 
     if (!session) {
@@ -311,6 +315,9 @@
       sessionPanel.classList.add('secured');
       sessionAction.disabled = true;
       sessionAction.textContent = 'SPOT SECURED ✓';
+      sessionCancel.hidden = false;
+      sessionCancel.disabled = sessionLoading;
+      sessionCancel.textContent = sessionLoading ? 'CANCELLING…' : 'CANCEL SPOT';
       return;
     }
 
@@ -344,16 +351,42 @@
     sessionAction.disabled = true;
     sessionAction.textContent = 'SECURING…';
     setSessionMessage('');
+    let secured = false;
 
     try {
       const data = await api('/api/real-play/career/play', { method: 'POST' });
       renderSession(data?.session || currentSession);
-      setSessionMessage('YOUR PLACE IS SECURED.', 'success');
+      secured = true;
     } catch (error) {
       setSessionMessage(error.message || 'Could not secure your spot.', 'error');
     } finally {
       sessionLoading = false;
       if (currentSession) renderSession(currentSession);
+      if (secured) setSessionMessage('YOUR PLACE IS SECURED.', 'success');
+    }
+  }
+
+  async function cancelSpot() {
+    if (sessionLoading || !currentSession || !currentSession.joined) return;
+    const gameStatus = currentSession.gameStatus || currentSession.game_status || 'setup';
+    if (gameStatus !== 'setup') return;
+
+    sessionLoading = true;
+    sessionCancel.disabled = true;
+    sessionCancel.textContent = 'CANCELLING…';
+    setSessionMessage('');
+    let cancelled = false;
+
+    try {
+      const data = await api('/api/real-play/career/play', { method: 'DELETE' });
+      renderSession(data?.session || currentSession);
+      cancelled = true;
+    } catch (error) {
+      setSessionMessage(error.message || 'Could not cancel your spot.', 'error');
+    } finally {
+      sessionLoading = false;
+      if (currentSession) renderSession(currentSession);
+      if (cancelled) setSessionMessage('SPOT CANCELLED. THE SLOT IS OPEN AGAIN.', 'success');
     }
   }
 
@@ -578,6 +611,7 @@
     if (event.target === confirm) closeConfirmation();
   });
   sessionAction?.addEventListener('click', secureSpot);
+  sessionCancel?.addEventListener('click', cancelSpot);
 
   stage.querySelector('[data-rp-enter-3v3]')?.addEventListener('click', openView);
   back?.addEventListener('click', closeView);
