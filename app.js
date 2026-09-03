@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-3v3-bottom-spacing-v1';
+  const version = '20260903-3v3-secured-players-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -40,6 +40,7 @@
     'three-v-three-beta.css',
     'three-v-three-secure-spot.css',
     'three-v-three-refinement.css',
+    'three-v-three-participants.css',
     'career-beta.css',
     'career-beta-play.css',
     'real-play-updates.css',
@@ -92,6 +93,7 @@
       'three-v-three-beta.js',
       'three-v-three-layout-order.js',
       'three-v-three-refinement.js',
+      'three-v-three-participants.js',
       'real-play-updates.js',
       'real-play-world.js',
       'real-play-world-chat-cleanup.js',
