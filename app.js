@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-public-details-compact-v2';
+  const version = '20260903-vertical-main-menu-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -35,6 +35,7 @@
     'public-details-compact.css',
     'mobile-shell-fix.css',
     'mobile-lobby-cleanup.css',
+    'main-menu.css',
     'three-v-three-beta.css',
     'career-beta.css',
     'career-beta-play.css',
@@ -77,6 +78,7 @@
       'career-beta-leaderboard.js',
       'three-v-three-beta.js',
       'real-play-world.js',
+      'main-menu.js',
       'admin-score-sync.js',
       'admin-game-control.js',
       'admin-session-start.js',
