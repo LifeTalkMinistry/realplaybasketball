@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-profile-photo-v1';
+  const version = '20260903-3v3-bottom-spacing-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
