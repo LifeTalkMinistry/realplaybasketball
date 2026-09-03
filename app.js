@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-mobile-brand-space-v3';
+  const version = '20260903-mobile-brand-space-v4-secure-spot';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -37,6 +37,7 @@
     'mobile-lobby-cleanup.css',
     'main-menu.css',
     'three-v-three-beta.css',
+    'three-v-three-secure-spot.css',
     'career-beta.css',
     'career-beta-play.css',
     'real-play-world.css',
