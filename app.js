@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-public-pricing-599-v1';
+  const version = '20260903-public-pricing-card-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
