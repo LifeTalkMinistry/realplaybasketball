@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-mobile-brand-space-v4-secure-spot';
+  const version = '20260903-settings-panel-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -51,6 +51,7 @@
     'real-play-brand-system.css',
     'main-menu-brand-overrides.css',
     'real-play-admin-brand-overrides.css',
+    'settings-panel.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
@@ -83,6 +84,7 @@
       'three-v-three-beta.js',
       'real-play-world.js',
       'main-menu.js',
+      'settings-panel.js',
       'admin-score-sync.js',
       'admin-game-control.js',
       'admin-session-start.js',
