@@ -1,27 +1,26 @@
-/* Subtle Real Play ambient lighting: black-first, soft blue/red haze, no sharp beams. */
+/* Real Play ambient lighting: visible but still soft and black-first. */
 .rp-app.rp-guest .rp-entry.rp-public-landing{
   background:
-    radial-gradient(70% 46% at -8% 16%, rgba(8,108,255,.17) 0%, rgba(8,108,255,.085) 24%, rgba(8,108,255,.025) 46%, transparent 70%),
-    radial-gradient(58% 40% at 108% 28%, rgba(255,32,40,.11) 0%, rgba(255,32,40,.05) 28%, rgba(255,32,40,.018) 48%, transparent 72%),
-    radial-gradient(52% 34% at 18% 72%, rgba(22,135,255,.09) 0%, rgba(22,135,255,.035) 34%, transparent 72%),
-    radial-gradient(46% 30% at 88% 82%, rgba(255,28,39,.075) 0%, rgba(255,28,39,.028) 36%, transparent 72%),
+    radial-gradient(88% 58% at -18% 12%, rgba(8,108,255,.34) 0%, rgba(8,108,255,.20) 24%, rgba(8,108,255,.08) 45%, rgba(8,108,255,.025) 61%, transparent 76%),
+    radial-gradient(76% 52% at 118% 30%, rgba(255,32,40,.25) 0%, rgba(255,32,40,.14) 25%, rgba(255,32,40,.055) 45%, rgba(255,32,40,.018) 61%, transparent 76%),
+    radial-gradient(70% 46% at 2% 78%, rgba(22,135,255,.21) 0%, rgba(22,135,255,.10) 28%, rgba(22,135,255,.035) 50%, transparent 74%),
+    radial-gradient(64% 42% at 103% 88%, rgba(255,28,39,.17) 0%, rgba(255,28,39,.075) 30%, rgba(255,28,39,.025) 50%, transparent 74%),
     linear-gradient(180deg,#020306 0%,#010204 48%,#030407 100%);
 }
 
-/* Keep the title area clean so REAL PLAY BASKETBALL remains dominant. */
+/* Keep the exact center readable without erasing the surrounding color. */
 .rp-public-hero{
   background:
-    radial-gradient(45% 32% at 50% 42%, rgba(0,0,0,.16) 0%, rgba(0,0,0,.08) 48%, transparent 78%);
+    radial-gradient(42% 29% at 50% 43%, rgba(0,0,0,.055) 0%, rgba(0,0,0,.025) 48%, transparent 80%);
 }
 
-/* Slightly soften the atmosphere on very small screens. */
 @media(max-width:520px){
   .rp-app.rp-guest .rp-entry.rp-public-landing{
     background:
-      radial-gradient(78% 42% at -12% 18%, rgba(8,108,255,.15) 0%, rgba(8,108,255,.065) 28%, transparent 72%),
-      radial-gradient(66% 38% at 112% 31%, rgba(255,32,40,.09) 0%, rgba(255,32,40,.038) 30%, transparent 72%),
-      radial-gradient(60% 34% at 12% 76%, rgba(22,135,255,.07) 0%, rgba(22,135,255,.025) 34%, transparent 72%),
-      radial-gradient(52% 30% at 92% 86%, rgba(255,28,39,.06) 0%, rgba(255,28,39,.02) 34%, transparent 72%),
+      radial-gradient(105% 56% at -28% 13%, rgba(8,108,255,.37) 0%, rgba(8,108,255,.21) 25%, rgba(8,108,255,.075) 47%, rgba(8,108,255,.02) 62%, transparent 77%),
+      radial-gradient(90% 51% at 130% 31%, rgba(255,32,40,.28) 0%, rgba(255,32,40,.15) 27%, rgba(255,32,40,.05) 48%, rgba(255,32,40,.016) 62%, transparent 77%),
+      radial-gradient(84% 43% at -14% 75%, rgba(22,135,255,.22) 0%, rgba(22,135,255,.09) 31%, rgba(22,135,255,.025) 52%, transparent 76%),
+      radial-gradient(76% 38% at 118% 86%, rgba(255,28,39,.18) 0%, rgba(255,28,39,.07) 31%, rgba(255,28,39,.02) 52%, transparent 76%),
       linear-gradient(180deg,#020306 0%,#010204 48%,#030407 100%);
   }
 }
