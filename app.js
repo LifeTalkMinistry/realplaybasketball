@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-public-pricing-carousel-v4';
+  const version = '20260903-public-dual-carousel-v5';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -32,9 +32,8 @@
     'mobile-entry.css',
     'public-landing.css',
     'public-pricing-breakdown.css',
+    'public-story-carousel.css',
     'ambient-brand-glow.css',
-    'public-details-compact.css',
-    'public-season-flow.css',
     'mobile-shell-fix.css',
     'mobile-lobby-cleanup.css',
     'main-menu.css',
