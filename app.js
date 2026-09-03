@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-3v3-beta-v3';
+  const version = '20260903-public-landing-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -29,6 +29,7 @@
   [
     'mobile-lobby.css',
     'mobile-entry.css',
+    'public-landing.css',
     'mobile-shell-fix.css',
     'mobile-lobby-cleanup.css',
     'three-v-three-beta.css',
@@ -69,6 +70,7 @@
     window.clearTimeout(shellWatchdog);
 
     const enhancements = [
+      'public-landing.js',
       'login-landing-fix.js',
       'persistent-session-fix.js',
       'career-beta.js',
