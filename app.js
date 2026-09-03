@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-auth-welcome-cleanup-v6';
+  const version = '20260903-world-community-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
