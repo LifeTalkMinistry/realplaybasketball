@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-global-brand-system-v2';
+  const version = '20260903-mobile-brand-space-v3';
   const html = document.documentElement;
   html.classList.add('js');
 
