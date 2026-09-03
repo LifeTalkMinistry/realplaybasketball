@@ -1,0 +1,297 @@
+body.rp-lobby-active .rp-lobby-head,
+body.rp-lobby-active .rp-mode-stage,
+body.rp-lobby-active .rp-quick-row,
+body.rp-lobby-active .rp-bottom-nav{
+  display:none!important;
+}
+
+body.rp-lobby-active .rp-app{
+  min-height:100svh;
+  padding-bottom:0!important;
+  background:
+    radial-gradient(circle at 5% 18%,rgba(8,89,191,.17),transparent 34%),
+    radial-gradient(circle at 102% 50%,rgba(112,9,20,.18),transparent 40%),
+    linear-gradient(180deg,#020916 0%,#020711 48%,#05050a 100%);
+}
+
+body.rp-lobby-active .rp-app::before{
+  opacity:.035;
+}
+
+body.rp-lobby-active .rp-app-inner{
+  min-height:100svh;
+  display:flex;
+  flex-direction:column;
+}
+
+body.rp-lobby-active .rp-player-strip{
+  margin:0 20px;
+  padding:19px 0 16px;
+  min-height:66px;
+  border-bottom:1px solid rgba(136,176,222,.11);
+}
+
+body.rp-lobby-active .rp-player-number{
+  min-width:36px;
+  height:36px;
+  border-radius:10px;
+  font-size:1rem;
+}
+
+body.rp-lobby-active .rp-player-name strong{
+  max-width:180px;
+  font-size:1rem;
+  letter-spacing:.01em;
+}
+
+body.rp-lobby-active .rp-player-name span,
+body.rp-lobby-active .rp-player-rating span{
+  font-size:.5rem;
+  letter-spacing:.13em;
+}
+
+body.rp-lobby-active .rp-player-rating strong{
+  font-size:1rem;
+}
+
+.rp-main-menu{
+  position:relative;
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:24px 20px max(26px,env(safe-area-inset-bottom));
+  overflow:hidden;
+}
+
+.rp-main-menu::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 14% 42%,rgba(15,111,255,.09),transparent 27%),
+    radial-gradient(circle at 92% 62%,rgba(180,23,34,.08),transparent 31%);
+}
+
+.rp-main-menu-brand{
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  margin:0 auto clamp(26px,5.5vh,46px);
+  text-align:center;
+}
+
+.rp-main-menu-brand strong{
+  color:#f7fbff;
+  font-family:var(--rp-display);
+  font-size:clamp(2.1rem,10vw,3.4rem);
+  font-style:italic;
+  font-weight:900;
+  line-height:.86;
+  letter-spacing:-.045em;
+}
+
+.rp-main-menu-brand>span{
+  margin-top:7px;
+  color:#179cff;
+  font-family:var(--rp-display);
+  font-size:.82rem;
+  font-style:italic;
+  font-weight:900;
+  letter-spacing:.24em;
+}
+
+.rp-main-menu-brand i{
+  width:58px;
+  height:2px;
+  margin-top:17px;
+  background:linear-gradient(90deg,#1979ff 0 76%,#f21935 76% 100%);
+  box-shadow:0 0 16px rgba(23,108,255,.28);
+}
+
+.rp-main-menu-brand small{
+  margin-top:12px;
+  color:#8490a0;
+  font-family:var(--rp-display);
+  font-size:.52rem;
+  font-weight:800;
+  letter-spacing:.18em;
+}
+
+.rp-main-menu-list{
+  position:relative;
+  z-index:1;
+  width:100%;
+  max-width:390px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:2px;
+}
+
+.rp-main-menu-item{
+  appearance:none;
+  width:100%;
+  min-height:80px;
+  padding:9px 6px;
+  border:0;
+  background:transparent;
+  color:#778496;
+  text-align:center;
+  cursor:pointer;
+  transition:transform .22s ease,color .22s ease,opacity .22s ease;
+}
+
+.rp-main-menu-item small,
+.rp-main-menu-item span{
+  display:block;
+  font-family:var(--rp-display);
+  font-weight:800;
+  letter-spacing:.13em;
+  transition:opacity .22s ease,color .22s ease;
+}
+
+.rp-main-menu-item small{
+  margin-bottom:2px;
+  color:#536174;
+  font-size:.49rem;
+}
+
+.rp-main-menu-item strong{
+  display:block;
+  color:inherit;
+  font-family:var(--rp-display);
+  font-size:clamp(1.75rem,8vw,2.45rem);
+  font-style:italic;
+  font-weight:900;
+  line-height:.9;
+  letter-spacing:-.025em;
+  text-transform:uppercase;
+}
+
+.rp-main-menu-item span{
+  margin-top:6px;
+  color:#526075;
+  font-size:.48rem;
+}
+
+.rp-main-menu-item.active{
+  color:#fff;
+  transform:scale(1.08);
+}
+
+.rp-main-menu-item.active small{
+  color:#1bc9ff;
+}
+
+.rp-main-menu-item.active span{
+  color:#8fa1b8;
+}
+
+.rp-main-menu-item.muted:not(.active){
+  opacity:.54;
+}
+
+.rp-main-menu-item:focus-visible{
+  outline:1px solid rgba(31,201,255,.46);
+  outline-offset:-4px;
+  border-radius:14px;
+}
+
+.rp-main-menu-foot{
+  position:relative;
+  z-index:1;
+  margin:clamp(23px,5vh,44px) 0 0;
+  color:#4f5e72;
+  text-align:center;
+  font-family:var(--rp-display);
+  font-size:.5rem;
+  font-weight:800;
+  letter-spacing:.17em;
+}
+
+.rp-main-notice{
+  position:fixed;
+  z-index:2200;
+  inset:0;
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+  padding:18px;
+  background:rgba(0,4,11,.79);
+  backdrop-filter:blur(14px);
+}
+
+.rp-main-notice.open{
+  display:flex;
+}
+
+.rp-main-notice-card{
+  width:min(100%,520px);
+  padding:25px 22px 22px;
+  border:1px solid rgba(107,169,225,.16);
+  border-radius:24px;
+  background:linear-gradient(160deg,#081321,#03070e);
+  box-shadow:0 24px 70px rgba(0,0,0,.48);
+  color:#f8fbff;
+  text-align:center;
+}
+
+.rp-main-notice-card small{
+  color:#1bc9ff;
+  font-family:var(--rp-display);
+  font-size:.58rem;
+  font-weight:900;
+  letter-spacing:.17em;
+}
+
+.rp-main-notice-card h2{
+  margin:7px 0 8px;
+  font-family:var(--rp-display);
+  font-size:2rem;
+  font-style:italic;
+  font-weight:900;
+  line-height:.95;
+  letter-spacing:-.02em;
+}
+
+.rp-main-notice-card p{
+  margin:0 auto;
+  max-width:390px;
+  color:#8292a8;
+  font-size:.72rem;
+  line-height:1.6;
+}
+
+.rp-main-notice-card button{
+  width:100%;
+  min-height:48px;
+  margin-top:20px;
+  border:0;
+  border-radius:13px;
+  background:linear-gradient(100deg,#176cff,#1ddcff);
+  color:#fff;
+  font-family:var(--rp-display);
+  font-size:.8rem;
+  font-style:italic;
+  font-weight:900;
+  letter-spacing:.04em;
+}
+
+@media(max-height:720px){
+  .rp-main-menu{justify-content:flex-start;padding-top:15px;overflow-y:auto}
+  .rp-main-menu-brand{margin-bottom:15px}
+  .rp-main-menu-brand strong{font-size:2rem}
+  .rp-main-menu-brand i{margin-top:11px}
+  .rp-main-menu-item{min-height:68px}
+  .rp-main-menu-foot{margin-top:14px}
+}
+
+@media(min-width:700px){
+  .rp-main-notice{align-items:center}
+}
