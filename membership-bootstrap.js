@@ -3,6 +3,7 @@
   const TOKEN_KEY = 'real_play_access_token';
   let membershipLoaded = false;
   let probing = false;
+  let probedToken = '';
 
   function relabelFreePlayerEntry() {
     const kicker = document.querySelector('.auth-kicker');
@@ -34,17 +35,27 @@
 
   async function probeMembershipService() {
     relabelFreePlayerEntry();
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token || membershipLoaded || probing) return;
+    const token = localStorage.getItem(TOKEN_KEY) || '';
+
+    if (!token) {
+      probedToken = '';
+      return;
+    }
+
+    // Probe each authenticated session only once. If the optional membership
+    // route is not deployed yet, do not hammer the same missing endpoint every
+    // five seconds and flood DevTools with repeated 404s.
+    if (membershipLoaded || probing || probedToken === token) return;
 
     probing = true;
+    probedToken = token;
     try {
       const response = await fetch(`${API_BASE_URL}/api/real-play/membership`, {
         headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
       });
       if (response.ok) loadMembershipExperience();
     } catch (_error) {
-      // Preserve the existing Career flow until the membership API is live.
+      // Preserve the existing player experience when the optional service is unavailable.
     } finally {
       probing = false;
     }
@@ -54,10 +65,15 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.addEventListener('focus', probeMembershipService);
-  window.addEventListener('storage', (event) => { if (event.key === TOKEN_KEY) probeMembershipService(); });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) probeMembershipService(); });
+  window.addEventListener('storage', (event) => {
+    if (event.key !== TOKEN_KEY) return;
+    if (event.newValue !== probedToken) probedToken = '';
+    probeMembershipService();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) probeMembershipService();
+  });
 
   relabelFreePlayerEntry();
   probeMembershipService();
-  window.setInterval(probeMembershipService, 5000);
 })();
