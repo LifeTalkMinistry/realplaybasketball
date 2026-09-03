@@ -4,6 +4,7 @@
   flex-direction:column;
   align-items:center;
 }
+.rp-public-hero-default[hidden]{display:none!important}
 
 .rp-public-value-trigger{
   width:min(100%,360px);
