@@ -73,20 +73,26 @@
       return;
     }
 
-    list.innerHTML = players.map((player) => `
-      <article class="rp-3v3-admin-player" data-rp-three-player="${player.userId}">
-        <div class="rp-3v3-admin-player-head">
-          <div><strong>${escapeHtml(player.playerName)}</strong><span>${escapeHtml(player.email)}</span></div>
-          <span class="rp-3v3-admin-current">${clubName(player.assignedClub)}</span>
-        </div>
-        <div class="rp-3v3-admin-pref">PREFERRED: <b>${clubName(player.preferredClub)}</b></div>
-        <div class="rp-3v3-admin-actions">
-          ${CLUBS.map((club) => `<button type="button" class="${player.assignedClub === club.id ? 'active' : ''}" data-rp-three-assign="${club.id}">${club.name}</button>`).join('')}
-        </div>
-        <button class="rp-3v3-admin-clear" type="button" data-rp-three-assign="">RETURN TO UNASSIGNED</button>
-        <p class="rp-3v3-admin-status" data-rp-3v3-admin-status></p>
-      </article>
-    `).join('');
+    list.innerHTML = players.map((player) => {
+      const preferredName = clubName(player.preferredClub);
+      const assignedName = clubName(player.assignedClub);
+      const canAssignPreferred = Boolean(player.preferredClub && player.assignedClub !== player.preferredClub);
+      return `
+        <article class="rp-3v3-admin-player" data-rp-three-player="${player.userId}">
+          <div class="rp-3v3-admin-player-head">
+            <div><strong>${escapeHtml(player.playerName)}</strong><span>${escapeHtml(player.email)}</span></div>
+            <span class="rp-3v3-admin-current">${assignedName}</span>
+          </div>
+          <div class="rp-3v3-admin-pref">PREFERRED: <b>${preferredName}</b></div>
+          ${canAssignPreferred ? `<button class="rp-3v3-admin-preferred-action" type="button" data-rp-three-assign="${player.preferredClub}">ASSIGN PREFERRED · ${preferredName}</button>` : ''}
+          <div class="rp-3v3-admin-actions">
+            ${CLUBS.map((club) => `<button type="button" class="${player.assignedClub === club.id ? 'active' : ''}" data-rp-three-assign="${club.id}">${player.assignedClub === club.id ? `${club.name} ✓` : club.name}</button>`).join('')}
+          </div>
+          ${player.assignedClub ? '<button class="rp-3v3-admin-clear" type="button" data-rp-three-assign="">RETURN TO UNASSIGNED</button>' : ''}
+          <p class="rp-3v3-admin-status" data-rp-3v3-admin-status></p>
+        </article>
+      `;
+    }).join('');
 
     list.querySelectorAll('[data-rp-three-assign]').forEach((button) => {
       button.addEventListener('click', () => assign(button));
@@ -105,6 +111,14 @@
     }
   }
 
+  function showAssignmentResult(userId, message) {
+    const updatedCard = list.querySelector(`[data-rp-three-player="${userId}"]`);
+    const updatedStatus = updatedCard?.querySelector('[data-rp-3v3-admin-status]');
+    if (!updatedStatus) return;
+    updatedStatus.textContent = message;
+    updatedStatus.classList.add('success');
+  }
+
   async function assign(button) {
     const card = button.closest('[data-rp-three-player]');
     const userId = Number(card?.dataset.rpThreePlayer);
@@ -116,7 +130,7 @@
 
     const status = card.querySelector('[data-rp-3v3-admin-status]');
     card.querySelectorAll('button').forEach((control) => { control.disabled = true; });
-    if (status) status.textContent = 'UPDATING CLUB…';
+    if (status) status.textContent = club ? 'CONFIRMING FINAL CLUB…' : 'RETURNING TO UNASSIGNED…';
     try {
       const result = await api('/api/real-play/admin/3v3/assignment', {
         method: 'PUT',
@@ -125,6 +139,15 @@
       player.assignedClub = result.assignedClub || null;
       player.assignedAt = result.assignedAt || null;
       render();
+      showAssignmentResult(
+        userId,
+        result.assignedClub
+          ? `FINAL CLUB CONFIRMED: ${clubName(result.assignedClub)} ✓`
+          : 'PLAYER RETURNED TO UNASSIGNED.'
+      );
+      window.dispatchEvent(new CustomEvent('realplay:3v3-assignment', {
+        detail: { userId, assignedClub: result.assignedClub || null },
+      }));
     } catch (error) {
       if (status) status.textContent = error.message || 'Assignment failed.';
       card.querySelectorAll('button').forEach((control) => { control.disabled = false; });
