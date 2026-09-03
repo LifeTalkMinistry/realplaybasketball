@@ -1,81 +1,109 @@
-/* Real Play World — community / league activity screen */
+/* Real Play World — player community posts + chat */
 .rp-world{
-  position:fixed;
-  z-index:540;
-  inset:0;
-  display:none;
-  overflow-y:auto;
-  overscroll-behavior:contain;
-  padding:0 0 max(34px,env(safe-area-inset-bottom));
-  color:#f8fbff;
-  background:
-    radial-gradient(circle at 82% 2%,rgba(29,220,255,.12),transparent 23%),
-    radial-gradient(circle at 15% 16%,rgba(23,108,255,.18),transparent 30%),
-    linear-gradient(180deg,#040914 0%,#02050b 45%,#010308 100%);
-  font-family:var(--rp-body,Arial,sans-serif);
+  position:fixed;z-index:540;inset:0;display:none;overflow-y:auto;overscroll-behavior:contain;
+  color:#f7fbff;background:
+    radial-gradient(circle at 8% 8%,rgba(15,104,255,.16),transparent 28%),
+    radial-gradient(circle at 92% 34%,rgba(255,32,54,.1),transparent 26%),
+    linear-gradient(180deg,#03060c 0%,#020409 46%,#010205 100%);
+  font-family:var(--rp-body,Arial,sans-serif)
 }
 .rp-world.open{display:block}
 body.rp-world-open{overflow:hidden}
-.rp-world-shell{width:min(100%,560px);margin:0 auto;padding:0 18px 36px}
+.rp-world-shell{width:min(100%,620px);min-height:100%;margin:0 auto;padding:0 16px max(32px,env(safe-area-inset-bottom))}
 .rp-world-topbar{
-  position:sticky;top:0;z-index:5;
-  min-height:68px;margin:0 -18px;padding:12px 18px;
+  position:sticky;top:0;z-index:8;min-height:66px;margin:0 -16px;padding:10px 16px;
   display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:10px;
-  border-bottom:1px solid rgba(126,173,232,.09);
-  background:rgba(3,7,14,.9);backdrop-filter:blur(18px)
+  border-bottom:1px solid rgba(255,255,255,.065);background:rgba(2,4,9,.94);backdrop-filter:blur(18px)
 }
-.rp-world-back{width:40px;height:40px;border:1px solid rgba(126,173,232,.13);border-radius:13px;color:#fff;background:#07101b;font-size:1.12rem}
-.rp-world-title strong{display:block;font-family:var(--rp-display,Arial,sans-serif);font-size:1rem;font-style:italic;font-weight:900;letter-spacing:.12em}
-.rp-world-title span{display:block;margin-top:2px;color:#718096;font-size:.54rem;font-weight:800;letter-spacing:.12em}
-.rp-world-live{padding:7px 9px;border:1px solid rgba(29,220,255,.25);border-radius:999px;color:#62eaff;background:rgba(29,220,255,.06);font-family:var(--rp-display,Arial,sans-serif);font-size:.57rem;font-weight:900;letter-spacing:.1em}
+.rp-world-back{width:40px;height:40px;border:1px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;background:#080d15;font-size:1.05rem;font-weight:900}
+.rp-world-title strong{display:block;font-family:var(--rp-display,Arial,sans-serif);font-size:1.05rem;font-style:italic;font-weight:950;letter-spacing:.11em}
+.rp-world-title span{display:block;margin-top:2px;color:#617084;font-size:.48rem;font-weight:900;letter-spacing:.14em}
+.rp-world-online{padding:6px 8px;border:1px solid rgba(40,195,255,.18);border-radius:999px;color:#4fdcff;background:rgba(18,109,255,.08);font-size:.48rem;font-weight:950;letter-spacing:.1em}
 
-.rp-world-hero{position:relative;overflow:hidden;margin-top:22px;padding:22px;border:1px solid rgba(126,173,232,.14);border-radius:25px;background:linear-gradient(145deg,#0a1930,#06101c 68%);box-shadow:0 22px 55px rgba(0,0,0,.28)}
-.rp-world-hero::after{content:'';position:absolute;width:210px;height:210px;right:-92px;top:-90px;border:1px solid rgba(255,255,255,.045);border-radius:50%;box-shadow:0 0 0 40px rgba(255,255,255,.01),0 0 0 80px rgba(255,255,255,.008)}
-.rp-world-kicker{position:relative;z-index:1;color:#4ee7ff;font-size:.53rem;font-weight:900;letter-spacing:.15em}
-.rp-world-hero h1{position:relative;z-index:1;margin:7px 0 7px;font-family:var(--rp-display,Arial,sans-serif);font-size:2rem;font-style:italic;font-weight:900;line-height:.92;text-transform:uppercase}
-.rp-world-hero p{position:relative;z-index:1;max-width:390px;margin:0;color:#8b9cb0;font-size:.71rem;line-height:1.5}
-.rp-world-metrics{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:17px}
-.rp-world-metrics article{min-width:0;padding:12px 8px;border:1px solid rgba(126,173,232,.1);border-radius:14px;background:rgba(2,5,11,.34);text-align:center}
-.rp-world-metrics span{display:block;color:#687b91;font-size:.46rem;font-weight:900;letter-spacing:.1em}
-.rp-world-metrics strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:5px;font-family:var(--rp-display,Arial,sans-serif);font-size:1.08rem;font-weight:900}
+.rp-world-primary-tabs{
+  position:sticky;top:66px;z-index:7;display:flex;align-items:center;justify-content:center;gap:18px;
+  margin:0 -16px;padding:15px 16px 13px;border-bottom:1px solid rgba(255,255,255,.055);background:rgba(2,4,9,.93);backdrop-filter:blur(18px)
+}
+.rp-world-primary-tabs button{border:0;padding:0;color:#657286;background:transparent;font-family:var(--rp-display,Arial,sans-serif);font-size:.82rem;font-weight:950;letter-spacing:.13em}
+.rp-world-primary-tabs button.active{color:#fff}
+.rp-world-primary-tabs button.active::after{content:'';display:block;width:24px;height:2px;margin:7px auto -8px;border-radius:999px;background:#24c7ff;box-shadow:0 0 14px rgba(36,199,255,.45)}
+.rp-world-primary-tabs>span{color:#28313d;font-weight:900}
+.rp-world-body{padding:18px 0 10px}
+.rp-world-view[hidden]{display:none!important}
 
-.rp-world-section{margin-top:27px}
-.rp-world-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:11px}
-.rp-world-section-head small{display:block;color:#4ee7ff;font-size:.51rem;font-weight:900;letter-spacing:.14em}
-.rp-world-section-head h2{margin:3px 0 0;font-family:var(--rp-display,Arial,sans-serif);font-size:1.45rem;font-style:italic;font-weight:900;line-height:1;text-transform:uppercase}
-.rp-world-section-head>span{color:#607188;font-size:.55rem;font-weight:800;letter-spacing:.08em}
-.rp-world-tabs{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
-.rp-world-tabs::-webkit-scrollbar{display:none}
-.rp-world-tab{flex:0 0 auto;padding:8px 11px;border:1px solid rgba(126,173,232,.11);border-radius:999px;color:#697c91;background:#07101b;font-family:var(--rp-display,Arial,sans-serif);font-size:.6rem;font-weight:900;letter-spacing:.08em}
-.rp-world-tab.active{color:#fff;border-color:rgba(29,220,255,.26);background:rgba(23,108,255,.15)}
-.rp-world-board,.rp-world-feed{display:grid;gap:8px}
-.rp-world-row{display:grid;grid-template-columns:32px 1fr auto;align-items:center;gap:10px;padding:13px 14px;border:1px solid rgba(126,173,232,.1);border-radius:15px;background:#07101b}
-.rp-world-row.you{border-color:rgba(29,220,255,.24);background:linear-gradient(120deg,rgba(23,108,255,.14),#07101b 62%)}
-.rp-world-row em{font-style:normal;color:#687c91;font-family:var(--rp-display,Arial,sans-serif);font-size:.92rem;font-weight:900}
-.rp-world-player{min-width:0}
-.rp-world-player strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--rp-display,Arial,sans-serif);font-size:.98rem;font-weight:900}
-.rp-world-player small{display:block;margin-top:3px;color:#66798e;font-size:.5rem;font-weight:800;letter-spacing:.07em}
-.rp-world-value{text-align:right}
-.rp-world-value strong{display:block;font-family:var(--rp-display,Arial,sans-serif);font-size:1.12rem;font-weight:900}
-.rp-world-value span{display:block;margin-top:2px;color:#5ceaff;font-size:.46rem;font-weight:900;letter-spacing:.08em}
-.rp-world-feed-item{display:grid;grid-template-columns:38px 1fr;gap:11px;align-items:start;padding:14px;border:1px solid rgba(126,173,232,.1);border-radius:16px;background:#07101b}
-.rp-world-feed-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;color:#64eaff;background:rgba(23,108,255,.14);font-family:var(--rp-display,Arial,sans-serif);font-weight:900}
-.rp-world-feed-item small{display:block;color:#5ceaff;font-size:.49rem;font-weight:900;letter-spacing:.1em}
-.rp-world-feed-item strong{display:block;margin-top:3px;font-family:var(--rp-display,Arial,sans-serif);font-size:.95rem;font-weight:900;line-height:1.15}
-.rp-world-feed-item p{margin:5px 0 0;color:#74879c;font-size:.65rem;line-height:1.42}
-.rp-world-empty{padding:24px 18px;border:1px solid rgba(126,173,232,.1);border-radius:17px;background:#050b13;text-align:center}
-.rp-world-empty strong{display:block;font-family:var(--rp-display,Arial,sans-serif);font-size:1.02rem;font-style:italic;font-weight:900}
-.rp-world-empty p{margin:7px auto 0;color:#708195;font-size:.68rem;line-height:1.45}
-.rp-world-loading{opacity:.7}
+.rp-world-composer{display:grid;grid-template-columns:38px 1fr;gap:10px;padding:14px;border:1px solid rgba(255,255,255,.085);border-radius:18px;background:rgba(7,12,20,.9);box-shadow:0 16px 40px rgba(0,0,0,.2)}
+.rp-world-composer-avatar,.rp-world-avatar,.rp-world-comment-avatar,.rp-chat-message-avatar{display:grid;place-items:center;border-radius:50%;font-family:var(--rp-display,Arial,sans-serif);font-weight:950;letter-spacing:.02em;color:#fff;background:linear-gradient(145deg,#0f67ff,#10223f)}
+.rp-world-composer-avatar,.rp-world-avatar{width:38px;height:38px;font-size:.68rem}
+.rp-world-composer label{min-width:0}
+.rp-world-composer textarea{width:100%;min-height:66px;resize:none;border:0;outline:0;color:#f6faff;background:transparent;font:600 .86rem/1.5 var(--rp-body,Arial,sans-serif)}
+.rp-world-composer textarea::placeholder{color:#637085}
+.rp-world-composer-foot{grid-column:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:8px;border-top:1px solid rgba(255,255,255,.055)}
+.rp-world-composer-foot small{color:#526074;font-size:.47rem;font-weight:950;letter-spacing:.11em}
+.rp-world-composer-foot button,.rp-world-comment-form button{border:0;border-radius:999px;color:#001018;background:#43d5ff;font-family:var(--rp-display,Arial,sans-serif);font-weight:950;letter-spacing:.08em}
+.rp-world-composer-foot button{min-width:66px;padding:8px 13px;font-size:.61rem}
+.rp-world-composer-foot button:disabled,.rp-world-comment-form button:disabled,.rp-chat-form button:disabled{opacity:.55}
+.rp-world-status{min-height:14px;margin:8px 3px 0;color:#607188;font-size:.55rem;font-weight:850;letter-spacing:.04em;text-align:center}
+.rp-world-status.error{color:#ff7f8e}.rp-world-status.success{color:#59e6bc}
 
-/* Once World is installed, the third bottom-nav position belongs to World. */
+.rp-world-feed{display:grid;gap:11px;margin-top:9px}
+.rp-world-post{padding:15px 14px 13px;border:1px solid rgba(255,255,255,.075);border-radius:18px;background:rgba(5,9,15,.94)}
+.rp-world-post-head{display:flex;align-items:center;gap:10px}
+.rp-world-post-author{min-width:0}
+.rp-world-post-author strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--rp-display,Arial,sans-serif);font-size:.82rem;font-weight:950;letter-spacing:.025em}
+.rp-world-post-author span{display:block;margin-top:2px;color:#5f6d80;font-size:.48rem;font-weight:850;letter-spacing:.08em}
+.rp-world-post-copy{margin:12px 0 13px;white-space:pre-wrap;color:#dce5ef;font-size:.82rem;line-height:1.5}
+.rp-world-post-actions{display:flex;gap:7px;padding-top:9px;border-top:1px solid rgba(255,255,255,.05)}
+.rp-world-post-actions button{min-height:34px;padding:7px 10px;border:1px solid rgba(255,255,255,.07);border-radius:999px;color:#6f7f93;background:#060b12;font-size:.53rem;font-weight:950;letter-spacing:.055em}
+.rp-world-post-actions button span{margin-right:2px}.rp-world-post-actions button.active{color:#ff7687;border-color:rgba(255,84,108,.24);background:rgba(255,34,67,.075)}
+.rp-world-comments{display:grid;gap:8px;margin-top:9px}.rp-world-comments:not(.has-comments)>.rp-world-comment{display:none}
+.rp-world-comment{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start}
+.rp-world-comment-avatar{width:28px;height:28px;font-size:.48rem}
+.rp-world-comment>div:last-child{padding:8px 10px;border-radius:12px;background:#080e17}
+.rp-world-comment p{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0}
+.rp-world-comment p strong{font-family:var(--rp-display,Arial,sans-serif);font-size:.62rem;font-weight:950}
+.rp-world-comment p span{color:#556478;font-size:.42rem;font-weight:900}
+.rp-world-comment b{display:block;margin-top:3px;color:#aebccc;font-size:.65rem;font-weight:600;line-height:1.4}
+.rp-world-comment-form{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:3px}
+.rp-world-comment-form[hidden]{display:none!important}
+.rp-world-comment-form input{min-width:0;height:36px;border:1px solid rgba(255,255,255,.085);border-radius:999px;padding:0 12px;outline:0;color:#eef5fb;background:#070c14;font-size:.68rem}
+.rp-world-comment-form input:focus{border-color:rgba(43,201,255,.3)}
+.rp-world-comment-form button{padding:0 12px;font-size:.52rem}
+.rp-world-empty{padding:34px 20px;border:1px dashed rgba(255,255,255,.09);border-radius:18px;text-align:center;background:rgba(4,8,14,.55)}
+.rp-world-empty strong{display:block;font-family:var(--rp-display,Arial,sans-serif);font-size:1rem;font-style:italic;font-weight:950}
+.rp-world-empty p{margin:6px 0 0;color:#647388;font-size:.68rem}
+
+.rp-chat-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:4px 2px 13px}
+.rp-chat-heading small{display:block;color:#42d4ff;font-size:.48rem;font-weight:950;letter-spacing:.12em}
+.rp-chat-heading h1{margin:3px 0 0;font-family:var(--rp-display,Arial,sans-serif);font-size:1.45rem;font-style:italic;font-weight:950;line-height:1;text-transform:uppercase}
+.rp-chat-heading>span{color:#536174;font-size:.46rem;font-weight:900;letter-spacing:.08em}
+.rp-chat-channels{display:flex;gap:8px;overflow-x:auto;padding:1px 1px 10px;scrollbar-width:none}.rp-chat-channels::-webkit-scrollbar{display:none}
+.rp-chat-channel{flex:0 0 auto;min-width:180px;display:grid;grid-template-columns:32px 1fr;align-items:center;gap:9px;padding:10px;border:1px solid rgba(255,255,255,.075);border-radius:14px;color:#8b9aad;background:#070c14;text-align:left}
+.rp-chat-channel>span{width:32px;height:32px;display:grid;place-items:center;border-radius:10px;color:#48d8ff;background:rgba(28,119,255,.1);font-weight:950}
+.rp-chat-channel strong{display:block;color:#dfe7f0;font-family:var(--rp-display,Arial,sans-serif);font-size:.7rem;font-weight:950;letter-spacing:.04em}
+.rp-chat-channel small{display:block;margin-top:2px;color:#5c6b7f;font-size:.48rem;font-weight:800}
+.rp-chat-channel.active{border-color:rgba(53,205,255,.25);background:linear-gradient(125deg,rgba(19,92,194,.17),#070c14 66%)}
+.rp-chat-team-waiting{flex:0 0 205px;padding:10px 12px;border:1px dashed rgba(255,255,255,.08);border-radius:14px;background:rgba(5,9,15,.55)}
+.rp-chat-team-waiting strong{display:block;color:#65758a;font-family:var(--rp-display,Arial,sans-serif);font-size:.62rem;font-weight:950}.rp-chat-team-waiting span{display:block;margin-top:3px;color:#4d5b6d;font-size:.5rem;line-height:1.35}
+.rp-chat-thread-wrap{overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:#050910}
+.rp-chat-thread-head{height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;border-bottom:1px solid rgba(255,255,255,.06);background:#080e17}
+.rp-chat-thread-head strong{display:block;font-family:var(--rp-display,Arial,sans-serif);font-size:.78rem;font-weight:950;letter-spacing:.045em}.rp-chat-thread-head span{display:block;margin-top:2px;color:#5f6f82;font-size:.48rem;font-weight:800}.rp-chat-thread-head b{color:#4de2a8;font-size:.62rem}
+.rp-chat-thread{height:min(52vh,470px);min-height:330px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:13px 11px;scrollbar-width:none}.rp-chat-thread::-webkit-scrollbar{display:none}
+.rp-chat-message{display:flex;align-items:flex-end;gap:7px;max-width:87%}.rp-chat-message.mine{align-self:flex-end;flex-direction:row-reverse}.rp-chat-message-avatar{flex:0 0 26px;width:26px;height:26px;font-size:.43rem}
+.rp-chat-bubble{min-width:0;padding:8px 10px;border-radius:13px 13px 13px 4px;background:#0a111c}.rp-chat-message.mine .rp-chat-bubble{border-radius:13px 13px 4px 13px;background:linear-gradient(145deg,#0e66da,#104c9d)}
+.rp-chat-bubble strong{display:block;margin-bottom:3px;color:#57dfff;font-size:.52rem;font-weight:950;letter-spacing:.04em}.rp-chat-bubble p{margin:0;white-space:pre-wrap;color:#e7eef5;font-size:.71rem;line-height:1.4}.rp-chat-bubble span{display:block;margin-top:4px;color:#54657a;font-size:.4rem;font-weight:900;text-align:right}.rp-chat-message.mine .rp-chat-bubble span{color:rgba(255,255,255,.55)}
+.rp-chat-empty{margin:auto;text-align:center}.rp-chat-empty strong{display:block;font-family:var(--rp-display,Arial,sans-serif);font-size:.82rem;font-weight:950}.rp-chat-empty span{display:block;margin-top:4px;color:#607086;font-size:.6rem}
+.rp-chat-form{display:grid;grid-template-columns:1fr 38px;gap:8px;padding:10px;border-top:1px solid rgba(255,255,255,.06);background:#080e17}
+.rp-chat-form textarea{width:100%;min-height:38px;max-height:110px;resize:none;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:9px 12px;outline:0;color:#eef5fb;background:#050910;font:600 .69rem/1.35 var(--rp-body,Arial,sans-serif)}
+.rp-chat-form textarea:focus{border-color:rgba(49,201,255,.28)}
+.rp-chat-form button{width:38px;height:38px;border:0;border-radius:12px;color:#001018;background:#43d5ff;font-size:1rem;font-weight:950}
 .rp-nav-item[data-rp-nav="world"] span{color:#54e9ff}
 
+@media(min-width:700px){
+  .rp-world-shell{padding-inline:20px}.rp-world-topbar,.rp-world-primary-tabs{margin-inline:-20px;padding-inline:20px}
+  .rp-world-body{padding-top:22px}.rp-world-post{padding:17px}.rp-world-composer{padding:16px}
+}
 @media(max-width:380px){
-  .rp-world-shell{padding-inline:14px}
-  .rp-world-topbar{margin-inline:-14px;padding-inline:14px}
-  .rp-world-hero{padding:18px}
-  .rp-world-hero h1{font-size:1.8rem}
-  .rp-world-metrics{gap:6px}
-  .rp-world-metrics strong{font-size:.96rem}
+  .rp-world-shell{padding-inline:12px}.rp-world-topbar,.rp-world-primary-tabs{margin-inline:-12px;padding-inline:12px}
+  .rp-world-online{display:none}.rp-world-topbar{grid-template-columns:42px 1fr}
+  .rp-chat-channel{min-width:165px}.rp-chat-thread{min-height:300px;height:49vh}
 }
