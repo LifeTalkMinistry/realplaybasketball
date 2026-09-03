@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-public-pricing-card-v2';
+  const version = '20260903-public-pricing-carousel-v3';
   const html = document.documentElement;
   html.classList.add('js');
 
