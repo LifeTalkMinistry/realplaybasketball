@@ -1,26 +1,25 @@
-/* Real Play ambient lighting: visible but still soft and black-first. */
+/* Real Play ambient lighting: visible, soft, and black-first. */
 .rp-app.rp-guest .rp-entry.rp-public-landing{
   background:
     radial-gradient(88% 58% at -18% 12%, rgba(8,108,255,.34) 0%, rgba(8,108,255,.20) 24%, rgba(8,108,255,.08) 45%, rgba(8,108,255,.025) 61%, transparent 76%),
-    radial-gradient(76% 52% at 118% 30%, rgba(255,32,40,.25) 0%, rgba(255,32,40,.14) 25%, rgba(255,32,40,.055) 45%, rgba(255,32,40,.018) 61%, transparent 76%),
+    radial-gradient(82% 58% at 108% 28%, rgba(255,28,40,.40) 0%, rgba(255,28,40,.24) 22%, rgba(255,28,40,.11) 42%, rgba(255,28,40,.04) 58%, transparent 76%),
     radial-gradient(70% 46% at 2% 78%, rgba(22,135,255,.21) 0%, rgba(22,135,255,.10) 28%, rgba(22,135,255,.035) 50%, transparent 74%),
-    radial-gradient(64% 42% at 103% 88%, rgba(255,28,39,.17) 0%, rgba(255,28,39,.075) 30%, rgba(255,28,39,.025) 50%, transparent 74%),
+    radial-gradient(72% 48% at 108% 82%, rgba(255,20,35,.28) 0%, rgba(255,20,35,.14) 28%, rgba(255,20,35,.055) 49%, transparent 74%),
     linear-gradient(180deg,#020306 0%,#010204 48%,#030407 100%);
 }
 
 /* Keep the exact center readable without erasing the surrounding color. */
 .rp-public-hero{
-  background:
-    radial-gradient(42% 29% at 50% 43%, rgba(0,0,0,.055) 0%, rgba(0,0,0,.025) 48%, transparent 80%);
+  background:radial-gradient(42% 29% at 50% 43%, rgba(0,0,0,.045) 0%, rgba(0,0,0,.02) 48%, transparent 80%);
 }
 
 @media(max-width:520px){
   .rp-app.rp-guest .rp-entry.rp-public-landing{
     background:
       radial-gradient(105% 56% at -28% 13%, rgba(8,108,255,.37) 0%, rgba(8,108,255,.21) 25%, rgba(8,108,255,.075) 47%, rgba(8,108,255,.02) 62%, transparent 77%),
-      radial-gradient(90% 51% at 130% 31%, rgba(255,32,40,.28) 0%, rgba(255,32,40,.15) 27%, rgba(255,32,40,.05) 48%, rgba(255,32,40,.016) 62%, transparent 77%),
+      radial-gradient(102% 58% at 110% 30%, rgba(255,28,40,.46) 0%, rgba(255,28,40,.28) 23%, rgba(255,28,40,.125) 43%, rgba(255,28,40,.045) 59%, transparent 77%),
       radial-gradient(84% 43% at -14% 75%, rgba(22,135,255,.22) 0%, rgba(22,135,255,.09) 31%, rgba(22,135,255,.025) 52%, transparent 76%),
-      radial-gradient(76% 38% at 118% 86%, rgba(255,28,39,.18) 0%, rgba(255,28,39,.07) 31%, rgba(255,28,39,.02) 52%, transparent 76%),
+      radial-gradient(88% 44% at 108% 84%, rgba(255,20,35,.31) 0%, rgba(255,20,35,.145) 29%, rgba(255,20,35,.05) 50%, transparent 76%),
       linear-gradient(180deg,#020306 0%,#010204 48%,#030407 100%);
   }
 }
