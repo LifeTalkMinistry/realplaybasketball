@@ -1,0 +1,152 @@
+.rp-public-value{
+  width:min(100%,360px);
+  margin:-6px 0 22px;
+}
+
+.rp-public-value summary{
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:10px 14px;
+  list-style:none;
+  cursor:pointer;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  background:rgba(255,255,255,.025);
+  color:#b7c0cc;
+  font-family:var(--rp-display);
+  font-size:.9rem;
+  font-weight:900;
+  letter-spacing:.055em;
+  line-height:1.2;
+  text-transform:uppercase;
+}
+
+.rp-public-value summary::-webkit-details-marker{display:none}
+.rp-public-value summary:focus-visible{outline:2px solid var(--rp-blue-hi);outline-offset:3px}
+.rp-public-value summary b{
+  flex:none;
+  color:var(--rp-blue-hi);
+  font-family:var(--rp-display);
+  font-size:1.2rem;
+  line-height:1;
+}
+.rp-public-value[open] summary b{transform:rotate(45deg)}
+
+.rp-public-value-panel{
+  margin-top:10px;
+  padding:18px;
+  border:1px solid rgba(8,108,255,.18);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(8,13,20,.98),rgba(4,6,10,.98));
+  text-align:left;
+}
+
+.rp-public-value-kicker{
+  margin:0 0 12px;
+  color:#aab3bf;
+  font-family:var(--rp-display);
+  font-size:.88rem;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.rp-public-value-math{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+}
+.rp-public-value-math article{
+  min-width:0;
+  padding:15px 12px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:12px;
+  background:rgba(255,255,255,.025);
+  text-align:center;
+}
+.rp-public-value-math strong{
+  display:block;
+  color:#f5f7fa;
+  font-family:var(--rp-display);
+  font-size:1.65rem;
+  font-style:italic;
+  font-weight:900;
+  line-height:1;
+}
+.rp-public-value-math span{
+  display:block;
+  margin-top:7px;
+  color:#aab3bf;
+  font-family:var(--rp-display);
+  font-size:.86rem;
+  font-weight:900;
+  letter-spacing:.055em;
+}
+
+.rp-public-value-assumption{
+  margin:12px 0 0;
+  color:#929daa;
+  font-size:.9rem;
+  line-height:1.45;
+}
+
+.rp-public-value-list{
+  margin-top:17px;
+  display:grid;
+  gap:12px;
+  padding-top:16px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.rp-public-value-list article{
+  padding-left:12px;
+  border-left:2px solid rgba(26,168,255,.5);
+}
+.rp-public-value-list strong{
+  display:block;
+  color:#eef2f6;
+  font-family:var(--rp-display);
+  font-size:.96rem;
+  font-weight:900;
+  letter-spacing:.035em;
+  line-height:1.25;
+}
+.rp-public-value-list p{
+  margin:4px 0 0;
+  color:#9ca7b4;
+  font-size:.91rem;
+  line-height:1.48;
+}
+
+.rp-public-value-close{
+  margin:17px 0 0;
+  padding-top:15px;
+  border-top:1px solid rgba(255,255,255,.07);
+  color:#aeb8c5;
+  font-size:.93rem;
+  line-height:1.5;
+}
+.rp-public-value-close strong{
+  color:#f3f5f7;
+  font-family:var(--rp-display);
+  font-size:1rem;
+  font-weight:900;
+  letter-spacing:.03em;
+}
+
+/* Keep all pricing text readable on mobile. */
+.rp-public-price>span{font-size:.82rem}
+.rp-public-price small{font-size:.78rem;letter-spacing:.11em}
+.rp-public-final-price span{font-size:.78rem;letter-spacing:.06em}
+
+@media(max-width:520px){
+  .rp-public-value{width:100%;margin-bottom:20px}
+  .rp-public-value summary{font-size:.92rem;padding:11px 13px}
+  .rp-public-value-panel{padding:16px}
+  .rp-public-value-math strong{font-size:1.55rem}
+  .rp-public-value-assumption,
+  .rp-public-value-list p,
+  .rp-public-value-close{font-size:.92rem}
+}
