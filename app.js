@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-official-updates-v1';
+  const version = '20260903-real-play-own-backend-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
