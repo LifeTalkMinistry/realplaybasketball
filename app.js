@@ -1,7 +1,7 @@
 document.documentElement.classList.add('js');
 
 (() => {
-  const version = '20260903-known-good-v1';
+  const version = '20260903-membership-freeze-fix-v1';
 
   // This restores the exact startup pattern that was working when the 3v3
   // screen was visibly rendering before the later blank-screen debugging.
