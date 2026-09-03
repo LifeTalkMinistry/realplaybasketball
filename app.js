@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-updates-header-cleanup-v2';
+  const version = '20260903-premium-profile-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -45,6 +45,7 @@
     'real-play-updates-cleanup.css',
     'real-play-world.css',
     'real-play-world-chat-cleanup.css',
+    'real-play-profile.css',
     'membership.css',
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -91,6 +92,7 @@
       'real-play-updates.js',
       'real-play-world.js',
       'real-play-world-chat-cleanup.js',
+      'real-play-profile.js',
       'main-menu.js',
       'overlay-focus-release.js',
       'settings-panel.js',
