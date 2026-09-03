@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-player-console-clean-v2';
+  const version = '20260903-cancel-spot-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
