@@ -1,0 +1,72 @@
+/* Remaining operations/admin surfaces aligned with the global Real Play brand. */
+
+/* Courtside live */
+.rp-courtside-state{color:#46b6ff;font-size:.64rem;letter-spacing:.12em}
+.rp-courtside-live-dot{background:#ff2028;box-shadow:0 0 12px rgba(255,32,40,.42)}
+.rp-courtside-team,.rp-courtside-player-panel{
+  border-color:rgba(201,206,214,.11);
+  background:#07090d;
+  border-radius:13px;
+}
+.rp-courtside-team-head{border-bottom-color:rgba(201,206,214,.08);color:#9ca6b3;font-size:.62rem}
+.rp-courtside-team-head span:last-child{color:#707a88;font-size:.56rem}
+.rp-courtside-player{border-bottom-color:rgba(201,206,214,.07);font-size:.72rem}
+.rp-courtside-player:active{background:rgba(8,108,255,.08)}
+.rp-courtside-close{border-color:rgba(201,206,214,.13);background:#080b10}
+.rp-courtside-stat{border-color:rgba(201,206,214,.09);background:#030407}
+.rp-courtside-stat label{color:#7e8997;font-size:.54rem}
+.rp-courtside-stat-actions button{border-color:rgba(201,206,214,.11);background:#090c12;color:#fff}
+.rp-courtside-finish{border-color:rgba(255,32,40,.27);background:linear-gradient(105deg,#9f1023,#e32638);border-radius:11px}
+
+/* Membership review */
+.rp-membership-admin-launch,.rp-3v3-admin-launch{
+  border-color:rgba(8,108,255,.28);
+  border-radius:11px;
+  background:#07090d;
+  color:#e4e8ee;
+}
+.rp-membership-admin-launch b,.rp-3v3-admin-launch b{background:rgba(8,108,255,.12);color:#46b6ff}
+.rp-membership-admin-launch.has-pending{border-color:rgba(8,108,255,.58)}
+.rp-membership-admin-launch.has-pending b{background:#086cff;color:#fff}
+.rp-membership-admin-backdrop,.rp-3v3-admin-backdrop{background:rgba(1,2,5,.88);backdrop-filter:blur(20px)}
+.rp-membership-admin-panel,.rp-3v3-admin-panel{
+  border-color:rgba(201,206,214,.16);
+  border-radius:18px;
+  background:radial-gradient(circle at 100% 0%,rgba(255,32,40,.055),transparent 34%),radial-gradient(circle at 0% 0%,rgba(8,108,255,.12),transparent 42%),linear-gradient(160deg,#0a0d12,#040507);
+  color:#f7f8fa;
+}
+.rp-membership-admin-panel header small,.rp-3v3-admin-panel header small{color:#46b6ff;font-size:.7rem;letter-spacing:.12em}
+.rp-membership-admin-panel h2,.rp-3v3-admin-panel h2{font-family:var(--rp-display,Impact,sans-serif);color:#fff}
+.rp-membership-admin-panel header button,.rp-3v3-admin-panel header button{border-color:rgba(201,206,214,.14);border-radius:10px;background:#080b10;color:#e7ebf0}
+.rp-membership-admin-lede,.rp-3v3-admin-lede{color:#99a4b2;font-size:.76rem}
+.rp-membership-review-card,.rp-3v3-admin-player,.rp-3v3-admin-summary div{
+  border-color:rgba(201,206,214,.11);
+  background:#07090d;
+  border-radius:13px;
+}
+.rp-membership-review-head b,.rp-3v3-admin-current{color:#46b6ff}
+.rp-membership-review-meta,.rp-3v3-admin-pref{color:#85909e;font-size:.64rem}
+.rp-membership-proof-open{background:#020204;border-radius:11px}
+.rp-membership-review-actions .approve{
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(105deg,#075de5,#086cff 68%,#159cff);
+  color:#fff;
+}
+.rp-membership-review-actions .approve::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:#ff2028}
+.rp-membership-review-actions .reject{background:rgba(255,32,40,.07);color:#ff8c95;border-color:rgba(255,32,40,.22)}
+
+/* 3v3 assignment admin */
+.rp-3v3-admin-preferred-action{border-color:rgba(8,108,255,.34);background:rgba(8,108,255,.10);color:#eaf3ff}
+.rp-3v3-admin-actions button{border-color:rgba(201,206,214,.11);background:#080b10;color:#8995a4}
+.rp-3v3-admin-actions button.active{border-color:rgba(8,108,255,.48);background:rgba(8,108,255,.16);color:#fff}
+.rp-3v3-admin-clear{border-color:rgba(201,206,214,.10);color:#7b8795}
+.rp-3v3-admin-status{color:#ff7883}
+.rp-3v3-admin-status.success{color:#5ebcff}
+.rp-membership-admin-empty,.rp-3v3-admin-empty{border-color:rgba(201,206,214,.13);color:#75808e}
+
+@media(max-width:520px){
+  .rp-membership-admin-panel,.rp-3v3-admin-panel{padding:20px;border-radius:16px}
+  .rp-membership-admin-panel header small,.rp-3v3-admin-panel header small{font-size:.68rem}
+  .rp-courtside-state{font-size:.62rem}
+}
