@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-settings-panel-v1';
+  const version = '20260903-console-cleanup-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -60,6 +60,7 @@
 
   (async () => {
     await loadScript('auth-session-guard.js');
+    await loadScript('player-admin-probe-guard.js');
 
     const lobbyLoaded = await loadScript('mobile-lobby.js');
     const lobbyMounted = Boolean(document.querySelector('[data-rp-app]'));
@@ -84,6 +85,7 @@
       'three-v-three-beta.js',
       'real-play-world.js',
       'main-menu.js',
+      'overlay-focus-release.js',
       'settings-panel.js',
       'admin-score-sync.js',
       'admin-game-control.js',
