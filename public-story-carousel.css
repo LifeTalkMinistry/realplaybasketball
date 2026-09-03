@@ -1,0 +1,105 @@
+/* Story carousel reuses the premium membership carousel shell. */
+button.rp-public-more{
+  border:0;
+  background:none;
+  padding:0;
+  cursor:pointer;
+}
+
+.rp-public-story-experience{
+  background:
+    radial-gradient(circle at 10% 8%,rgba(8,108,255,.2),transparent 20rem),
+    radial-gradient(circle at 94% 90%,rgba(255,32,40,.13),transparent 18rem),
+    linear-gradient(155deg,#06101f 0%,#05070b 50%,#150607 100%);
+}
+
+.rp-public-carousel-team-grid{
+  margin-top:26px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+}
+.rp-public-carousel-team-grid span{
+  min-height:52px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:12px 8px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:13px;
+  background:rgba(4,7,11,.52);
+  color:#f4f6f8;
+  font-family:var(--rp-display);
+  font-size:1rem;
+  font-weight:900;
+  letter-spacing:.055em;
+}
+
+.rp-public-carousel-standing{
+  margin-top:18px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:7px;
+}
+.rp-public-carousel-standing span{
+  padding:13px 4px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:11px;
+  background:rgba(4,7,11,.48);
+  color:#f2f5f8;
+  text-align:center;
+  font-family:var(--rp-display);
+  font-size:1.05rem;
+  font-style:italic;
+  font-weight:900;
+}
+
+.rp-public-carousel-playoffs{
+  margin-top:28px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.rp-public-carousel-playoffs>div{
+  padding:20px 14px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:15px;
+  background:rgba(4,7,11,.5);
+  text-align:center;
+}
+.rp-public-carousel-playoffs small{
+  display:block;
+  color:#8f99a6;
+  font-family:var(--rp-display);
+  font-size:.8rem;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.rp-public-carousel-playoffs strong{
+  display:block;
+  margin-top:9px;
+  color:#f7f8fa;
+  font-family:var(--rp-display);
+  font-size:1.65rem;
+  font-style:italic;
+  font-weight:900;
+}
+
+.rp-public-carousel-champion{
+  border-left-color:var(--rp-red);
+  background:linear-gradient(115deg,rgba(8,108,255,.08),rgba(255,32,40,.08));
+}
+.rp-public-carousel-champion strong{font-size:1.35rem}
+
+.rp-public-story-cta{
+  margin-top:24px;
+  width:min(100%,360px)!important;
+}
+
+@media(max-width:520px){
+  .rp-public-carousel-team-grid span{font-size:.95rem;min-height:48px}
+  .rp-public-carousel-playoffs{grid-template-columns:1fr;gap:8px;margin-top:22px}
+  .rp-public-carousel-playoffs>div{padding:15px 12px}
+  .rp-public-carousel-playoffs strong{font-size:1.45rem}
+  .rp-public-carousel-standing span{font-size:.98rem;padding:11px 3px}
+}
