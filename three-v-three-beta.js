@@ -141,7 +141,7 @@
 
       <div class="rp-3v3-clubs" data-rp-3v3-clubs>
         ${CLUBS.map((club) => `
-          <button class="rp-3v3-club" type="button" data-rp-3v3-club="${club.id}">
+          <button class="rp-3v3-club" type="button" data-rp-three-club="${club.id}">
             <strong>${club.name}</strong>
             <span>${club.verse}</span>
           </button>
@@ -160,7 +160,7 @@
   document.body.appendChild(view);
 
   const back = view.querySelector('[data-rp-3v3-back]');
-  const clubButtons = [...view.querySelectorAll('[data-rp-3v3-club]')];
+  const clubButtons = [...view.querySelectorAll('[data-rp-three-club]')];
   const save = view.querySelector('[data-rp-3v3-save]');
   const status = view.querySelector('[data-rp-3v3-status]');
   const playerState = view.querySelector('[data-rp-3v3-player-state]');
@@ -186,7 +186,7 @@
   function render() {
     const locked = Boolean(assignedClub);
     clubButtons.forEach((button) => {
-      const id = button.dataset.rp3v3Club;
+      const id = button.dataset.rpThreeClub;
       const selected = id === (assignedClub || selectedClub);
       button.classList.toggle('selected', selected);
       button.classList.toggle('assigned', id === assignedClub);
@@ -286,7 +286,7 @@
   clubButtons.forEach((button) => {
     button.addEventListener('click', () => {
       if (assignedClub) return;
-      selectedClub = button.dataset.rp3v3Club || null;
+      selectedClub = button.dataset.rpThreeClub || null;
       setStatus('');
       render();
     });
