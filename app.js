@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-public-dual-carousel-v5';
+  const version = '20260903-auth-welcome-cleanup-v6';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -53,6 +53,7 @@
     'main-menu-brand-overrides.css',
     'real-play-admin-brand-overrides.css',
     'settings-panel.css',
+    'auth-welcome-cleanup.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
