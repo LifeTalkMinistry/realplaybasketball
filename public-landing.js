@@ -34,19 +34,60 @@
         <blockquote><strong>THE GAME HAPPENS ON THE COURT.</strong><span>THE SYSTEM RECORDS IT.</span></blockquote>
       </section>
 
-      <section class="rp-public-section rp-public-competition">
-        <p class="rp-public-eyebrow">REAL PLAY COMPETITION</p>
-        <h2>PLAY FOR<br><span>SOMETHING.</span></h2>
-        <p>Four teams compete through a season. Verified games build the standings, the standings set the playoffs, and the season ends with one Real Play Champion.</p>
-        <div class="rp-public-steps">
-          <article><span>01</span><strong>GET RATED</strong><p>Play at least 5 official Placement Games to establish your initial OVR.</p></article>
-          <article><span>02</span><strong>JOIN YOUR TEAM</strong><p>Lions · Valiant · Watchmen · Conquerors. Real Play uses player data to build balanced teams before the season.</p></article>
-          <article><span>03</span><strong>PLAY THE SEASON</strong><p>Each team plays 3 games in every scheduled Real Play session. Wins and losses build the standings.</p></article>
-          <article><span>04</span><strong>MAKE THE PLAYOFFS</strong><p>#1 vs #4 · #2 vs #3. The winners advance to the Final.</p></article>
-          <article><span>05</span><strong>WIN THE FINAL</strong><p>One team earns the title: Real Play Champion.</p></article>
-        </div>
-        <p class="rp-public-note">Your team stays locked for the season. Your OVR, stats, and history stay with you as a player.</p>
-      </section>
+      <div class="rp-public-journey" aria-label="How Real Play competition works">
+        <section class="rp-public-journey-page">
+          <div class="rp-public-journey-inner">
+            <p class="rp-public-journey-step"><strong>01</strong> · BEFORE THE SEASON</p>
+            <h2>FIND YOUR<br><span>LEVEL.</span></h2>
+            <p class="rp-public-journey-copy">Start Unranked. Play at least 5 official Placement Games so Real Play can establish your initial OVR and understand your competitive level.</p>
+            <div class="rp-public-journey-meta">
+              <span>5 Placement Games</span>
+              <span>Initial OVR</span>
+            </div>
+            <div class="rp-public-team-list" aria-label="Real Play teams">
+              <span>Lions</span>
+              <span>Valiant</span>
+              <span>Watchmen</span>
+              <span>Conquerors</span>
+            </div>
+            <p class="rp-public-journey-copy">Real Play uses that player data to build balanced teams before the season begins.</p>
+            <span class="rp-public-journey-arrow" aria-hidden="true"></span>
+          </div>
+        </section>
+
+        <section class="rp-public-journey-page">
+          <div class="rp-public-journey-inner">
+            <p class="rp-public-journey-step"><strong>02</strong> · REGULAR SEASON</p>
+            <h2>BUILD YOUR<br><span>RECORD.</span></h2>
+            <p class="rp-public-journey-copy">Your team stays together for the season. Every scheduled Real Play session gives each team 3 games, and every win or loss adds to the standings.</p>
+            <div class="rp-public-journey-meta">
+              <span>3 Games Per Schedule</span>
+              <span>36 Regular-Season Games</span>
+              <span>Season Standings</span>
+            </div>
+            <p class="rp-public-journey-copy">Your team can rise or fall through the season. Your personal OVR, stats, and history continue to stay with you as a player.</p>
+            <span class="rp-public-journey-arrow" aria-hidden="true"></span>
+          </div>
+        </section>
+
+        <section class="rp-public-journey-page">
+          <div class="rp-public-journey-inner">
+            <p class="rp-public-journey-step"><strong>03</strong> · PLAYOFFS & FINAL</p>
+            <h2>EARN THE<br><span>CHAMPIONSHIP.</span></h2>
+            <p class="rp-public-journey-copy">When the regular season ends, the standings decide the playoff matchups.</p>
+            <div class="rp-public-playoff-pair" aria-label="Playoff matchups">
+              <article><small>PLAYOFF 1</small><strong>#1 vs #4</strong></article>
+              <b>+</b>
+              <article><small>PLAYOFF 2</small><strong>#2 vs #3</strong></article>
+            </div>
+            <p class="rp-public-journey-copy">The two playoff winners advance. One final game decides the title.</p>
+            <div class="rp-public-champion-mark">
+              <small>ONE TITLE</small>
+              <strong>REAL PLAY <span>CHAMPION</span></strong>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <section class="rp-public-section">
         <p class="rp-public-eyebrow">YOUR ₱100 MEMBERSHIP</p>
