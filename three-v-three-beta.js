@@ -115,66 +115,100 @@
   view.innerHTML = `
     <div class="rp-3v3-shell">
       <header class="rp-3v3-topbar">
-        <button class="rp-3v3-back" type="button" aria-label="Back to game formats" data-rp-3v3-back>←</button>
+        <button class="rp-3v3-back" type="button" aria-label="Back to main menu" data-rp-3v3-back>←</button>
         <div class="rp-3v3-brand"><strong>REAL PLAY 3V3</strong><span>BETA SEASON</span></div>
         <div class="rp-3v3-topmark">3V3</div>
       </header>
 
-      <section class="rp-3v3-hero">
-        <p class="rp-3v3-eyebrow">THE FOUNDING FOUR</p>
-        <h1>CHOOSE YOUR CLUB.</h1>
-        <p>Choose the club you would like to represent. During Beta Season, Real Play confirms the final team designation.</p>
+      <section class="rp-3v3-select-head">
+        <p>THE FOUNDING FOUR</p>
+        <h1>SELECT YOUR TEAM.</h1>
+        <span>Choose the team you would most like to represent this Beta Season.</span>
       </section>
 
-      <section class="rp-3v3-player-state" data-rp-3v3-player-state>
-        <div class="rp-3v3-player-state-head">
-          <div><small>YOUR 3V3 STATUS</small><strong data-rp-3v3-state-title>FREE AGENT</strong></div>
-          <span class="rp-3v3-state-pill" data-rp-3v3-state-pill>BETA</span>
+      <section class="rp-3v3-team-picker" aria-label="Choose your preferred Real Play team">
+        <button class="rp-team-arrow rp-team-arrow-left" type="button" aria-label="Previous team" data-rp-team-prev>‹</button>
+        <div class="rp-team-carousel" data-rp-team-carousel tabindex="0" aria-live="polite">
+          ${CLUBS.map((club) => `
+            <button class="rp-team-card" id="rp-team-${club.id}" type="button" data-rp-three-club="${club.id}">
+              <small>REAL PLAY CLUB</small>
+              <strong>${club.name}</strong>
+              <span>${club.verse}</span>
+              <em data-rp-team-badge></em>
+            </button>
+          `).join('')}
         </div>
-        <p data-rp-3v3-state-copy>Select your preferred club below. Your final assignment will be confirmed by Real Play.</p>
+        <button class="rp-team-arrow rp-team-arrow-right" type="button" aria-label="Next team" data-rp-team-next>›</button>
       </section>
 
-      <div class="rp-3v3-section-head">
-        <div><span>REAL PLAY CLUBS</span><h2>Preferred Club</h2></div>
-        <span>REAL PLAY CONFIRMS</span>
+      <div class="rp-team-dots" data-rp-team-dots aria-hidden="true">
+        ${CLUBS.map(() => '<i></i>').join('')}
       </div>
 
-      <div class="rp-3v3-clubs" data-rp-3v3-clubs>
-        ${CLUBS.map((club) => `
-          <button class="rp-3v3-club" type="button" data-rp-three-club="${club.id}">
-            <strong>${club.name}</strong>
-            <span>${club.verse}</span>
-          </button>
-        `).join('')}
-      </div>
-
-      <button class="rp-3v3-save" type="button" data-rp-3v3-save disabled>SAVE PREFERRED CLUB <span>→</span></button>
+      <p class="rp-team-center-label" data-rp-team-center-label>TAP TEAM TO CHOOSE</p>
       <p class="rp-3v3-status" data-rp-3v3-status aria-live="polite"></p>
+
+      <section class="rp-3v3-compact-state" data-rp-3v3-compact-state>
+        <small>YOUR BETA STATUS</small>
+        <strong data-rp-3v3-state-title>NO PREFERENCE YET</strong>
+        <p data-rp-3v3-state-copy>Your #1 preference will be reviewed before final team assignment.</p>
+      </section>
 
       <div class="rp-3v3-format">
         <div><small>BETA CONTEST FORMAT</small><strong>4 CLUBS · 2 SEMIFINALS · 1 FINAL</strong></div>
         <b>RACE TO 8</b>
       </div>
     </div>
+
+    <div class="rp-team-confirm" data-rp-team-confirm aria-hidden="true">
+      <section class="rp-team-confirm-card" role="dialog" aria-modal="true" aria-labelledby="rp-team-confirm-title">
+        <small>TOP 1 PREFERENCE</small>
+        <h2 id="rp-team-confirm-title">CHOOSE <span data-rp-confirm-team>TEAM</span>?</h2>
+        <p>Do you want to make <strong data-rp-confirm-team-copy>this team</strong> your #1 preferred team for the Beta Season?</p>
+        <div class="rp-team-confirm-note">
+          <b>IMPORTANT</b>
+          <span>This is your preference, not your final assignment. Real Play may still place you on a different team based on balance and Beta Season needs.</span>
+        </div>
+        <button class="rp-team-confirm-primary" type="button" data-rp-team-confirm-save>YES, MAKE THIS MY TOP 1</button>
+        <button class="rp-team-confirm-secondary" type="button" data-rp-team-confirm-close>NOT YET</button>
+      </section>
+    </div>
   `;
   document.body.appendChild(view);
 
   const back = view.querySelector('[data-rp-3v3-back]');
+  const carousel = view.querySelector('[data-rp-team-carousel]');
   const clubButtons = [...view.querySelectorAll('[data-rp-three-club]')];
-  const save = view.querySelector('[data-rp-3v3-save]');
+  const dots = [...view.querySelectorAll('[data-rp-team-dots] i')];
   const status = view.querySelector('[data-rp-3v3-status]');
-  const playerState = view.querySelector('[data-rp-3v3-player-state]');
+  const centerLabel = view.querySelector('[data-rp-team-center-label]');
   const stateTitle = view.querySelector('[data-rp-3v3-state-title]');
-  const statePill = view.querySelector('[data-rp-3v3-state-pill]');
   const stateCopy = view.querySelector('[data-rp-3v3-state-copy]');
+  const compactState = view.querySelector('[data-rp-3v3-compact-state]');
+  const confirm = view.querySelector('[data-rp-team-confirm]');
+  const confirmName = view.querySelector('[data-rp-confirm-team]');
+  const confirmCopyName = view.querySelector('[data-rp-confirm-team-copy]');
+  const confirmSave = view.querySelector('[data-rp-team-confirm-save]');
 
-  let selectedClub = null;
+  let activeIndex = 0;
   let assignedClub = null;
   let savedClub = null;
   let loading = false;
+  let pointerStartX = null;
+  let pendingClub = null;
+  let suppressClickUntil = 0;
 
   function clubName(id) {
     return CLUBS.find((club) => club.id === id)?.name || '';
+  }
+
+  function clubIndex(id) {
+    const index = CLUBS.findIndex((club) => club.id === id);
+    return index >= 0 ? index : 0;
+  }
+
+  function normalizeIndex(index) {
+    return (index + CLUBS.length) % CLUBS.length;
   }
 
   function setStatus(message = '', type = '') {
@@ -183,50 +217,100 @@
     status.classList.toggle('error', type === 'error');
   }
 
-  function render() {
-    const locked = Boolean(assignedClub);
-    clubButtons.forEach((button) => {
+  function renderCarousel() {
+    const previous = normalizeIndex(activeIndex - 1);
+    const next = normalizeIndex(activeIndex + 1);
+
+    clubButtons.forEach((button, index) => {
       const id = button.dataset.rpThreeClub;
-      const selected = id === (assignedClub || selectedClub);
-      button.classList.toggle('selected', selected);
+      const isActive = index === activeIndex;
+      const isPrevious = index === previous;
+      const isNext = index === next;
+      const isHidden = !isActive && !isPrevious && !isNext;
+      const badge = button.querySelector('[data-rp-team-badge]');
+
+      button.classList.toggle('slot-active', isActive);
+      button.classList.toggle('slot-prev', isPrevious);
+      button.classList.toggle('slot-next', isNext);
+      button.classList.toggle('slot-hidden', isHidden);
+      button.classList.toggle('saved', id === savedClub);
       button.classList.toggle('assigned', id === assignedClub);
-      button.disabled = locked;
-      button.setAttribute('aria-pressed', String(selected));
+      button.setAttribute('aria-current', isActive ? 'true' : 'false');
+      button.setAttribute('aria-hidden', isHidden ? 'true' : 'false');
+      button.tabIndex = isHidden ? -1 : 0;
+
+      if (badge) {
+        if (id === assignedClub) badge.textContent = 'OFFICIAL TEAM';
+        else if (id === savedClub) badge.textContent = 'YOUR #1 PREFERENCE';
+        else badge.textContent = '';
+      }
     });
 
+    dots.forEach((dot, index) => dot.classList.toggle('active', index === activeIndex));
+    carousel?.setAttribute('aria-activedescendant', clubButtons[activeIndex]?.id || '');
+
+    const activeClub = CLUBS[activeIndex];
     if (assignedClub) {
-      playerState.classList.add('assigned');
-      stateTitle.textContent = clubName(assignedClub);
-      statePill.textContent = 'OFFICIAL';
-      stateCopy.textContent = `Real Play has confirmed your Beta Season club. You are officially representing ${clubName(assignedClub)}.`;
-      save.disabled = true;
-      save.innerHTML = 'OFFICIAL CLUB CONFIRMED <span>✓</span>';
-      return;
+      centerLabel.textContent = activeClub.id === assignedClub ? 'OFFICIAL TEAM CONFIRMED' : 'TEAM ASSIGNMENT LOCKED';
+    } else if (activeClub.id === savedClub) {
+      centerLabel.textContent = 'YOUR CURRENT #1 PREFERENCE';
+    } else {
+      centerLabel.textContent = 'TAP TEAM TO CHOOSE';
+    }
+  }
+
+  function renderState() {
+    compactState.classList.toggle('assigned', Boolean(assignedClub));
+
+    if (assignedClub) {
+      stateTitle.textContent = `${clubName(assignedClub)} · OFFICIAL`;
+      stateCopy.textContent = `Real Play has confirmed your Beta Season team. You are officially representing ${clubName(assignedClub)}.`;
+    } else if (savedClub) {
+      stateTitle.textContent = `${clubName(savedClub)} · TOP 1 SAVED`;
+      stateCopy.textContent = 'Your preference is saved. Final team assignment is still confirmed by Real Play.';
+    } else {
+      stateTitle.textContent = 'NO PREFERENCE YET';
+      stateCopy.textContent = 'Your #1 preference will be reviewed before final team assignment.';
     }
 
-    playerState.classList.remove('assigned');
-    stateTitle.textContent = savedClub ? 'PREFERENCE SAVED' : 'FREE AGENT';
-    statePill.textContent = savedClub ? 'PENDING' : 'BETA';
-    stateCopy.textContent = savedClub
-      ? `${clubName(savedClub)} is your preferred club. Final team designation is still confirmed by Real Play.`
-      : 'Select your preferred club below. Your final assignment will be confirmed by Real Play.';
-    save.disabled = loading || !selectedClub || selectedClub === savedClub;
-    save.innerHTML = savedClub && selectedClub === savedClub
-      ? 'PREFERENCE SAVED <span>✓</span>'
-      : 'SAVE PREFERRED CLUB <span>→</span>';
+    renderCarousel();
+  }
+
+  function selectIndex(index) {
+    if (assignedClub) return;
+    activeIndex = normalizeIndex(index);
+    setStatus('');
+    renderCarousel();
+  }
+
+  function openConfirmation(id) {
+    if (!id || assignedClub || loading) return;
+    pendingClub = id;
+    const name = clubName(id);
+    confirmName.textContent = name;
+    confirmCopyName.textContent = name;
+    confirm.classList.add('open');
+    confirm.setAttribute('aria-hidden', 'false');
+    confirmSave.disabled = false;
+    confirmSave.textContent = id === savedClub ? 'KEEP AS MY TOP 1' : 'YES, MAKE THIS MY TOP 1';
+  }
+
+  function closeConfirmation() {
+    confirm.classList.remove('open');
+    confirm.setAttribute('aria-hidden', 'true');
+    pendingClub = null;
   }
 
   async function loadState({ quiet = false } = {}) {
     if (loading) return;
     loading = true;
     if (!quiet) setStatus('LOADING YOUR 3V3 STATUS…');
-    render();
     try {
       const data = await api('/api/real-play/3v3/me');
       assignedClub = data.assignedClub || null;
       savedClub = data.preferredClub || null;
-      selectedClub = assignedClub || savedClub || null;
-      if (assignedClub) setStatus(`Official club confirmed: ${clubName(assignedClub)}.`, 'success');
+      activeIndex = clubIndex(assignedClub || savedClub || CLUBS[0].id);
+      if (assignedClub) setStatus(`Official team confirmed: ${clubName(assignedClub)}.`, 'success');
       else if (!quiet) setStatus('');
     } catch (error) {
       if (error.status === 401) {
@@ -234,33 +318,38 @@
         document.querySelector('[data-auth-open]')?.click();
         return;
       }
-      if (!quiet) setStatus(error.message || 'Could not load your 3v3 club status.', 'error');
+      if (!quiet) setStatus(error.message || 'Could not load your 3v3 team status.', 'error');
     } finally {
       loading = false;
-      render();
+      renderState();
     }
   }
 
   async function savePreference() {
-    if (!selectedClub || assignedClub || loading) return;
+    if (!pendingClub || assignedClub || loading) return;
+    const club = pendingClub;
     loading = true;
-    save.disabled = true;
-    save.innerHTML = 'SAVING… <span>·</span>';
+    confirmSave.disabled = true;
+    confirmSave.textContent = 'SAVING…';
     setStatus('');
+
     try {
       const data = await api('/api/real-play/3v3/preference', {
         method: 'PUT',
-        body: { club: selectedClub },
+        body: { club },
       });
-      savedClub = data.preferredClub || selectedClub;
+      savedClub = data.preferredClub || club;
       assignedClub = data.assignedClub || null;
-      selectedClub = assignedClub || savedClub;
-      setStatus(data.message || 'Preferred club saved. Final assignment is confirmed by Real Play.', 'success');
+      activeIndex = clubIndex(assignedClub || savedClub);
+      closeConfirmation();
+      setStatus(`${clubName(savedClub)} is now your #1 preferred team.`, 'success');
     } catch (error) {
-      setStatus(error.message || 'Could not save your preferred club.', 'error');
+      setStatus(error.message || 'Could not save your preferred team.', 'error');
+      confirmSave.disabled = false;
+      confirmSave.textContent = 'TRY AGAIN';
     } finally {
       loading = false;
-      render();
+      renderState();
     }
   }
 
@@ -282,23 +371,65 @@
   }
 
   function closeView() {
+    closeConfirmation();
     view.classList.remove('open');
     view.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-3v3-open');
   }
 
-  clubButtons.forEach((button) => {
+  clubButtons.forEach((button, index) => {
     button.addEventListener('click', () => {
-      if (assignedClub) return;
-      selectedClub = button.dataset.rpThreeClub || null;
-      setStatus('');
-      render();
+      if (Date.now() < suppressClickUntil || assignedClub) return;
+      if (index !== activeIndex) {
+        selectIndex(index);
+        return;
+      }
+      openConfirmation(button.dataset.rpThreeClub || null);
     });
+  });
+
+  carousel?.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    pointerStartX = event.clientX;
+  });
+
+  carousel?.addEventListener('pointerup', (event) => {
+    if (pointerStartX === null || assignedClub) return;
+    const deltaX = event.clientX - pointerStartX;
+    pointerStartX = null;
+    if (Math.abs(deltaX) < 34) return;
+    suppressClickUntil = Date.now() + 320;
+    selectIndex(activeIndex + (deltaX < 0 ? 1 : -1));
+  });
+
+  carousel?.addEventListener('pointercancel', () => {
+    pointerStartX = null;
+  });
+
+  carousel?.addEventListener('keydown', (event) => {
+    if (assignedClub) return;
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      selectIndex(activeIndex - 1);
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      selectIndex(activeIndex + 1);
+    } else if ((event.key === 'Enter' || event.key === ' ') && event.target === carousel) {
+      event.preventDefault();
+      openConfirmation(CLUBS[activeIndex].id);
+    }
+  });
+
+  view.querySelector('[data-rp-team-prev]')?.addEventListener('click', () => selectIndex(activeIndex - 1));
+  view.querySelector('[data-rp-team-next]')?.addEventListener('click', () => selectIndex(activeIndex + 1));
+  view.querySelector('[data-rp-team-confirm-close]')?.addEventListener('click', closeConfirmation);
+  confirmSave?.addEventListener('click', savePreference);
+  confirm?.addEventListener('click', (event) => {
+    if (event.target === confirm) closeConfirmation();
   });
 
   stage.querySelector('[data-rp-enter-3v3]')?.addEventListener('click', openView);
   back?.addEventListener('click', closeView);
-  save?.addEventListener('click', savePreference);
 
   window.addEventListener('focus', refreshIfOpen);
   window.addEventListener('pageshow', refreshIfOpen);
@@ -308,6 +439,8 @@
   });
 
   window.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && view.classList.contains('open')) closeView();
+    if (event.key !== 'Escape') return;
+    if (confirm.classList.contains('open')) closeConfirmation();
+    else if (view.classList.contains('open')) closeView();
   });
 })();
