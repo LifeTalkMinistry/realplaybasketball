@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-global-brand-system-v1';
+  const version = '20260903-global-brand-system-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -49,6 +49,7 @@
     'admin-three-v-three.css',
     'real-play-brand-system.css',
     'main-menu-brand-overrides.css',
+    'real-play-admin-brand-overrides.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
