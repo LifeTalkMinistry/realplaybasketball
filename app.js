@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-cancel-spot-v1';
+  const version = '20260903-public-season-flow-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -31,6 +31,7 @@
     'lobby-topbar-cleanup.css',
     'mobile-entry.css',
     'public-landing.css',
+    'public-season-flow.css',
     'ambient-brand-glow.css',
     'public-details-compact.css',
     'mobile-shell-fix.css',
