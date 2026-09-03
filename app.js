@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-world-chat-cleanup-v2';
+  const version = '20260903-official-updates-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -41,6 +41,7 @@
     'three-v-three-secure-spot.css',
     'career-beta.css',
     'career-beta-play.css',
+    'real-play-updates.css',
     'real-play-world.css',
     'real-play-world-chat-cleanup.css',
     'membership.css',
@@ -86,6 +87,7 @@
       'career-beta-leaderboard.js',
       'three-v-three-beta.js',
       'three-v-three-layout-order.js',
+      'real-play-updates.js',
       'real-play-world.js',
       'real-play-world-chat-cleanup.js',
       'main-menu.js',
