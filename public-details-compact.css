@@ -1,0 +1,162 @@
+/* Compact the public explanation flow without changing the hero. */
+.rp-public-details .rp-public-section{
+  padding-top:54px;
+  padding-bottom:54px;
+}
+
+.rp-public-details .rp-public-eyebrow{
+  margin-bottom:12px;
+  font-size:.72rem;
+  letter-spacing:.14em;
+}
+
+.rp-public-details .rp-public-section h2{
+  font-size:clamp(2rem,8vw,3.6rem);
+  line-height:.93;
+}
+
+.rp-public-details .rp-public-section>p:not(.rp-public-eyebrow):not(.rp-public-note):not(.rp-public-standard-close){
+  margin-top:16px;
+  max-width:620px;
+  font-size:1rem;
+  line-height:1.62;
+  color:#aeb7c5;
+}
+
+.rp-public-details .rp-public-intro blockquote{
+  margin-top:22px;
+  padding:19px 0;
+}
+
+.rp-public-details .rp-public-intro blockquote strong,
+.rp-public-details .rp-public-intro blockquote span{
+  font-size:clamp(1.05rem,4.7vw,1.55rem);
+}
+
+.rp-public-details .rp-public-benefits,
+.rp-public-details .rp-public-rules{
+  margin-top:24px;
+  gap:8px;
+}
+
+.rp-public-details .rp-public-benefits article,
+.rp-public-details .rp-public-rules article{
+  padding:15px 16px;
+  min-height:0;
+  border-radius:14px;
+}
+
+.rp-public-details .rp-public-benefits article{
+  grid-template-columns:34px 1fr;
+  gap:10px;
+}
+
+.rp-public-details .rp-public-benefits b{
+  font-size:.72rem;
+}
+
+.rp-public-details .rp-public-benefits strong,
+.rp-public-details .rp-public-rules strong,
+.rp-public-details .rp-public-steps strong{
+  font-size:.96rem;
+  letter-spacing:.035em;
+}
+
+.rp-public-details .rp-public-benefits p,
+.rp-public-details .rp-public-rules p{
+  margin-top:5px;
+  font-size:.9rem;
+  line-height:1.45;
+  color:#9aa6b7;
+}
+
+.rp-public-details .rp-public-note{
+  margin-top:14px!important;
+  font-size:.86rem!important;
+  line-height:1.45!important;
+}
+
+.rp-public-details .rp-public-steps{
+  margin-top:24px;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+
+.rp-public-details .rp-public-steps article{
+  min-height:0;
+  padding:17px 15px;
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
+
+.rp-public-details .rp-public-steps span{
+  margin:0;
+  flex:none;
+  font-size:.72rem;
+}
+
+.rp-public-details .rp-public-now-grid{
+  margin-top:24px;
+}
+
+.rp-public-details .rp-public-now-grid article{
+  min-height:150px;
+}
+
+.rp-public-details .rp-public-player-card{
+  margin-top:24px;
+}
+
+.rp-public-details .rp-public-standard-close{
+  margin-top:18px!important;
+  font-size:.78rem!important;
+}
+
+.rp-public-details .rp-public-final{
+  min-height:0;
+  padding-top:64px;
+  padding-bottom:max(64px,env(safe-area-inset-bottom));
+}
+
+.rp-public-details .rp-public-final-price{
+  margin-top:22px;
+  margin-bottom:18px;
+}
+
+@media(max-width:520px){
+  .rp-public-details .rp-public-section{
+    padding-top:46px;
+    padding-bottom:46px;
+  }
+
+  .rp-public-details .rp-public-eyebrow{
+    font-size:.7rem;
+  }
+
+  .rp-public-details .rp-public-section h2{
+    font-size:2.15rem;
+  }
+
+  .rp-public-details .rp-public-section>p:not(.rp-public-eyebrow):not(.rp-public-note):not(.rp-public-standard-close){
+    font-size:.98rem;
+    line-height:1.55;
+  }
+
+  .rp-public-details .rp-public-steps{
+    grid-template-columns:1fr;
+  }
+
+  .rp-public-details .rp-public-steps article{
+    padding:15px 14px;
+  }
+
+  .rp-public-details .rp-public-now-grid article{
+    min-height:135px;
+  }
+
+  .rp-public-details .rp-public-benefits p,
+  .rp-public-details .rp-public-rules p{
+    font-size:.88rem;
+  }
+}
