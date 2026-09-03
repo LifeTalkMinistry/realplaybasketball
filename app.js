@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-real-mobile-viewport-menu-v4';
+  const version = '20260903-3v3-team-carousel-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
