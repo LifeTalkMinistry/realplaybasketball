@@ -1,0 +1,131 @@
+/* 3V3 next-session action: keep the team identity clean and make Play the final action. */
+.rp-3v3-shell{
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+}
+
+.rp-3v3-session{
+  position:relative;
+  z-index:2;
+  margin-top:auto;
+  padding:20px 0 max(8px,env(safe-area-inset-bottom));
+  border-top:1px solid rgba(126,173,232,.10);
+}
+
+.rp-3v3-session-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  min-width:0;
+}
+
+.rp-3v3-session-head>div{
+  min-width:0;
+  display:grid;
+  gap:4px;
+}
+
+.rp-3v3-session-head small{
+  color:#5f748d;
+  font-size:.5rem;
+  font-weight:900;
+  letter-spacing:.14em;
+}
+
+.rp-3v3-session-head strong{
+  overflow:hidden;
+  color:#f3f8ff;
+  font-family:var(--rp-display);
+  font-size:1.05rem;
+  font-style:italic;
+  font-weight:900;
+  line-height:1;
+  letter-spacing:.02em;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.rp-3v3-session-head span{
+  min-height:12px;
+  overflow:hidden;
+  color:#71849b;
+  font-size:.56rem;
+  font-weight:700;
+  letter-spacing:.04em;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.rp-3v3-session-head b{
+  flex:0 0 auto;
+  color:#2fdcff;
+  font-family:var(--rp-display);
+  font-size:.9rem;
+  font-style:italic;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.rp-3v3-session-action{
+  width:100%;
+  min-height:56px;
+  margin-top:13px;
+  border:0;
+  border-radius:16px;
+  color:#fff;
+  background:linear-gradient(100deg,#176cff 0%,#1685ff 55%,#1ddcff 100%);
+  box-shadow:0 16px 38px rgba(20,105,255,.20);
+  font-family:var(--rp-display);
+  font-size:1rem;
+  font-style:italic;
+  font-weight:900;
+  letter-spacing:.07em;
+  cursor:pointer;
+}
+
+.rp-3v3-session-action:disabled{
+  cursor:default;
+  box-shadow:none;
+}
+
+.rp-3v3-session:not(.secured):not(.live) .rp-3v3-session-action:disabled{
+  color:#607389;
+  background:#0a1320;
+  border:1px solid rgba(126,173,232,.08);
+}
+
+.rp-3v3-session.secured .rp-3v3-session-action{
+  color:#65e8ff;
+  background:rgba(18,72,103,.22);
+  border:1px solid rgba(47,220,255,.28);
+}
+
+.rp-3v3-session.live .rp-3v3-session-action{
+  color:#fff;
+  background:rgba(23,108,255,.20);
+  border:1px solid rgba(47,220,255,.25);
+}
+
+.rp-3v3-session.full .rp-3v3-session-head b{
+  color:#70849b;
+}
+
+.rp-3v3-session-message{
+  min-height:0;
+  margin:8px 2px 0;
+  color:#71849a;
+  text-align:center;
+  font-size:.59rem;
+  line-height:1.4;
+}
+
+.rp-3v3-session-message:empty{display:none}
+.rp-3v3-session-message.success{color:#61dff4}
+.rp-3v3-session-message.error{color:#ff9aa7}
+
+@media(max-height:760px){
+  .rp-3v3-session{padding-top:14px}
+  .rp-3v3-session-action{min-height:52px}
+}
