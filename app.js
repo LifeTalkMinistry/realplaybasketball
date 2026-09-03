@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-3v3-session-format-order-v1';
+  const version = '20260903-player-console-clean-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -60,7 +60,6 @@
 
   (async () => {
     await loadScript('auth-session-guard.js');
-    await loadScript('player-admin-probe-guard.js');
 
     const lobbyLoaded = await loadScript('mobile-lobby.js');
     const lobbyMounted = Boolean(document.querySelector('[data-rp-app]'));
@@ -88,17 +87,23 @@
       'main-menu.js',
       'overlay-focus-release.js',
       'settings-panel.js',
-      'admin-score-sync.js',
-      'admin-game-control.js',
-      'admin-session-start.js',
-      'admin-game-control-simplify.js',
-      'admin-courtside-live.js',
-      'admin-manual-open.js',
-      'admin-session-picker.js',
-      'admin-score-dom-sync.js',
-      'admin-membership-review.js',
-      'admin-three-v-three.js',
     ];
+
+    const adminMode = new URLSearchParams(window.location.search).get('admin') === '1';
+    if (adminMode) {
+      enhancements.push(
+        'admin-score-sync.js',
+        'admin-game-control.js',
+        'admin-session-start.js',
+        'admin-game-control-simplify.js',
+        'admin-courtside-live.js',
+        'admin-manual-open.js',
+        'admin-session-picker.js',
+        'admin-score-dom-sync.js',
+        'admin-membership-review.js',
+        'admin-three-v-three.js',
+      );
+    }
 
     for (const href of enhancements) {
       const loaded = await loadScript(href);
