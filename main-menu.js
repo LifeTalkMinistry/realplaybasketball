@@ -47,8 +47,6 @@
         <span>PLAYERS · COMMUNITY · CHAT</span>
       </button>
     </div>
-
-    <p class="rp-main-menu-foot">SWIPE TO CHOOSE · TAP CENTER TO ENTER</p>
   `;
   playerStrip.insertAdjacentElement('afterend', menu);
 
