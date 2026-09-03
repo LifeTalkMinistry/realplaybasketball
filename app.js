@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-public-story-readable-type-v4';
+  const version = '20260903-public-pricing-599-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -31,6 +31,7 @@
     'lobby-topbar-cleanup.css',
     'mobile-entry.css',
     'public-landing.css',
+    'public-pricing-breakdown.css',
     'ambient-brand-glow.css',
     'public-details-compact.css',
     'public-season-flow.css',
