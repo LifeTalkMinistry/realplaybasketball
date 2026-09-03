@@ -39,13 +39,11 @@
 
     if (!token) {
       probedToken = '';
-      return;
+      return false;
     }
 
-    // Probe each authenticated session only once. If the optional membership
-    // route is not deployed yet, do not hammer the same missing endpoint every
-    // five seconds and flood DevTools with repeated 404s.
-    if (membershipLoaded || probing || probedToken === token) return;
+    if (membershipLoaded) return true;
+    if (probing || probedToken === token) return false;
 
     probing = true;
     probedToken = token;
@@ -53,27 +51,36 @@
       const response = await fetch(`${API_BASE_URL}/api/real-play/membership`, {
         headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
       });
-      if (response.ok) loadMembershipExperience();
+      if (response.ok) {
+        loadMembershipExperience();
+        return true;
+      }
     } catch (_error) {
-      // Preserve the existing player experience when the optional service is unavailable.
+      // Keep the rest of Real Play usable if the optional membership service is offline.
     } finally {
       probing = false;
     }
+    return false;
   }
 
   const observer = new MutationObserver(relabelFreePlayerEntry);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
-  window.addEventListener('focus', probeMembershipService);
+  // Membership is optional during the current Beta build. Do not probe its API
+  // during normal browsing. Only test it when the player actually asks for a
+  // membership-related action, and only once per authenticated token.
+  document.addEventListener('click', (event) => {
+    const target = event.target.closest?.(
+      '[data-auth-membership-card], [data-membership-open], [data-plus-one-prompt], [data-rp-settings-action="membership"], [data-session-action]'
+    );
+    if (target) probeMembershipService();
+  }, true);
+
   window.addEventListener('storage', (event) => {
     if (event.key !== TOKEN_KEY) return;
-    if (event.newValue !== probedToken) probedToken = '';
-    probeMembershipService();
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) probeMembershipService();
+    probedToken = '';
   });
 
+  window.__realPlayEnsureMembership = probeMembershipService;
   relabelFreePlayerEntry();
-  probeMembershipService();
 })();
