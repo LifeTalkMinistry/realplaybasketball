@@ -1,0 +1,27 @@
+/* Subtle Real Play ambient lighting: black-first, soft blue/red haze, no sharp beams. */
+.rp-app.rp-guest .rp-entry.rp-public-landing{
+  background:
+    radial-gradient(70% 46% at -8% 16%, rgba(8,108,255,.17) 0%, rgba(8,108,255,.085) 24%, rgba(8,108,255,.025) 46%, transparent 70%),
+    radial-gradient(58% 40% at 108% 28%, rgba(255,32,40,.11) 0%, rgba(255,32,40,.05) 28%, rgba(255,32,40,.018) 48%, transparent 72%),
+    radial-gradient(52% 34% at 18% 72%, rgba(22,135,255,.09) 0%, rgba(22,135,255,.035) 34%, transparent 72%),
+    radial-gradient(46% 30% at 88% 82%, rgba(255,28,39,.075) 0%, rgba(255,28,39,.028) 36%, transparent 72%),
+    linear-gradient(180deg,#020306 0%,#010204 48%,#030407 100%);
+}
+
+/* Keep the title area clean so REAL PLAY BASKETBALL remains dominant. */
+.rp-public-hero{
+  background:
+    radial-gradient(45% 32% at 50% 42%, rgba(0,0,0,.16) 0%, rgba(0,0,0,.08) 48%, transparent 78%);
+}
+
+/* Slightly soften the atmosphere on very small screens. */
+@media(max-width:520px){
+  .rp-app.rp-guest .rp-entry.rp-public-landing{
+    background:
+      radial-gradient(78% 42% at -12% 18%, rgba(8,108,255,.15) 0%, rgba(8,108,255,.065) 28%, transparent 72%),
+      radial-gradient(66% 38% at 112% 31%, rgba(255,32,40,.09) 0%, rgba(255,32,40,.038) 30%, transparent 72%),
+      radial-gradient(60% 34% at 12% 76%, rgba(22,135,255,.07) 0%, rgba(22,135,255,.025) 34%, transparent 72%),
+      radial-gradient(52% 30% at 92% 86%, rgba(255,28,39,.06) 0%, rgba(255,28,39,.02) 34%, transparent 72%),
+      linear-gradient(180deg,#020306 0%,#010204 48%,#030407 100%);
+  }
+}
