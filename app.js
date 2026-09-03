@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-premium-profile-v1';
+  const version = '20260903-3v3-refinement-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -39,6 +39,7 @@
     'main-menu.css',
     'three-v-three-beta.css',
     'three-v-three-secure-spot.css',
+    'three-v-three-refinement.css',
     'career-beta.css',
     'career-beta-play.css',
     'real-play-updates.css',
@@ -89,6 +90,7 @@
       'career-beta-leaderboard.js',
       'three-v-three-beta.js',
       'three-v-three-layout-order.js',
+      'three-v-three-refinement.js',
       'real-play-updates.js',
       'real-play-world.js',
       'real-play-world-chat-cleanup.js',
