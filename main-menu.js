@@ -46,6 +46,12 @@
         <strong>WORLD</strong>
         <span>PLAYERS · COMMUNITY · CHAT</span>
       </button>
+
+      <button id="rp-main-choice-settings" class="rp-main-menu-item" type="button" data-rp-main-action="settings">
+        <small>ACCOUNT</small>
+        <strong>SETTINGS</strong>
+        <span>ACCOUNT · LOG OUT</span>
+      </button>
     </div>
   `;
   playerStrip.insertAdjacentElement('afterend', menu);
@@ -69,10 +75,12 @@
   const noticeKicker = notice.querySelector('[data-rp-main-notice-kicker]');
   const noticeTitle = notice.querySelector('[data-rp-main-notice-title]');
   const noticeCopy = notice.querySelector('[data-rp-main-notice-copy]');
+  const noticeButton = notice.querySelector('[data-rp-main-notice-close]');
   let activeIndex = 0;
   let pointerStartY = null;
   let suppressClickUntil = 0;
   let lastWheelAt = 0;
+  let noticeAction = 'close';
 
   function normalizeIndex(index) {
     return (index + items.length) % items.length;
@@ -107,10 +115,12 @@
     selectIndex(activeIndex + direction);
   }
 
-  function showNotice({ kicker, title, copy }) {
+  function showNotice({ kicker, title, copy, button = 'GOT IT', action = 'close' }) {
     noticeKicker.textContent = kicker;
     noticeTitle.textContent = title;
     noticeCopy.textContent = copy;
+    noticeAction = action;
+    if (noticeButton) noticeButton.textContent = button;
     notice.classList.add('open');
     notice.setAttribute('aria-hidden', 'false');
   }
@@ -118,6 +128,8 @@
   function closeNotice() {
     notice.classList.remove('open');
     notice.setAttribute('aria-hidden', 'true');
+    noticeAction = 'close';
+    if (noticeButton) noticeButton.textContent = 'GOT IT';
   }
 
   function openThreeVThree(attempt = 0) {
@@ -150,6 +162,33 @@
     });
   }
 
+  function openSettings() {
+    const playerName = String(lobby.querySelector('[data-rp-name]')?.textContent || 'REAL PLAY PLAYER').trim();
+    const email = String(document.querySelector('[data-auth-account-email]')?.textContent || '').trim();
+    const identity = email ? `${playerName} · ${email}` : playerName;
+
+    showNotice({
+      kicker: 'ACCOUNT',
+      title: 'SETTINGS',
+      copy: identity,
+      button: 'LOG OUT',
+      action: 'logout',
+    });
+  }
+
+  function logout() {
+    const existingLogout = document.querySelector('[data-auth-logout]');
+    closeNotice();
+
+    if (existingLogout) {
+      existingLogout.click();
+      return;
+    }
+
+    window.localStorage.removeItem(TOKEN_KEY);
+    window.location.reload();
+  }
+
   function enterSelected() {
     const action = items[activeIndex]?.dataset.rpMainAction;
     if (action === '3v3') {
@@ -168,6 +207,8 @@
       });
     } else if (action === 'world') {
       openWorld();
+    } else if (action === 'settings') {
+      openSettings();
     }
   }
 
@@ -223,7 +264,13 @@
     }
   });
 
-  notice.querySelector('[data-rp-main-notice-close]')?.addEventListener('click', closeNotice);
+  noticeButton?.addEventListener('click', () => {
+    if (noticeAction === 'logout') {
+      logout();
+      return;
+    }
+    closeNotice();
+  });
   notice.addEventListener('click', (event) => {
     if (event.target === notice) closeNotice();
   });
