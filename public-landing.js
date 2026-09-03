@@ -16,10 +16,34 @@
       <p class="rp-public-tagline">LESS SCREEN. REAL POINTS.</p>
 
       <div class="rp-public-price">
-        <strong>₱100</strong>
+        <strong>₱599</strong>
         <span>/ MONTH</span>
         <small>BETA MEMBERSHIP</small>
       </div>
+
+      <details class="rp-public-value">
+        <summary>
+          <span>SEE WHAT ₱599 INCLUDES</span>
+          <b aria-hidden="true">+</b>
+        </summary>
+        <div class="rp-public-value-panel">
+          <p class="rp-public-value-kicker">BREAK IT DOWN</p>
+          <div class="rp-public-value-math">
+            <article><strong>≈ ₱150</strong><span>PER WEEK</span></article>
+            <article><strong>≈ ₱50</strong><span>PER GAME</span></article>
+          </div>
+          <p class="rp-public-value-assumption">Based on roughly 4 weekly schedules per month and 3 games per scheduled session.</p>
+          <div class="rp-public-value-list">
+            <article><strong>COURT + SCHEDULED PLAY</strong><p>Your share of organized court access, dates, times, and player spots.</p></article>
+            <article><strong>OFFICIAL SCORING + VERIFICATION</strong><p>Games, results, stats, OVR movement, and records are documented instead of self-reported.</p></article>
+            <article><strong>CAMERA + GAME DOCUMENTATION</strong><p>Real games can become footage, highlights, and a history you can actually look back on.</p></article>
+            <article><strong>TEAM + SEASON SYSTEM</strong><p>Balanced teams, standings, playoffs, a Final, and something meaningful to compete for.</p></article>
+            <article><strong>YOUR PLAYER CAREER</strong><p>Your identity, OVR, verified stats, games, achievements, and history stay with you.</p></article>
+            <article><strong>THE COMMUNITY BEHIND IT</strong><p>Real Play handles the organization so you can focus on showing up and playing basketball.</p></article>
+          </div>
+          <p class="rp-public-value-close"><strong>YOU'RE NOT JUST PAYING FOR A COURT.</strong> You're joining an organized basketball system built to keep you playing.</p>
+        </div>
+      </details>
 
       <button class="rp-public-cta" type="button" data-public-create>CREATE MY PLAYER</button>
 
@@ -122,7 +146,7 @@
       <section class="rp-public-section rp-public-membership-story">
         <p class="rp-public-eyebrow">WHAT YOUR MEMBERSHIP SUPPORTS</p>
         <h2>SHOW UP.<br><span>KEEP PLAYING.</span></h2>
-        <p>Your ₱100 Beta Membership helps Real Play build the repeatable basketball experience you just saw.</p>
+        <p>Your ₱599 monthly membership helps Real Play build the repeatable basketball experience you just saw.</p>
         <div class="rp-public-benefits">
           <article><b>01</b><div><strong>SCHEDULED GAMES</strong><p>Court, date, time, and player spots organized around real play.</p></div></article>
           <article><b>02</b><div><strong>REAL PLAY OPERATIONS</strong><p>Team organization, check-in, verified games, and official records.</p></div></article>
@@ -148,7 +172,7 @@
           <span class="rp-public-title-main">REAL PLAY</span>
           <span class="rp-public-title-sub">BASKETBALL</span>
         </div>
-        <div class="rp-public-final-price"><strong>₱100</strong><span>/ MONTH · BETA MEMBERSHIP</span></div>
+        <div class="rp-public-final-price"><strong>₱599</strong><span>/ MONTH · BETA MEMBERSHIP</span></div>
         <button class="rp-public-cta" type="button" data-public-create>CREATE MY PLAYER</button>
         <button class="rp-public-text-button" type="button" data-public-login>ALREADY A PLAYER? LOG IN</button>
       </section>
