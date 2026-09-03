@@ -21,29 +21,10 @@
         <small>BETA MEMBERSHIP</small>
       </div>
 
-      <details class="rp-public-value">
-        <summary>
-          <span>SEE WHAT ₱599 INCLUDES</span>
-          <b aria-hidden="true">+</b>
-        </summary>
-        <div class="rp-public-value-panel">
-          <p class="rp-public-value-kicker">BREAK IT DOWN</p>
-          <div class="rp-public-value-math">
-            <article><strong>≈ ₱150</strong><span>PER WEEK</span></article>
-            <article><strong>≈ ₱50</strong><span>PER GAME</span></article>
-          </div>
-          <p class="rp-public-value-assumption">Based on roughly 4 weekly schedules per month and 3 games per scheduled session.</p>
-          <div class="rp-public-value-list">
-            <article><strong>COURT + SCHEDULED PLAY</strong><p>Your share of organized court access, dates, times, and player spots.</p></article>
-            <article><strong>OFFICIAL SCORING + VERIFICATION</strong><p>Games, results, stats, OVR movement, and records are documented instead of self-reported.</p></article>
-            <article><strong>CAMERA + GAME DOCUMENTATION</strong><p>Real games can become footage, highlights, and a history you can actually look back on.</p></article>
-            <article><strong>TEAM + SEASON SYSTEM</strong><p>Balanced teams, standings, playoffs, a Final, and something meaningful to compete for.</p></article>
-            <article><strong>YOUR PLAYER CAREER</strong><p>Your identity, OVR, verified stats, games, achievements, and history stay with you.</p></article>
-            <article><strong>THE COMMUNITY BEHIND IT</strong><p>Real Play handles the organization so you can focus on showing up and playing basketball.</p></article>
-          </div>
-          <p class="rp-public-value-close"><strong>YOU'RE NOT JUST PAYING FOR A COURT.</strong> You're joining an organized basketball system built to keep you playing.</p>
-        </div>
-      </details>
+      <button class="rp-public-value-trigger" type="button" data-public-value-open aria-haspopup="dialog" aria-controls="rp-public-value-dialog">
+        <span>SEE WHAT ₱599 INCLUDES</span>
+        <b aria-hidden="true">+</b>
+      </button>
 
       <button class="rp-public-cta" type="button" data-public-create>CREATE MY PLAYER</button>
 
@@ -177,9 +158,38 @@
         <button class="rp-public-text-button" type="button" data-public-login>ALREADY A PLAYER? LOG IN</button>
       </section>
     </div>
+
+    <div class="rp-public-value-overlay" data-public-value-overlay aria-hidden="true">
+      <section class="rp-public-value-card" id="rp-public-value-dialog" role="dialog" aria-modal="true" aria-labelledby="rp-public-value-title">
+        <button class="rp-public-value-close-button" type="button" data-public-value-close aria-label="Close membership value breakdown">×</button>
+        <div class="rp-public-value-head">
+          <p class="rp-public-value-kicker">REAL PLAY MEMBER VALUE</p>
+          <h2 class="rp-public-value-title" id="rp-public-value-title">₱599.<br><span>HERE'S WHAT IT BUILDS.</span></h2>
+          <p class="rp-public-value-sub">The membership is not just a share of a court. It supports the organized basketball experience around every game.</p>
+        </div>
+        <div class="rp-public-value-math">
+          <article><strong>≈ ₱150</strong><span>PER WEEK</span></article>
+          <article><strong>≈ ₱50</strong><span>PER GAME</span></article>
+        </div>
+        <p class="rp-public-value-assumption">Based on roughly 4 weekly schedules per month and 3 games per scheduled Real Play session.</p>
+        <div class="rp-public-value-list">
+          <article><strong>COURT + SCHEDULED PLAY</strong><p>Organized court access, dates, times, and player spots without arranging the whole run yourself.</p></article>
+          <article><strong>OFFICIAL SCORING + VERIFICATION</strong><p>Results, stats, OVR movement, and official records are documented instead of self-reported.</p></article>
+          <article><strong>CAMERA + GAME DOCUMENTATION</strong><p>Real games can become footage, highlights, and a basketball history you can actually look back on.</p></article>
+          <article><strong>TEAM + SEASON SYSTEM</strong><p>Balanced teams, standings, playoffs, a Final, and something meaningful to compete for.</p></article>
+          <article><strong>YOUR PLAYER CAREER</strong><p>Your identity, OVR, verified stats, games, achievements, and history stay connected to you.</p></article>
+          <article><strong>THE COMMUNITY BEHIND IT</strong><p>Real Play handles the organization and structure so you can focus on showing up and playing.</p></article>
+        </div>
+        <p class="rp-public-value-end"><strong>YOU'RE NOT JUST PAYING FOR A COURT.</strong> You're joining an organized basketball system built to keep you playing.</p>
+      </section>
+    </div>
   `;
 
   const authOpen = document.querySelector('[data-auth-open]');
+  const valueOpen = entry.querySelector('[data-public-value-open]');
+  const valueOverlay = entry.querySelector('[data-public-value-overlay]');
+  const valueClose = entry.querySelector('[data-public-value-close]');
+  let valueReturnFocus = null;
 
   function openAuth(view) {
     if (!authOpen) return;
@@ -190,6 +200,32 @@
       if (tab) tab.click();
     }, 30);
   }
+
+  function openValueCard() {
+    if (!valueOverlay) return;
+    valueReturnFocus = document.activeElement;
+    valueOverlay.classList.add('open');
+    valueOverlay.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('rp-public-value-open');
+    window.setTimeout(() => valueClose?.focus(), 0);
+  }
+
+  function closeValueCard() {
+    if (!valueOverlay || !valueOverlay.classList.contains('open')) return;
+    valueOverlay.classList.remove('open');
+    valueOverlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('rp-public-value-open');
+    if (valueReturnFocus && typeof valueReturnFocus.focus === 'function') valueReturnFocus.focus();
+  }
+
+  valueOpen?.addEventListener('click', openValueCard);
+  valueClose?.addEventListener('click', closeValueCard);
+  valueOverlay?.addEventListener('click', (event) => {
+    if (event.target === valueOverlay) closeValueCard();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeValueCard();
+  });
 
   entry.querySelectorAll('[data-public-create]').forEach((button) => {
     button.addEventListener('click', () => openAuth('signup'));
