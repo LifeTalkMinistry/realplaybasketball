@@ -1,4 +1,24 @@
 (() => {
+  function ensureUpdatesLayer() {
+    if (window.__realPlayUpdatesInstalled || document.querySelector('[data-rp-updates-fallback]')) return;
+
+    if (!document.querySelector('link[href*="real-play-updates.css"]')) {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'real-play-updates.css?v=20260903-official-updates-v1';
+      css.dataset.rpUpdatesFallback = 'true';
+      document.head.appendChild(css);
+    }
+
+    const script = document.createElement('script');
+    script.src = 'real-play-updates.js?v=20260903-official-updates-v1';
+    script.async = false;
+    script.dataset.rpUpdatesFallback = 'true';
+    document.head.appendChild(script);
+  }
+
+  ensureUpdatesLayer();
+
   function install() {
     const panel = document.querySelector('[data-rp-world]');
     const channelsRoot = panel?.querySelector('[data-chat-channels]');
