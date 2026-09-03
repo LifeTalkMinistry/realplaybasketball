@@ -1,4 +1,4 @@
-/* 3V3 next-session action: keep the team identity clean and make Play the final action. */
+/* 3V3 next-session action: team first, Play next, league format as the footer. */
 .rp-3v3-shell{
   min-height:100dvh;
   display:flex;
@@ -8,8 +8,9 @@
 .rp-3v3-session{
   position:relative;
   z-index:2;
-  margin-top:auto;
-  padding:20px 0 max(8px,env(safe-area-inset-bottom));
+  flex:0 0 auto;
+  margin-top:18px;
+  padding:18px 0 16px;
   border-top:1px solid rgba(126,173,232,.10);
 }
 
@@ -125,7 +126,15 @@
 .rp-3v3-session-message.success{color:#61dff4}
 .rp-3v3-session-message.error{color:#ff9aa7}
 
+/* The league format is intentionally the final informational strip at the bottom. */
+.rp-3v3-league-format{
+  flex:0 0 auto;
+  margin-top:auto!important;
+  margin-bottom:0;
+  padding-bottom:max(14px,env(safe-area-inset-bottom));
+}
+
 @media(max-height:760px){
-  .rp-3v3-session{padding-top:14px}
+  .rp-3v3-session{margin-top:12px;padding-top:13px;padding-bottom:12px}
   .rp-3v3-session-action{min-height:52px}
 }
