@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260903-3v3-refinement-v1';
+  const version = '20260903-profile-photo-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -47,6 +47,7 @@
     'real-play-world.css',
     'real-play-world-chat-cleanup.css',
     'real-play-profile.css',
+    'real-play-profile-photo.css',
     'membership.css',
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -95,6 +96,7 @@
       'real-play-world.js',
       'real-play-world-chat-cleanup.js',
       'real-play-profile.js',
+      'real-play-profile-photo.js',
       'main-menu.js',
       'overlay-focus-release.js',
       'settings-panel.js',
