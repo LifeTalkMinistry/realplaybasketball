@@ -1,0 +1,19 @@
+.auth-panel.welcome-mode > .auth-kicker,
+.auth-panel.welcome-mode > .auth-title,
+.auth-panel.welcome-mode > .auth-subtitle {
+  display: none !important;
+}
+
+.auth-panel.welcome-mode {
+  padding-top: 54px !important;
+}
+
+.auth-panel.welcome-mode .auth-welcome-screen {
+  margin-top: 0;
+}
+
+@media (max-width: 759px) {
+  .auth-panel.welcome-mode {
+    padding-top: 52px !important;
+  }
+}
