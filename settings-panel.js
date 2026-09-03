@@ -7,6 +7,9 @@
   const menuList = document.querySelector('[data-rp-main-menu-list]');
   if (!menu || !settingsChoice) return;
 
+  const settingsSummary = settingsChoice.querySelector('span');
+  if (settingsSummary) settingsSummary.textContent = 'PROFILE · MEMBERSHIP · COMMUNITY';
+
   const panel = document.createElement('div');
   panel.className = 'rp-settings-overlay';
   panel.dataset.rpSettingsOverlay = 'true';
