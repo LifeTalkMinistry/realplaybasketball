@@ -6,15 +6,24 @@
   if (!view) return;
 
   const status = view.querySelector('[data-rp-ranking-session-status]');
-  if (!status) return;
+  const title = view.querySelector('[data-rp-ranking-session-title]');
+  if (!status || !title) return;
 
   function sync() {
-    const text = String(status.textContent || '').trim().toUpperCase();
-    const redundant = text === 'RANKING GAME ANNOUNCED';
-    status.hidden = redundant;
+    const statusText = String(status.textContent || '').trim().toUpperCase();
+    const titleText = String(title.textContent || '').trim().toUpperCase();
+
+    status.hidden = statusText === 'RANKING GAME ANNOUNCED';
+    title.hidden = titleText === 'OPEN RANK GAME';
   }
 
-  new MutationObserver(sync).observe(status, {
+  const observer = new MutationObserver(sync);
+  observer.observe(status, {
+    childList: true,
+    characterData: true,
+    subtree: true,
+  });
+  observer.observe(title, {
     childList: true,
     characterData: true,
     subtree: true,
