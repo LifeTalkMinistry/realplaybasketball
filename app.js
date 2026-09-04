@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-ranking-games-v3';
+  const version = '20260904-ranking-info-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -95,6 +95,7 @@
       'real-play-profile-photo.js',
       'main-menu.js',
       'ranking-games.js',
+      'ranking-games-info-toggle.js',
       'overlay-focus-release.js',
       'settings-panel.js',
       'player-admin-probe-guard.js',
