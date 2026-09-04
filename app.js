@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-ranking-games-v1';
+  const version = '20260904-ranking-games-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
