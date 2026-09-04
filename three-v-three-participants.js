@@ -49,12 +49,12 @@
       section.innerHTML = `
         <header class="rp-3v3-players-head">
           <div>
-            <small>SECURED PLAYERS</small>
+            <small>LEAGUE RESERVATIONS</small>
             <strong>WHO'S IN.</strong>
           </div>
           <b data-rp-secured-count>0</b>
         </header>
-        <p class="rp-3v3-players-mode" data-rp-secured-mode>PREFERRED CLUBS · FINAL ASSIGNMENT PENDING</p>
+        <p class="rp-3v3-players-mode" data-rp-secured-mode>FIRST 3V3 ROSTER · PREFERRED CLUBS · FINAL ASSIGNMENT PENDING</p>
         <div class="rp-3v3-club-roster" data-rp-club-roster></div>
         <div class="rp-3v3-unassigned" data-rp-unassigned hidden></div>
       `;
@@ -71,12 +71,12 @@
     const roster = section.querySelector('[data-rp-club-roster]');
     const unassigned = section.querySelector('[data-rp-unassigned]');
     if (count) count.textContent = '0';
-    if (mode) mode.textContent = 'PREFERRED CLUBS · FINAL ASSIGNMENT PENDING';
+    if (mode) mode.textContent = 'FIRST 3V3 ROSTER · PREFERRED CLUBS · FINAL ASSIGNMENT PENDING';
     if (roster) {
       roster.innerHTML = `
         <div class="rp-3v3-players-empty">
-          <strong>NO SECURED PLAYERS YET.</strong>
-          <span>Secure a spot to appear here.</span>
+          <strong>NO LEAGUE RESERVATIONS YET.</strong>
+          <span>Reserve your league spot to appear on the launch roster.</span>
         </div>`;
     }
     if (unassigned) unassigned.hidden = true;
@@ -106,7 +106,7 @@
     const allAssigned = playersWithClub.length > 0 && playersWithClub.every((player) => Boolean(player.assignedClub));
     const modeLabel = allAssigned
       ? 'OFFICIAL TEAMS'
-      : 'PREFERRED CLUBS · FINAL ASSIGNMENT PENDING';
+      : 'FIRST 3V3 ROSTER · PREFERRED CLUBS · FINAL ASSIGNMENT PENDING';
 
     const count = section.querySelector('[data-rp-secured-count]');
     const mode = section.querySelector('[data-rp-secured-mode]');
