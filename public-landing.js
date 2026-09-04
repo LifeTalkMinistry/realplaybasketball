@@ -41,7 +41,68 @@
 
         <div class="rp-public-value-viewport" data-carousel-viewport tabindex="0" aria-roledescription="carousel">
           <div class="rp-public-value-track" data-carousel-track>
-            <article class="rp-public-value-slide is-active" data-carousel-slide>
+            <article class="rp-public-value-slide rp-public-origin-slide is-active" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 01</p>
+              <h2>FAN KA BA NG<br><span>NBA?</span></h2>
+              <p class="rp-public-value-slide-copy">Or kahit anong sport kung saan nakikita mo yung stats ng players, records nila, at kung gaano talaga sila kalakas?</p>
+              <div class="rp-public-value-player-line"><span>POINTS</span><span>ASSISTS</span><span>REBOUNDS</span><span>W/L</span><span>OVR</span></div>
+              <p class="rp-public-value-footnote">Alam mo yung makikita mo: Ilang points na-score nila. Ilang assists. Ilang rebounds. Wins and losses. Pati overall rating na nagre-represent kung gaano sila kalakas as a player.</p>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 02</p>
+              <h2>WHAT IF DALHIN NATIN<br><span>YUNG EXPERIENCE NA 'YON SA LOCAL BASKETBALL?</span></h2>
+              <p class="rp-public-value-slide-copy">Meet...</p>
+              <div class="rp-public-value-highlight"><strong>REAL PLAY BASKETBALL.</strong><span>Pero bago tayo pumunta diyan, gusto ko munang sabihin kung bakit ko ginawa ang Real Play.</span></div>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 03</p>
+              <h2>LOOK<br><span>AROUND.</span></h2>
+              <p class="rp-public-value-slide-copy">Kids, teenagers, kahit tayong adults... sobrang dami na nating oras na nakaharap sa screen.</p>
+              <div class="rp-public-value-player-line"><span>SCROLLING.</span><span>WATCHING.</span><span>PLAYING DIGITALLY.</span></div>
+              <p class="rp-public-value-footnote">Kaya naisip ko... What if bigyan natin ang mga tao ng another reason para ibaba muna yung phone... lumabas... at maglaro for real?</p>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 04</p>
+              <h2>THAT'S WHAT REAL PLAY<br><span>IS FIGHTING FOR.</span></h2>
+              <div class="rp-public-value-highlight"><strong>LESS SCREEN. REAL POINTS.</strong><span>Now... balikan natin yung NBA experience na sinasabi ko kanina.</span></div>
+              <p class="rp-public-value-slide-copy">Sa Real Play, magkakaroon tayo ng different ways to play. 5v5. 1v1. 3v3. And more.</p>
+              <p class="rp-public-value-footnote">Pero since nasa Beta Season pa tayo... we're starting with 3v3.</p>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 05</p>
+              <h2>“A MIST<br><span>OF APPLAUSE.”</span></h2>
+              <p class="rp-public-value-slide-copy">And this time... kapag sobrang ganda ng laro mo... hindi ka na lang makakakuha ng tinatawag kong... “A mist of applause.”</p>
+              <p class="rp-public-value-footnote">Think about it. Naglaro ka. You dominated. Nakita ng mga tao yung tira mo. Yung pasa mo. Yung laro mo. Nag-cheer sila. Pinag-usapan ka nila. “Ang lakas nung player na 'yon.”</p>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 06</p>
+              <h2>PERO AFTER<br><span>A FEW GAMES?</span></h2>
+              <p class="rp-public-value-slide-copy">Unti-unting nawawala yung moment. Nakalimutan na. Walang record. Walang history. Parang nangyari lang... then it's gone.</p>
+              <div class="rp-public-value-highlight"><strong>NOT ANYMORE.</strong><span>Because with Real Play Basketball, kapag naglaro ka sa official Career games... yung performance mo becomes part of your actual basketball career.</span></div>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 07</p>
+              <h2>YOUR POINTS. YOUR ASSISTS.<br><span>YOUR REBOUNDS. YOUR WINS AND LOSSES. YOUR GAMES.</span></h2>
+              <p class="rp-public-value-slide-copy">And eventually... your own OVR. Isang rating na hindi mo basta pinili para sa sarili mo.</p>
+              <div class="rp-public-value-highlight"><strong>YOU DON'T CHOOSE YOUR RATING.</strong><span>YOU EARN IT.</span></div>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 08</p>
+              <h2>YOUR GAME<br><span>LEAVES A RECORD.</span></h2>
+              <p class="rp-public-value-slide-copy">Every official game you play... unti-unting binubuo ng Real Play yung history ng player na ikaw talaga.</p>
+              <p class="rp-public-value-slide-copy">So yung magandang laro mo last week? Hindi na kailangang mawala pagkatapos umuwi ng lahat.</p>
+              <div class="rp-public-value-highlight"><strong>YOUR STATS TELL THE STORY.</strong><span>YOUR CAREER CONTINUES.</span></div>
+              <p class="rp-public-value-footnote">So... ready ka na ba? Pick the team you want to carry. Step onto the court. And show the locals... kung ano talaga ang laro mo.</p>
+            </article>
+
+            <article class="rp-public-value-slide" data-carousel-slide>
               <p class="rp-public-value-slide-label">THE REAL VALUE</p>
               <h2>₱599<br><span>GOES FURTHER.</span></h2>
               <p class="rp-public-value-slide-copy">Break the monthly membership down and the price becomes simple.</p>
@@ -120,7 +181,68 @@
 
         <div class="rp-public-value-viewport" data-carousel-viewport tabindex="0" aria-roledescription="carousel">
           <div class="rp-public-value-track" data-carousel-track>
-            <article class="rp-public-value-slide is-active" data-carousel-slide>
+            <article class="rp-public-value-slide rp-public-origin-slide is-active" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 01</p>
+              <h2>FAN KA BA NG<br><span>NBA?</span></h2>
+              <p class="rp-public-value-slide-copy">Or kahit anong sport kung saan nakikita mo yung stats ng players, records nila, at kung gaano talaga sila kalakas?</p>
+              <div class="rp-public-value-player-line"><span>POINTS</span><span>ASSISTS</span><span>REBOUNDS</span><span>W/L</span><span>OVR</span></div>
+              <p class="rp-public-value-footnote">Alam mo yung makikita mo: Ilang points na-score nila. Ilang assists. Ilang rebounds. Wins and losses. Pati overall rating na nagre-represent kung gaano sila kalakas as a player.</p>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 02</p>
+              <h2>WHAT IF DALHIN NATIN<br><span>YUNG EXPERIENCE NA 'YON SA LOCAL BASKETBALL?</span></h2>
+              <p class="rp-public-value-slide-copy">Meet...</p>
+              <div class="rp-public-value-highlight"><strong>REAL PLAY BASKETBALL.</strong><span>Pero bago tayo pumunta diyan, gusto ko munang sabihin kung bakit ko ginawa ang Real Play.</span></div>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 03</p>
+              <h2>LOOK<br><span>AROUND.</span></h2>
+              <p class="rp-public-value-slide-copy">Kids, teenagers, kahit tayong adults... sobrang dami na nating oras na nakaharap sa screen.</p>
+              <div class="rp-public-value-player-line"><span>SCROLLING.</span><span>WATCHING.</span><span>PLAYING DIGITALLY.</span></div>
+              <p class="rp-public-value-footnote">Kaya naisip ko... What if bigyan natin ang mga tao ng another reason para ibaba muna yung phone... lumabas... at maglaro for real?</p>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 04</p>
+              <h2>THAT'S WHAT REAL PLAY<br><span>IS FIGHTING FOR.</span></h2>
+              <div class="rp-public-value-highlight"><strong>LESS SCREEN. REAL POINTS.</strong><span>Now... balikan natin yung NBA experience na sinasabi ko kanina.</span></div>
+              <p class="rp-public-value-slide-copy">Sa Real Play, magkakaroon tayo ng different ways to play. 5v5. 1v1. 3v3. And more.</p>
+              <p class="rp-public-value-footnote">Pero since nasa Beta Season pa tayo... we're starting with 3v3.</p>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 05</p>
+              <h2>“A MIST<br><span>OF APPLAUSE.”</span></h2>
+              <p class="rp-public-value-slide-copy">And this time... kapag sobrang ganda ng laro mo... hindi ka na lang makakakuha ng tinatawag kong... “A mist of applause.”</p>
+              <p class="rp-public-value-footnote">Think about it. Naglaro ka. You dominated. Nakita ng mga tao yung tira mo. Yung pasa mo. Yung laro mo. Nag-cheer sila. Pinag-usapan ka nila. “Ang lakas nung player na 'yon.”</p>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 06</p>
+              <h2>PERO AFTER<br><span>A FEW GAMES?</span></h2>
+              <p class="rp-public-value-slide-copy">Unti-unting nawawala yung moment. Nakalimutan na. Walang record. Walang history. Parang nangyari lang... then it's gone.</p>
+              <div class="rp-public-value-highlight"><strong>NOT ANYMORE.</strong><span>Because with Real Play Basketball, kapag naglaro ka sa official Career games... yung performance mo becomes part of your actual basketball career.</span></div>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 07</p>
+              <h2>YOUR POINTS. YOUR ASSISTS.<br><span>YOUR REBOUNDS. YOUR WINS AND LOSSES. YOUR GAMES.</span></h2>
+              <p class="rp-public-value-slide-copy">And eventually... your own OVR. Isang rating na hindi mo basta pinili para sa sarili mo.</p>
+              <div class="rp-public-value-highlight"><strong>YOU DON'T CHOOSE YOUR RATING.</strong><span>YOU EARN IT.</span></div>
+            </article>
+
+            <article class="rp-public-value-slide rp-public-origin-slide" data-carousel-slide>
+              <p class="rp-public-value-slide-label">WHY REAL PLAY EXISTS · 08</p>
+              <h2>YOUR GAME<br><span>LEAVES A RECORD.</span></h2>
+              <p class="rp-public-value-slide-copy">Every official game you play... unti-unting binubuo ng Real Play yung history ng player na ikaw talaga.</p>
+              <p class="rp-public-value-slide-copy">So yung magandang laro mo last week? Hindi na kailangang mawala pagkatapos umuwi ng lahat.</p>
+              <div class="rp-public-value-highlight"><strong>YOUR STATS TELL THE STORY.</strong><span>YOUR CAREER CONTINUES.</span></div>
+              <p class="rp-public-value-footnote">So... ready ka na ba? Pick the team you want to carry. Step onto the court. And show the locals... kung ano talaga ang laro mo.</p>
+            </article>
+
+            <article class="rp-public-value-slide" data-carousel-slide>
               <p class="rp-public-value-slide-label">01 · WHAT IS REAL PLAY?</p>
               <h2>REAL BASKETBALL.<br><span>ORGANIZED.</span></h2>
               <p class="rp-public-value-slide-copy">Real Play turns scheduled basketball into a real player and team history. You show up, play on the court, and the system records what actually happened.</p>
