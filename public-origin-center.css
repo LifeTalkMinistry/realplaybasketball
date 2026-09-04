@@ -1,100 +1,139 @@
-/* REAL PLAY — center the shared WHY REAL PLAY EXISTS origin slides in both carousels.
-   These slides appear inside both the 18-slide membership carousel and the 8-slide story carousel. */
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide{
+/* REAL PLAY — center every public carousel slide.
+   Applies to both the membership carousel and the story carousel, not only the origin slides. */
+.rp-public-value-experience .rp-public-value-slide{
   align-items:center!important;
   text-align:center!important;
 }
 
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-slide-label,
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide h2,
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-slide-copy,
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-footnote,
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-highlight,
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-player-line{
+.rp-public-value-experience .rp-public-value-slide > *{
   margin-left:auto!important;
   margin-right:auto!important;
+}
+
+.rp-public-value-experience .rp-public-value-slide-label,
+.rp-public-value-experience .rp-public-value-slide h2,
+.rp-public-value-experience .rp-public-value-slide-copy,
+.rp-public-value-experience .rp-public-value-footnote,
+.rp-public-value-experience .rp-public-value-highlight,
+.rp-public-value-experience .rp-public-value-player-line,
+.rp-public-value-experience .rp-public-value-math,
+.rp-public-value-experience .rp-public-carousel-team-grid,
+.rp-public-value-experience .rp-public-carousel-standing,
+.rp-public-value-experience .rp-public-carousel-playoffs,
+.rp-public-value-experience .rp-public-value-final-price{
   text-align:center!important;
 }
 
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-slide-label{
+.rp-public-value-experience .rp-public-value-slide-label{
   width:100%;
   max-width:470px;
 }
 
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide h2{
+.rp-public-value-experience .rp-public-value-slide h2{
   width:100%;
   max-width:500px;
+  text-align:center!important;
 }
 
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-slide-copy{
+.rp-public-value-experience .rp-public-value-slide-copy{
   width:100%;
   max-width:450px;
+  text-align:center!important;
 }
 
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-footnote{
+.rp-public-value-experience .rp-public-value-footnote{
   width:100%;
   max-width:455px;
   margin-top:22px!important;
   line-height:1.55;
+  text-align:center!important;
 }
 
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-highlight{
+.rp-public-value-experience .rp-public-value-highlight{
   width:min(100%,460px);
-  border-left:1px solid rgba(255,255,255,.08);
+  border-left:1px solid rgba(255,255,255,.08)!important;
   border-top:2px solid var(--rp-blue-hi);
+  text-align:center!important;
 }
 
-.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-player-line{
+.rp-public-value-experience .rp-public-value-highlight strong,
+.rp-public-value-experience .rp-public-value-highlight span{
+  text-align:center!important;
+}
+
+.rp-public-value-experience .rp-public-value-player-line,
+.rp-public-value-experience .rp-public-value-math,
+.rp-public-value-experience .rp-public-carousel-team-grid,
+.rp-public-value-experience .rp-public-carousel-standing,
+.rp-public-value-experience .rp-public-carousel-playoffs{
   width:min(100%,460px);
+}
+
+.rp-public-value-experience .rp-public-value-final-price,
+.rp-public-value-experience .rp-public-story-cta,
+.rp-public-value-experience .rp-public-cta{
+  align-self:center!important;
+}
+
+.rp-public-value-experience .rp-public-carousel-playoffs > div,
+.rp-public-value-experience .rp-public-carousel-team-grid span,
+.rp-public-value-experience .rp-public-carousel-standing span,
+.rp-public-value-experience .rp-public-value-math > div,
+.rp-public-value-experience .rp-public-value-player-line span{
+  text-align:center!important;
 }
 
 @media(max-width:520px){
-  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide{
+  .rp-public-value-experience .rp-public-value-slide{
     padding-left:20px!important;
     padding-right:20px!important;
   }
 
-  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-slide-label{
+  .rp-public-value-experience .rp-public-value-slide-label{
     max-width:330px;
     margin-bottom:15px;
     font-size:.78rem;
     letter-spacing:.12em;
   }
 
-  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide h2{
+  .rp-public-value-experience .rp-public-value-slide h2{
     max-width:330px;
     font-size:clamp(2.8rem,12vw,3.6rem);
     line-height:.9;
   }
 
-  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-slide-copy{
+  .rp-public-value-experience .rp-public-value-slide-copy{
     max-width:330px;
     margin-top:20px;
     font-size:.96rem;
     line-height:1.55;
   }
 
-  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-footnote{
+  .rp-public-value-experience .rp-public-value-footnote{
     max-width:335px;
     margin-top:21px!important;
     font-size:.82rem;
     line-height:1.52;
   }
 
-  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-player-line{
-    max-width:330px;
+  .rp-public-value-experience .rp-public-value-highlight,
+  .rp-public-value-experience .rp-public-value-player-line,
+  .rp-public-value-experience .rp-public-value-math,
+  .rp-public-value-experience .rp-public-carousel-team-grid,
+  .rp-public-value-experience .rp-public-carousel-standing,
+  .rp-public-value-experience .rp-public-carousel-playoffs{
+    max-width:335px;
+  }
+
+  .rp-public-value-experience .rp-public-value-player-line{
     grid-template-columns:repeat(2,minmax(0,1fr));
     gap:8px;
     margin-top:24px!important;
   }
 
-  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-player-line span:last-child:nth-child(odd){
+  .rp-public-value-experience .rp-public-value-player-line span:last-child:nth-child(odd){
     grid-column:1/-1;
     width:calc(50% - 4px);
     justify-self:center;
-  }
-
-  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-highlight{
-    max-width:335px;
   }
 }
