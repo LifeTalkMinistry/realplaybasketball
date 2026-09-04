@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-3v3-season-authority-v3';
+  const version = '20260904-admin-settings-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -102,24 +102,8 @@
       'main-menu.js',
       'overlay-focus-release.js',
       'settings-panel.js',
+      'admin-access-bootstrap.js',
     ];
-
-    const adminMode = new URLSearchParams(window.location.search).get('admin') === '1';
-    if (adminMode) {
-      enhancements.push(
-        'admin-score-sync.js',
-        'admin-game-control.js',
-        'admin-session-start.js',
-        'admin-game-control-simplify.js',
-        'admin-courtside-live.js',
-        'admin-manual-open.js',
-        'admin-session-picker.js',
-        'admin-score-dom-sync.js',
-        'admin-membership-review.js',
-        'admin-three-v-three.js',
-        'admin-season-control.js',
-      );
-    }
 
     for (const href of enhancements) {
       const loaded = await loadScript(href);
