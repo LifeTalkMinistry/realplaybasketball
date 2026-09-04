@@ -129,10 +129,18 @@
 
     // Close Settings through its own control first so focus/ARIA state is
     // released before the admin overlay mounts.
+    const active = document.activeElement;
+    if (active && typeof active.blur === 'function') active.blur();
+
     const settingsBack = document.querySelector('[data-rp-settings-back]');
-    if (settingsBack) settingsBack.click();
-    else {
+    if (settingsBack) {
+      settingsBack.click();
+    } else {
       const overlay = document.querySelector('.rp-settings-overlay');
+      if (document.body) {
+        document.body.tabIndex = -1;
+        document.body.focus({ preventScroll: true });
+      }
       overlay?.classList.remove('open');
       overlay?.setAttribute('aria-hidden', 'true');
       document.body.classList.remove('rp-settings-open');
