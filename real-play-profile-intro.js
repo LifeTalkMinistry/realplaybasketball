@@ -196,11 +196,15 @@ button.dataset.rpPlayerIntro = 'true';
 button.addEventListener('click', openEditor);
 player.appendChild(button);
 }
+const introState = activeBlob ? 'video' : 'empty';
 button.classList.toggle('has-intro', Boolean(activeBlob));
+if (button.dataset.rpIntroState !== introState) {
+button.dataset.rpIntroState = introState;
 button.setAttribute('aria-label', activeBlob ? 'Change player intro video' : 'Add player intro video');
 button.innerHTML = introMarkup();
+}
 const video = button.querySelector('[data-rp-player-intro-video]');
-if (video && activeObjectUrl) {
+if (video && activeObjectUrl && video.src !== activeObjectUrl) {
 video.src = activeObjectUrl;
 video.addEventListener('canplay', syncPlayback, { once: true });
 }
