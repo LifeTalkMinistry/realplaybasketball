@@ -132,7 +132,7 @@
 .rp-3v3-session-cancel{min-height:38px;margin-top:7px;font-size:.64rem}
 .rp-3v3-session-message{margin-top:6px;font-size:.54rem}
 
-/* The visible reservation card stays minimal: one Beta Season label + the action. */
+/* The visible reservation card stays minimal: Beta Season + live roster progress + the action. */
 .rp-3v3-session>.rp-3v3-session-head,
 .rp-3v3-session>.rp-3v3-roster-needed{
   display:none;
@@ -142,7 +142,12 @@
   align-items:center;
   justify-content:space-between;
   gap:12px;
-  min-height:34px;
+  min-height:38px;
+}
+.rp-3v3-session-summary-copy{
+  min-width:0;
+  display:grid;
+  gap:3px;
 }
 .rp-3v3-session-summary strong{
   color:#f5f9ff;
@@ -150,7 +155,16 @@
   font-size:.9rem;
   font-style:italic;
   font-weight:950;
+  line-height:1;
   letter-spacing:.035em;
+}
+.rp-3v3-session-summary span{
+  color:#79dff5;
+  font-size:.6rem;
+  font-weight:850;
+  line-height:1.35;
+  letter-spacing:.05em;
+  text-transform:uppercase;
 }
 .rp-3v3-session-summary button{
   flex:0 0 auto;
@@ -305,6 +319,7 @@
   .rp-team-fixed-card{width:min(76vw,218px)}
   .rp-team-card{width:min(74vw,218px)}
   .rp-3v3-session-summary strong{font-size:.8rem}
+  .rp-3v3-session-summary span{font-size:.55rem}
 }
 
 @media(min-width:700px){
