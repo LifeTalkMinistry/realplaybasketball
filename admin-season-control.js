@@ -204,34 +204,25 @@
     createSeason(form);
   });
 
-  let applyQueued = false;
-  const observer = new MutationObserver((mutations) => {
-    if (!setupTabOpen() || applyQueued) return;
-
-    const externalChange = mutations.some((mutation) => {
-      const target = mutation.target?.nodeType === 1 ? mutation.target : mutation.target?.parentElement;
-      return !target?.closest?.('[data-rp-admin-season-wrap]');
-    });
-    if (!externalChange) return;
-
-    applyQueued = true;
-    window.requestAnimationFrame(() => {
-      applyQueued = false;
+  // Admin Game Control already re-renders its body frequently.
+  // Do not observe its DOM: a MutationObserver here can feed back into those
+  // renders and freeze Admin Mode. Use lightweight scheduled refresh instead.
+  window.setInterval(() => {
+    if (setupTabOpen()) {
       apply();
-    });
+      refresh();
+    }
+  }, 2500);
+
+  document.addEventListener('click', (event) => {
+    if (event.target.closest?.('[data-admin-tab="session"], .rp-admin-launcher')) {
+      window.setTimeout(() => {
+        apply();
+        refresh();
+      }, 60);
+    }
   });
 
-  const adminControl = adminRoot();
-  if (adminControl) {
-    observer.observe(adminControl, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-  }
-
-  window.setInterval(refresh, 2500);
   window.addEventListener('focus', refresh);
   window.addEventListener('realplay:3v3-season-changed', refresh);
   refresh();
