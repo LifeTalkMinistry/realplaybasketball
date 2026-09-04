@@ -9,6 +9,7 @@
   let busy = false;
   let message = '';
   let messageType = '';
+  let lastMarkup = '';
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -142,10 +143,13 @@
       else body.prepend(wrap);
     }
 
-    wrap.innerHTML = `
+    const markup = `
       ${seasonMarkup()}
       ${message ? `<p class="rp-admin-season-message${messageType === 'success' ? ' success' : ''}">${esc(message)}</p>` : ''}
     `;
+    if (markup === lastMarkup && wrap.innerHTML) return;
+    lastMarkup = markup;
+    wrap.innerHTML = markup;
   }
 
   async function refresh() {
@@ -200,10 +204,32 @@
     createSeason(form);
   });
 
-  const observer = new MutationObserver(() => {
-    if (setupTabOpen()) apply();
+  let applyQueued = false;
+  const observer = new MutationObserver((mutations) => {
+    if (!setupTabOpen() || applyQueued) return;
+
+    const externalChange = mutations.some((mutation) => {
+      const target = mutation.target?.nodeType === 1 ? mutation.target : mutation.target?.parentElement;
+      return !target?.closest?.('[data-rp-admin-season-wrap]');
+    });
+    if (!externalChange) return;
+
+    applyQueued = true;
+    window.requestAnimationFrame(() => {
+      applyQueued = false;
+      apply();
+    });
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+
+  const adminControl = adminRoot();
+  if (adminControl) {
+    observer.observe(adminControl, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+  }
 
   window.setInterval(refresh, 2500);
   window.addEventListener('focus', refresh);
