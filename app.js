@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-3v3-premium-v2';
+  const version = '20260904-3v3-all-clubs-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -44,6 +44,7 @@
     'three-v-three-participants.css',
     'three-v-three-premium.css',
     'three-v-three-logo-scale.css',
+    'three-v-three-club-themes.css',
     'career-beta.css',
     'career-beta-play.css',
     'real-play-updates.css',
