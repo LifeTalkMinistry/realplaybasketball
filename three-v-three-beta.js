@@ -159,14 +159,15 @@
       <section class="rp-3v3-session" data-rp-3v3-session>
         <div class="rp-3v3-session-head">
           <div>
-            <small>NEXT 3V3 SESSION</small>
-            <strong data-rp-session-title>CHECKING SCHEDULE…</strong>
+            <small>FIRST OFFICIAL 3V3 LEAGUE</small>
+            <strong data-rp-session-title>BUILDING THE LAUNCH ROSTER…</strong>
             <span data-rp-session-meta></span>
           </div>
           <b data-rp-session-count>—</b>
         </div>
+        <p class="rp-3v3-roster-needed" data-rp-roster-needed>Checking how many players we still need to complete the first roster.</p>
         <button class="rp-3v3-session-action" type="button" data-rp-session-action disabled>CHECKING…</button>
-        <button class="rp-3v3-session-cancel" type="button" data-rp-session-cancel hidden>CANCEL SPOT</button>
+        <button class="rp-3v3-session-cancel" type="button" data-rp-session-cancel hidden>RELEASE MY LEAGUE SPOT</button>
         <p class="rp-3v3-session-message" data-rp-session-message aria-live="polite"></p>
       </section>
     </div>
@@ -211,6 +212,7 @@
   const sessionAction = view.querySelector('[data-rp-session-action]');
   const sessionCancel = view.querySelector('[data-rp-session-cancel]');
   const sessionMessage = view.querySelector('[data-rp-session-message]');
+  const rosterNeeded = view.querySelector('[data-rp-roster-needed]');
 
   let activeIndex = 0;
   let assignedClub = null;
@@ -275,11 +277,12 @@
     setSessionMessage('');
 
     if (!session) {
-      sessionTitle.textContent = 'TO BE ANNOUNCED';
-      sessionMeta.textContent = '';
+      sessionTitle.textContent = 'LAUNCH ROSTER OPENING SOON';
+      sessionMeta.textContent = 'Official start details will appear here once the launch roster opens.';
       sessionCount.textContent = '—';
       sessionAction.disabled = true;
-      sessionAction.textContent = 'NO SESSION YET';
+      if (rosterNeeded) rosterNeeded.textContent = 'We’ll show the live reservation count here as soon as the first league roster is available.';
+      sessionAction.textContent = 'ROSTER NOT OPEN YET';
       return;
     }
 
@@ -294,42 +297,52 @@
     if (dateText) details.push(dateText);
     if (session.locationName || session.location_name) details.push(session.locationName || session.location_name);
 
-    sessionTitle.textContent = session.title || 'REAL PLAY 3V3';
-    sessionMeta.textContent = details.join(' · ');
-    sessionCount.textContent = capacity === null ? `${confirmed} SECURED` : `${confirmed}/${capacity}`;
+    sessionTitle.textContent = 'BETA LEAGUE ROSTER';
+    sessionMeta.textContent = details.length ? details.join(' · ') : 'OFFICIAL START · WAITING ON ROSTER COMPLETION';
+    sessionCount.textContent = capacity === null ? `${confirmed} RESERVED` : `${confirmed}/${capacity}`;
+    if (rosterNeeded) {
+      if (capacity === null) {
+        rosterNeeded.textContent = `${confirmed} player${confirmed === 1 ? '' : 's'} reserved so far. Reserve yours and join the first official 3V3 league roster.`;
+      } else {
+        const remaining = Math.max(0, capacity - confirmed);
+        rosterNeeded.textContent = remaining === 0
+          ? 'THE FIRST 3V3 LEAGUE ROSTER IS COMPLETE.'
+          : `WE ONLY NEED ${remaining} MORE PLAYER${remaining === 1 ? '' : 'S'} TO COMPLETE THE FIRST 3V3 ROSTER.`;
+      }
+    }
 
     if (gameStatus === 'live') {
       sessionPanel.classList.add('live');
       sessionAction.disabled = true;
-      sessionAction.textContent = joined ? '● GAME LIVE · YOU’RE IN' : '● GAME LIVE';
+      sessionAction.textContent = joined ? '● LEAGUE LIVE · YOU’RE IN' : '● LEAGUE LIVE';
       return;
     }
 
     if (gameStatus === 'final') {
       sessionAction.disabled = true;
-      sessionAction.textContent = 'SESSION COMPLETE';
+      sessionAction.textContent = 'LEAGUE SESSION COMPLETE';
       return;
     }
 
     if (joined) {
       sessionPanel.classList.add('secured');
       sessionAction.disabled = true;
-      sessionAction.textContent = 'SPOT SECURED ✓';
+      sessionAction.textContent = 'YOUR LEAGUE SPOT IS RESERVED ✓';
       sessionCancel.hidden = false;
       sessionCancel.disabled = sessionLoading;
-      sessionCancel.textContent = sessionLoading ? 'CANCELLING…' : 'CANCEL SPOT';
+      sessionCancel.textContent = sessionLoading ? 'RELEASING…' : 'RELEASE MY LEAGUE SPOT';
       return;
     }
 
     if (full || !available) {
       sessionPanel.classList.add('full');
       sessionAction.disabled = true;
-      sessionAction.textContent = 'SESSION FULL';
+      sessionAction.textContent = 'LAUNCH ROSTER FULL';
       return;
     }
 
     sessionAction.disabled = sessionLoading;
-    sessionAction.textContent = sessionLoading ? 'SECURING…' : 'SECURE SPOT';
+    sessionAction.textContent = sessionLoading ? 'RESERVING…' : 'RESERVE MY LEAGUE SPOT';
   }
 
   async function refreshSession({ quiet = false } = {}) {
@@ -349,7 +362,7 @@
 
     sessionLoading = true;
     sessionAction.disabled = true;
-    sessionAction.textContent = 'SECURING…';
+    sessionAction.textContent = 'RESERVING…';
     setSessionMessage('');
     let secured = false;
 
@@ -358,11 +371,11 @@
       renderSession(data?.session || currentSession);
       secured = true;
     } catch (error) {
-      setSessionMessage(error.message || 'Could not secure your spot.', 'error');
+      setSessionMessage(error.message || 'Could not reserve your league spot.', 'error');
     } finally {
       sessionLoading = false;
       if (currentSession) renderSession(currentSession);
-      if (secured) setSessionMessage('YOUR PLACE IS SECURED.', 'success');
+      if (secured) setSessionMessage('YOU’RE ON THE FIRST 3V3 LEAGUE RESERVATION ROSTER.', 'success');
     }
   }
 
@@ -373,7 +386,7 @@
 
     sessionLoading = true;
     sessionCancel.disabled = true;
-    sessionCancel.textContent = 'CANCELLING…';
+    sessionCancel.textContent = 'RELEASING…';
     setSessionMessage('');
     let cancelled = false;
 
@@ -382,11 +395,11 @@
       renderSession(data?.session || currentSession);
       cancelled = true;
     } catch (error) {
-      setSessionMessage(error.message || 'Could not cancel your spot.', 'error');
+      setSessionMessage(error.message || 'Could not release your league spot.', 'error');
     } finally {
       sessionLoading = false;
       if (currentSession) renderSession(currentSession);
-      if (cancelled) setSessionMessage('SPOT CANCELLED. THE SLOT IS OPEN AGAIN.', 'success');
+      if (cancelled) setSessionMessage('YOUR LEAGUE RESERVATION WAS RELEASED. THE SPOT IS OPEN AGAIN.', 'success');
     }
   }
 
