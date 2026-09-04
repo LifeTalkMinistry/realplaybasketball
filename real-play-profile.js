@@ -65,6 +65,165 @@
     }).format(date).toUpperCase();
   }
 
+  function gameLabel(game) {
+    if (game?.displayLabel) return String(game.displayLabel);
+    const id = Number(game?.sessionId ?? game?.id);
+    if (String(game?.mode || '').toLowerCase() === 'ranking' && Number.isFinite(id)) {
+      return `RANKING GAME #${String(id).padStart(3, '0')}`;
+    }
+    return String(game?.label || `OFFICIAL GAME #${Number.isFinite(id) ? id : ''}`);
+  }
+
+  function sideLabel(game, side) {
+    const labels = game?.teamLabels || game?.team_labels || {};
+    return String(labels?.[side] || side).toUpperCase();
+  }
+
+  function gameScore(game, side) {
+    if (side === 'east') return number(pick(game?.eastScore, game?.east_score), 0);
+    return number(pick(game?.westScore, game?.west_score), 0);
+  }
+
+  function gamePlayers(game, side) {
+    const fromTeams = game?.teams?.[side];
+    if (Array.isArray(fromTeams)) return fromTeams;
+    const players = Array.isArray(game?.players) ? game.players : [];
+    return players.filter((player) => String(player?.team || '').toLowerCase() === side);
+  }
+
+  function formatOvrImpact(before, after, movement) {
+    if (after === undefined || after === null || after === '') return '';
+    const beforeText = before === undefined || before === null || before === '' ? 'UNRANKED' : String(before);
+    const afterText = String(after);
+    const move = Number(movement);
+    const moveText = Number.isFinite(move) && move !== 0 ? ` (${move > 0 ? '+' : ''}${move})` : '';
+    return `${beforeText} → ${afterText}${moveText}`;
+  }
+
+  function renderBoxPlayer(player) {
+    const pts = number(pick(player?.pts, player?.points));
+    const ast = number(pick(player?.ast, player?.assists));
+    const reb = number(pick(player?.reb, player?.rebounds));
+    const tov = number(pick(player?.tov, player?.to, player?.turnovers));
+    const isYou = Boolean(player?.isYou);
+    const unclaimed = Boolean(player?.unclaimed);
+    const rating = unclaimed
+      ? 'UNCLAIMED PLAYER'
+      : formatOvrImpact(
+        pick(player?.ovrBefore, player?.ovr_before),
+        pick(player?.ovrAfter, player?.ovr_after),
+        pick(player?.ovrMovement, player?.ovr_movement)
+      );
+
+    return `
+      <div class="rp-profile-box-player${isYou ? ' is-you' : ''}">
+        <div class="rp-profile-box-player-head">
+          <div>
+            <strong>${esc(player?.playerName || player?.player_name || 'REAL PLAY PLAYER')}</strong>
+            <span>${rating ? esc(rating) : 'OFFICIAL PARTICIPANT'}</span>
+          </div>
+          ${isYou ? '<b>YOU</b>' : unclaimed ? '<em>UNCLAIMED</em>' : ''}
+        </div>
+        <div class="rp-profile-box-stats">
+          <span><strong>${pts}</strong><small>PTS</small></span>
+          <span><strong>${ast}</strong><small>AST</small></span>
+          <span><strong>${reb}</strong><small>REB</small></span>
+          <span><strong>${tov}</strong><small>TO</small></span>
+        </div>
+      </div>`;
+  }
+
+  function renderTeamBox(game, side) {
+    const players = gamePlayers(game, side);
+    return `
+      <section class="rp-profile-team-box ${side}">
+        <header>
+          <span>${esc(sideLabel(game, side))}</span>
+          <strong>${gameScore(game, side)}</strong>
+        </header>
+        <div class="rp-profile-team-players">
+          ${players.length
+            ? players.map(renderBoxPlayer).join('')
+            : '<p class="rp-profile-box-missing">PLAYER BOX SCORE NOT AVAILABLE.</p>'}
+        </div>
+      </section>`;
+  }
+
+  function renderGameDetail(game) {
+    const eastScore = gameScore(game, 'east');
+    const westScore = gameScore(game, 'west');
+    const eastLabel = sideLabel(game, 'east');
+    const westLabel = sideLabel(game, 'west');
+    const players = Array.isArray(game?.players) ? game.players : [];
+    const ownerImpact = formatOvrImpact(
+      pick(game?.ovrBefore, game?.ovr_before),
+      pick(game?.ovrAfter, game?.ovr_after, game?.ovr),
+      pick(game?.ovrMovement, game?.ovr_movement)
+    );
+
+    return `
+      <div class="rp-profile-game-detail">
+        <div class="rp-profile-final-board">
+          <small>OFFICIAL FINAL</small>
+          <div>
+            <span>${esc(eastLabel)}</span>
+            <strong>${eastScore}</strong>
+            <i>—</i>
+            <strong>${westScore}</strong>
+            <span>${esc(westLabel)}</span>
+          </div>
+        </div>
+        ${ownerImpact ? `
+          <div class="rp-profile-game-impact">
+            <span>YOUR OVR</span>
+            <strong>${esc(ownerImpact)}</strong>
+          </div>` : ''}
+        ${players.length ? `
+          <div class="rp-profile-box-score-head"><span>FULL BOX SCORE</span><small>ALL VERIFIED PLAYERS</small></div>
+          <div class="rp-profile-team-grid">
+            ${renderTeamBox(game, 'east')}
+            ${renderTeamBox(game, 'west')}
+          </div>` : `
+          <div class="rp-profile-game-detail-empty">
+            <strong>FULL BOX SCORE NOT AVAILABLE YET.</strong>
+            <p>This finalized game is on your record, but its all-player detail has not been returned by the game record service yet.</p>
+          </div>`}
+      </div>`;
+  }
+
+  function renderRecentGame(game) {
+    const result = String(game?.result || 'FINAL').toUpperCase();
+    const resultClass = result === 'WIN' ? 'win' : result === 'LOSS' ? 'loss' : 'final';
+    const eastLabel = sideLabel(game, 'east');
+    const westLabel = sideLabel(game, 'west');
+    const pts = number(pick(game?.pts, game?.points));
+    const ast = number(pick(game?.ast, game?.assists));
+    const reb = number(pick(game?.reb, game?.rebounds));
+    const tov = number(pick(game?.tov, game?.to, game?.turnovers));
+    const date = formatDate(game?.finalizedAt || game?.startsAt);
+    const location = game?.locationName ? String(game.locationName).toUpperCase() : '';
+    const meta = [date, location].filter(Boolean).join(' · ');
+
+    return `
+      <details class="rp-profile-game">
+        <summary class="rp-profile-game-summary">
+          <div class="rp-profile-game-main">
+            <strong>${esc(gameLabel(game))}</strong>
+            <span>${esc(meta)}</span>
+          </div>
+          <b class="${resultClass}">${esc(result)}</b>
+          <div class="rp-profile-game-score">
+            <span>${esc(eastLabel)}</span><strong>${gameScore(game, 'east')}</strong><i>—</i><strong>${gameScore(game, 'west')}</strong><span>${esc(westLabel)}</span>
+          </div>
+          <div class="rp-profile-game-stats">
+            <span>${pts} PTS</span><span>${ast} AST</span><span>${reb} REB</span><span>${tov} TO</span>
+          </div>
+          <div class="rp-profile-game-open-hint"><span>VIEW GAME</span><b>⌄</b></div>
+        </summary>
+        ${renderGameDetail(game)}
+      </details>`;
+  }
+
   async function api(path) {
     const accessToken = token();
     if (!accessToken) {
@@ -177,13 +336,8 @@
       </section>
 
       <section class="rp-profile-section rp-profile-history">
-        <div class="rp-profile-section-head"><div><small>RECENT HISTORY</small><h2>YOUR LAST REAL PLAY.</h2></div></div>
-        ${recentGames.length ? recentGames.map((game) => `
-          <article class="rp-profile-game">
-            <div><strong>${esc(game.label || `CAREER GAME #${game.id || ''}`)}</strong><span>${esc(formatDate(game.finalizedAt || game.startsAt))}${game.locationName ? ` · ${esc(game.locationName)}` : ''}</span></div>
-            <b class="${String(game.result || '').toLowerCase() === 'win' ? 'win' : 'loss'}">${esc(game.result || 'FINAL')}</b>
-            <div class="rp-profile-game-stats"><span>${number(pick(game.pts, game.points))} PTS</span><span>${number(pick(game.ast, game.assists))} AST</span><span>${number(pick(game.reb, game.rebounds))} REB</span></div>
-          </article>`).join('') : `
+        <div class="rp-profile-section-head"><div><small>RECENT HISTORY</small><h2>YOUR LAST REAL PLAY.</h2></div><span>FINALIZED GAMES</span></div>
+        ${recentGames.length ? recentGames.map(renderRecentGame).join('') : `
           <div class="rp-profile-no-games"><strong>NO OFFICIAL GAMES YET.</strong><p>Your verified game history will build here automatically.</p></div>`}
       </section>
 
