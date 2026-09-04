@@ -4,7 +4,7 @@
 /*
  * The 3V3 selector no longer uses the basketball backdrop.
  * The currently active club's own logo is reused as a huge atmospheric layer behind the UI.
- * It stays soft enough to preserve readability, but visible enough to clearly identify the active club.
+ * The art is intentionally very visible, but darkened instead of heavily blurred.
  */
 .rp-3v3-view{
   --rp-active-club-color:#1ca8ff;
@@ -37,16 +37,16 @@
   width:min(166vw,860px);
   aspect-ratio:1/1;
   background:var(--rp-active-club-art) center/contain no-repeat;
-  opacity:.70;
-  filter:blur(10px) brightness(.78) contrast(1.08) saturate(1.04);
+  opacity:.90;
+  filter:blur(2px) brightness(.48) contrast(1.10) saturate(.94);
   transform:translate(-50%,-50%) scale(1.06);
   pointer-events:none;
-  -webkit-mask-image:radial-gradient(ellipse 76% 72% at 50% 49%,#000 0 56%,rgba(0,0,0,.94) 69%,rgba(0,0,0,.58) 82%,transparent 98%);
-  mask-image:radial-gradient(ellipse 76% 72% at 50% 49%,#000 0 56%,rgba(0,0,0,.94) 69%,rgba(0,0,0,.58) 82%,transparent 98%);
+  -webkit-mask-image:radial-gradient(ellipse 80% 76% at 50% 49%,#000 0 62%,rgba(0,0,0,.97) 72%,rgba(0,0,0,.70) 85%,transparent 99%);
+  mask-image:radial-gradient(ellipse 80% 76% at 50% 49%,#000 0 62%,rgba(0,0,0,.97) 72%,rgba(0,0,0,.70) 85%,transparent 99%);
   transition:opacity .28s ease,filter .28s ease,transform .32s ease;
 }
 
-/* A soft club-color bloom gives the artwork extra depth without replacing the logo itself. */
+/* Keep only a restrained club-color bloom; the actual logo art should own the background. */
 .rp-3v3-view::after{
   content:'';
   position:fixed;
@@ -58,7 +58,7 @@
   border-radius:50%;
   color:var(--rp-active-club-color);
   background:currentColor;
-  opacity:.13;
+  opacity:.08;
   filter:blur(72px);
   mix-blend-mode:screen;
   transform:translate(-50%,-50%);
@@ -187,14 +187,14 @@
   .rp-3v3-view::before{
     top:47%;
     width:min(154vw,760px);
-    opacity:.70;
-    filter:blur(9px) brightness(.76) contrast(1.06) saturate(1.02);
+    opacity:.90;
+    filter:blur(2px) brightness(.46) contrast(1.08) saturate(.92);
   }
   .rp-3v3-view::after{
     top:48%;
     width:min(118vw,580px);
     height:min(76vw,360px);
-    opacity:.12;
+    opacity:.07;
     filter:blur(64px);
   }
 }
