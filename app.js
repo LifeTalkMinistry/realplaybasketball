@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-ranking-info-v1';
+  const version = '20260904-ranking-session-cleanup-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -96,6 +96,7 @@
       'main-menu.js',
       'ranking-games.js',
       'ranking-games-info-toggle.js',
+      'ranking-games-session-cleanup.js',
       'overlay-focus-release.js',
       'settings-panel.js',
       'player-admin-probe-guard.js',
