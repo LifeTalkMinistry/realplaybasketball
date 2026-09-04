@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-3v3-season-authority-v1';
+  const version = '20260904-3v3-season-authority-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
