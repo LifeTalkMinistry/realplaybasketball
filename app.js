@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-3v3-league-reservation-v2';
+  const version = '20260904-3v3-league-reservation-v3';
   const html = document.documentElement;
   html.classList.add('js');
 
