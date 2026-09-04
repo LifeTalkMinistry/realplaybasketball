@@ -31,7 +31,7 @@
 
       <button id="rp-main-choice-ranking" class="rp-main-menu-item" type="button" data-rp-main-action="ranking">
         <small>OFFICIAL COMPETITIVE PLAY</small>
-        <strong>RANKING GAMES</strong>
+        <strong>OPEN RANKING</strong>
         <span>EAST VS WEST · BUILD YOUR OVR</span>
       </button>
 
