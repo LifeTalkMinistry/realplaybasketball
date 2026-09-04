@@ -1,0 +1,100 @@
+/* REAL PLAY — center the shared WHY REAL PLAY EXISTS origin slides in both carousels.
+   These slides appear inside both the 18-slide membership carousel and the 8-slide story carousel. */
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide{
+  align-items:center!important;
+  text-align:center!important;
+}
+
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-slide-label,
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide h2,
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-slide-copy,
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-footnote,
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-highlight,
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-player-line{
+  margin-left:auto!important;
+  margin-right:auto!important;
+  text-align:center!important;
+}
+
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-slide-label{
+  width:100%;
+  max-width:470px;
+}
+
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide h2{
+  width:100%;
+  max-width:500px;
+}
+
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-slide-copy{
+  width:100%;
+  max-width:450px;
+}
+
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-footnote{
+  width:100%;
+  max-width:455px;
+  margin-top:22px!important;
+  line-height:1.55;
+}
+
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-highlight{
+  width:min(100%,460px);
+  border-left:1px solid rgba(255,255,255,.08);
+  border-top:2px solid var(--rp-blue-hi);
+}
+
+.rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-player-line{
+  width:min(100%,460px);
+}
+
+@media(max-width:520px){
+  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide{
+    padding-left:20px!important;
+    padding-right:20px!important;
+  }
+
+  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-slide-label{
+    max-width:330px;
+    margin-bottom:15px;
+    font-size:.78rem;
+    letter-spacing:.12em;
+  }
+
+  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide h2{
+    max-width:330px;
+    font-size:clamp(2.8rem,12vw,3.6rem);
+    line-height:.9;
+  }
+
+  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-slide-copy{
+    max-width:330px;
+    margin-top:20px;
+    font-size:.96rem;
+    line-height:1.55;
+  }
+
+  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-footnote{
+    max-width:335px;
+    margin-top:21px!important;
+    font-size:.82rem;
+    line-height:1.52;
+  }
+
+  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-player-line{
+    max-width:330px;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    margin-top:24px!important;
+  }
+
+  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-player-line span:last-child:nth-child(odd){
+    grid-column:1/-1;
+    width:calc(50% - 4px);
+    justify-self:center;
+  }
+
+  .rp-public-value-experience .rp-public-value-slide.rp-public-origin-slide .rp-public-value-highlight{
+    max-width:335px;
+  }
+}
