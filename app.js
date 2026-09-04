@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-profile-intro-loop-v1';
+  const version = '20260904-admin-settings-session-sync-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
