@@ -1,6 +1,46 @@
 /* REAL PLAY 3V3 — club-specific identity system.
    Lions = blue, Valiant = red, Watchmen = gold, Conquerors = purple. */
 
+/* The same photographic basketball stays in place. Only its soft atmospheric light changes
+   with the active club, so swiping teams recolors the scene without loading new ball assets. */
+.rp-3v3-view{
+  --rp-active-club-color:#1ca8ff;
+}
+.rp-3v3-view[data-rp-active-club='lions']{--rp-active-club-color:#1ca8ff}
+.rp-3v3-view[data-rp-active-club='valiant']{--rp-active-club-color:#ff3347}
+.rp-3v3-view[data-rp-active-club='watchmen']{--rp-active-club-color:#f4b934}
+.rp-3v3-view[data-rp-active-club='conquerors']{--rp-active-club-color:#a64dff}
+
+/* Quiet the original blue/red baked lighting enough for the active club tint to own the ball. */
+.rp-3v3-view::before{
+  opacity:.44;
+  filter:grayscale(.62) brightness(.72) contrast(1.23) saturate(.74);
+  transition:opacity .35s ease,filter .35s ease;
+}
+
+/* Blurred color wash over the photographed ball. `color` is interpolable, so the team change
+   feels like arena lighting fading between clubs rather than a hard image swap. */
+.rp-3v3-view::after{
+  content:'';
+  position:fixed;
+  z-index:0;
+  left:50%;
+  top:49%;
+  width:min(124vw,640px);
+  height:min(78vw,400px);
+  border-radius:50%;
+  color:var(--rp-active-club-color);
+  background:currentColor;
+  opacity:.18;
+  filter:blur(62px);
+  mix-blend-mode:screen;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  -webkit-mask-image:radial-gradient(ellipse at center,#000 0 42%,rgba(0,0,0,.82) 61%,rgba(0,0,0,.28) 79%,transparent 96%);
+  mask-image:radial-gradient(ellipse at center,#000 0 42%,rgba(0,0,0,.82) 61%,rgba(0,0,0,.28) 79%,transparent 96%);
+  transition:color .38s ease,opacity .35s ease;
+}
+
 .rp-team-card,
 .rp-team-fixed-card{
   --club-accent:#2aaeff;
@@ -114,4 +154,19 @@
 .rp-team-fixed-card.has-club-art.official em{
   color:#fff;
   text-shadow:0 0 16px rgba(var(--club-accent-rgb),.32);
+}
+
+@media(max-height:760px){
+  .rp-3v3-view::after{
+    top:47%;
+    width:min(120vw,580px);
+    height:min(74vw,350px);
+    opacity:.16;
+    filter:blur(56px);
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .rp-3v3-view::before,
+  .rp-3v3-view::after{transition:none}
 }
