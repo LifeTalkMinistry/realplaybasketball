@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-3v3-league-reservation-v3';
+  const version = '20260904-3v3-season-authority-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -117,6 +117,7 @@
         'admin-score-dom-sync.js',
         'admin-membership-review.js',
         'admin-three-v-three.js',
+        'admin-season-control.js',
       );
     }
 
