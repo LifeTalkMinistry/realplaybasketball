@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-3v3-club-backdrop-v1';
+  const version = '20260904-3v3-club-backdrop-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
