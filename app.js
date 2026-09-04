@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-cinematic-main-menu-v2';
+  const version = '20260904-cinematic-main-menu-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -54,7 +54,6 @@
     'real-play-brand-system.css',
     'main-menu-brand-overrides.css',
     'main-menu-cinematic.css',
-    'main-menu-reference-polish.css',
     'settings-panel.css',
     'auth-welcome-cleanup.css',
   ].forEach(addStylesheet);
@@ -96,7 +95,6 @@
       'real-play-profile.js',
       'real-play-profile-photo.js',
       'main-menu.js',
-      'beta-season-info.js',
       'ranking-games.js',
       'ranking-games-info-toggle.js',
       'ranking-games-session-cleanup.js',
