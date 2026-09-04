@@ -37,8 +37,8 @@
   width:min(166vw,860px);
   aspect-ratio:1/1;
   background:var(--rp-active-club-art) center/contain no-repeat;
-  opacity:.50;
-  filter:blur(8px) brightness(.82) contrast(1.08) saturate(1.12);
+  opacity:.70;
+  filter:blur(10px) brightness(.78) contrast(1.08) saturate(1.04);
   transform:translate(-50%,-50%) scale(1.06);
   pointer-events:none;
   -webkit-mask-image:radial-gradient(ellipse 76% 72% at 50% 49%,#000 0 56%,rgba(0,0,0,.94) 69%,rgba(0,0,0,.58) 82%,transparent 98%);
@@ -187,8 +187,8 @@
   .rp-3v3-view::before{
     top:47%;
     width:min(154vw,760px);
-    opacity:.50;
-    filter:blur(7px) brightness(.80) contrast(1.08) saturate(1.10);
+    opacity:.70;
+    filter:blur(9px) brightness(.76) contrast(1.06) saturate(1.02);
   }
   .rp-3v3-view::after{
     top:48%;
