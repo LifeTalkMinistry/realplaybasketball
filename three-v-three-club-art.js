@@ -21,6 +21,30 @@
     if (ART[clubName]) card.classList.add(themeClass(clubName));
   }
 
+  function applyViewTheme(view, clubName) {
+    if (!view || !ART[clubName]) return;
+    view.dataset.rpActiveClub = clubName.toLowerCase();
+  }
+
+  function activeCarouselClub(view) {
+    const active = view?.querySelector('[data-rp-three-club].slot-active');
+    if (!active) return '';
+    return String(active.dataset.rpThreeClub || '').trim().toUpperCase();
+  }
+
+  function syncViewTheme(view) {
+    if (!view) return;
+
+    const fixed = view.querySelector('[data-rp-team-fixed]');
+    const fixedName = view.querySelector('[data-rp-fixed-name]');
+    const fixedVisible = fixed && !fixed.hidden;
+    const clubName = fixedVisible
+      ? String(fixedName?.textContent || '').trim().toUpperCase()
+      : activeCarouselClub(view);
+
+    if (ART[clubName]) applyViewTheme(view, clubName);
+  }
+
   function addLogoToCard(card) {
     if (!card || card.querySelector('.rp-team-card-logo')) return;
     const clubId = String(card.dataset.rpThreeClub || '').toUpperCase();
@@ -53,6 +77,7 @@
     if (!src) {
       if (image) image.remove();
       card.classList.remove('has-club-art');
+      syncViewTheme(view);
       return;
     }
 
@@ -67,14 +92,17 @@
     image.src = src;
     image.alt = `${clubName} club logo`;
     card.classList.add('has-club-art');
+    syncViewTheme(view);
   }
 
   function install() {
     const view = document.querySelector('.rp-3v3-view');
     if (!view) return false;
 
-    view.querySelectorAll('[data-rp-three-club]').forEach(addLogoToCard);
+    const clubCards = [...view.querySelectorAll('[data-rp-three-club]')];
+    clubCards.forEach(addLogoToCard);
     syncFixedCard(view);
+    syncViewTheme(view);
 
     const fixedName = view.querySelector('[data-rp-fixed-name]');
     if (fixedName && !fixedName.__rpClubArtObserved) {
@@ -82,6 +110,22 @@
       const observer = new MutationObserver(() => syncFixedCard(view));
       observer.observe(fixedName, { childList: true, characterData: true, subtree: true });
     }
+
+    const fixed = view.querySelector('[data-rp-team-fixed]');
+    if (fixed && !fixed.__rpClubThemeObserved) {
+      fixed.__rpClubThemeObserved = true;
+      const observer = new MutationObserver(() => syncViewTheme(view));
+      observer.observe(fixed, { attributes: true, attributeFilter: ['hidden'] });
+    }
+
+    clubCards.forEach((card) => {
+      if (card.__rpClubThemeObserved) return;
+      card.__rpClubThemeObserved = true;
+      const observer = new MutationObserver(() => {
+        if (card.classList.contains('slot-active')) syncViewTheme(view);
+      });
+      observer.observe(card, { attributes: true, attributeFilter: ['class'] });
+    });
 
     return true;
   }
