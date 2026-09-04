@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-premium-card-v1';
+  const version = '20260904-3v3-premium-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -42,6 +42,7 @@
     'three-v-three-secure-spot.css',
     'three-v-three-refinement.css',
     'three-v-three-participants.css',
+    'three-v-three-premium.css',
     'career-beta.css',
     'career-beta-play.css',
     'real-play-updates.css',
@@ -91,6 +92,7 @@
       'three-v-three-layout-order.js',
       'three-v-three-refinement.js',
       'three-v-three-participants.js',
+      'three-v-three-club-art.js',
       'real-play-updates.js',
       'real-play-world.js',
       'real-play-world-chat-cleanup.js',
