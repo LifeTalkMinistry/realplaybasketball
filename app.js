@@ -1,10 +1,10 @@
 (() => {
-  const version = '20260904-session-manage-v2';
+  const version = '20260904-ranking-games-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
   function restoreBaseSite() {
-    document.body?.classList.remove('rp-lobby-active', 'rp-guest-active', 'rp-3v3-open');
+    document.body?.classList.remove('rp-lobby-active', 'rp-guest-active', 'rp-3v3-open', 'rp-ranking-open');
     html.classList.remove('js');
   }
 
@@ -37,6 +37,7 @@
     'mobile-shell-fix.css',
     'mobile-lobby-cleanup.css',
     'main-menu.css',
+    'ranking-games.css',
     'three-v-three-beta.css',
     'three-v-three-secure-spot.css',
     'three-v-three-refinement.css',
@@ -93,6 +94,7 @@
       'real-play-profile.js',
       'real-play-profile-photo.js',
       'main-menu.js',
+      'ranking-games.js',
       'overlay-focus-release.js',
       'settings-panel.js',
       'player-admin-probe-guard.js',
