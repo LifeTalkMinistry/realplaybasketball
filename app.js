@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-3v3-premium-v1';
+  const version = '20260904-3v3-premium-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -43,6 +43,7 @@
     'three-v-three-refinement.css',
     'three-v-three-participants.css',
     'three-v-three-premium.css',
+    'three-v-three-logo-scale.css',
     'career-beta.css',
     'career-beta-play.css',
     'real-play-updates.css',
