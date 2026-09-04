@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-3v3-beta-progress-v2';
+  const version = '20260904-cinematic-main-menu-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -53,6 +53,7 @@
     'membership.css',
     'real-play-brand-system.css',
     'main-menu-brand-overrides.css',
+    'main-menu-cinematic.css',
     'settings-panel.css',
     'auth-welcome-cleanup.css',
   ].forEach(addStylesheet);
