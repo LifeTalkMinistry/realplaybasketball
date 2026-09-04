@@ -382,24 +382,32 @@
   async function cancelSpot() {
     if (sessionLoading || !currentSession || !currentSession.joined) return;
     const gameStatus = currentSession.gameStatus || currentSession.game_status || 'setup';
-    if (gameStatus !== 'setup') return;
+    if (gameStatus !== 'setup') {
+      setSessionMessage('THIS LEAGUE ROSTER IS ALREADY LOCKED.', 'error');
+      return;
+    }
 
     sessionLoading = true;
     sessionCancel.disabled = true;
     sessionCancel.textContent = 'RELEASING…';
     setSessionMessage('');
-    let cancelled = false;
 
     try {
       const data = await api('/api/real-play/career/play', { method: 'DELETE' });
-      renderSession(data?.session || currentSession);
-      cancelled = true;
+      const releasedSession = data?.session || null;
+
+      if (!releasedSession || releasedSession.joined) {
+        throw new Error('The server did not release your reservation. Please try again.');
+      }
+
+      sessionLoading = false;
+      renderSession(releasedSession);
+      setSessionMessage('YOUR LEAGUE RESERVATION WAS RELEASED. THE SPOT IS OPEN AGAIN.', 'success');
+      window.dispatchEvent(new CustomEvent('realplay:3v3-reservation-changed'));
     } catch (error) {
-      setSessionMessage(error.message || 'Could not release your league spot.', 'error');
-    } finally {
       sessionLoading = false;
       if (currentSession) renderSession(currentSession);
-      if (cancelled) setSessionMessage('YOUR LEAGUE RESERVATION WAS RELEASED. THE SPOT IS OPEN AGAIN.', 'success');
+      setSessionMessage(error.message || 'Could not release your league spot.', 'error');
     }
   }
 
