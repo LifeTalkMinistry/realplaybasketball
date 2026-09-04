@@ -1,6 +1,5 @@
 (() => {
-  const params = new URLSearchParams(location.search);
-  if (params.get('admin') !== '1') return;
+  if (!window.__realPlayAdminVerified) return;
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
