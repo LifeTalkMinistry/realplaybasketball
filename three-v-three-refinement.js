@@ -31,7 +31,10 @@
       summary.className = 'rp-3v3-session-summary';
       summary.dataset.rpBetaSessionSummary = '1';
       summary.innerHTML = `
-        <strong>REAL PLAY 3V3 BETA SEASON</strong>
+        <div class="rp-3v3-session-summary-copy">
+          <strong>REAL PLAY 3V3 BETA SEASON</strong>
+          <span data-rp-beta-season-progress>CHECKING ROSTER…</span>
+        </div>
         <button type="button" aria-label="About the Real Play 3v3 Beta Season" aria-expanded="false" data-rp-beta-season-info-open>i</button>
       `;
       session.prepend(summary);
@@ -84,12 +87,31 @@
     const sessionMeta = view.querySelector('[data-rp-session-meta]');
     const sessionCount = view.querySelector('[data-rp-session-count]');
     const rosterNeeded = view.querySelector('[data-rp-roster-needed]');
+    const progressNode = summary.querySelector('[data-rp-beta-season-progress]');
 
     if (sessionTitle) {
       const safeTitle = normalizeBetaSeasonName(sessionTitle.textContent.trim());
       setText(sessionTitle, safeTitle);
     }
 
+    let progressText = 'CHECKING ROSTER…';
+    const countText = sessionCount?.textContent.trim() || '';
+    const match = countText.match(/(\d+)\s*\/\s*(\d+)/);
+
+    if (match) {
+      const joined = Number(match[1] || 0);
+      const total = Number(match[2] || 0);
+      const left = Math.max(0, total - joined);
+      progressText = left === 0
+        ? `${joined} JOINED · ROSTER FULL`
+        : `${joined} JOINED · ${left} SPOT${left === 1 ? '' : 'S'} LEFT`;
+    } else if (countText && countText !== '—') {
+      progressText = countText;
+    } else if (rosterNeeded?.textContent.trim()) {
+      progressText = rosterNeeded.textContent.trim();
+    }
+
+    setText(progressNode, progressText);
     setText(sheet.querySelector('[data-rp-beta-info-meta]'), sessionMeta?.textContent.trim() || 'ROSTER REGISTRATION');
     setText(sheet.querySelector('[data-rp-beta-info-count]'), sessionCount?.textContent.trim() || '—');
     setText(sheet.querySelector('[data-rp-beta-info-roster]'), rosterNeeded?.textContent.trim() || 'Checking the launch roster.');
