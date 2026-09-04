@@ -158,3 +158,15 @@
   .rp-3v3-session-action{min-height:52px}
   .rp-3v3-session-cancel{min-height:40px}
 }
+
+
+/* First official 3V3 league roster reservation messaging */
+.rp-3v3-roster-needed{
+  margin:12px 2px 0;
+  color:#78dff5;
+  font-size:.62rem;
+  font-weight:850;
+  line-height:1.45;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
