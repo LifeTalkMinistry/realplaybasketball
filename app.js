@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-public-landing-premium-v3';
+  const version = '20260904-public-landing-premium-v4';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -63,6 +63,7 @@
     'main-menu-card-premium.css',
     'settings-panel.css',
     'auth-welcome-cleanup.css',
+    'public-landing-cleanup.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
