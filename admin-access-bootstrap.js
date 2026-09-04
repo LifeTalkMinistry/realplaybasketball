@@ -4,7 +4,7 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
-  const ADMIN_ASSET_VERSION = '20260904-season-team-admin-v1';
+  const ADMIN_ASSET_VERSION = '20260904-session-manage-v2';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
