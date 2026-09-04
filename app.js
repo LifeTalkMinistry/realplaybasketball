@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-founder-credit-v1';
+  const version = '20260904-profile-intro-loop-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -54,7 +54,7 @@
     'real-play-world.css',
     'real-play-world-chat-cleanup.css',
     'real-play-profile.css',
-    'real-play-profile-photo.css',
+    'real-play-profile-intro.css',
     'membership.css',
     'real-play-brand-system.css',
     'main-menu-brand-overrides.css',
@@ -106,7 +106,7 @@
       'real-play-world.js',
       'real-play-world-chat-cleanup.js',
       'real-play-profile.js',
-      'real-play-profile-photo.js',
+      'real-play-profile-intro.js',
       'main-menu.js',
       'ranking-games.js',
       'ranking-games-info-toggle.js',
