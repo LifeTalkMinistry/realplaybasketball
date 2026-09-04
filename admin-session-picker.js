@@ -138,8 +138,8 @@
   `;
   document.head.appendChild(style);
 
-  const root = document.querySelector('.rp-admin-control') || document.documentElement;
-  const observer = new MutationObserver(enhance);
-  observer.observe(root, { childList: true, subtree: true });
+  window.addEventListener('realplay:admin-render', () => {
+    window.requestAnimationFrame(enhance);
+  });
   enhance();
 })();
