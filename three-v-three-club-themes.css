@@ -1,0 +1,117 @@
+/* REAL PLAY 3V3 — club-specific identity system.
+   Lions = blue, Valiant = red, Watchmen = gold, Conquerors = purple. */
+
+.rp-team-card,
+.rp-team-fixed-card{
+  --club-accent:#2aaeff;
+  --club-accent-rgb:42,174,255;
+  --club-secondary:#ff3347;
+  --club-secondary-rgb:255,51,71;
+  --club-glow:rgba(42,174,255,.18);
+}
+
+.rp-team-card[data-rp-three-club='lions'],
+.rp-team-fixed-card.club-lions{
+  --club-accent:#1ca8ff;
+  --club-accent-rgb:28,168,255;
+  --club-secondary:#1767ff;
+  --club-secondary-rgb:23,103,255;
+  --club-glow:rgba(28,168,255,.22);
+}
+
+.rp-team-card[data-rp-three-club='valiant'],
+.rp-team-fixed-card.club-valiant{
+  --club-accent:#ff3948;
+  --club-accent-rgb:255,57,72;
+  --club-secondary:#a70f22;
+  --club-secondary-rgb:167,15,34;
+  --club-glow:rgba(255,46,63,.23);
+}
+
+.rp-team-card[data-rp-three-club='watchmen'],
+.rp-team-fixed-card.club-watchmen{
+  --club-accent:#ffc94a;
+  --club-accent-rgb:255,201,74;
+  --club-secondary:#c88412;
+  --club-secondary-rgb:200,132,18;
+  --club-glow:rgba(255,187,45,.23);
+}
+
+.rp-team-card[data-rp-three-club='conquerors'],
+.rp-team-fixed-card.club-conquerors{
+  --club-accent:#b45cff;
+  --club-accent-rgb:180,92,255;
+  --club-secondary:#6d24db;
+  --club-secondary-rgb:109,36,219;
+  --club-glow:rgba(171,74,255,.24);
+}
+
+.rp-team-card.has-club-art,
+.rp-team-fixed-card.has-club-art{
+  background:
+    radial-gradient(circle at 50% 43%,rgba(var(--club-accent-rgb),.10),transparent 42%) padding-box,
+    linear-gradient(155deg,rgba(5,12,21,.97),rgba(2,5,9,.99)) padding-box,
+    linear-gradient(125deg,
+      rgba(var(--club-accent-rgb),.88) 0%,
+      rgba(var(--club-accent-rgb),.34) 28%,
+      rgba(143,153,176,.16) 51%,
+      rgba(var(--club-secondary-rgb),.34) 74%,
+      rgba(var(--club-secondary-rgb),.82) 100%) border-box;
+}
+
+.rp-team-card.has-club-art::before,
+.rp-team-fixed-card.has-club-art::before{
+  background:
+    radial-gradient(circle at 50% 41%,rgba(var(--club-accent-rgb),.13),transparent 39%),
+    linear-gradient(180deg,rgba(255,255,255,.032),transparent 45%),
+    linear-gradient(120deg,transparent 0 48%,rgba(var(--club-accent-rgb),.045) 50%,transparent 52%);
+}
+
+.rp-team-card.has-club-art.slot-active,
+.rp-team-fixed-card.has-club-art{
+  box-shadow:
+    0 34px 84px rgba(0,0,0,.46),
+    -12px 0 38px rgba(var(--club-accent-rgb),.13),
+    12px 0 36px rgba(var(--club-secondary-rgb),.08),
+    inset 0 1px 0 rgba(255,255,255,.045);
+}
+
+.rp-team-card.has-club-art small,
+.rp-team-fixed-card.has-club-art small,
+.rp-team-fixed-card.has-club-art em{
+  color:var(--club-accent);
+  text-shadow:0 0 14px rgba(var(--club-accent-rgb),.18);
+}
+
+.rp-team-card.has-club-art span,
+.rp-team-fixed-card.has-club-art span{
+  color:#b8c3d1;
+}
+
+.rp-team-card.has-club-art .rp-team-card-logo,
+.rp-team-fixed-card.has-club-art .rp-team-card-logo{
+  filter:
+    drop-shadow(0 14px 28px rgba(0,0,0,.52))
+    drop-shadow(0 0 22px var(--club-glow));
+}
+
+/* Side cards keep their team color visible enough to hint at what is next. */
+.rp-team-card.has-club-art.slot-prev,
+.rp-team-card.has-club-art.slot-next{
+  opacity:.28;
+  filter:saturate(.72) brightness(.72);
+}
+
+/* Keep the saved/assigned identity unmistakably tied to its club. */
+.rp-team-fixed-card.has-club-art.official{
+  border-color:transparent;
+  box-shadow:
+    0 34px 84px rgba(0,0,0,.48),
+    0 0 0 1px rgba(var(--club-accent-rgb),.18),
+    0 0 52px rgba(var(--club-accent-rgb),.12);
+}
+
+.rp-team-fixed-card.has-club-art.official em{
+  color:#fff;
+  text-shadow:0 0 16px rgba(var(--club-accent-rgb),.32);
+}
