@@ -120,11 +120,18 @@ body.rp-ranking-open{overflow:hidden}
 .rp-ranking-session>strong{display:block;margin-top:7px;font-family:var(--rp-display);font-size:1.25rem;font-style:italic;font-weight:900}
 .rp-ranking-session>p{margin:7px 0 0;color:#74869d;font-size:.65rem;line-height:1.55}
 .rp-ranking-session button{width:100%;min-height:46px;margin-top:14px;border:1px solid rgba(99,145,193,.12);border-radius:12px;background:#091321;color:#667991;font-family:var(--rp-display);font-size:.58rem;font-weight:900;letter-spacing:.06em}
+.rp-ranking-session button:not(:disabled){border-color:rgba(32,218,255,.48);background:linear-gradient(100deg,#176cff,#1ddcff);color:#fff;box-shadow:0 8px 24px rgba(23,108,255,.18)}
+.rp-ranking-session button:disabled{opacity:.72}
 .rp-ranking-session.posted{border-color:rgba(37,198,255,.2);box-shadow:0 0 0 1px rgba(26,122,255,.04) inset}
 .rp-ranking-session.posted>span{color:#1fcfff}
+.rp-ranking-session.joined{border-color:rgba(74,237,191,.22);background:linear-gradient(155deg,rgba(4,26,31,.92),rgba(4,12,20,.96))}
+.rp-ranking-session.joined>span{color:#72efc4}
+.rp-ranking-session.joined button{color:#72efc4;border-color:rgba(74,237,191,.2);background:rgba(15,43,39,.72)}
+.rp-ranking-session.full>span{color:#ff9aa7}
 
 .rp-ranking-message{min-height:18px;margin:13px 0 0;color:#7f91a8;font-size:.62rem;text-align:center}
 .rp-ranking-message.error{color:#ff7587}
+.rp-ranking-message.success{color:#72efc4}
 
 .rp-main-menu-item[data-rp-main-action="ranking"] strong{font-size:clamp(1.35rem,6vw,1.9rem)}
 .rp-main-menu-item[data-rp-main-action="ranking"].slot-active strong{font-size:clamp(2.5rem,11.5vw,3.9rem);line-height:.88}
