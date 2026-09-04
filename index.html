@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="mission.css" />
   <link rel="stylesheet" href="auth.css" />
-  <script src="app.js?v=20260904-cinematic-main-menu-v2" defer></script>
+  <script src="app.js?v=20260904-cinematic-main-menu-v1" defer></script>
   <script src="auth.js?v=20260903-mobile-brand-space-v3" defer></script>
 </head>
 <body>
@@ -284,7 +284,7 @@
         <p class="auth-subtitle">Your Real Play account is active. Finish your separate player profile by choosing your player name and number.</p>
         <form class="auth-form" data-auth-complete-form>
           <div class="auth-field"><label for="real-play-complete-name">Player Name</label><input id="real-play-complete-name" name="player_name" type="text" minlength="2" maxlength="40" autocomplete="nickname" placeholder="Name shown on your Real Play profile" required /></div>
-          <div class="auth-field"><label for="real-play-complete-number">Player Number</label><input id="real-play-complete-number" name="player_number" type="number" min="0" max="99" inputmode="numeric" placeholder="0–99" required data-player-number-input="complete" /><p class="auth-number-status" data-number-status="complete">Choose 0–99. If it is available, it becomes yours for the rest of this month.</p></div>
+          <div class="auth-field"><label for="real-play-complete-number">Player Number</label><input id="real-play-complete-number" name="player_number" type="number" min="0" max="99" inputmode="numeric" placeholder="#" required data-player-number-input="complete" /><p class="auth-number-status" data-number-status="complete">Choose 0–99. If it is available, it becomes yours for the rest of this month.</p></div>
           <button class="auth-submit" type="submit">CREATE REAL PLAY PLAYER PROFILE</button>
         </form>
       </div>
