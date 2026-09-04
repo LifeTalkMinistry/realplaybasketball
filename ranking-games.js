@@ -51,7 +51,7 @@
         <button class="rp-ranking-back" type="button" aria-label="Back to main menu" data-rp-ranking-back>←</button>
         <div class="rp-ranking-brand">
           <strong>RANKING GAMES</strong>
-          <span>REAL PLAY BASKBALL</span>
+          <span>REAL PLAY BASKETBALL</span>
         </div>
         <div class="rp-ranking-mark">E/W</div>
       </header>
