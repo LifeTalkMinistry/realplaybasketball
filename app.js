@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-ranking-session-title-cleanup-v2';
+  const version = '20260904-3v3-beta-info-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
