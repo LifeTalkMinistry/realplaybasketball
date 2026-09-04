@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-origin-center-v2';
+  const version = '20260904-all-slides-center-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
