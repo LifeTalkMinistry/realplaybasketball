@@ -1,0 +1,41 @@
+/* Real Play 3V3 — crop the uploaded club artwork to its useful center so the crest reads at full card scale. */
+
+.rp-team-card.has-club-art .rp-team-card-logo,
+.rp-team-fixed-card.has-club-art .rp-team-card-logo{
+  width:96%;
+  max-width:244px;
+  height:190px;
+  margin:0 auto -8px;
+  object-fit:cover;
+  object-position:center 49%;
+  filter:
+    drop-shadow(0 14px 28px rgba(0,0,0,.50))
+    drop-shadow(0 0 22px rgba(0,140,255,.16));
+}
+
+.rp-team-card.has-club-art span,
+.rp-team-fixed-card.has-club-art span{
+  position:relative;
+  z-index:2;
+  margin-top:-2px;
+}
+
+@media(max-height:760px){
+  .rp-team-card.has-club-art .rp-team-card-logo,
+  .rp-team-fixed-card.has-club-art .rp-team-card-logo{
+    width:98%;
+    max-width:226px;
+    height:174px;
+    margin:-5px auto -14px;
+    object-fit:cover;
+    object-position:center 49%;
+  }
+}
+
+@media(max-width:360px){
+  .rp-team-card.has-club-art .rp-team-card-logo,
+  .rp-team-fixed-card.has-club-art .rp-team-card-logo{
+    max-width:214px;
+    height:164px;
+  }
+}
