@@ -15,6 +15,7 @@ body.rp-ranking-open{overflow:hidden}
 
 .rp-ranking-view.open{display:block}
 .rp-ranking-shell{width:min(100%,560px);min-height:100svh;margin:0 auto;padding:0 20px 34px;box-sizing:border-box}
+.rp-ranking-matchup[hidden],.rp-ranking-next[hidden]{display:none!important}
 
 .rp-ranking-topbar{
   position:sticky;
