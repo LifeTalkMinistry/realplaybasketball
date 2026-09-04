@@ -1,6 +1,9 @@
 /* REAL PLAY — focused basketball hero artwork.
    Reuses the existing main-menu basketball asset only inside the upper landing hero. */
 
+/* Remove the extra decorative blue/red divider under the landing brand. */
+.rp-public-title::after{display:none!important}
+
 .rp-public-hero::before{
   left:50%;
   top:31%;
@@ -10,6 +13,7 @@
   opacity:.30;
   filter:brightness(.62) contrast(1.16) saturate(.92) blur(1.5px);
   transform:translate(-50%,-50%) scale(1.04);
+  pointer-events:none;
   -webkit-mask-image:radial-gradient(ellipse 70% 62% at 50% 47%,#000 0 48%,rgba(0,0,0,.94) 61%,rgba(0,0,0,.58) 74%,rgba(0,0,0,.18) 86%,transparent 96%);
   mask-image:radial-gradient(ellipse 70% 62% at 50% 47%,#000 0 48%,rgba(0,0,0,.94) 61%,rgba(0,0,0,.58) 74%,rgba(0,0,0,.18) 86%,transparent 96%);
 }
