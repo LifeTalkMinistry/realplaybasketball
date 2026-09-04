@@ -86,13 +86,29 @@
     document.body.classList.add('rp-settings-open');
   }
 
-  function closeSettings() {
+  function closeSettings({ restoreFocus = true } = {}) {
+    const active = document.activeElement;
+
+    // Never hide a dialog while focus is still inside it. Chrome blocks
+    // aria-hidden in that state, which can leave Settings visually closed
+    // but interaction/focus trapped behind it.
+    if (active && panel.contains(active) && typeof active.blur === 'function') {
+      active.blur();
+    }
+    if (document.body && typeof document.body.focus === 'function') {
+      document.body.tabIndex = -1;
+      document.body.focus({ preventScroll: true });
+    }
+
     panel.classList.remove('open');
     panel.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-settings-open');
     if (mainPanel) mainPanel.hidden = false;
     if (communityPanel) communityPanel.hidden = true;
-    window.setTimeout(() => settingsChoice.focus(), 30);
+
+    if (restoreFocus) {
+      window.setTimeout(() => settingsChoice.focus({ preventScroll: true }), 30);
+    }
   }
 
   function showCommunity() {
