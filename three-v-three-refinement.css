@@ -132,6 +132,151 @@
 .rp-3v3-session-cancel{min-height:38px;margin-top:7px;font-size:.64rem}
 .rp-3v3-session-message{margin-top:6px;font-size:.54rem}
 
+/* The visible reservation card stays minimal: one Beta Season label + the action. */
+.rp-3v3-session>.rp-3v3-session-head,
+.rp-3v3-session>.rp-3v3-roster-needed{
+  display:none;
+}
+.rp-3v3-session-summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:34px;
+}
+.rp-3v3-session-summary strong{
+  color:#f5f9ff;
+  font-family:var(--rp-display);
+  font-size:.9rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.035em;
+}
+.rp-3v3-session-summary button{
+  flex:0 0 auto;
+  width:29px;
+  height:29px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid rgba(47,220,255,.24);
+  border-radius:50%;
+  color:#64e7ff;
+  background:rgba(19,111,164,.08);
+  font-family:Georgia,serif;
+  font-size:.79rem;
+  font-style:italic;
+  font-weight:800;
+  cursor:pointer;
+}
+.rp-3v3-session-summary button:hover,
+.rp-3v3-session-summary button:focus-visible{
+  color:#fff;
+  border-color:rgba(47,220,255,.48);
+  background:rgba(29,220,255,.11);
+  outline:none;
+}
+
+/* Beta Season information lives behind the info icon as a mobile bottom sheet. */
+.rp-3v3-beta-info{
+  position:fixed;
+  z-index:295;
+  inset:0;
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+  padding:16px;
+  background:rgba(0,4,10,.76);
+  backdrop-filter:blur(14px);
+}
+.rp-3v3-beta-info.open{display:flex}
+.rp-3v3-beta-info-card{
+  width:min(100%,500px);
+  padding:20px 18px max(18px,env(safe-area-inset-bottom));
+  border:1px solid rgba(126,173,232,.16);
+  border-radius:24px;
+  color:#fff;
+  background:linear-gradient(155deg,#091726,#03070e 74%);
+  box-shadow:0 30px 80px rgba(0,0,0,.58);
+}
+.rp-3v3-beta-info-card header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+}
+.rp-3v3-beta-info-card header>div{min-width:0}
+.rp-3v3-beta-info-card header small{
+  display:block;
+  color:#5f7893;
+  font-size:.48rem;
+  font-weight:950;
+  letter-spacing:.13em;
+}
+.rp-3v3-beta-info-card h2{
+  margin:6px 0 0;
+  color:#fff;
+  font-family:var(--rp-display);
+  font-size:1.35rem;
+  font-style:italic;
+  font-weight:950;
+  line-height:.96;
+  letter-spacing:.01em;
+}
+.rp-3v3-beta-info-card header button{
+  flex:0 0 auto;
+  width:34px;
+  height:34px;
+  border:1px solid rgba(126,173,232,.13);
+  border-radius:11px;
+  color:#9bb0c7;
+  background:#08111d;
+  font-size:1.1rem;
+  cursor:pointer;
+}
+.rp-3v3-beta-info-status{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:18px;
+  padding:12px 0;
+  border-top:1px solid rgba(126,173,232,.09);
+  border-bottom:1px solid rgba(126,173,232,.09);
+}
+.rp-3v3-beta-info-status span{
+  color:#7890a9;
+  font-size:.58rem;
+  font-weight:850;
+  letter-spacing:.055em;
+}
+.rp-3v3-beta-info-status b{
+  flex:0 0 auto;
+  color:#42dfff;
+  font-family:var(--rp-display);
+  font-size:.9rem;
+  font-style:italic;
+  font-weight:950;
+}
+.rp-3v3-beta-info-roster{
+  margin:14px 0 0;
+  color:#7ce4f8;
+  font-size:.64rem;
+  font-weight:850;
+  line-height:1.5;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+.rp-3v3-beta-info-note{
+  margin:13px 0 0;
+  padding:11px 12px;
+  border-radius:13px;
+  color:#7e92a9;
+  background:rgba(255,255,255,.025);
+  font-size:.61rem;
+  line-height:1.5;
+}
+
 /* League rules stay quiet, but anchor the bottom so the page does not end halfway down the phone. */
 .rp-3v3-league-format{
   margin-top:auto!important;
@@ -159,4 +304,9 @@
   .rp-3v3-topbar{margin-inline:-12px;padding-inline:12px}
   .rp-team-fixed-card{width:min(76vw,218px)}
   .rp-team-card{width:min(74vw,218px)}
+  .rp-3v3-session-summary strong{font-size:.8rem}
+}
+
+@media(min-width:700px){
+  .rp-3v3-beta-info{align-items:center}
 }
