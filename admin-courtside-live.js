@@ -242,7 +242,7 @@
     }
   });
 
-  const observer = new MutationObserver(() => {
+  window.addEventListener('realplay:admin-render', () => {
     if (scheduled) return;
     scheduled = true;
     window.requestAnimationFrame(() => {
@@ -250,7 +250,5 @@
       enhance();
     });
   });
-
-  observer.observe(document.documentElement, { childList: true, subtree: true });
   enhance();
 })();
