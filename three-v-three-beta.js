@@ -269,58 +269,57 @@
     }).format(date).toUpperCase();
   }
 
-  function renderSession(session) {
-    currentSession = session || null;
+  function renderSession(season) {
+    currentSession = season || null;
     sessionPanel.classList.remove('secured', 'full', 'live');
     sessionCancel.hidden = true;
     sessionCancel.disabled = true;
     setSessionMessage('');
 
-    if (!session) {
-      sessionTitle.textContent = 'LAUNCH ROSTER OPENING SOON';
-      sessionMeta.textContent = 'Official start details will appear here once the launch roster opens.';
+    if (!season) {
+      sessionTitle.textContent = 'NO 3V3 SEASON OPEN YET';
+      sessionMeta.textContent = 'The roster will open after Real Play creates the upcoming season.';
       sessionCount.textContent = '—';
+      if (rosterNeeded) rosterNeeded.textContent = 'WAITING FOR THE NEXT OFFICIAL 3V3 SEASON.';
       sessionAction.disabled = true;
-      if (rosterNeeded) rosterNeeded.textContent = 'We’ll show the live reservation count here as soon as the first league roster is available.';
-      sessionAction.textContent = 'ROSTER NOT OPEN YET';
+      sessionAction.textContent = 'SEASON NOT OPEN YET';
       return;
     }
 
-    const confirmed = Number(session.confirmedCount ?? session.confirmed_count ?? 0) || 0;
-    const capacity = session.capacity === null || session.capacity === undefined ? null : Number(session.capacity);
-    const joined = Boolean(session.joined);
-    const gameStatus = session.gameStatus || session.game_status || 'setup';
-    const full = capacity !== null && confirmed >= capacity;
-    const available = session.available !== false && gameStatus === 'setup' && !full;
+    const reserved = Number(season.reservedCount ?? season.reserved_count ?? 0) || 0;
+    const capacity = Number(season.targetPlayers ?? season.target_players ?? 0) || 0;
+    const joined = Boolean(season.registered);
+    const status = String(season.status || 'registration');
+    const full = capacity > 0 && reserved >= capacity;
+    const registrationOpen = Boolean(season.registrationOpen) && status === 'registration' && !full;
     const details = [];
-    const dateText = formatSessionDate(session.startsAt || session.starts_at);
+    const dateText = formatSessionDate(season.startsAt || season.starts_at);
     if (dateText) details.push(dateText);
-    if (session.locationName || session.location_name) details.push(session.locationName || session.location_name);
+    details.push('ROSTER REGISTRATION');
 
-    sessionTitle.textContent = 'BETA LEAGUE ROSTER';
-    sessionMeta.textContent = details.length ? details.join(' · ') : 'OFFICIAL START · WAITING ON ROSTER COMPLETION';
-    sessionCount.textContent = capacity === null ? `${confirmed} RESERVED` : `${confirmed}/${capacity}`;
+    sessionTitle.textContent = season.name || 'REAL PLAY 3V3 SEASON';
+    sessionMeta.textContent = details.join(' · ');
+    sessionCount.textContent = capacity ? `${reserved}/${capacity}` : `${reserved} RESERVED`;
+
     if (rosterNeeded) {
-      if (capacity === null) {
-        rosterNeeded.textContent = `${confirmed} player${confirmed === 1 ? '' : 's'} reserved so far. Reserve yours and join the first official 3V3 league roster.`;
-      } else {
-        const remaining = Math.max(0, capacity - confirmed);
-        rosterNeeded.textContent = remaining === 0
-          ? 'THE FIRST 3V3 LEAGUE ROSTER IS COMPLETE.'
+      const remaining = capacity ? Math.max(0, capacity - reserved) : null;
+      rosterNeeded.textContent = remaining === 0
+        ? 'THE FIRST 3V3 LEAGUE ROSTER IS COMPLETE.'
+        : remaining === null
+          ? `${reserved} PLAYER${reserved === 1 ? '' : 'S'} RESERVED SO FAR.`
           : `WE ONLY NEED ${remaining} MORE PLAYER${remaining === 1 ? '' : 'S'} TO COMPLETE THE FIRST 3V3 ROSTER.`;
-      }
     }
 
-    if (gameStatus === 'live') {
+    if (status === 'live') {
       sessionPanel.classList.add('live');
       sessionAction.disabled = true;
-      sessionAction.textContent = joined ? '● LEAGUE LIVE · YOU’RE IN' : '● LEAGUE LIVE';
+      sessionAction.textContent = joined ? '● SEASON LIVE · YOU’RE IN' : '● SEASON LIVE';
       return;
     }
 
-    if (gameStatus === 'final') {
+    if (status === 'completed') {
       sessionAction.disabled = true;
-      sessionAction.textContent = 'LEAGUE SESSION COMPLETE';
+      sessionAction.textContent = 'SEASON COMPLETE';
       return;
     }
 
@@ -328,16 +327,16 @@
       sessionPanel.classList.add('secured');
       sessionAction.disabled = true;
       sessionAction.textContent = 'YOUR LEAGUE SPOT IS RESERVED ✓';
-      sessionCancel.hidden = false;
+      sessionCancel.hidden = status !== 'registration';
       sessionCancel.disabled = sessionLoading;
       sessionCancel.textContent = sessionLoading ? 'RELEASING…' : 'RELEASE MY LEAGUE SPOT';
       return;
     }
 
-    if (full || !available) {
+    if (full || !registrationOpen) {
       sessionPanel.classList.add('full');
       sessionAction.disabled = true;
-      sessionAction.textContent = 'LAUNCH ROSTER FULL';
+      sessionAction.textContent = full ? 'LAUNCH ROSTER FULL' : 'REGISTRATION CLOSED';
       return;
     }
 
@@ -348,42 +347,39 @@
   async function refreshSession({ quiet = false } = {}) {
     if (sessionLoading || !token()) return;
     try {
-      const data = await api('/api/real-play/career/session');
-      renderSession(data?.session || null);
+      const data = await api('/api/real-play/3v3/season');
+      renderSession(data?.season || null);
     } catch (error) {
-      if (!quiet) setSessionMessage(error.message || 'Could not load the next session.', 'error');
+      if (!quiet) setSessionMessage(error.message || 'Could not load the current 3V3 season.', 'error');
     }
   }
 
   async function secureSpot() {
-    if (sessionLoading || !currentSession || currentSession.joined) return;
-    const gameStatus = currentSession.gameStatus || currentSession.game_status || 'setup';
-    if (gameStatus !== 'setup') return;
+    if (sessionLoading || !currentSession || currentSession.registered) return;
+    if (currentSession.status !== 'registration') return;
 
     sessionLoading = true;
     sessionAction.disabled = true;
     sessionAction.textContent = 'RESERVING…';
     setSessionMessage('');
-    let secured = false;
 
     try {
-      const data = await api('/api/real-play/career/play', { method: 'POST' });
-      renderSession(data?.session || currentSession);
-      secured = true;
+      const data = await api('/api/real-play/3v3/season/register', { method: 'POST' });
+      sessionLoading = false;
+      renderSession(data?.season || currentSession);
+      setSessionMessage('YOU’RE ON THE 3V3 SEASON RESERVATION ROSTER.', 'success');
+      window.dispatchEvent(new CustomEvent('realplay:3v3-reservation-changed'));
     } catch (error) {
-      setSessionMessage(error.message || 'Could not reserve your league spot.', 'error');
-    } finally {
       sessionLoading = false;
       if (currentSession) renderSession(currentSession);
-      if (secured) setSessionMessage('YOU’RE ON THE FIRST 3V3 LEAGUE RESERVATION ROSTER.', 'success');
+      setSessionMessage(error.message || 'Could not reserve your league spot.', 'error');
     }
   }
 
   async function cancelSpot() {
-    if (sessionLoading || !currentSession || !currentSession.joined) return;
-    const gameStatus = currentSession.gameStatus || currentSession.game_status || 'setup';
-    if (gameStatus !== 'setup') {
-      setSessionMessage('THIS LEAGUE ROSTER IS ALREADY LOCKED.', 'error');
+    if (sessionLoading || !currentSession || !currentSession.registered) return;
+    if (currentSession.status !== 'registration') {
+      setSessionMessage('THIS SEASON ROSTER IS ALREADY LOCKED.', 'error');
       return;
     }
 
@@ -393,15 +389,13 @@
     setSessionMessage('');
 
     try {
-      const data = await api('/api/real-play/career/play', { method: 'DELETE' });
-      const releasedSession = data?.session || null;
-
-      if (!releasedSession || releasedSession.joined) {
-        throw new Error('The server did not release your reservation. Please try again.');
+      const data = await api('/api/real-play/3v3/season/register', { method: 'DELETE' });
+      const releasedSeason = data?.season || null;
+      if (!releasedSeason || releasedSeason.registered) {
+        throw new Error('The server did not release your season reservation. Please try again.');
       }
-
       sessionLoading = false;
-      renderSession(releasedSession);
+      renderSession(releasedSeason);
       setSessionMessage('YOUR LEAGUE RESERVATION WAS RELEASED. THE SPOT IS OPEN AGAIN.', 'success');
       window.dispatchEvent(new CustomEvent('realplay:3v3-reservation-changed'));
     } catch (error) {
