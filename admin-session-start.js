@@ -10,6 +10,7 @@
   let loading = false;
   let actionBusy = false;
   let lastError = '';
+  let lastSessionSignature = '';
 
   function ensureStyles() {
     if (document.querySelector('[data-rp-session-start-styles]')) return;
@@ -143,15 +144,20 @@
   async function refresh() {
     if (loading || actionBusy || !isOpen() || !token()) return;
     loading = true;
+    let changed = false;
     try {
       const data = await api('/api/real-play/admin/career/control');
-      session = data?.control?.session || null;
+      const nextSession = data?.control?.session || null;
+      const nextSignature = JSON.stringify(nextSession);
+      changed = nextSignature !== lastSessionSignature;
+      session = nextSession;
+      lastSessionSignature = nextSignature;
       lastError = '';
     } catch (_error) {
       // Base Game Control already owns global API error handling.
     } finally {
       loading = false;
-      apply();
+      if (changed) apply();
     }
   }
 
@@ -167,6 +173,7 @@
         body: { action: 'start-session' },
       });
       session = data?.control?.session || session;
+      lastSessionSignature = JSON.stringify(session);
     } catch (error) {
       lastError = error.message || 'Unable to start the session.';
     } finally {
