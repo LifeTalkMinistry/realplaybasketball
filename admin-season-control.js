@@ -10,6 +10,7 @@
   let message = '';
   let messageType = '';
   let lastMarkup = '';
+  let startFormOpen = false;
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -85,6 +86,13 @@
       .rp-admin-season-form input{width:100%;min-height:48px;padding:0 12px;border:1px solid rgba(126,173,232,.16);border-radius:12px;background:#020812;color:#fff;font:inherit}
       .rp-admin-season-form button{min-height:50px;border:0;border-radius:13px;background:linear-gradient(100deg,#176cff,#1ddcff);color:#fff;font-family:var(--rp-display);font-size:.83rem;font-style:italic;font-weight:950;letter-spacing:.05em}
       .rp-admin-season-form button:disabled{opacity:.55}
+      .rp-admin-season-start{display:grid;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(126,173,232,.1)}
+      .rp-admin-season-start-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .rp-admin-season-start button{min-height:46px;border-radius:12px;font-family:var(--rp-display);font-weight:950;font-style:italic;letter-spacing:.04em}
+      .rp-admin-season-start [data-rp-season-start-open]{border:1px solid rgba(47,220,255,.32);background:#071420;color:#6feaff}
+      .rp-admin-season-start [data-rp-season-start-confirm]{border:0;background:linear-gradient(100deg,#176cff,#1ddcff);color:#fff}
+      .rp-admin-season-start [data-rp-season-start-cancel]{border:1px solid rgba(126,173,232,.18);background:#030914;color:#8da4bb}
+      .rp-admin-season-start input{width:100%;min-height:48px;padding:0 12px;border:1px solid rgba(126,173,232,.16);border-radius:12px;background:#020812;color:#fff;font:inherit}
       .rp-admin-season-message{margin:9px 0 0;color:#ff9aa7;font-size:.64rem;line-height:1.45}
       .rp-admin-season-message.success{color:#63e6ff}
     `;
@@ -97,17 +105,34 @@
       const reserved = Number(season.reservedCount ?? season.reserved_count ?? 0) || 0;
       const target = Number(season.targetPlayers ?? season.target_players ?? 0) || 0;
       const remaining = Math.max(0, target - reserved);
+      const status = String(season.status || 'registration');
+      const startsAt = season.startsAt || season.starts_at || null;
       return `
         <section class="rp-admin-season-card">
           <header>
             <div><small>3V3 SEASON AUTHORITY</small><h2>${esc(season.name)}</h2></div>
-            <span class="rp-season-pill">${esc(String(season.status || 'registration').toUpperCase())}</span>
+            <span class="rp-season-pill">${esc(status.toUpperCase())}</span>
           </header>
           <div class="rp-admin-season-progress">
             <div><strong>${reserved} / ${target}</strong><span> PLAYERS RESERVED</span></div>
             <b>${remaining === 0 ? 'ROSTER COMPLETE' : `${remaining} NEEDED`}</b>
           </div>
-          <p class="rp-admin-season-note">${esc(formatDate(season.startsAt || season.starts_at))} · This season now owns the public 3V3 reservation roster. Career sessions remain separate game operations.</p>
+          <p class="rp-admin-season-note">${status === 'registration'
+            ? 'ROSTER BUILDING · No official start date yet. Admin decides when the season is ready to start.'
+            : `${esc(formatDate(startsAt))} · Official season start is set. Career sessions remain separate game operations.`}</p>
+          ${status === 'registration' ? `
+            <div class="rp-admin-season-start">
+              ${startFormOpen ? `
+                <label>OFFICIAL START DATE<input type="date" data-rp-season-start-date></label>
+                <div class="rp-admin-season-start-actions">
+                  <button type="button" data-rp-season-start-cancel>CANCEL</button>
+                  <button type="button" data-rp-season-start-confirm ${busy ? 'disabled' : ''}>${busy ? 'STARTING…' : 'CONFIRM START'}</button>
+                </div>
+              ` : `
+                <button type="button" data-rp-season-start-open>START SEASON</button>
+              `}
+            </div>
+          ` : ''}
         </section>`;
     }
 
@@ -121,7 +146,6 @@
         <form class="rp-admin-season-form" data-rp-season-form>
           <label>SEASON NAME<input name="name" maxlength="120" value="REAL PLAY 3V3 BETA SEASON 1" required></label>
           <label>ROSTER TARGET<input name="targetPlayers" type="number" min="4" max="500" inputmode="numeric" value="20" required></label>
-          <label>PLANNED START DATE<input name="startsAt" type="date"></label>
           <button type="submit" ${busy ? 'disabled' : ''}>${busy ? 'CREATING…' : 'CREATE SEASON & OPEN ROSTER'}</button>
         </form>
       </section>`;
@@ -174,14 +198,12 @@
     apply();
 
     const data = new FormData(form);
-    const startsAtRaw = String(data.get('startsAt') || '').trim();
     try {
       const result = await api('/api/real-play/admin/3v3/season', {
         method: 'POST',
         body: {
           name: String(data.get('name') || '').trim(),
           targetPlayers: Number(data.get('targetPlayers') || 20),
-          startsAt: startsAtRaw ? `${startsAtRaw}T00:00:00+08:00` : null,
         },
       });
       state.season = result?.season || null;
@@ -197,11 +219,66 @@
     }
   }
 
+  async function startSeason() {
+    if (busy || !state.season) return;
+    const input = adminRoot()?.querySelector('[data-rp-season-start-date]');
+    const date = String(input?.value || '').trim();
+    if (!date) {
+      message = 'Choose the official season start date.';
+      messageType = 'error';
+      apply();
+      return;
+    }
+
+    busy = true;
+    message = '';
+    messageType = '';
+    apply();
+
+    try {
+      const result = await api('/api/real-play/admin/3v3/season/start', {
+        method: 'POST',
+        body: { startsAt: `${date}T00:00:00+08:00` },
+      });
+      state.season = result?.season || state.season;
+      startFormOpen = false;
+      message = 'OFFICIAL SEASON START DATE CONFIRMED.';
+      messageType = 'success';
+      window.dispatchEvent(new CustomEvent('realplay:3v3-season-changed'));
+    } catch (error) {
+      message = error.message || 'Could not start the season.';
+      messageType = 'error';
+    } finally {
+      busy = false;
+      apply();
+    }
+  }
+
   document.addEventListener('submit', (event) => {
     const form = event.target.closest?.('[data-rp-season-form]');
     if (!form) return;
     event.preventDefault();
     createSeason(form);
+  });
+
+  document.addEventListener('click', (event) => {
+    if (event.target.closest?.('[data-rp-season-start-open]')) {
+      startFormOpen = true;
+      message = '';
+      messageType = '';
+      apply();
+      return;
+    }
+    if (event.target.closest?.('[data-rp-season-start-cancel]')) {
+      startFormOpen = false;
+      message = '';
+      messageType = '';
+      apply();
+      return;
+    }
+    if (event.target.closest?.('[data-rp-season-start-confirm]')) {
+      startSeason();
+    }
   });
 
   window.addEventListener('realplay:admin-render', () => {
