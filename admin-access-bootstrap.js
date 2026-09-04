@@ -4,13 +4,12 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
+  const ADMIN_ASSET_VERSION = '20260904-admin-stable-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
     'admin-game-control-simplify.css',
     'admin-courtside-live.css',
-    'admin-membership-review.css',
-    'admin-three-v-three.css',
     'real-play-admin-brand-overrides.css',
   ];
   const ADMIN_SCRIPTS = [
@@ -21,8 +20,6 @@
     'admin-courtside-live.js',
     'admin-session-picker.js',
     'admin-score-dom-sync.js',
-    'admin-membership-review.js',
-    'admin-three-v-three.js',
     'admin-season-control.js',
   ];
 
@@ -96,7 +93,7 @@
       if (existing) return resolve(true);
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = `${href}?v=20260904-admin-settings-v1`;
+      link.href = `${href}?v=${ADMIN_ASSET_VERSION}`;
       link.onload = () => resolve(true);
       link.onerror = () => resolve(false);
       document.head.appendChild(link);
@@ -108,7 +105,7 @@
       const existing = [...document.scripts].find((script) => String(script.src || '').includes(src));
       if (existing) return resolve(true);
       const script = document.createElement('script');
-      script.src = `${src}?v=20260904-admin-settings-v1`;
+      script.src = `${src}?v=${ADMIN_ASSET_VERSION}`;
       script.async = false;
       script.onload = () => resolve(true);
       script.onerror = () => resolve(false);
