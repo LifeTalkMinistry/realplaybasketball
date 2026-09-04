@@ -29,6 +29,12 @@
         <span>FOUNDING FOUR · RACE TO 8</span>
       </button>
 
+      <button id="rp-main-choice-ranking" class="rp-main-menu-item" type="button" data-rp-main-action="ranking">
+        <small>OFFICIAL COMPETITIVE PLAY</small>
+        <strong>RANKING GAMES</strong>
+        <span>EAST VS WEST · BUILD YOUR OVR</span>
+      </button>
+
       <button id="rp-main-choice-5v5" class="rp-main-menu-item" type="button" data-rp-main-action="5v5">
         <small>COMING SOON</small>
         <strong>5V5</strong>
@@ -155,6 +161,22 @@
     });
   }
 
+  function openRankingGames(attempt = 0) {
+    if (window.RealPlayRankingGames?.open) {
+      window.RealPlayRankingGames.open();
+      return;
+    }
+    if (attempt < 8) {
+      window.setTimeout(() => openRankingGames(attempt + 1), 100);
+      return;
+    }
+    showNotice({
+      kicker: 'RANKING GAMES',
+      title: 'RANKING GAMES ARE LOADING.',
+      copy: 'The East vs West ranking layer is still loading. Try Ranking Games again in a moment.',
+    });
+  }
+
   function openWorld() {
     if (window.RealPlayWorld?.open) {
       window.RealPlayWorld.open();
@@ -215,6 +237,8 @@
     const action = items[activeIndex]?.dataset.rpMainAction;
     if (action === '3v3') {
       openThreeVThree();
+    } else if (action === 'ranking') {
+      openRankingGames();
     } else if (action === '5v5') {
       showNotice({
         kicker: 'REAL PLAY 5V5',
