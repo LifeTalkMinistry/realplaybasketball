@@ -1,0 +1,212 @@
+/* REAL PLAY 3V3 — premium club selector treatment based on the approved concept.
+   Keeps all reservation, roster, carousel and team-assignment logic real and interactive. */
+
+.rp-3v3-view{
+  background:
+    radial-gradient(54% 34% at 2% 48%,rgba(0,111,255,.14),transparent 76%),
+    radial-gradient(54% 34% at 98% 52%,rgba(255,31,42,.10),transparent 78%),
+    linear-gradient(180deg,#02050a 0%,#020307 58%,#020203 100%);
+}
+
+.rp-3v3-view::before{
+  content:'';
+  position:fixed;
+  z-index:0;
+  left:50%;
+  top:48%;
+  width:min(150vw,720px);
+  aspect-ratio:2/3;
+  background:
+    linear-gradient(180deg,rgba(2,3,7,.90) 0%,rgba(2,3,7,.55) 22%,rgba(2,3,7,.22) 43%,rgba(2,3,7,.18) 68%,rgba(2,3,7,.85) 100%),
+    url('assets/main-menu/main-menu-basketball-bg.png') center/cover no-repeat;
+  opacity:.42;
+  filter:brightness(.72) contrast(1.24) saturate(1.28);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  -webkit-mask-image:radial-gradient(ellipse 78% 64% at 50% 56%,#000 0 58%,rgba(0,0,0,.92) 70%,rgba(0,0,0,.42) 84%,transparent 97%);
+  mask-image:radial-gradient(ellipse 78% 64% at 50% 56%,#000 0 58%,rgba(0,0,0,.92) 70%,rgba(0,0,0,.42) 84%,transparent 97%);
+}
+
+.rp-3v3-shell{position:relative;z-index:1;overflow:visible}
+.rp-3v3-shell::before{display:none!important}
+
+.rp-3v3-topbar{
+  border-bottom:1px solid rgba(126,173,232,.055);
+  background:linear-gradient(180deg,rgba(2,5,10,.99),rgba(2,5,10,.92) 78%,rgba(2,5,10,.68));
+}
+.rp-3v3-back,.rp-3v3-topmark{
+  border-color:rgba(126,173,232,.18);
+  background:linear-gradient(155deg,rgba(10,21,35,.9),rgba(3,7,13,.94));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 8px 24px rgba(0,0,0,.18);
+}
+.rp-3v3-topmark{border-color:rgba(255,70,84,.14)}
+.rp-3v3-brand strong{color:#f7f8fa;letter-spacing:.14em}
+.rp-3v3-brand span{color:#22b9ff;letter-spacing:.17em}
+
+.rp-3v3-select-head{padding-top:24px}
+.rp-3v3-select-head h1{
+  font-size:clamp(2.35rem,11vw,3.4rem);
+  color:#fafafa;
+  text-shadow:0 10px 32px rgba(0,0,0,.42);
+}
+
+.rp-3v3-team-picker{
+  grid-template-columns:34px minmax(0,1fr) 34px;
+  margin-top:18px;
+}
+.rp-team-carousel{height:304px;overflow:visible}
+
+.rp-team-card{
+  width:min(78vw,282px);
+  height:268px;
+  padding:20px 18px 18px;
+  border:1px solid transparent;
+  border-radius:27px;
+  background:
+    linear-gradient(155deg,rgba(5,14,25,.965),rgba(2,5,10,.985)) padding-box,
+    linear-gradient(112deg,rgba(21,146,255,.62),rgba(33,96,184,.25) 31%,rgba(124,118,152,.16) 52%,rgba(170,64,79,.25) 72%,rgba(255,47,62,.56)) border-box;
+  box-shadow:0 30px 70px rgba(0,0,0,.40),inset 0 1px 0 rgba(255,255,255,.035);
+  overflow:hidden;
+}
+.rp-team-card::before{
+  background:
+    radial-gradient(circle at 50% 38%,rgba(16,121,255,.11),transparent 40%),
+    linear-gradient(180deg,rgba(255,255,255,.028),transparent 42%),
+    linear-gradient(120deg,transparent 0 48%,rgba(45,105,175,.045) 50%,transparent 52%);
+}
+.rp-team-card small{
+  color:#29b9ff;
+  font-size:.52rem;
+  letter-spacing:.20em;
+}
+.rp-team-card strong{
+  margin-top:82px;
+  color:#f7f7f7;
+  font-size:2.7rem;
+  text-shadow:0 8px 26px rgba(0,0,0,.38);
+}
+.rp-team-card span{
+  margin-top:10px;
+  color:#9caec2;
+  font-size:.64rem;
+}
+.rp-team-card.slot-active{
+  border-color:transparent;
+  box-shadow:
+    0 34px 84px rgba(0,0,0,.46),
+    -13px 0 36px rgba(0,113,255,.12),
+    13px 0 36px rgba(255,33,47,.08),
+    inset 0 1px 0 rgba(255,255,255,.04);
+}
+.rp-team-card.slot-prev,.rp-team-card.slot-next{opacity:.20;filter:saturate(.48) brightness(.78)}
+.rp-team-card.slot-prev{transform:translate(calc(-50% - 61vw),-50%) scale(.82) rotateY(8deg)}
+.rp-team-card.slot-next{transform:translate(calc(-50% + 61vw),-50%) scale(.82) rotateY(-8deg)}
+
+.rp-team-card-logo{
+  position:relative;
+  z-index:1;
+  display:block;
+  width:88%;
+  max-width:222px;
+  height:168px;
+  margin:8px auto -2px;
+  object-fit:contain;
+  filter:drop-shadow(0 12px 26px rgba(0,0,0,.46)) drop-shadow(0 0 18px rgba(0,140,255,.13));
+}
+.rp-team-card.has-club-art strong{display:none}
+.rp-team-card.has-club-art span{margin-top:0;color:#a5b4c7;font-size:.66rem}
+
+.rp-team-arrow{
+  width:34px;
+  height:56px;
+  border:1px solid rgba(126,173,232,.10);
+  color:#8eb3d0;
+  background:linear-gradient(155deg,rgba(8,19,33,.82),rgba(3,7,13,.92));
+  box-shadow:0 10px 28px rgba(0,0,0,.20);
+}
+.rp-team-dots{gap:8px;margin-top:7px}
+.rp-team-dots i{width:7px;height:7px;background:#304256}
+.rp-team-dots i.active{background:#1faeff;box-shadow:0 0 12px rgba(31,174,255,.45)}
+[data-rp-team-browse]::after{
+  content:'SWIPE TO VIEW TEAMS';
+  display:block;
+  margin-top:9px;
+  color:#6f8298;
+  text-align:center;
+  font-size:.50rem;
+  font-weight:850;
+  letter-spacing:.12em;
+}
+
+.rp-team-fixed-card{
+  width:min(78vw,282px);
+  height:268px;
+  padding:20px 18px 18px;
+  border:1px solid transparent;
+  border-radius:27px;
+  background:
+    linear-gradient(155deg,rgba(5,14,25,.965),rgba(2,5,10,.985)) padding-box,
+    linear-gradient(112deg,rgba(21,146,255,.62),rgba(33,96,184,.25) 31%,rgba(124,118,152,.16) 52%,rgba(170,64,79,.25) 72%,rgba(255,47,62,.56)) border-box;
+  box-shadow:0 34px 84px rgba(0,0,0,.46),-13px 0 36px rgba(0,113,255,.11),13px 0 36px rgba(255,33,47,.07);
+}
+.rp-team-fixed-card.has-club-art strong{display:none}
+.rp-team-fixed-card.has-club-art span{margin-top:0}
+.rp-team-fixed-card .rp-team-card-logo{height:164px;margin-top:5px;margin-bottom:-4px}
+.rp-team-fixed-card em{color:#28c5ff}
+
+.rp-3v3-session,
+.rp-3v3-players{
+  border-color:rgba(104,156,215,.15);
+  background:
+    radial-gradient(circle at 6% 0%,rgba(0,111,255,.055),transparent 38%),
+    radial-gradient(circle at 96% 100%,rgba(255,37,50,.035),transparent 42%),
+    linear-gradient(155deg,rgba(5,13,23,.90),rgba(2,5,10,.94));
+  box-shadow:0 18px 48px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.022);
+}
+.rp-3v3-session-summary strong{font-size:1rem;color:#f7f9fc}
+.rp-3v3-session-summary span{color:#62dfff}
+.rp-3v3-session-action{
+  border:1px solid rgba(73,162,255,.22);
+  color:#e8f8ff;
+  background:linear-gradient(100deg,rgba(7,63,126,.28),rgba(5,13,24,.96) 55%,rgba(82,18,30,.20));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 0 24px rgba(0,113,255,.07);
+}
+.rp-3v3-session-action:not(:disabled){color:#2bc3ff;border-color:rgba(62,171,255,.46)}
+
+.rp-3v3-players-head strong{font-size:1.14rem}
+.rp-3v3-players-head>b{border-color:rgba(43,196,255,.23);color:#37d2ff}
+.rp-3v3-players-empty{
+  min-height:84px;
+  border-color:rgba(112,159,211,.10);
+  background:rgba(0,0,0,.12);
+}
+.rp-3v3-players-empty strong{color:#758ba1}
+.rp-3v3-players-empty span{color:#536478}
+
+.rp-3v3-league-format{
+  border-top-color:rgba(126,173,232,.10);
+}
+.rp-3v3-format small{color:#6f8297}
+.rp-3v3-format strong{color:#f5f7fa}
+.rp-3v3-format b{color:#20b8ff;text-shadow:0 0 18px rgba(32,184,255,.18)}
+
+@media(max-height:760px){
+  .rp-3v3-view::before{top:46%;width:min(138vw,650px);opacity:.36}
+  .rp-3v3-select-head{padding-top:14px}
+  .rp-team-carousel{height:258px}
+  .rp-team-card{width:min(74vw,246px);height:226px;padding:16px 15px}
+  .rp-team-card-logo{height:136px;max-width:198px;margin-top:5px}
+  .rp-team-card strong{margin-top:66px;font-size:2.35rem}
+  .rp-team-fixed-card{width:min(74vw,246px);height:226px}
+  .rp-team-fixed-card .rp-team-card-logo{height:132px}
+  [data-rp-team-browse]::after{margin-top:5px}
+}
+
+@media(max-width:360px){
+  .rp-team-card,.rp-team-fixed-card{width:min(76vw,232px)}
+  .rp-team-card-logo{max-width:186px}
+}
+
+@media(min-width:700px){
+  .rp-3v3-view::before{width:min(92vw,760px)}
+}
