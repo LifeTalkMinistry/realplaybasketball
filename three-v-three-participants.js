@@ -94,7 +94,7 @@
 
   function render(data) {
     if (!section) return;
-    const players = Array.isArray(data?.securedPlayers) ? data.securedPlayers : [];
+    const players = Array.isArray(data?.registeredPlayers) ? data.registeredPlayers : [];
     const currentUserId = Number(data?.userId || 0);
 
     if (!players.length) {
@@ -160,7 +160,7 @@
     if (loading || !token() || !viewIsOpen()) return;
     loading = true;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/real-play/3v3/me`, {
+      const response = await fetch(`${API_BASE_URL}/api/real-play/3v3/season`, {
         headers: {
           Accept: 'application/json',
           Authorization: `Bearer ${token()}`,
@@ -172,7 +172,7 @@
 
       const signature = JSON.stringify({
         userId: data.userId,
-        securedPlayers: data.securedPlayers || [],
+        registeredPlayers: data.registeredPlayers || [],
       });
       if (!quiet || signature !== lastSignature) {
         lastSignature = signature;
