@@ -1,0 +1,405 @@
+/*
+ * REAL PLAY — CINEMATIC MAIN MENU
+ * Recreates the approved blue/red Beta Season selector direction using real UI.
+ * No screenshot is used as the interface; all navigation remains functional.
+ */
+
+body.rp-lobby-active .rp-app:not(.rp-guest){
+  background:
+    radial-gradient(72% 56% at -10% 48%,rgba(0,111,255,.20),transparent 66%),
+    radial-gradient(72% 58% at 110% 58%,rgba(255,31,42,.13),transparent 68%),
+    linear-gradient(180deg,#02050a 0%,#020307 50%,#030304 100%);
+}
+
+body.rp-lobby-active .rp-app::before{
+  opacity:.055;
+}
+
+/* Player identity stays compact, but reads like a player HUD. */
+body.rp-lobby-active .rp-player-strip{
+  position:relative;
+  z-index:10;
+  flex:0 0 68px;
+  min-height:68px;
+  margin:0 18px;
+  padding:9px 0 8px;
+  border:0;
+}
+
+body.rp-lobby-active .rp-player-id{
+  gap:11px;
+}
+
+body.rp-lobby-active .rp-player-number{
+  min-width:44px;
+  width:44px;
+  height:44px;
+  border:1px solid rgba(78,170,255,.42);
+  border-radius:12px;
+  background:linear-gradient(145deg,#0879ff,#0643b8);
+  box-shadow:0 0 28px rgba(8,108,255,.18),inset 0 1px 0 rgba(255,255,255,.18);
+  color:#fff;
+  font-size:1.08rem;
+}
+
+body.rp-lobby-active .rp-player-name strong{
+  max-width:190px;
+  color:#f7f8fa;
+  font-size:1.05rem;
+  letter-spacing:.005em;
+  line-height:1;
+}
+
+body.rp-lobby-active .rp-player-name span{
+  margin-top:5px;
+  color:#77879d;
+  font-size:.5rem;
+  letter-spacing:.18em;
+}
+
+body.rp-lobby-active .rp-player-rating{
+  min-width:92px;
+}
+
+body.rp-lobby-active .rp-player-rating strong{
+  color:#f7f8fa;
+  font-size:1rem;
+  line-height:1;
+}
+
+body.rp-lobby-active .rp-player-rating span{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:5px;
+  margin-top:5px;
+  color:#17a8ff;
+  font-size:.5rem;
+  letter-spacing:.15em;
+}
+
+body.rp-lobby-active .rp-player-rating span::after{
+  content:'i';
+  display:inline-grid;
+  place-items:center;
+  width:13px;
+  height:13px;
+  border:1px solid rgba(202,218,238,.68);
+  border-radius:50%;
+  color:#c8d4e2;
+  font-family:Arial,sans-serif;
+  font-size:8px;
+  font-style:normal;
+  font-weight:700;
+  letter-spacing:0;
+  opacity:.86;
+}
+
+.rp-main-menu{
+  position:relative;
+  padding:8px 18px max(12px,env(safe-area-inset-bottom));
+  isolation:isolate;
+}
+
+.rp-main-menu::before{
+  z-index:0;
+  background:
+    radial-gradient(46% 35% at 7% 55%,rgba(0,116,255,.16),transparent 72%),
+    radial-gradient(46% 35% at 94% 61%,rgba(255,34,46,.10),transparent 74%);
+}
+
+/* Subtle court / basketball halo behind the selected card. */
+.rp-main-menu::after{
+  content:'';
+  position:absolute;
+  z-index:0;
+  left:50%;
+  top:64%;
+  width:min(128vw,570px);
+  aspect-ratio:1;
+  border:1px solid rgba(98,140,190,.065);
+  border-radius:50%;
+  background:
+    linear-gradient(90deg,transparent 49.8%,rgba(91,130,178,.035) 50%,transparent 50.2%),
+    linear-gradient(0deg,transparent 49.8%,rgba(91,130,178,.028) 50%,transparent 50.2%);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+
+/* Brand gets the open upper space instead of adding more dashboard controls. */
+.rp-main-menu-brand{
+  z-index:2;
+  width:min(100%,410px);
+  min-height:178px;
+  justify-content:center;
+  padding:12px 0 9px;
+}
+
+.rp-main-menu-brand strong{
+  color:#f7f7f8;
+  font-size:clamp(3.25rem,15vw,4.7rem);
+  line-height:.82;
+  letter-spacing:-.055em;
+  text-shadow:0 8px 30px rgba(0,0,0,.34);
+}
+
+.rp-main-menu-brand>span{
+  margin-top:13px;
+  color:#129fff;
+  font-size:clamp(.98rem,4.3vw,1.18rem);
+  letter-spacing:.29em;
+  text-shadow:0 0 22px rgba(18,159,255,.18);
+}
+
+.rp-main-menu-brand small{
+  margin-top:17px;
+  color:#8792a2;
+  font-size:clamp(.58rem,2.55vw,.7rem);
+  letter-spacing:.2em;
+}
+
+.rp-main-menu-list{
+  z-index:2;
+  max-width:410px;
+  overflow:visible;
+}
+
+.rp-main-menu-item{
+  left:50%;
+  width:100%;
+  transform:translate(-50%,-50%) scale(.48);
+}
+
+.rp-main-menu-item.slot-prev,
+.rp-main-menu-item.slot-next{
+  width:78%;
+  min-height:58px;
+  padding:2px 4px;
+  opacity:.20;
+  filter:saturate(.3);
+  transform:translate(-50%,-50%) scale(.72);
+}
+
+.rp-main-menu-item.slot-prev{top:8%}
+.rp-main-menu-item.slot-next{top:93%}
+
+.rp-main-menu-item.slot-prev small,
+.rp-main-menu-item.slot-prev span,
+.rp-main-menu-item.slot-next small,
+.rp-main-menu-item.slot-next span{
+  display:none;
+}
+
+.rp-main-menu-item.slot-prev strong,
+.rp-main-menu-item.slot-next strong{
+  color:#a8b0bc;
+  font-size:clamp(1.6rem,6.5vw,2rem);
+  line-height:.9;
+}
+
+.rp-main-menu-item.slot-prev::before,
+.rp-main-menu-item.slot-next::before{
+  position:absolute;
+  left:50%;
+  color:#798391;
+  font-family:var(--rp-display);
+  font-size:.46rem;
+  font-style:normal;
+  font-weight:800;
+  letter-spacing:.24em;
+  transform:translateX(-50%);
+  white-space:nowrap;
+}
+
+.rp-main-menu-item.slot-prev::before{
+  content:'PREVIOUS';
+  top:-19px;
+}
+
+.rp-main-menu-item.slot-next::before{
+  content:'NEXT';
+  top:-19px;
+}
+
+.rp-main-menu-item.slot-prev::after,
+.rp-main-menu-item.slot-next::after{
+  position:absolute;
+  left:50%;
+  color:#758193;
+  font-family:Arial,sans-serif;
+  font-size:1.1rem;
+  font-style:normal;
+  font-weight:400;
+  transform:translateX(-50%);
+  opacity:.75;
+}
+
+.rp-main-menu-item.slot-prev::after{content:'⌃';top:-42px}
+.rp-main-menu-item.slot-next::after{content:'⌄';bottom:-33px}
+
+/* The selected item is one premium, interactive game panel — not a dashboard. */
+.rp-main-menu-item.slot-active{
+  top:51%;
+  width:min(88vw,365px);
+  min-height:348px;
+  padding:48px 26px 92px;
+  border:1px solid transparent;
+  border-radius:27px;
+  background:
+    linear-gradient(155deg,rgba(5,12,22,.96),rgba(3,5,9,.985)) padding-box,
+    linear-gradient(112deg,#108cff 0%,rgba(42,126,220,.54) 29%,rgba(124,119,154,.28) 50%,rgba(180,72,85,.48) 72%,#ff3a43 100%) border-box;
+  box-shadow:
+    0 26px 80px rgba(0,0,0,.48),
+    -17px 2px 48px rgba(0,103,255,.10),
+    17px 5px 48px rgba(255,32,44,.075),
+    inset 0 1px 0 rgba(255,255,255,.035);
+  color:#fff;
+  overflow:hidden;
+  transform:translate(-50%,-50%) scale(1);
+}
+
+.rp-main-menu-item.slot-active::before{
+  content:'';
+  position:absolute;
+  z-index:0;
+  inset:0;
+  width:auto;
+  height:auto;
+  border-radius:inherit;
+  background:
+    radial-gradient(circle at 50% 41%,rgba(20,126,255,.075),transparent 42%),
+    radial-gradient(circle at 50% 48%,transparent 0 34%,rgba(138,161,192,.055) 34.2%,transparent 34.8%),
+    linear-gradient(62deg,transparent 49.75%,rgba(121,147,180,.035) 50%,transparent 50.25%),
+    linear-gradient(-62deg,transparent 49.75%,rgba(121,147,180,.035) 50%,transparent 50.25%);
+  transform:none;
+  pointer-events:none;
+}
+
+.rp-main-menu-item.slot-active small,
+.rp-main-menu-item.slot-active strong,
+.rp-main-menu-item.slot-active span{
+  position:relative;
+  z-index:1;
+}
+
+.rp-main-menu-item.slot-active small{
+  margin:0 0 17px;
+  color:#28b7ff;
+  font-size:.68rem;
+  letter-spacing:.2em;
+}
+
+.rp-main-menu-item.slot-active strong{
+  color:#f8f8f7;
+  font-size:clamp(3.3rem,14vw,4.45rem);
+  line-height:.82;
+  letter-spacing:-.04em;
+  text-shadow:0 9px 34px rgba(0,0,0,.42);
+}
+
+.rp-main-menu-item.slot-active span{
+  margin-top:20px;
+  color:#abb3bf;
+  font-size:.62rem;
+  letter-spacing:.2em;
+}
+
+/* 3V3 / 5V5 get the giant game-mode treatment; words remain proportional. */
+.rp-main-menu-item[data-rp-main-action='3v3'].slot-active strong,
+.rp-main-menu-item[data-rp-main-action='5v5'].slot-active strong{
+  font-size:clamp(5.2rem,24vw,7.25rem);
+}
+
+.rp-main-menu-item[data-rp-main-action='ranking'].slot-active strong{font-size:clamp(2.45rem,10.5vw,3.35rem)}
+.rp-main-menu-item[data-rp-main-action='updates'].slot-active strong{font-size:clamp(3.25rem,14vw,4.4rem)}
+.rp-main-menu-item[data-rp-main-action='world'].slot-active strong{font-size:clamp(3.7rem,16vw,5rem)}
+.rp-main-menu-item[data-rp-main-action='profile'].slot-active strong{font-size:clamp(3.2rem,14vw,4.35rem)}
+.rp-main-menu-item[data-rp-main-action='settings'].slot-active strong{font-size:clamp(2.95rem,13vw,4rem)}
+
+/* The whole card is still the real button. This pseudo element is its visual CTA. */
+.rp-main-menu-item.slot-active::after{
+  content:'OPEN  →';
+  position:absolute;
+  z-index:2;
+  left:50%;
+  bottom:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:calc(100% - 58px);
+  min-height:48px;
+  box-sizing:border-box;
+  border:1px solid rgba(91,174,255,.52);
+  border-radius:13px;
+  background:linear-gradient(100deg,rgba(7,62,126,.26),rgba(5,13,25,.82) 55%,rgba(80,18,28,.22));
+  box-shadow:0 0 22px rgba(0,119,255,.08),inset 0 1px 0 rgba(255,255,255,.025);
+  color:#23b5ff;
+  font-family:var(--rp-display);
+  font-size:.7rem;
+  font-style:normal;
+  font-weight:900;
+  letter-spacing:.16em;
+  transform:translateX(-50%);
+  white-space:nowrap;
+}
+
+.rp-main-menu-item[data-rp-main-action='3v3'].slot-active::after{content:'ENTER BETA SEASON  →'}
+.rp-main-menu-item[data-rp-main-action='ranking'].slot-active::after{content:'ENTER RANKING GAMES  →'}
+.rp-main-menu-item[data-rp-main-action='5v5'].slot-active::after{content:'VIEW 5V5  →'}
+.rp-main-menu-item[data-rp-main-action='updates'].slot-active::after{content:'OPEN UPDATES  →'}
+.rp-main-menu-item[data-rp-main-action='world'].slot-active::after{content:'ENTER WORLD  →'}
+.rp-main-menu-item[data-rp-main-action='profile'].slot-active::after{content:'OPEN PROFILE  →'}
+.rp-main-menu-item[data-rp-main-action='settings'].slot-active::after{content:'OPEN SETTINGS  →'}
+
+.rp-main-menu-item.slot-active:active{
+  transform:translate(-50%,-50%) scale(.985);
+}
+
+.rp-main-menu-item:focus-visible{
+  outline:2px solid rgba(28,166,255,.55);
+  outline-offset:4px;
+}
+
+/* Keep the approved composition usable on shorter Android screens. */
+@media(max-height:760px){
+  .rp-main-menu-brand{min-height:138px;padding:5px 0}
+  .rp-main-menu-brand strong{font-size:clamp(2.7rem,12.5vw,3.75rem)}
+  .rp-main-menu-brand>span{margin-top:9px;font-size:.86rem}
+  .rp-main-menu-brand small{margin-top:11px;font-size:.55rem}
+
+  .rp-main-menu-item.slot-active{
+    top:51%;
+    min-height:300px;
+    padding:38px 22px 78px;
+    border-radius:23px;
+  }
+  .rp-main-menu-item.slot-active small{margin-bottom:12px;font-size:.6rem}
+  .rp-main-menu-item.slot-active span{margin-top:15px;font-size:.54rem}
+  .rp-main-menu-item.slot-active::after{bottom:21px;min-height:43px;font-size:.62rem}
+  .rp-main-menu-item[data-rp-main-action='3v3'].slot-active strong,
+  .rp-main-menu-item[data-rp-main-action='5v5'].slot-active strong{font-size:clamp(4.55rem,21vw,6rem)}
+  .rp-main-menu-item.slot-prev{top:7%}
+  .rp-main-menu-item.slot-next{top:94%}
+}
+
+@media(max-height:650px){
+  body.rp-lobby-active .rp-player-strip{flex-basis:60px;min-height:60px;padding:6px 0}
+  body.rp-lobby-active .rp-player-number{width:40px;min-width:40px;height:40px}
+  .rp-main-menu{height:calc(100dvh - 60px);min-height:calc(100svh - 60px);padding-top:2px}
+  .rp-main-menu-brand{min-height:108px}
+  .rp-main-menu-brand strong{font-size:2.45rem}
+  .rp-main-menu-brand>span{font-size:.72rem;margin-top:6px}
+  .rp-main-menu-brand small{font-size:.48rem;margin-top:7px}
+  .rp-main-menu-item.slot-active{min-height:270px;padding-top:31px;padding-bottom:70px}
+  .rp-main-menu-item.slot-active span{margin-top:11px}
+  .rp-main-menu-item.slot-active::after{bottom:17px;min-height:40px}
+}
+
+@media(min-width:700px){
+  .rp-main-menu-brand{min-height:190px}
+  .rp-main-menu-item.slot-active{width:390px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .rp-main-menu-item.slot-active:active{transform:translate(-50%,-50%)}
+}
