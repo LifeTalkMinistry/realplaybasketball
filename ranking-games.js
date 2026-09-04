@@ -5,6 +5,7 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
   const REQUIRED_GAMES = 5;
+  const SESSION_POLL_MS = 2000;
 
   const app = document.querySelector('[data-rp-app]');
   const lobby = document.querySelector('[data-rp-lobby]');
@@ -16,6 +17,28 @@
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
+  }
+
+  async function api(path, options = {}) {
+    const auth = token();
+    if (!auth) throw new Error('Real Play session is not available.');
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: options.method || 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${auth}`,
+        ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      cache: 'no-store',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(data?.message || data?.error || `Request failed (${response.status}).`);
+      error.status = response.status;
+      throw error;
+    }
+    return data;
   }
 
   const view = document.createElement('section');
@@ -36,7 +59,7 @@
       <section class="rp-ranking-hero">
         <small class="rp-ranking-kicker" data-rp-ranking-kicker>BUILD YOUR OVR</small>
         <h1 data-rp-ranking-title>GET RANKED.</h1>
-        <p data-rp-ranking-copy>Complete 5 official East vs West Ranking Games to establish your first Real Play OVR.</p>
+        <p data-rp-ranking-copy>Complete 5 official Ranking Games to establish your first Real Play OVR.</p>
 
         <div class="rp-ranking-status-card">
           <div>
@@ -56,9 +79,9 @@
           <div><small>GET ON COURT</small><h2>NEXT RANKING GAME</h2></div>
         </div>
         <article class="rp-ranking-session" data-rp-ranking-session>
-          <span data-rp-ranking-session-status>NO SESSION POSTED</span>
+          <span data-rp-ranking-session-status>NO GAME ANNOUNCED</span>
           <strong data-rp-ranking-session-title>TO BE ANNOUNCED</strong>
-          <p data-rp-ranking-session-copy>When Real Play posts an official Ranking Game, the court, date and time will appear here.</p>
+          <p data-rp-ranking-session-copy>The next official Ranking Game will appear here once Real Play announces the court, date and time.</p>
           <button type="button" data-rp-ranking-session-action disabled>WAITING FOR ANNOUNCEMENT</button>
         </article>
       </section>
@@ -69,11 +92,11 @@
           <b>LIVE SIDES</b>
         </div>
         <div class="rp-ranking-sides">
-          <article class="east"><small>TEAM</small><strong>EAST</strong><span>Assigned for this game</span></article>
+          <article class="east"><small>TEAM EAST</small><strong data-rp-ranking-east-score>0</strong><span>LIVE SCORE</span></article>
           <div class="rp-ranking-versus">VS</div>
-          <article class="west"><small>TEAM</small><strong>WEST</strong><span>Assigned for this game</span></article>
+          <article class="west"><small>TEAM WEST</small><strong data-rp-ranking-west-score>0</strong><span>LIVE SCORE</span></article>
         </div>
-        <p class="rp-ranking-side-note">East and West appear only after the admin starts the actual basketball game.</p>
+        <p class="rp-ranking-side-note" data-rp-ranking-live-note>East and West appear only after the admin starts the actual basketball game.</p>
       </section>
 
       <section class="rp-ranking-rules">
@@ -109,7 +132,12 @@
 
   const q = (selector) => view.querySelector(selector);
   const steps = [...view.querySelectorAll('[data-rp-ranking-step]')];
-  let loading = false;
+  const sessionAction = q('[data-rp-ranking-session-action]');
+  let profileLoading = false;
+  let sessionLoading = false;
+  let joining = false;
+  let currentSession = null;
+  let pollTimer = null;
 
   function setText(selector, value) {
     const node = q(selector);
@@ -121,6 +149,7 @@
     if (!node) return;
     node.textContent = message;
     node.classList.toggle('error', type === 'error');
+    node.classList.toggle('success', type === 'success');
   }
 
   function formatSessionDate(value) {
@@ -138,12 +167,7 @@
   }
 
   function isGameLive(session) {
-    const status = String(pick(
-      session?.gameStatus,
-      session?.game_status,
-      session?.status,
-      ''
-    )).trim().toLowerCase();
+    const status = String(pick(session?.gameStatus, session?.game_status, session?.status, '')).trim().toLowerCase();
     return status === 'live' || status === 'in_progress' || status === 'in-progress';
   }
 
@@ -154,67 +178,98 @@
     if (matchup) matchup.hidden = true;
   }
 
-  function showLiveMatchup() {
+  function showLiveMatchup(session) {
     const announcement = q('[data-rp-ranking-announcement]');
     const matchup = q('[data-rp-ranking-live-matchup]');
     if (announcement) announcement.hidden = true;
     if (matchup) matchup.hidden = false;
+    setText('[data-rp-ranking-east-score]', Number(session?.eastScore ?? session?.east_score ?? 0) || 0);
+    setText('[data-rp-ranking-west-score]', Number(session?.westScore ?? session?.west_score ?? 0) || 0);
+    setText('[data-rp-ranking-live-note]', session?.joined
+      ? 'You are in this Ranking Game. East and West were revealed when the admin started the game.'
+      : 'This Ranking Game is live. East and West were revealed when the admin started the game.');
   }
 
   function renderSession(session) {
+    currentSession = session || null;
     const card = q('[data-rp-ranking-session]');
-    const action = q('[data-rp-ranking-session-action]');
-    if (!card || !action) return;
+    if (!card || !sessionAction) return;
+
+    card.classList.remove('posted', 'joined', 'full');
 
     if (session && isGameLive(session)) {
-      showLiveMatchup();
+      showLiveMatchup(session);
       return;
     }
 
     showAnnouncement();
 
     if (!session || typeof session !== 'object') {
-      card.classList.remove('posted');
       setText('[data-rp-ranking-session-status]', 'NO GAME ANNOUNCED');
       setText('[data-rp-ranking-session-title]', 'TO BE ANNOUNCED');
       setText('[data-rp-ranking-session-copy]', 'The next official Ranking Game will appear here once Real Play announces the court, date and time.');
-      action.disabled = true;
-      action.textContent = 'WAITING FOR ANNOUNCEMENT';
+      sessionAction.disabled = true;
+      sessionAction.textContent = 'WAITING FOR ANNOUNCEMENT';
       return;
     }
 
-    const title = pick(session.title, session.location_name, session.locationName, session.location, 'RANKING GAME');
-    const date = pick(session.startsAt, session.starts_at, session.date, session.dateLabel, session.date_label);
-    const time = pick(session.time, session.timeLabel, session.time_label);
-    const capacity = pick(session.capacity, session.playerCapacity, session.player_capacity);
-    const reserved = pick(session.reservedCount, session.reserved_count, session.reserved);
-    const details = [
-      formatSessionDate(date),
-      time && !date ? String(time).toUpperCase() : '',
-      capacity !== undefined && reserved !== undefined ? `${reserved}/${capacity} PLAYERS` : '',
-    ].filter(Boolean);
+    const gameStatus = String(session.gameStatus || session.game_status || 'setup').toLowerCase();
+    const confirmed = Number(session.confirmedCount ?? session.confirmed_count ?? 0) || 0;
+    const capacity = session.capacity === null || session.capacity === undefined ? null : Number(session.capacity);
+    const joined = Boolean(session.joined);
+    const full = capacity !== null && confirmed >= capacity;
+    const available = session.available !== false && !full && gameStatus === 'setup';
+    const sessionStarted = Boolean(session.sessionStarted ?? session.session_started);
+    const details = [];
+
+    if (session.locationName || session.location_name) details.push(String(session.locationName || session.location_name).toUpperCase());
+    if (session.startsAt || session.starts_at) details.push(formatSessionDate(session.startsAt || session.starts_at));
+    details.push(capacity === null ? `${confirmed} CONFIRMED` : `${confirmed}/${capacity} CONFIRMED`);
 
     card.classList.add('posted');
-    setText('[data-rp-ranking-session-status]', 'RANKING GAME ANNOUNCED');
-    setText('[data-rp-ranking-session-title]', String(title).toUpperCase());
-    setText('[data-rp-ranking-session-copy]', details.join(' · ') || 'OFFICIAL RANKING GAME ANNOUNCEMENT');
-    action.disabled = true;
-    action.textContent = 'GAME ANNOUNCED';
+    card.classList.toggle('joined', joined);
+    card.classList.toggle('full', full);
+
+    if (gameStatus === 'final') {
+      setText('[data-rp-ranking-session-status]', 'RANKING GAME COMPLETE');
+      setText('[data-rp-ranking-session-title]', String(session.title || 'RANKING GAME').toUpperCase());
+      setText('[data-rp-ranking-session-copy]', `FINAL · EAST ${Number(session.eastScore || 0)} — ${Number(session.westScore || 0)} WEST`);
+      sessionAction.disabled = true;
+      sessionAction.textContent = 'FINAL';
+      return;
+    }
+
+    setText('[data-rp-ranking-session-status]', joined
+      ? (sessionStarted ? 'YOU’RE IN · CHECK-IN OPEN' : 'YOU’RE IN · SCHEDULED')
+      : full
+        ? 'RANKING GAME FULL'
+        : sessionStarted
+          ? 'CHECK-IN OPEN'
+          : 'RANKING GAME ANNOUNCED');
+    setText('[data-rp-ranking-session-title]', String(session.title || 'RANKING GAME').toUpperCase());
+    setText('[data-rp-ranking-session-copy]', details.join(' · '));
+
+    if (joining) {
+      sessionAction.disabled = true;
+      sessionAction.textContent = 'JOINING…';
+    } else if (joined) {
+      sessionAction.disabled = true;
+      sessionAction.textContent = '✓ YOU’RE IN';
+    } else if (full || !available) {
+      sessionAction.disabled = true;
+      sessionAction.textContent = full ? 'RANKING GAME FULL' : 'JOINING CLOSED';
+    } else {
+      sessionAction.disabled = false;
+      sessionAction.textContent = 'JOIN RANKING GAME';
+    }
   }
 
-  function render(state = {}) {
+  function renderProfile(state = {}) {
     const profile = state.profile || {};
     const career = state.career || state.careerSummary || state.career_summary || profile.career || {};
     const ranking = state.ranking || state.rankingGames || state.ranking_games || career.ranking || {};
 
-    const ovr = pick(
-      state.ovr,
-      ranking.ovr,
-      career.ovr,
-      career.rating,
-      profile.ovr,
-      profile.rating
-    );
+    const ovr = pick(state.ovr, ranking.ovr, career.ovr, career.rating, profile.ovr, profile.rating);
     const ranked = ovr !== undefined && ovr !== null && ovr !== '';
 
     const required = Math.max(1, num(pick(
@@ -264,43 +319,73 @@
       q('[data-rp-ranking-progress]')?.setAttribute('aria-hidden', 'false');
       steps.forEach((step, index) => step.classList.toggle('complete', index < completed));
     }
-
-    renderSession(pick(
-      state.currentRankingSession,
-      state.current_ranking_session,
-      state.nextRankingSession,
-      state.next_ranking_session,
-      ranking.currentSession,
-      ranking.current_session,
-      ranking.nextSession,
-      ranking.next_session,
-      state.upcomingRankingSession,
-      state.upcoming_ranking_session
-    ));
   }
 
-  async function refresh() {
-    if (loading || !token()) return;
-    loading = true;
-    setMessage('');
+  async function refreshProfile() {
+    if (profileLoading || !token()) return;
+    profileLoading = true;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/real-play/me`, {
-        headers: { Accept: 'application/json', Authorization: `Bearer ${token()}` },
-        cache: 'no-store',
-      });
-      if (response.status === 401) {
+      const data = await api('/api/real-play/me');
+      renderProfile(data || {});
+    } catch (error) {
+      if (error.status === 401) {
+        close();
+        document.querySelector('[data-auth-open]')?.click();
+      }
+    } finally {
+      profileLoading = false;
+    }
+  }
+
+  async function refreshSession({ quiet = false } = {}) {
+    if (sessionLoading || joining || !token()) return;
+    sessionLoading = true;
+    try {
+      const data = await api('/api/real-play/career/session');
+      renderSession(data?.session || null);
+      if (!quiet) setMessage('');
+    } catch (error) {
+      if (error.status === 401) {
         close();
         document.querySelector('[data-auth-open]')?.click();
         return;
       }
-      if (!response.ok) throw new Error('Could not load your Ranking Games status.');
-      render(await response.json().catch(() => ({})));
-    } catch (error) {
-      showAnnouncement();
-      setMessage(error.message || 'Could not load your Ranking Games status.', 'error');
+      if (!quiet) setMessage(error.message || 'Could not load the Ranking Game schedule.', 'error');
     } finally {
-      loading = false;
+      sessionLoading = false;
     }
+  }
+
+  async function joinRankingGame() {
+    if (joining || !currentSession || currentSession.joined) return;
+    if (String(currentSession.gameStatus || 'setup').toLowerCase() !== 'setup') return;
+    joining = true;
+    setMessage('');
+    renderSession(currentSession);
+    try {
+      const data = await api('/api/real-play/career/play', { method: 'POST' });
+      renderSession(data?.session || currentSession);
+      setMessage('YOU’RE CONFIRMED FOR THIS RANKING GAME.', 'success');
+      window.dispatchEvent(new CustomEvent('realplay:ranking-session-changed'));
+    } catch (error) {
+      setMessage(error.message || 'Unable to join this Ranking Game.', 'error');
+    } finally {
+      joining = false;
+      await refreshSession({ quiet: true });
+    }
+  }
+
+  function startPolling() {
+    if (pollTimer) window.clearInterval(pollTimer);
+    pollTimer = window.setInterval(() => {
+      if (!view.classList.contains('open')) return;
+      refreshSession({ quiet: true });
+    }, SESSION_POLL_MS);
+  }
+
+  function stopPolling() {
+    if (pollTimer) window.clearInterval(pollTimer);
+    pollTimer = null;
   }
 
   function open() {
@@ -312,23 +397,30 @@
     view.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-ranking-open');
     view.scrollTop = 0;
-    refresh();
+    refreshProfile();
+    refreshSession();
+    startPolling();
   }
 
   function close() {
+    stopPolling();
     view.classList.remove('open');
     view.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-ranking-open');
   }
 
+  sessionAction?.addEventListener('click', joinRankingGame);
   q('[data-rp-ranking-back]')?.addEventListener('click', close);
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && view.classList.contains('open')) close();
   });
   window.addEventListener('focus', () => {
-    if (view.classList.contains('open')) refresh();
+    if (!view.classList.contains('open')) return;
+    refreshProfile();
+    refreshSession({ quiet: true });
   });
+  window.addEventListener('realplay:ranking-session-changed', () => refreshSession({ quiet: true }));
 
   showAnnouncement();
-  window.RealPlayRankingGames = { open, close, refresh };
+  window.RealPlayRankingGames = { open, close, refresh: () => Promise.all([refreshProfile(), refreshSession()]) };
 })();
