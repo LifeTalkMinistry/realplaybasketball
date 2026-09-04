@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-admin-settings-v4';
+  const version = '20260904-admin-authority-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -50,15 +50,8 @@
     'real-play-profile.css',
     'real-play-profile-photo.css',
     'membership.css',
-    'admin-game-control.css',
-    'admin-launcher-mobile-fix.css',
-    'admin-game-control-simplify.css',
-    'admin-courtside-live.css',
-    'admin-membership-review.css',
-    'admin-three-v-three.css',
     'real-play-brand-system.css',
     'main-menu-brand-overrides.css',
-    'real-play-admin-brand-overrides.css',
     'settings-panel.css',
     'auth-welcome-cleanup.css',
   ].forEach(addStylesheet);
@@ -102,6 +95,7 @@
       'main-menu.js',
       'overlay-focus-release.js',
       'settings-panel.js',
+      'player-admin-probe-guard.js',
       'admin-access-bootstrap.js',
     ];
 
