@@ -19,7 +19,6 @@
     'admin-session-start.js',
     'admin-game-control-simplify.js',
     'admin-courtside-live.js',
-    'admin-manual-open.js',
     'admin-session-picker.js',
     'admin-score-dom-sync.js',
     'admin-membership-review.js',
@@ -31,13 +30,24 @@
   let loadingAdmin = false;
   let adminLoaded = false;
 
+  // Single client-side admin authority. This is only a UI gate; every admin
+  // API call is still authorized by the backend.
+  window.__realPlayAdminVerified = false;
+  window.__realPlayAdminAccessProbe = false;
+
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
   }
 
   async function verifyAdmin() {
     const auth = token();
-    if (!auth) return false;
+    if (!auth) {
+      verifiedAdmin = false;
+      window.__realPlayAdminVerified = false;
+      syncSettingsRow();
+      return false;
+    }
+    window.__realPlayAdminAccessProbe = true;
     try {
       const response = await fetch(`${API_BASE_URL}/api/real-play/admin/career/control`, {
         headers: { Accept: 'application/json', Authorization: `Bearer ${auth}` },
@@ -47,7 +57,10 @@
       verifiedAdmin = Boolean(response.ok && data?.admin);
     } catch (_error) {
       verifiedAdmin = false;
+    } finally {
+      window.__realPlayAdminAccessProbe = false;
     }
+    window.__realPlayAdminVerified = verifiedAdmin;
     syncSettingsRow();
     return verifiedAdmin;
   }
@@ -182,6 +195,7 @@
   window.addEventListener('storage', (event) => {
     if (event.key !== TOKEN_KEY) return;
     verifiedAdmin = false;
+    window.__realPlayAdminVerified = false;
     syncSettingsRow();
     verifyAdmin();
   });
