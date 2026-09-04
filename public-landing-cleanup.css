@@ -1,0 +1,13 @@
+/* REAL PLAY public landing surgical cleanup.
+   Remove the legacy divider beneath the BASKETBALL wordmark. */
+.rp-app.rp-guest .rp-public-landing .rp-public-title::after{
+  content:none!important;
+  display:none!important;
+  width:0!important;
+  height:0!important;
+  margin:0!important;
+  padding:0!important;
+  background:none!important;
+  box-shadow:none!important;
+  border:0!important;
+}
