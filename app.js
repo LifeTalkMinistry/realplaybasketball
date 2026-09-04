@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-season-team-admin-v1';
+  const version = '20260904-session-manage-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
