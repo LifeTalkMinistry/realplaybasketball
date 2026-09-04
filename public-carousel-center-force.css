@@ -1,0 +1,93 @@
+/* REAL PLAY — final centering authority for every public carousel slide.
+   Loaded last so pricing/value slides and story slides share one centered visual hierarchy. */
+.rp-public-value-experience [data-carousel-slide]{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  text-align:center!important;
+}
+
+.rp-public-value-experience [data-carousel-slide] > *{
+  margin-left:auto!important;
+  margin-right:auto!important;
+  text-align:center!important;
+}
+
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-slide-label,
+.rp-public-value-experience [data-carousel-slide] h2,
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-slide-copy,
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-footnote{
+  width:100%!important;
+  max-width:460px!important;
+  text-align:center!important;
+}
+
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-math,
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-player-line,
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-highlight,
+.rp-public-value-experience [data-carousel-slide] .rp-public-carousel-team-grid,
+.rp-public-value-experience [data-carousel-slide] .rp-public-carousel-standing,
+.rp-public-value-experience [data-carousel-slide] .rp-public-carousel-playoffs{
+  width:min(100%,460px)!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  text-align:center!important;
+}
+
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-math > div,
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-math strong,
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-math span,
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-player-line span,
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-highlight strong,
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-highlight span,
+.rp-public-value-experience [data-carousel-slide] .rp-public-carousel-team-grid span,
+.rp-public-value-experience [data-carousel-slide] .rp-public-carousel-standing span,
+.rp-public-value-experience [data-carousel-slide] .rp-public-carousel-playoffs > div,
+.rp-public-value-experience [data-carousel-slide] .rp-public-carousel-playoffs small,
+.rp-public-value-experience [data-carousel-slide] .rp-public-carousel-playoffs strong{
+  text-align:center!important;
+}
+
+.rp-public-value-experience [data-carousel-slide] .rp-public-value-final-price,
+.rp-public-value-experience [data-carousel-slide] .rp-public-cta,
+.rp-public-value-experience [data-carousel-slide] .rp-public-story-cta{
+  align-self:center!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  text-align:center!important;
+}
+
+@media(max-width:520px){
+  .rp-public-value-experience [data-carousel-slide]{
+    padding-left:20px!important;
+    padding-right:20px!important;
+  }
+
+  .rp-public-value-experience [data-carousel-slide] .rp-public-value-slide-label,
+  .rp-public-value-experience [data-carousel-slide] h2,
+  .rp-public-value-experience [data-carousel-slide] .rp-public-value-slide-copy,
+  .rp-public-value-experience [data-carousel-slide] .rp-public-value-footnote,
+  .rp-public-value-experience [data-carousel-slide] .rp-public-value-math,
+  .rp-public-value-experience [data-carousel-slide] .rp-public-value-player-line,
+  .rp-public-value-experience [data-carousel-slide] .rp-public-value-highlight,
+  .rp-public-value-experience [data-carousel-slide] .rp-public-carousel-team-grid,
+  .rp-public-value-experience [data-carousel-slide] .rp-public-carousel-standing,
+  .rp-public-value-experience [data-carousel-slide] .rp-public-carousel-playoffs{
+    max-width:335px!important;
+  }
+
+  .rp-public-value-experience [data-carousel-slide] h2{
+    font-size:clamp(2.8rem,12vw,3.6rem)!important;
+    line-height:.9!important;
+  }
+
+  .rp-public-value-experience [data-carousel-slide] .rp-public-value-slide-copy{
+    font-size:.96rem!important;
+    line-height:1.55!important;
+  }
+
+  .rp-public-value-experience [data-carousel-slide] .rp-public-value-footnote{
+    font-size:.82rem!important;
+    line-height:1.52!important;
+  }
+}
