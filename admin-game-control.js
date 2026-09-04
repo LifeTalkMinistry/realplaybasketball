@@ -13,6 +13,7 @@
   let authTimer = null;
   let message = '';
   let messageType = '';
+  let lastControlSignature = '';
 
   const launcher = document.createElement('button');
   launcher.type = 'button';
@@ -288,6 +289,12 @@
       ${final ? '<div class="rp-admin-success">FINAL RESULT CONFIRMED. Game controls are locked.</div>' : `<div class="rp-admin-card soft"><button type="button" class="rp-admin-danger" data-control-action="finalize" ${session.gameStatus !== 'live' || tie || busy ? 'disabled' : ''}>CONFIRM FINAL RESULT</button></div>`}`;
   }
 
+  function notifyAdminRendered() {
+    window.dispatchEvent(new CustomEvent('realplay:admin-render', {
+      detail: { tab: activeTab },
+    }));
+  }
+
   function render() {
     if (!root.classList.contains('open')) return;
     renderLivebar();
@@ -296,6 +303,7 @@
     else if (activeTab === 'live' || activeTab === 'game' || activeTab === 'stats') body.innerHTML = renderGame();
     else if (activeTab === 'finalize') body.innerHTML = renderFinalize();
     else body.innerHTML = renderSession();
+    notifyAdminRendered();
   }
 
   async function refresh(options = {}) {
@@ -303,8 +311,18 @@
     try {
       const data = await api('/api/real-play/admin/career/control');
       admin = Boolean(data?.admin);
-      control = data?.control || { session: null, players: [] };
-      // Admin entry is exposed only through Settings.
+      const nextControl = data?.control || { session: null, players: [] };
+      const nextSignature = JSON.stringify(nextControl);
+      const changed = nextSignature !== lastControlSignature;
+
+      control = nextControl;
+      lastControlSignature = nextSignature;
+
+      // Silent polling should never rebuild the whole screen if the server
+      // state did not change. Rewriting the DOM every 2 seconds caused cards,
+      // forms and admin enhancements to jump/reopen.
+      if (options.silent && !changed) return;
+
       if (!options.silent) setMessage('', '');
       render();
     } catch (error) {
@@ -325,6 +343,7 @@
       const data = await api('/api/real-play/admin/career/control');
       admin = Boolean(data?.admin);
       control = data?.control || { session: null, players: [] };
+      lastControlSignature = JSON.stringify(control);
       if (!admin) return;
       openedForToken = token;
     } catch (error) {
@@ -355,6 +374,7 @@
     try {
       const data = await api('/api/real-play/admin/career/control', { method: 'POST', body: payload });
       control = data?.control || control;
+      lastControlSignature = JSON.stringify(control);
       setMessage('', '');
     } catch (error) {
       setMessage(error.message || 'Game Control action failed.', 'error');
