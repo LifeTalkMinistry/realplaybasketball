@@ -77,6 +77,7 @@
       <section class="rp-ranking-next" data-rp-ranking-announcement>
         <div class="rp-ranking-section-head">
           <div><small>GET ON COURT</small><h2>NEXT RANKING GAME</h2></div>
+          <button type="button" data-rp-ranking-cancel hidden aria-label="Cancel Ranking Game reservation" style="appearance:none;align-self:center;min-height:30px;padding:0 10px;border:1px solid rgba(255,104,119,.30);border-radius:9px;background:rgba(55,14,24,.38);color:#ff91a0;font-family:var(--rp-display);font-size:.43rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase">CANCEL SPOT</button>
         </div>
         <article class="rp-ranking-session" data-rp-ranking-session>
           <span data-rp-ranking-session-status>NO GAME ANNOUNCED</span>
@@ -133,9 +134,11 @@
   const q = (selector) => view.querySelector(selector);
   const steps = [...view.querySelectorAll('[data-rp-ranking-step]')];
   const sessionAction = q('[data-rp-ranking-session-action]');
+  const cancelAction = q('[data-rp-ranking-cancel]');
   let profileLoading = false;
   let sessionLoading = false;
   let joining = false;
+  let leaving = false;
   let currentSession = null;
   let pollTimer = null;
 
@@ -196,6 +199,11 @@
     if (!card || !sessionAction) return;
 
     card.classList.remove('posted', 'joined', 'full');
+    if (cancelAction) {
+      cancelAction.hidden = true;
+      cancelAction.disabled = true;
+      cancelAction.textContent = 'CANCEL SPOT';
+    }
 
     if (session && isGameLive(session)) {
       showLiveMatchup(session);
@@ -229,6 +237,13 @@
     card.classList.add('posted');
     card.classList.toggle('joined', joined);
     card.classList.toggle('full', full);
+
+    const canCancel = joined && gameStatus === 'setup';
+    if (cancelAction) {
+      cancelAction.hidden = !canCancel;
+      cancelAction.disabled = !canCancel || joining || leaving;
+      cancelAction.textContent = leaving ? 'CANCELLING…' : 'CANCEL SPOT';
+    }
 
     if (gameStatus === 'final') {
       setText('[data-rp-ranking-session-status]', 'RANKING GAME COMPLETE');
@@ -338,7 +353,7 @@
   }
 
   async function refreshSession({ quiet = false } = {}) {
-    if (sessionLoading || joining || !token()) return;
+    if (sessionLoading || joining || leaving || !token()) return;
     sessionLoading = true;
     try {
       const data = await api('/api/real-play/career/session');
@@ -357,7 +372,7 @@
   }
 
   async function joinRankingGame() {
-    if (joining || !currentSession || currentSession.joined) return;
+    if (joining || leaving || !currentSession || currentSession.joined) return;
     if (String(currentSession.gameStatus || 'setup').toLowerCase() !== 'setup') return;
     joining = true;
     setMessage('');
@@ -371,6 +386,29 @@
       setMessage(error.message || 'Unable to join this Ranking Game.', 'error');
     } finally {
       joining = false;
+      await refreshSession({ quiet: true });
+    }
+  }
+
+  async function cancelRankingGame() {
+    if (joining || leaving || !currentSession || !currentSession.joined) return;
+    if (String(currentSession.gameStatus || currentSession.game_status || 'setup').toLowerCase() !== 'setup') return;
+
+    const title = String(currentSession.title || 'this Ranking Game');
+    if (!window.confirm(`Cancel your reservation for ${title}?\n\nYour spot will be released for another player.`)) return;
+
+    leaving = true;
+    setMessage('');
+    renderSession(currentSession);
+    try {
+      const data = await api('/api/real-play/career/play', { method: 'DELETE' });
+      renderSession(data?.session || currentSession);
+      setMessage('YOUR RANKING GAME RESERVATION WAS CANCELLED.', 'success');
+      window.dispatchEvent(new CustomEvent('realplay:ranking-session-changed'));
+    } catch (error) {
+      setMessage(error.message || 'Unable to cancel this Ranking Game reservation.', 'error');
+    } finally {
+      leaving = false;
       await refreshSession({ quiet: true });
     }
   }
@@ -410,6 +448,7 @@
   }
 
   sessionAction?.addEventListener('click', joinRankingGame);
+  cancelAction?.addEventListener('click', cancelRankingGame);
   q('[data-rp-ranking-back]')?.addEventListener('click', close);
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && view.classList.contains('open')) close();
