@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-public-landing-premium-v4';
+  const version = '20260904-story-center-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
