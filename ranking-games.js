@@ -51,7 +51,7 @@
         <button class="rp-ranking-back" type="button" aria-label="Back to main menu" data-rp-ranking-back>←</button>
         <div class="rp-ranking-brand">
           <strong>RANKING GAMES</strong>
-          <span>REAL PLAY BASKETBALL</span>
+          <span>REAL PLAY BASKBALL</span>
         </div>
         <div class="rp-ranking-mark">E/W</div>
       </header>
@@ -102,15 +102,15 @@
 
       <section class="rp-ranking-rules">
         <div class="rp-ranking-section-head">
-          <div><small>WHAT COUNTS</small><h2>OFFICIAL COMPETITIVE DATA</h2></div>
+          <div><small>YOUR VERIFIED TOTALS</small><h2>OFFICIAL COMPETITIVE DATA</h2></div>
         </div>
         <div class="rp-ranking-stat-grid">
-          <article><strong>PTS</strong><span>Points</span></article>
-          <article><strong>AST</strong><span>Assists</span></article>
-          <article><strong>REB</strong><span>Rebounds</span></article>
-          <article><strong>TO</strong><span>Turnovers</span></article>
-          <article><strong>W/L</strong><span>Result</span></article>
-          <article><strong>OVR</strong><span>Rating</span></article>
+          <article><strong data-rp-ranking-stat-pts>0</strong><span>PTS</span></article>
+          <article><strong data-rp-ranking-stat-ast>0</strong><span>AST</span></article>
+          <article><strong data-rp-ranking-stat-reb>0</strong><span>REB</span></article>
+          <article><strong data-rp-ranking-stat-to>0</strong><span>TO</span></article>
+          <article><strong data-rp-ranking-stat-record>0-0</strong><span>W/L</span></article>
+          <article><strong data-rp-ranking-stat-ovr>—</strong><span>OVR</span></article>
         </div>
         <div class="rp-ranking-rule-row">
           <span>UNRANKED PLAYER</span>
@@ -141,6 +141,7 @@
   let leaving = false;
   let currentSession = null;
   let pollTimer = null;
+  let pollCount = 0;
 
   function setText(selector, value) {
     const node = q(selector);
@@ -283,9 +284,33 @@
     const profile = state.profile || {};
     const career = state.career || state.careerSummary || state.career_summary || profile.career || {};
     const ranking = state.ranking || state.rankingGames || state.ranking_games || career.ranking || {};
+    const stats = state.careerStats || career.stats || career || {};
 
-    const ovr = pick(state.ovr, ranking.ovr, career.ovr, career.rating, profile.ovr, profile.rating);
+    const ovr = pick(
+      state.ovr,
+      ranking.ovr,
+      career.ovr,
+      career.rating,
+      state.careerStats?.ovr,
+      state.careerStats?.rating,
+      profile.ovr,
+      profile.rating
+    );
     const ranked = ovr !== undefined && ovr !== null && ovr !== '';
+
+    const points = num(pick(stats.pts, stats.points), 0);
+    const assists = num(pick(stats.ast, stats.assists), 0);
+    const rebounds = num(pick(stats.reb, stats.rebounds), 0);
+    const turnovers = num(pick(stats.to, stats.tov, stats.turnovers), 0);
+    const wins = num(stats.wins, 0);
+    const losses = num(stats.losses, 0);
+
+    setText('[data-rp-ranking-stat-pts]', points);
+    setText('[data-rp-ranking-stat-ast]', assists);
+    setText('[data-rp-ranking-stat-reb]', rebounds);
+    setText('[data-rp-ranking-stat-to]', turnovers);
+    setText('[data-rp-ranking-stat-record]', `${wins}-${losses}`);
+    setText('[data-rp-ranking-stat-ovr]', ranked ? ovr : '—');
 
     const required = Math.max(1, num(pick(
       ranking.requiredGames,
@@ -310,6 +335,8 @@
       career.ranking_games_completed,
       career.placementGamesCompleted,
       career.placement_games_completed,
+      stats.games,
+      stats.gamesPlayed,
       0
     ), 0), 0, required);
 
@@ -415,15 +442,19 @@
 
   function startPolling() {
     if (pollTimer) window.clearInterval(pollTimer);
+    pollCount = 0;
     pollTimer = window.setInterval(() => {
       if (!view.classList.contains('open')) return;
+      pollCount += 1;
       refreshSession({ quiet: true });
+      if (pollCount % 2 === 0) refreshProfile();
     }, SESSION_POLL_MS);
   }
 
   function stopPolling() {
     if (pollTimer) window.clearInterval(pollTimer);
     pollTimer = null;
+    pollCount = 0;
   }
 
   function open() {
@@ -458,7 +489,11 @@
     refreshProfile();
     refreshSession({ quiet: true });
   });
-  window.addEventListener('realplay:ranking-session-changed', () => refreshSession({ quiet: true }));
+  window.addEventListener('realplay:ranking-session-changed', () => {
+    refreshProfile();
+    refreshSession({ quiet: true });
+  });
+  window.addEventListener('realplay:player-stats-changed', refreshProfile);
 
   showAnnouncement();
   window.RealPlayRankingGames = { open, close, refresh: () => Promise.all([refreshProfile(), refreshSession()]) };
