@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-basketball-bg-v1';
+  const version = '20260904-premium-card-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -55,6 +55,7 @@
     'main-menu-brand-overrides.css',
     'main-menu-cinematic.css',
     'main-menu-ball-background.css',
+    'main-menu-card-premium.css',
     'settings-panel.css',
     'auth-welcome-cleanup.css',
   ].forEach(addStylesheet);
