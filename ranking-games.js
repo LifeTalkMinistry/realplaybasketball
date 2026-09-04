@@ -51,17 +51,29 @@
         </div>
       </section>
 
-      <section class="rp-ranking-matchup" aria-labelledby="rp-ranking-matchup-title">
+      <section class="rp-ranking-next" data-rp-ranking-announcement>
         <div class="rp-ranking-section-head">
-          <div><small>EVERY RANKING GAME</small><h2 id="rp-ranking-matchup-title">EAST <span>VS</span> WEST</h2></div>
-          <b>TEMPORARY SIDES</b>
+          <div><small>GET ON COURT</small><h2>NEXT RANKING GAME</h2></div>
+        </div>
+        <article class="rp-ranking-session" data-rp-ranking-session>
+          <span data-rp-ranking-session-status>NO SESSION POSTED</span>
+          <strong data-rp-ranking-session-title>TO BE ANNOUNCED</strong>
+          <p data-rp-ranking-session-copy>When Real Play posts an official Ranking Game, the court, date and time will appear here.</p>
+          <button type="button" data-rp-ranking-session-action disabled>WAITING FOR ANNOUNCEMENT</button>
+        </article>
+      </section>
+
+      <section class="rp-ranking-matchup" data-rp-ranking-live-matchup aria-labelledby="rp-ranking-matchup-title" hidden>
+        <div class="rp-ranking-section-head">
+          <div><small>GAME IS LIVE</small><h2 id="rp-ranking-matchup-title">EAST <span>VS</span> WEST</h2></div>
+          <b>LIVE SIDES</b>
         </div>
         <div class="rp-ranking-sides">
           <article class="east"><small>TEAM</small><strong>EAST</strong><span>Assigned for this game</span></article>
           <div class="rp-ranking-versus">VS</div>
           <article class="west"><small>TEAM</small><strong>WEST</strong><span>Assigned for this game</span></article>
         </div>
-        <p class="rp-ranking-side-note">East and West are game sides only. They do not replace your permanent Real Play identity or your Beta League club.</p>
+        <p class="rp-ranking-side-note">East and West appear only after the admin starts the actual basketball game.</p>
       </section>
 
       <section class="rp-ranking-rules">
@@ -88,18 +100,6 @@
           <span>MEDIA</span>
           <strong>NO OFFICIAL VIDEO RECORDING</strong>
         </div>
-      </section>
-
-      <section class="rp-ranking-next">
-        <div class="rp-ranking-section-head">
-          <div><small>GET ON COURT</small><h2>NEXT RANKING GAME</h2></div>
-        </div>
-        <article class="rp-ranking-session" data-rp-ranking-session>
-          <span data-rp-ranking-session-status>NO SESSION POSTED</span>
-          <strong data-rp-ranking-session-title>TO BE ANNOUNCED</strong>
-          <p data-rp-ranking-session-copy>When Real Play posts an official Ranking Game, the court, date, time and East vs West player slots will appear here.</p>
-          <button type="button" data-rp-ranking-session-action disabled>WAITING FOR SCHEDULE</button>
-        </article>
       </section>
 
       <p class="rp-ranking-message" data-rp-ranking-message aria-live="polite"></p>
@@ -137,18 +137,49 @@
     }).format(date).toUpperCase();
   }
 
+  function isGameLive(session) {
+    const status = String(pick(
+      session?.gameStatus,
+      session?.game_status,
+      session?.status,
+      ''
+    )).trim().toLowerCase();
+    return status === 'live' || status === 'in_progress' || status === 'in-progress';
+  }
+
+  function showAnnouncement() {
+    const announcement = q('[data-rp-ranking-announcement]');
+    const matchup = q('[data-rp-ranking-live-matchup]');
+    if (announcement) announcement.hidden = false;
+    if (matchup) matchup.hidden = true;
+  }
+
+  function showLiveMatchup() {
+    const announcement = q('[data-rp-ranking-announcement]');
+    const matchup = q('[data-rp-ranking-live-matchup]');
+    if (announcement) announcement.hidden = true;
+    if (matchup) matchup.hidden = false;
+  }
+
   function renderSession(session) {
     const card = q('[data-rp-ranking-session]');
     const action = q('[data-rp-ranking-session-action]');
     if (!card || !action) return;
 
+    if (session && isGameLive(session)) {
+      showLiveMatchup();
+      return;
+    }
+
+    showAnnouncement();
+
     if (!session || typeof session !== 'object') {
       card.classList.remove('posted');
-      setText('[data-rp-ranking-session-status]', 'NO SESSION POSTED');
+      setText('[data-rp-ranking-session-status]', 'NO GAME ANNOUNCED');
       setText('[data-rp-ranking-session-title]', 'TO BE ANNOUNCED');
-      setText('[data-rp-ranking-session-copy]', 'When Real Play posts an official Ranking Game, the court, date, time and East vs West player slots will appear here.');
+      setText('[data-rp-ranking-session-copy]', 'The next official Ranking Game will appear here once Real Play announces the court, date and time.');
       action.disabled = true;
-      action.textContent = 'WAITING FOR SCHEDULE';
+      action.textContent = 'WAITING FOR ANNOUNCEMENT';
       return;
     }
 
@@ -161,15 +192,14 @@
       formatSessionDate(date),
       time && !date ? String(time).toUpperCase() : '',
       capacity !== undefined && reserved !== undefined ? `${reserved}/${capacity} PLAYERS` : '',
-      'EAST VS WEST',
     ].filter(Boolean);
 
     card.classList.add('posted');
-    setText('[data-rp-ranking-session-status]', 'OFFICIAL RANKING GAME');
+    setText('[data-rp-ranking-session-status]', 'RANKING GAME ANNOUNCED');
     setText('[data-rp-ranking-session-title]', String(title).toUpperCase());
-    setText('[data-rp-ranking-session-copy]', details.join(' · ') || 'OFFICIAL EAST VS WEST RANKING GAME');
+    setText('[data-rp-ranking-session-copy]', details.join(' · ') || 'OFFICIAL RANKING GAME ANNOUNCEMENT');
     action.disabled = true;
-    action.textContent = 'BOOKING VIA REAL PLAY SCHEDULE';
+    action.textContent = 'GAME ANNOUNCED';
   }
 
   function render(state = {}) {
@@ -218,7 +248,7 @@
     if (ranked) {
       setText('[data-rp-ranking-kicker]', 'RANKED COMPETITIVE PLAY');
       setText('[data-rp-ranking-title]', 'DEFEND YOUR OVR.');
-      setText('[data-rp-ranking-copy]', 'You already have a Real Play ranking. Keep playing official East vs West Ranking Games and your OVR can rise or fall from verified performance.');
+      setText('[data-rp-ranking-copy]', 'You already have a Real Play ranking. Keep playing official Ranking Games and your OVR can rise or fall from verified performance.');
       setText('[data-rp-ranking-status-label]', 'CURRENT OVR');
       setText('[data-rp-ranking-status-value]', ovr);
       setText('[data-rp-ranking-status-note]', 'RANKED PLAYER');
@@ -227,7 +257,7 @@
     } else {
       setText('[data-rp-ranking-kicker]', 'BUILD YOUR OVR');
       setText('[data-rp-ranking-title]', 'GET RANKED.');
-      setText('[data-rp-ranking-copy]', `Complete ${required} official East vs West Ranking Games to establish your first Real Play OVR.`);
+      setText('[data-rp-ranking-copy]', `Complete ${required} official Ranking Games to establish your first Real Play OVR.`);
       setText('[data-rp-ranking-status-label]', 'UNRANKED');
       setText('[data-rp-ranking-status-value]', `${completed} / ${required}`);
       setText('[data-rp-ranking-status-note]', 'OFFICIAL GAMES');
@@ -236,8 +266,12 @@
     }
 
     renderSession(pick(
+      state.currentRankingSession,
+      state.current_ranking_session,
       state.nextRankingSession,
       state.next_ranking_session,
+      ranking.currentSession,
+      ranking.current_session,
       ranking.nextSession,
       ranking.next_session,
       state.upcomingRankingSession,
@@ -262,6 +296,7 @@
       if (!response.ok) throw new Error('Could not load your Ranking Games status.');
       render(await response.json().catch(() => ({})));
     } catch (error) {
+      showAnnouncement();
       setMessage(error.message || 'Could not load your Ranking Games status.', 'error');
     } finally {
       loading = false;
@@ -294,5 +329,6 @@
     if (view.classList.contains('open')) refresh();
   });
 
+  showAnnouncement();
   window.RealPlayRankingGames = { open, close, refresh };
 })();
