@@ -1,0 +1,87 @@
+/*
+ * REAL PLAY — PHOTOGRAPHIC BASKETBALL BACKDROP
+ * Uses the uploaded basketball artwork only as a decorative responsive layer.
+ * The carousel, text, card and controls remain real UI above it.
+ */
+
+/* Replace the previous CSS-drawn court-circle halo with the real basketball asset. */
+.rp-main-menu::after{
+  content:'';
+  position:absolute;
+  z-index:0;
+  left:50%;
+  top:50%;
+  width:min(150vw,720px);
+  aspect-ratio:2 / 3;
+  border:0;
+  border-radius:0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(2,3,7,.84) 0%,
+      rgba(2,3,7,.48) 20%,
+      rgba(2,3,7,.12) 42%,
+      rgba(2,3,7,.08) 68%,
+      rgba(2,3,7,.70) 100%
+    ),
+    url('assets/main-menu/main-menu-basketball-bg.png') center / cover no-repeat;
+  box-shadow:none;
+  opacity:.84;
+  filter:brightness(.80) contrast(1.20) saturate(1.22);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  -webkit-mask-image:radial-gradient(ellipse 78% 68% at 50% 58%,#000 0 57%,rgba(0,0,0,.94) 69%,rgba(0,0,0,.46) 82%,transparent 96%);
+  mask-image:radial-gradient(ellipse 78% 68% at 50% 58%,#000 0 57%,rgba(0,0,0,.94) 69%,rgba(0,0,0,.46) 82%,transparent 96%);
+}
+
+/* Keep the existing brand atmosphere, but let the photographed ball own the middle. */
+.rp-main-menu::before{
+  z-index:0;
+  background:
+    radial-gradient(44% 32% at 3% 57%,rgba(0,111,255,.13),transparent 76%),
+    radial-gradient(44% 32% at 97% 61%,rgba(255,31,42,.09),transparent 77%);
+}
+
+/* Everything interactive stays above the photographic layer. */
+.rp-main-menu-brand,
+.rp-main-menu-list{
+  position:relative;
+  z-index:2;
+}
+
+/* The active card remains readable while allowing the ball texture to frame it. */
+.rp-main-menu-item.slot-active{
+  background:
+    linear-gradient(155deg,rgba(4,11,20,.965),rgba(3,5,9,.982)) padding-box,
+    linear-gradient(112deg,#108cff 0%,rgba(42,126,220,.54) 29%,rgba(124,119,154,.28) 50%,rgba(180,72,85,.48) 72%,#ff3a43 100%) border-box;
+  backdrop-filter:blur(1.5px);
+  -webkit-backdrop-filter:blur(1.5px);
+}
+
+/* Mobile height tuning: the ball follows the selector rather than the viewport crop. */
+@media(max-height:760px){
+  .rp-main-menu::after{
+    top:48%;
+    width:min(142vw,650px);
+    opacity:.80;
+  }
+}
+
+@media(max-height:650px){
+  .rp-main-menu::after{
+    top:47%;
+    width:min(132vw,590px);
+    opacity:.76;
+  }
+}
+
+/* On wider screens keep the ball large but capped, preserving the mobile composition. */
+@media(min-width:700px){
+  .rp-main-menu::after{
+    width:min(100vw,760px);
+  }
+}
+
+@media(prefers-reduced-transparency:reduce){
+  .rp-main-menu::after{opacity:.66}
+}
