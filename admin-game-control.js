@@ -129,7 +129,7 @@
     root.classList.remove('open');
     root.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-admin-open');
-    if (admin) launcher.classList.add('visible');
+    // Admin entry is exposed only through Settings.
     stopPolling();
   }
 
@@ -304,7 +304,7 @@
       const data = await api('/api/real-play/admin/career/control');
       admin = Boolean(data?.admin);
       control = data?.control || { session: null, players: [] };
-      if (admin) launcher.classList.toggle('visible', !root.classList.contains('open'));
+      // Admin entry is exposed only through Settings.
       if (!options.silent) setMessage('', '');
       render();
     } catch (error) {
@@ -326,11 +326,7 @@
       admin = Boolean(data?.admin);
       control = data?.control || { session: null, players: [] };
       if (!admin) return;
-      launcher.classList.add('visible');
-      if (openedForToken !== token) {
-        openedForToken = token;
-        openDashboard();
-      }
+      openedForToken = token;
     } catch (error) {
       if (error.status === 403 || error.status === 401) {
         admin = false;
@@ -376,7 +372,14 @@
     });
   });
 
-  launcher.addEventListener('click', openDashboard);
+  launcher.hidden = true;
+  launcher.setAttribute('aria-hidden', 'true');
+  window.__realPlayOpenAdminGameControl = () => {
+    if (!admin) return false;
+    openDashboard();
+    return true;
+  };
+  window.__realPlayRefreshAdminGameControl = detectAdmin;
   root.querySelector('[data-admin-exit]').addEventListener('click', closeDashboard);
 
   root.addEventListener('click', async (event) => {
