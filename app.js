@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-3v3-club-backdrop-v4';
+  const version = '20260904-public-landing-premium-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -34,6 +34,7 @@
     'public-pricing-breakdown.css',
     'public-story-carousel.css',
     'ambient-brand-glow.css',
+    'public-landing-premium.css',
     'mobile-shell-fix.css',
     'mobile-lobby-cleanup.css',
     'main-menu.css',
