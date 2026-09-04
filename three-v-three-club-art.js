@@ -4,7 +4,22 @@
 
   const ART = {
     LIONS: 'assets/3v3/clubs/lions-logo.png',
+    VALIANT: 'assets/3v3/clubs/valiant-logo.png',
+    WATCHMEN: 'assets/3v3/clubs/watchmen-logo.png',
+    CONQUERORS: 'assets/3v3/clubs/conquerors-logo.png',
   };
+
+  const CLUB_CLASSES = ['club-lions', 'club-valiant', 'club-watchmen', 'club-conquerors'];
+
+  function themeClass(name) {
+    return `club-${String(name || '').trim().toLowerCase()}`;
+  }
+
+  function applyThemeClass(card, clubName) {
+    if (!card) return;
+    card.classList.remove(...CLUB_CLASSES);
+    if (ART[clubName]) card.classList.add(themeClass(clubName));
+  }
 
   function addLogoToCard(card) {
     if (!card || card.querySelector('.rp-team-card-logo')) return;
@@ -17,11 +32,12 @@
     const image = document.createElement('img');
     image.className = 'rp-team-card-logo';
     image.src = src;
-    image.alt = clubName;
+    image.alt = `${clubName} club logo`;
     image.decoding = 'async';
     image.loading = 'eager';
     nameNode?.insertAdjacentElement('beforebegin', image);
     card.classList.add('has-club-art');
+    applyThemeClass(card, clubName);
   }
 
   function syncFixedCard(view) {
@@ -32,6 +48,7 @@
     const clubName = String(nameNode.textContent || '').trim().toUpperCase();
     let image = card.querySelector('.rp-team-card-logo');
     const src = ART[clubName];
+    applyThemeClass(card, clubName);
 
     if (!src) {
       if (image) image.remove();
@@ -48,7 +65,7 @@
     }
 
     image.src = src;
-    image.alt = clubName;
+    image.alt = `${clubName} club logo`;
     card.classList.add('has-club-art');
   }
 
