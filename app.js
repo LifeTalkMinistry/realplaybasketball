@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-all-slides-center-v2';
+  const version = '20260904-founder-credit-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -66,6 +66,7 @@
     'public-landing-cleanup.css',
     'public-origin-center.css',
     'public-carousel-center-force.css',
+    'public-founder-credit.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
@@ -89,6 +90,7 @@
 
     const enhancements = [
       'public-landing.js',
+      'public-founder-credit.js',
       'login-landing-fix.js',
       'persistent-session-fix.js',
       'career-beta.js',
