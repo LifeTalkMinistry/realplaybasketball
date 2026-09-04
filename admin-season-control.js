@@ -204,24 +204,19 @@
     createSeason(form);
   });
 
-  // Admin Game Control already re-renders its body frequently.
-  // Do not observe its DOM: a MutationObserver here can feed back into those
-  // renders and freeze Admin Mode. Use lightweight scheduled refresh instead.
-  window.setInterval(() => {
-    if (setupTabOpen()) {
+  window.addEventListener('realplay:admin-render', () => {
+    if (!setupTabOpen()) return;
+    window.requestAnimationFrame(() => {
       apply();
       refresh();
-    }
-  }, 2500);
-
-  document.addEventListener('click', (event) => {
-    if (event.target.closest?.('[data-admin-tab="session"], .rp-admin-launcher')) {
-      window.setTimeout(() => {
-        apply();
-        refresh();
-      }, 60);
-    }
+    });
   });
+
+  // Season registration can change outside this admin screen, so keep a slow
+  // background refresh without repeatedly rebuilding the admin body.
+  window.setInterval(() => {
+    if (setupTabOpen()) refresh();
+  }, 10000);
 
   window.addEventListener('focus', refresh);
   window.addEventListener('realplay:3v3-season-changed', refresh);
