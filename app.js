@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-public-landing-premium-v1';
+  const version = '20260904-public-landing-premium-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -35,6 +35,7 @@
     'public-story-carousel.css',
     'ambient-brand-glow.css',
     'public-landing-premium.css',
+    'public-landing-ball-focus.css',
     'mobile-shell-fix.css',
     'mobile-lobby-cleanup.css',
     'main-menu.css',
