@@ -127,10 +127,23 @@
   async function openAdmin() {
     if (!verifiedAdmin && !(await verifyAdmin())) return;
 
-    const overlay = document.querySelector('.rp-settings-overlay');
-    overlay?.classList.remove('open');
-    overlay?.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('rp-settings-open');
+    // Route cleanly into Admin Mode instead of trying to mount the whole
+    // admin dashboard while the Settings dialog is still closing.
+    const url = new URL(window.location.href);
+    url.hash = '';
+    url.searchParams.set('admin', '1');
+    window.location.href = url.toString();
+  }
+
+  async function openAdminRouteIfRequested() {
+    const requested = new URLSearchParams(window.location.search).get('admin') === '1';
+    if (!requested) return;
+    if (!verifiedAdmin && !(await verifyAdmin())) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('admin');
+      window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+      return;
+    }
 
     try {
       await ensureAdminLoaded();
@@ -140,7 +153,7 @@
         window.setTimeout(async () => {
           await window.__realPlayRefreshAdminGameControl?.();
           window.__realPlayOpenAdminGameControl?.();
-        }, 120);
+        }, 150);
       }
     } catch (error) {
       console.error('[Real Play] Unable to open admin tools.', error);
@@ -156,7 +169,7 @@
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
     syncSettingsRow();
-    verifyAdmin();
+    verifyAdmin().then(() => openAdminRouteIfRequested());
   }
 
   window.addEventListener('storage', (event) => {
