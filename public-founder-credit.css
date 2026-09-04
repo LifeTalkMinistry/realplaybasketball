@@ -1,0 +1,57 @@
+/* REAL PLAY — quiet founder signature for the early public landing. */
+.rp-public-founder-credit{
+  position:relative;
+  width:min(100%,420px);
+  margin:30px auto 0;
+  padding-top:16px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+  color:#6f7a88;
+  text-align:center;
+  text-transform:uppercase;
+  pointer-events:none;
+}
+
+.rp-public-founder-credit::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:50%;
+  width:58px;
+  height:1px;
+  transform:translateX(-50%);
+  background:linear-gradient(90deg,rgba(10,163,255,.78),rgba(255,255,255,.18) 50%,rgba(255,43,63,.72));
+  opacity:.68;
+}
+
+.rp-public-founder-credit span{
+  font-size:.52rem;
+  font-weight:800;
+  letter-spacing:.22em;
+}
+
+.rp-public-founder-credit strong{
+  color:#a7b0bd;
+  font-family:var(--rp-display);
+  font-size:.76rem;
+  font-style:italic;
+  font-weight:900;
+  letter-spacing:.14em;
+  text-shadow:0 3px 14px rgba(0,0,0,.55);
+}
+
+@media(max-width:520px){
+  .rp-public-founder-credit{
+    margin-top:26px;
+    padding-top:14px;
+  }
+}
+
+@media(max-height:700px){
+  .rp-public-founder-credit{
+    margin-top:20px;
+    padding-top:12px;
+  }
+}
