@@ -84,6 +84,12 @@
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-settings-open');
+
+    // Admin access is session-dependent. The login token can change inside this
+    // same browser tab, and the native "storage" event does not fire back into
+    // the tab that changed localStorage. Tell the admin bootstrap to re-check
+    // the current authenticated session whenever Settings is actually opened.
+    window.dispatchEvent(new CustomEvent('realplay:settings-open'));
   }
 
   function closeSettings({ restoreFocus = true } = {}) {
