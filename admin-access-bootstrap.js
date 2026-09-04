@@ -4,6 +4,9 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
+  const HEAD_ADMIN_EMAILS = new Set([
+    'jeromemirabuenos62@gmail.com',
+  ]);
   const ADMIN_ASSET_VERSION = '20260904-session-manage-v2';
   const ADMIN_CSS = [
     'admin-game-control.css',
@@ -27,6 +30,7 @@
   let verifiedAdmin = false;
   let loadingAdmin = false;
   let adminLoaded = false;
+  let verifySequence = 0;
 
   // Single client-side admin authority. This is only a UI gate; every admin
   // API call is still authorized by the backend.
@@ -37,7 +41,20 @@
     return localStorage.getItem(TOKEN_KEY) || '';
   }
 
+  function settingsEmail() {
+    return String(
+      document.querySelector('.rp-settings-overlay [data-rp-settings-email]')?.textContent ||
+      document.querySelector('[data-auth-account-email]')?.textContent ||
+      ''
+    ).trim().toLowerCase();
+  }
+
+  function hasKnownHeadAdminIdentity() {
+    return HEAD_ADMIN_EMAILS.has(settingsEmail());
+  }
+
   async function verifyAdmin() {
+    const sequence = ++verifySequence;
     const auth = token();
     if (!auth) {
       verifiedAdmin = false;
@@ -45,6 +62,7 @@
       syncSettingsRow();
       return false;
     }
+
     window.__realPlayAdminAccessProbe = true;
     try {
       const response = await fetch(`${API_BASE_URL}/api/real-play/admin/career/control`, {
@@ -52,12 +70,20 @@
         cache: 'no-store',
       });
       const data = await response.json().catch(() => ({}));
+
+      // Ignore an older response if a newer verification started while this
+      // request was in flight (for example after login/logout in the same tab).
+      if (sequence !== verifySequence) return verifiedAdmin;
       verifiedAdmin = Boolean(response.ok && data?.admin);
     } catch (_error) {
+      if (sequence !== verifySequence) return verifiedAdmin;
       verifiedAdmin = false;
     } finally {
-      window.__realPlayAdminAccessProbe = false;
+      if (sequence === verifySequence) {
+        window.__realPlayAdminAccessProbe = false;
+      }
     }
+
     window.__realPlayAdminVerified = verifiedAdmin;
     syncSettingsRow();
     return verifiedAdmin;
@@ -72,7 +98,12 @@
     if (!list) return;
     let row = list.querySelector('[data-rp-settings-action="admin"]');
 
-    if (!verifiedAdmin) {
+    // The known Head Admin identity is allowed to see the entry immediately,
+    // even before the network verification finishes. Opening/admin API actions
+    // still require the backend-authorized token, so this never bypasses the
+    // actual security boundary.
+    const shouldShow = verifiedAdmin || hasKnownHeadAdminIdentity();
+    if (!shouldShow) {
       row?.remove();
       return;
     }
@@ -136,7 +167,10 @@
   }
 
   async function openAdmin() {
-    if (!verifiedAdmin && !(await verifyAdmin())) return;
+    if (!verifiedAdmin && !(await verifyAdmin())) {
+      window.alert('Real Play could not verify Head Admin access for this session. Please sign in again and retry.');
+      return;
+    }
 
     // Close Settings through its own control first so focus/ARIA state is
     // released before the admin overlay mounts.
@@ -190,8 +224,17 @@
     verifyAdmin();
   }
 
+  // localStorage's native storage event does not fire in the same tab that
+  // performed login. Settings emits this event whenever it opens, which gives
+  // us a reliable point to refresh both the visible identity and backend role.
+  window.addEventListener('realplay:settings-open', () => {
+    syncSettingsRow();
+    verifyAdmin();
+  });
+
   window.addEventListener('storage', (event) => {
     if (event.key !== TOKEN_KEY) return;
+    verifySequence += 1;
     verifiedAdmin = false;
     window.__realPlayAdminVerified = false;
     syncSettingsRow();
