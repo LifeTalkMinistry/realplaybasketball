@@ -220,6 +220,7 @@
   window.addEventListener('focus', () => refresh({ quiet: true }));
   window.addEventListener('pageshow', () => refresh({ quiet: true }));
   window.addEventListener('realplay:3v3-assignment', () => refresh({ quiet: false }));
+  window.addEventListener('realplay:3v3-reservation-changed', () => refresh({ quiet: false }));
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) refresh({ quiet: true });
   });
