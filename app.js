@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-admin-settings-v2';
+  const version = '20260904-admin-settings-v3';
   const html = document.documentElement;
   html.classList.add('js');
 
