@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-profile-game-history-v1';
+  const version = '20260904-ranking-session-title-cleanup-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
