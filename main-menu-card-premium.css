@@ -1,0 +1,95 @@
+/* REAL PLAY — PREMIUM ACTIVE CARD
+ * Surgical visual upgrade for the inside of the active selector card.
+ * Layout and carousel geometry intentionally remain unchanged.
+ */
+
+/* Give the card a richer, glassier interior without competing with the ball. */
+.rp-main-menu-item.slot-active{
+  background:
+    radial-gradient(78% 62% at 50% 36%,rgba(16,113,218,.10),transparent 58%),
+    radial-gradient(62% 54% at 92% 78%,rgba(142,24,42,.075),transparent 64%),
+    linear-gradient(158deg,rgba(5,13,24,.955) 0%,rgba(3,7,13,.982) 52%,rgba(5,5,9,.988) 100%) padding-box,
+    linear-gradient(112deg,#1398ff 0%,rgba(52,145,232,.62) 28%,rgba(119,129,151,.24) 50%,rgba(190,64,78,.56) 74%,#ff3542 100%) border-box;
+  box-shadow:
+    0 28px 84px rgba(0,0,0,.50),
+    -20px 4px 48px rgba(0,117,255,.13),
+    20px 5px 48px rgba(255,37,51,.09),
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -1px 0 rgba(255,255,255,.018);
+}
+
+/* Subtle internal illumination and texture. */
+.rp-main-menu-item.slot-active::before{
+  background:
+    radial-gradient(circle at 50% 38%,rgba(31,154,255,.12),transparent 29%),
+    radial-gradient(circle at 50% 46%,transparent 0 33.5%,rgba(156,183,213,.06) 33.8%,transparent 34.6%),
+    linear-gradient(62deg,transparent 49.76%,rgba(139,167,202,.042) 50%,transparent 50.24%),
+    linear-gradient(-62deg,transparent 49.76%,rgba(139,167,202,.036) 50%,transparent 50.24%),
+    linear-gradient(180deg,rgba(255,255,255,.018),transparent 34%);
+}
+
+/* Kicker: make LIVE feel energized instead of muted. */
+.rp-main-menu-item.slot-active small{
+  color:#35c8ff;
+  font-weight:900;
+  letter-spacing:.22em;
+  text-shadow:
+    0 0 10px rgba(27,182,255,.40),
+    0 0 24px rgba(0,126,255,.20);
+}
+
+/* Hero title: silver-white with dimensional highlight and grounded shadow. */
+.rp-main-menu-item.slot-active strong{
+  color:#f7f9fb;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.34),
+    0 4px 0 rgba(153,164,178,.10),
+    0 10px 22px rgba(0,0,0,.56),
+    0 0 30px rgba(57,162,255,.08);
+  -webkit-text-stroke:.2px rgba(255,255,255,.16);
+}
+
+/* 3V3 gets the strongest premium treatment. */
+.rp-main-menu-item[data-rp-main-action='3v3'].slot-active strong{
+  color:#fbfbfa;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.55),
+    0 3px 0 rgba(193,200,209,.20),
+    0 7px 0 rgba(73,82,95,.12),
+    0 14px 28px rgba(0,0,0,.62),
+    -8px 0 24px rgba(20,139,255,.07),
+    8px 0 24px rgba(255,49,61,.045);
+}
+
+/* Supporting copy should be readable, still secondary. */
+.rp-main-menu-item.slot-active span{
+  color:#c1c8d1;
+  font-weight:900;
+  letter-spacing:.205em;
+  text-shadow:0 2px 12px rgba(0,0,0,.54);
+}
+
+/* Premium embedded CTA: luminous edges, black-glass center, crisp cyan label. */
+.rp-main-menu-item.slot-active::after{
+  border:1px solid transparent;
+  background:
+    linear-gradient(102deg,rgba(7,32,61,.88),rgba(4,9,17,.94) 50%,rgba(33,8,16,.88)) padding-box,
+    linear-gradient(105deg,#36aaff 0%,rgba(72,157,230,.68) 32%,rgba(102,112,137,.34) 52%,rgba(185,62,78,.58) 76%,#ff4450 100%) border-box;
+  box-shadow:
+    -12px 0 26px rgba(0,117,255,.09),
+    12px 0 24px rgba(255,38,51,.065),
+    inset 0 1px 0 rgba(255,255,255,.055),
+    inset 0 -12px 26px rgba(0,0,0,.14);
+  color:#32c5ff;
+  text-shadow:0 0 14px rgba(29,184,255,.30);
+}
+
+/* Slightly richer pressed state, still no layout movement. */
+.rp-main-menu-item.slot-active:active::after{
+  filter:brightness(1.08);
+}
+
+@media(max-height:760px){
+  .rp-main-menu-item.slot-active small{letter-spacing:.19em}
+  .rp-main-menu-item.slot-active span{letter-spacing:.18em}
+}
