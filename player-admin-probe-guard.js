@@ -7,9 +7,13 @@
 
   function adminContextRequested() {
     try {
-      return new URLSearchParams(window.location.search).get('admin') === '1';
+      return Boolean(
+        window.__realPlayAdminVerified ||
+        window.__realPlayAdminAccessProbe ||
+        new URLSearchParams(window.location.search).get('admin') === '1'
+      );
     } catch (_error) {
-      return false;
+      return Boolean(window.__realPlayAdminVerified || window.__realPlayAdminAccessProbe);
     }
   }
 
