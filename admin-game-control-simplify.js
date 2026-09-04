@@ -9,6 +9,12 @@
   let playerFormBusy = false;
   let playerNotice = '';
   let playerNoticeType = '';
+  let manageOpen = false;
+  let manageMode = 'menu';
+  let manageBusy = false;
+  let manageNotice = '';
+  let manageNoticeType = '';
+  let managedSession = null;
 
   function nextTitle(title) {
     const match = String(title || '').match(/#\s*(\d+)/);
@@ -25,6 +31,56 @@
     const value = String(text || '').trim();
     const index = value.indexOf('·');
     return index >= 0 ? value.slice(index + 1).trim() : value;
+  }
+
+  function esc(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function toManilaDateTimeInput(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Manila',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(date);
+    const part = (type) => parts.find((item) => item.type === type)?.value || '';
+    return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`;
+  }
+
+  function fromManilaDateTimeInput(value) {
+    const clean = String(value || '').trim();
+    if (!clean) return null;
+    return `${clean.length === 16 ? `${clean}:00` : clean}+08:00`;
+  }
+
+  async function controlApi(options = {}) {
+    const token = window.localStorage.getItem(TOKEN_KEY) || '';
+    if (!token) throw new Error('Admin session is not available. Log in again.');
+    const response = await fetch(`${API_BASE_URL}/api/real-play/admin/career/control`, {
+      method: options.method || 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      cache: 'no-store',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.message || data?.error || `Request failed (${response.status}).`);
+    return data;
   }
 
   function ensurePlayerStyles() {
@@ -47,6 +103,37 @@
       .rp-admin-manual-player-status:empty{display:none}
       .rp-admin-manual-player-status.error{color:#ff9b9b}
       .rp-admin-unclaimed-badge{display:inline-flex;align-items:center;width:max-content;margin-top:4px;padding:3px 6px;border:1px solid rgba(32,218,255,.34);border-radius:999px;color:#54e8ff;font:800 8px/1 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensureManageStyles() {
+    if (document.querySelector('[data-admin-session-manage-styles]')) return;
+    const style = document.createElement('style');
+    style.dataset.adminSessionManageStyles = '1';
+    style.textContent = `
+      .rp-admin-session-manage-toggle{min-height:28px;padding:0 10px;border:1px solid rgba(32,218,255,.24);border-radius:999px;background:#0a1825;color:#b9d7e6;font:900 8px/1 system-ui,sans-serif;letter-spacing:.11em;text-transform:uppercase;touch-action:manipulation}
+      .rp-admin-session-manage-toggle.open{border-color:rgba(32,218,255,.58);color:#4be7ff;background:rgba(5,33,45,.92)}
+      .rp-admin-session-manage{margin-top:12px;padding:13px;border:1px solid rgba(118,164,190,.24);border-radius:14px;background:rgba(4,14,23,.92);display:grid;gap:10px}
+      .rp-admin-session-manage-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .rp-admin-session-manage-head strong{color:#eafcff;font:900 10px/1.2 system-ui,sans-serif;letter-spacing:.11em;text-transform:uppercase}
+      .rp-admin-session-manage-head span{color:#6f98ad;font:800 8px/1 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}
+      .rp-admin-session-manage-actions{display:grid;gap:8px}
+      .rp-admin-session-manage-action{width:100%;min-height:43px;padding:0 12px;border:1px solid rgba(118,164,190,.24);border-radius:11px;background:#081723;color:#eafcff;text-align:left;font:850 10px/1 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;touch-action:manipulation}
+      .rp-admin-session-manage-action:hover,.rp-admin-session-manage-action:focus{border-color:rgba(32,218,255,.55);outline:none}
+      .rp-admin-session-manage-action.danger{border-color:rgba(255,95,95,.28);color:#ffaaaa}
+      .rp-admin-session-manage-action.delete{border-color:rgba(255,70,70,.42);color:#ff8c8c;background:rgba(55,10,14,.38)}
+      .rp-admin-session-manage-note,.rp-admin-session-manage-status{margin:0;color:#82a8bc;font:600 10px/1.45 system-ui,sans-serif}
+      .rp-admin-session-manage-status.error{color:#ff9b9b}
+      .rp-admin-session-manage-form{display:grid;gap:10px}
+      .rp-admin-session-manage-form label{display:grid;gap:6px;color:#8fb9cf;font:800 9px/1 system-ui,sans-serif;letter-spacing:.11em;text-transform:uppercase}
+      .rp-admin-session-manage-form input{width:100%;min-height:44px;box-sizing:border-box;border:1px solid rgba(118,164,190,.28);border-radius:11px;background:#07111c;color:#fff;padding:0 12px;font:700 14px/1 system-ui,sans-serif;outline:none;-webkit-user-select:text;user-select:text}
+      .rp-admin-session-manage-form input:focus{border-color:rgba(32,218,255,.65)}
+      .rp-admin-session-manage-form-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .rp-admin-session-manage-save,.rp-admin-session-manage-back{min-height:44px;border-radius:11px;font:900 10px/1 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}
+      .rp-admin-session-manage-save{border:0;background:#16d9f4;color:#011017}
+      .rp-admin-session-manage-back{border:1px solid rgba(118,164,190,.26);background:#081723;color:#bdd5e1}
+      .rp-admin-session-manage button:disabled,.rp-admin-session-manage input:disabled{opacity:.52}
     `;
     document.head.appendChild(style);
   }
@@ -111,8 +198,6 @@
     });
 
     input?.addEventListener('pointerdown', () => {
-      // Keep the same input node alive. Mobile browsers will only open the
-      // software keyboard reliably when focus remains on the tapped element.
       if (!playerFormOpen) {
         playerFormOpen = true;
         syncPlayerForm(wrap);
@@ -220,6 +305,216 @@
     syncPlayerForm(wrap);
   }
 
+  function renderManagePanel(sessionCard) {
+    if (!sessionCard) return;
+    ensureManageStyles();
+
+    const toggle = sessionCard.querySelector('[data-admin-session-manage-toggle]');
+    if (toggle) {
+      toggle.textContent = manageOpen ? 'MANAGE ×' : 'MANAGE ▾';
+      toggle.classList.toggle('open', manageOpen);
+      toggle.disabled = manageBusy && !manageOpen;
+    }
+
+    let panel = sessionCard.querySelector('[data-admin-session-manage-panel]');
+    if (!manageOpen) {
+      panel?.remove();
+      return;
+    }
+
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.className = 'rp-admin-session-manage';
+      panel.dataset.adminSessionManagePanel = '1';
+      const startPanel = sessionCard.querySelector('[data-rp-session-start-panel]');
+      if (startPanel) sessionCard.insertBefore(panel, startPanel);
+      else sessionCard.appendChild(panel);
+    }
+
+    if (manageBusy && !managedSession) {
+      panel.innerHTML = '<div class="rp-admin-session-manage-head"><strong>SESSION MANAGEMENT</strong><span>LOADING…</span></div>';
+      return;
+    }
+
+    if (!managedSession) {
+      panel.innerHTML = `
+        <div class="rp-admin-session-manage-head"><strong>SESSION MANAGEMENT</strong><span>UNAVAILABLE</span></div>
+        <p class="rp-admin-session-manage-status error">${esc(manageNotice || 'Unable to load this session.')}</p>`;
+      return;
+    }
+
+    const started = Boolean(managedSession.sessionStarted);
+    if (manageMode === 'edit') {
+      panel.innerHTML = `
+        <div class="rp-admin-session-manage-head"><strong>EDIT SESSION</strong><span>${esc(shortTitle(managedSession.title))}</span></div>
+        <form class="rp-admin-session-manage-form" data-admin-session-edit-form>
+          <label>Session title<input name="title" type="text" minlength="2" maxlength="100" value="${esc(managedSession.title)}" required ${manageBusy ? 'disabled' : ''}></label>
+          <label>Court<input name="locationName" type="text" maxlength="160" value="${esc(managedSession.locationName || '')}" placeholder="Court / location" ${manageBusy ? 'disabled' : ''}></label>
+          <label>Date & time<input name="startsAt" type="datetime-local" value="${esc(toManilaDateTimeInput(managedSession.startsAt))}" ${manageBusy ? 'disabled' : ''}></label>
+          <label>Capacity<input name="capacity" type="number" min="1" max="500" value="${managedSession.capacity ?? ''}" placeholder="Open" ${manageBusy ? 'disabled' : ''}></label>
+          <div class="rp-admin-session-manage-form-buttons">
+            <button type="button" class="rp-admin-session-manage-back" data-admin-session-manage-back ${manageBusy ? 'disabled' : ''}>BACK</button>
+            <button type="submit" class="rp-admin-session-manage-save" ${manageBusy ? 'disabled' : ''}>${manageBusy ? 'SAVING…' : 'SAVE CHANGES'}</button>
+          </div>
+        </form>
+        <p class="rp-admin-session-manage-status ${manageNoticeType === 'error' ? 'error' : ''}" aria-live="polite">${esc(manageNotice)}</p>`;
+      wireManagePanel(sessionCard, panel);
+      return;
+    }
+
+    panel.innerHTML = `
+      <div class="rp-admin-session-manage-head"><strong>SESSION MANAGEMENT</strong><span>${started ? 'CHECK-IN OPEN' : 'NOT STARTED'}</span></div>
+      <div class="rp-admin-session-manage-actions">
+        ${started ? '' : '<button type="button" class="rp-admin-session-manage-action" data-admin-session-manage-edit>EDIT / RESCHEDULE SESSION</button>'}
+        <button type="button" class="rp-admin-session-manage-action" data-admin-session-manage-players>MANAGE PLAYERS</button>
+        <button type="button" class="rp-admin-session-manage-action danger" data-admin-session-manage-cancel>CANCEL SESSION</button>
+        ${started ? '' : '<button type="button" class="rp-admin-session-manage-action delete" data-admin-session-manage-delete>DELETE SESSION</button>'}
+      </div>
+      <p class="rp-admin-session-manage-note">${started ? 'Session details and hard delete are locked after START SESSION. You can still manage players or cancel before the basketball game begins.' : 'Edit anything before START SESSION. Delete is only for a session created by mistake; cancel keeps the session record.'}</p>
+      <p class="rp-admin-session-manage-status ${manageNoticeType === 'error' ? 'error' : ''}" aria-live="polite">${esc(manageNotice)}</p>`;
+    wireManagePanel(sessionCard, panel);
+  }
+
+  function wireManagePanel(sessionCard, panel) {
+    panel.querySelector('[data-admin-session-manage-edit]')?.addEventListener('click', () => {
+      manageMode = 'edit';
+      manageNotice = '';
+      manageNoticeType = '';
+      renderManagePanel(sessionCard);
+    });
+
+    panel.querySelector('[data-admin-session-manage-back]')?.addEventListener('click', () => {
+      manageMode = 'menu';
+      manageNotice = '';
+      manageNoticeType = '';
+      renderManagePanel(sessionCard);
+    });
+
+    panel.querySelector('[data-admin-session-manage-players]')?.addEventListener('click', () => {
+      manageOpen = false;
+      manageMode = 'menu';
+      renderManagePanel(sessionCard);
+      document.querySelector('.rp-admin-control [data-admin-tab="players"]')?.click();
+    });
+
+    panel.querySelector('[data-admin-session-manage-cancel]')?.addEventListener('click', async () => {
+      if (manageBusy) return;
+      const label = shortTitle(managedSession?.title);
+      if (!window.confirm(`Cancel ${label}?\n\nThis keeps the session record but closes it. It will not become an official Career game.`)) return;
+      await performManageMutation(sessionCard, { action: 'cancel-session' });
+    });
+
+    panel.querySelector('[data-admin-session-manage-delete]')?.addEventListener('click', async () => {
+      if (manageBusy) return;
+      const label = shortTitle(managedSession?.title);
+      const count = Number(managedSession?.confirmedCount || 0);
+      if (!window.confirm(`Delete ${label}?\n\n${count ? `${count} confirmed player${count === 1 ? '' : 's'} will lose this reservation. ` : ''}Use delete only when the session was created by mistake. This cannot be undone.`)) return;
+      await performManageMutation(sessionCard, { action: 'delete-session' });
+    });
+
+    panel.querySelector('[data-admin-session-edit-form]')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (manageBusy) return;
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const capacityRaw = String(formData.get('capacity') || '').trim();
+      await performManageMutation(sessionCard, {
+        action: 'update-session',
+        title: String(formData.get('title') || '').trim(),
+        locationName: String(formData.get('locationName') || '').trim(),
+        startsAt: fromManilaDateTimeInput(formData.get('startsAt')),
+        capacity: capacityRaw ? Number(capacityRaw) : null,
+      });
+    });
+  }
+
+  async function performManageMutation(sessionCard, payload) {
+    manageBusy = true;
+    manageNotice = '';
+    manageNoticeType = '';
+    renderManagePanel(sessionCard);
+    try {
+      const data = await controlApi({ method: 'POST', body: payload });
+      managedSession = data?.control?.session || null;
+      manageOpen = false;
+      manageMode = 'menu';
+      manageNotice = '';
+      manageNoticeType = '';
+      renderManagePanel(sessionCard);
+      window.setTimeout(() => window.dispatchEvent(new Event('focus')), 50);
+    } catch (error) {
+      manageNotice = error.message || 'Session could not be updated.';
+      manageNoticeType = 'error';
+    } finally {
+      manageBusy = false;
+      renderManagePanel(sessionCard);
+    }
+  }
+
+  async function toggleSessionManage(sessionCard) {
+    if (manageOpen) {
+      manageOpen = false;
+      manageMode = 'menu';
+      manageNotice = '';
+      manageNoticeType = '';
+      managedSession = null;
+      renderManagePanel(sessionCard);
+      return;
+    }
+
+    manageOpen = true;
+    manageMode = 'menu';
+    manageBusy = true;
+    manageNotice = '';
+    manageNoticeType = '';
+    managedSession = null;
+    renderManagePanel(sessionCard);
+    try {
+      const data = await controlApi();
+      managedSession = data?.control?.session || null;
+      if (!managedSession) {
+        manageNotice = 'This session is no longer open.';
+        manageNoticeType = 'error';
+      }
+    } catch (error) {
+      manageNotice = error.message || 'Unable to load this session.';
+      manageNoticeType = 'error';
+    } finally {
+      manageBusy = false;
+      renderManagePanel(sessionCard);
+    }
+  }
+
+  function mountSessionManage(sessionCard) {
+    if (!sessionCard) return;
+    ensureManageStyles();
+    const head = sessionCard.querySelector('.rp-admin-card-head');
+    const pill = head?.querySelector('.rp-admin-pill');
+    const setup = String(pill?.textContent || '').trim().toUpperCase() === 'SETUP';
+    let button = head?.querySelector('[data-admin-session-manage-toggle]');
+
+    if (!setup) {
+      if (pill) pill.hidden = false;
+      button?.remove();
+      sessionCard.querySelector('[data-admin-session-manage-panel]')?.remove();
+      manageOpen = false;
+      managedSession = null;
+      return;
+    }
+
+    if (pill) pill.hidden = true;
+    if (!button && head) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'rp-admin-session-manage-toggle';
+      button.dataset.adminSessionManageToggle = '1';
+      button.textContent = 'MANAGE ▾';
+      button.addEventListener('click', () => toggleSessionManage(sessionCard));
+      head.appendChild(button);
+    }
+    renderManagePanel(sessionCard);
+  }
+
   function applySession(root) {
     if (root.querySelector('.rp-admin-tab.active')?.dataset.adminTab !== 'session') return;
 
@@ -257,8 +552,12 @@
         sessionCard.classList.add('rp-admin-session-summary');
         sessionCard.dataset.compact = '1';
       }
+
+      mountSessionManage(sessionCard);
     } else {
       lastSessionTitle = '';
+      manageOpen = false;
+      managedSession = null;
     }
 
     if (formOpen && openedAgainstTitle !== null && sessionTitle !== openedAgainstTitle) {
