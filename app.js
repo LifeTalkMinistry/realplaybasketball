@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-all-slides-center-v1';
+  const version = '20260904-all-slides-center-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -65,6 +65,7 @@
     'auth-welcome-cleanup.css',
     'public-landing-cleanup.css',
     'public-origin-center.css',
+    'public-carousel-center-force.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
