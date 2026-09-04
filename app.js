@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-story-center-v1';
+  const version = '20260904-origin-center-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -64,6 +64,7 @@
     'settings-panel.css',
     'auth-welcome-cleanup.css',
     'public-landing-cleanup.css',
+    'public-origin-center.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
