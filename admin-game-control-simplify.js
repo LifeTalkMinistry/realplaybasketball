@@ -316,15 +316,8 @@
     applySession(root);
   }
 
-  let scheduled = false;
-  const observer = new MutationObserver(() => {
-    if (scheduled) return;
-    scheduled = true;
-    window.requestAnimationFrame(() => {
-      scheduled = false;
-      apply();
-    });
+  window.addEventListener('realplay:admin-render', () => {
+    window.requestAnimationFrame(apply);
   });
-  observer.observe(document.body, { childList: true, subtree: true });
   apply();
 })();
