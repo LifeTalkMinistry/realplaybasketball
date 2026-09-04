@@ -1,0 +1,44 @@
+/* REAL PLAY — focused basketball hero artwork.
+   Reuses the existing main-menu basketball asset only inside the upper landing hero. */
+
+.rp-public-hero::before{
+  left:50%;
+  top:31%;
+  width:min(150vw,820px);
+  aspect-ratio:1/1;
+  background:url('assets/main-menu/main-menu-basketball-bg.png') center 46%/cover no-repeat;
+  opacity:.30;
+  filter:brightness(.62) contrast(1.16) saturate(.92) blur(1.5px);
+  transform:translate(-50%,-50%) scale(1.04);
+  -webkit-mask-image:radial-gradient(ellipse 70% 62% at 50% 47%,#000 0 48%,rgba(0,0,0,.94) 61%,rgba(0,0,0,.58) 74%,rgba(0,0,0,.18) 86%,transparent 96%);
+  mask-image:radial-gradient(ellipse 70% 62% at 50% 47%,#000 0 48%,rgba(0,0,0,.94) 61%,rgba(0,0,0,.58) 74%,rgba(0,0,0,.18) 86%,transparent 96%);
+}
+
+/* Keep the logo, price and controls fully readable over the artwork. */
+.rp-public-hero-default{
+  text-shadow:0 3px 18px rgba(0,0,0,.34);
+}
+
+.rp-public-value-trigger{
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+
+@media(max-width:520px){
+  .rp-public-hero::before{
+    top:30%;
+    width:min(158vw,720px);
+    opacity:.32;
+    filter:brightness(.60) contrast(1.17) saturate(.94) blur(1px);
+    -webkit-mask-image:radial-gradient(ellipse 72% 64% at 50% 46%,#000 0 50%,rgba(0,0,0,.94) 62%,rgba(0,0,0,.56) 75%,rgba(0,0,0,.16) 87%,transparent 97%);
+    mask-image:radial-gradient(ellipse 72% 64% at 50% 46%,#000 0 50%,rgba(0,0,0,.94) 62%,rgba(0,0,0,.56) 75%,rgba(0,0,0,.16) 87%,transparent 97%);
+  }
+}
+
+@media(max-height:700px){
+  .rp-public-hero::before{
+    top:29%;
+    width:min(150vw,660px);
+    opacity:.28;
+  }
+}
