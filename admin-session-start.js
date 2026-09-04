@@ -182,17 +182,12 @@
     }
   }, true);
 
-  let scheduled = false;
-  const observer = new MutationObserver(() => {
-    if (scheduled) return;
-    scheduled = true;
-    window.requestAnimationFrame(() => {
-      scheduled = false;
-      apply();
-    });
+  window.addEventListener('realplay:admin-render', () => {
+    window.requestAnimationFrame(apply);
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 
+  // Keep session state fresh, but only mutate the DOM through the explicit
+  // admin render event / state changes rather than observing the entire page.
   window.setInterval(refresh, POLL_MS);
   window.addEventListener('focus', refresh);
   refresh();
