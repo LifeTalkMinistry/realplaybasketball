@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-career-metrics-carousel-v1';
+  const version = '20260905-career-metric-pages-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
