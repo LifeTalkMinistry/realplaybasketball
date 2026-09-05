@@ -6,6 +6,14 @@
     document.querySelector('[data-auth-open]')?.click();
   }
 
+  function setText(node, value) {
+    if (node && node.textContent !== value) node.textContent = value;
+  }
+
+  function setNodeValue(node, value) {
+    if (node && node.nodeValue !== value) node.nodeValue = value;
+  }
+
   function ensureStyle() {
     if (document.querySelector('[data-rp-number-recovery-style]')) return;
     const style = document.createElement('style');
@@ -32,25 +40,25 @@
     const nextStatus = document.querySelector('[data-auth-next-status]');
 
     if (missing) {
-      numberBox.textContent = '#?';
+      setText(numberBox, '#?');
       numberBox.setAttribute('role', 'button');
       numberBox.setAttribute('tabindex', '0');
       numberBox.setAttribute('aria-label', 'Choose your Real Play player number');
       form.dataset.currentNumberRecovery = '1';
-      if (label?.firstChild) label.firstChild.nodeValue = 'Choose your player number ';
-      if (submit && !submit.disabled) submit.textContent = 'CLAIM NUMBER';
-      if (note) note.textContent = 'Your profile has no current player number. Choose any available number from 0–99. If it is free, it becomes yours immediately for the rest of this month.';
-      if (lock) lock.textContent = 'PLAYER NUMBER REQUIRED';
-      if (nextNumber) nextNumber.textContent = 'Choose your current number first.';
-      if (nextStatus) nextStatus.textContent = 'After your current number is secured, next-month options work normally.';
+      setNodeValue(label?.firstChild, 'Choose your player number ');
+      if (submit && !submit.disabled) setText(submit, 'CLAIM NUMBER');
+      setText(note, 'Your profile has no current player number. Choose any available number from 0–99. If it is free, it becomes yours immediately for the rest of this month.');
+      setText(lock, 'PLAYER NUMBER REQUIRED');
+      setText(nextNumber, 'Choose your current number first.');
+      setText(nextStatus, 'After your current number is secured, next-month options work normally.');
     } else {
       numberBox.removeAttribute('role');
       numberBox.removeAttribute('tabindex');
       numberBox.removeAttribute('aria-label');
       if (form.dataset.currentNumberRecovery === '1') {
         delete form.dataset.currentNumberRecovery;
-        if (label?.firstChild) label.firstChild.nodeValue = 'Want a different number next month? ';
-        if (submit && !submit.disabled) submit.textContent = 'CHECK / REQUEST';
+        setNodeValue(label?.firstChild, 'Want a different number next month? ');
+        if (submit && !submit.disabled) setText(submit, 'CHECK / REQUEST');
       }
     }
   }
@@ -70,7 +78,16 @@
     setTimeout(sync, 50);
   });
 
-  new MutationObserver(sync).observe(document.body, { childList: true, characterData: true, subtree: true });
+  let scheduled = false;
+  new MutationObserver(() => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      sync();
+    });
+  }).observe(document.body, { childList: true, characterData: true, subtree: true });
+
   sync();
   setTimeout(sync, 600);
 })();
