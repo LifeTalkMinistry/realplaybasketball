@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260906-main-menu-physics-v3';
+  const version = '20260906-main-menu-physics-v4';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -63,6 +63,7 @@
     'main-menu-ball-background.css',
     'main-menu-card-premium.css',
     'main-menu-physics.css',
+    'main-menu-fast-snap.css',
     'settings-panel.css',
     'auth-welcome-cleanup.css',
     'public-landing-cleanup.css',
@@ -112,7 +113,9 @@
       'real-play-profile.js',
       'real-play-profile-intro.js',
       'real-play-profile-metrics.js',
+      'main-menu-fast-snap-bootstrap.js',
       'main-menu.js',
+      'main-menu-fast-snap-restore.js',
       'main-menu-touch-lite.js',
       'player-number-recovery.js',
       'ranking-games.js',
