@@ -2,7 +2,7 @@
   "name": "Real Play Basketball",
   "short_name": "Real Play",
   "description": "Less Screen. Real Points.",
-  "start_url": "./?v=20260906-main-menu-physics-v7",
+  "start_url": "./?v=20260906-main-menu-physics-v8",
   "display": "standalone",
   "background_color": "#020306",
   "theme_color": "#0647d6",
