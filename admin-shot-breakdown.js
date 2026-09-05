@@ -7,8 +7,13 @@
 
   let busy = false;
   let scheduled = false;
+  let pendingRefresh = false;
   let rootObserver = null;
   let refreshSequence = 0;
+  let refreshInFlight = false;
+  let lastRefreshAt = 0;
+  let lastControl = null;
+  const playerCache = new Map();
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -53,6 +58,28 @@
     return data;
   }
 
+  function number(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+  }
+
+  function normalizeStats(stats = {}) {
+    const normalized = {
+      onePtMade: number(stats.onePtMade),
+      onePtMiss: number(stats.onePtMiss),
+      twoPtMade: number(stats.twoPtMade),
+      twoPtMiss: number(stats.twoPtMiss),
+      ast: number(stats.ast),
+      reb: number(stats.reb),
+      tov: number(stats.tov),
+      stl: number(stats.stl),
+      blk: number(stats.blk),
+      foul: number(stats.foul),
+    };
+    normalized.pts = normalized.onePtMade + (2 * normalized.twoPtMade);
+    return normalized;
+  }
+
   function shotSummary(made, missed) {
     const attempts = made + missed;
     return {
@@ -61,6 +88,44 @@
       attempts,
       percent: attempts ? `${Math.round((made / attempts) * 100)}%` : '—',
     };
+  }
+
+  function parseMadeAttempts(text) {
+    const match = String(text || '').match(/(\d+)\s*\/\s*(\d+)/);
+    if (!match) return null;
+    const made = number(match[1]);
+    const attempts = Math.max(made, number(match[2]));
+    return { made, missed: attempts - made };
+  }
+
+  function readPanelFallback(panel, playerId) {
+    const cached = playerCache.get(Number(playerId)) || null;
+    const draft = cached ? { ...cached } : normalizeStats();
+
+    panel?.querySelectorAll('.rp-courtside-stat').forEach((box) => {
+      const label = String(box.querySelector('label')?.textContent || '').trim().toUpperCase();
+      const raw = String(box.querySelector('strong')?.textContent || '').trim();
+      if (label === '1PT') {
+        const shot = parseMadeAttempts(raw);
+        if (shot) {
+          draft.onePtMade = shot.made;
+          draft.onePtMiss = shot.missed;
+        }
+      } else if (label === '2PT') {
+        const shot = parseMadeAttempts(raw);
+        if (shot) {
+          draft.twoPtMade = shot.made;
+          draft.twoPtMiss = shot.missed;
+        }
+      } else if (label === 'AST') draft.ast = number(raw);
+      else if (label === 'REB') draft.reb = number(raw);
+      else if (label === 'TO') draft.tov = number(raw);
+      else if (label === 'STL') draft.stl = number(raw);
+      else if (label === 'BLK') draft.blk = number(raw);
+      else if (label === 'FOUL') draft.foul = number(raw);
+    });
+
+    return normalizeStats(draft);
   }
 
   function statActions(playerId, stat) {
@@ -74,7 +139,7 @@
   function normalStat(playerId, label, value, stat) {
     return `<div class="rp-courtside-stat">
       <label>${label}</label>
-      <strong>${Number(value || 0)}</strong>
+      <strong>${number(value)}</strong>
       ${statActions(playerId, stat)}
     </div>`;
   }
@@ -82,7 +147,7 @@
   function pointsCard(points) {
     return `<div class="rp-courtside-stat rp-shot-points">
       <label>PTS</label>
-      <strong>${Number(points || 0)}</strong>
+      <strong>${number(points)}</strong>
       <span class="rp-shot-auto">AUTO</span>
     </div>`;
   }
@@ -100,16 +165,28 @@
     </div>`;
   }
 
-  function updateScoreboard(session) {
+  function derivedTeamScores(control) {
+    const scores = { west: 0, east: 0 };
+    for (const player of control?.players || []) {
+      const team = String(player?.team || '').toLowerCase();
+      if (!player?.checkedIn || (team !== 'west' && team !== 'east')) continue;
+      const stats = normalizeStats(player?.stats || {});
+      scores[team] += stats.pts;
+    }
+    return scores;
+  }
+
+  function updateScoreboard(control = lastControl) {
     const scope = root();
-    if (!scope || !session) return;
+    if (!scope || !control) return;
+    const scores = derivedTeamScores(control);
     scope.querySelectorAll('.rp-admin-score-side').forEach((side) => {
       const label = side.querySelector('small')?.textContent.trim().toUpperCase();
       const value = side.querySelector('strong');
       if (!value) return;
       let next = null;
-      if (label === 'WEST') next = String(Number(session.westScore || 0));
-      if (label === 'EAST') next = String(Number(session.eastScore || 0));
+      if (label === 'WEST') next = String(scores.west);
+      if (label === 'EAST') next = String(scores.east);
       if (next !== null && value.textContent !== next) value.textContent = next;
     });
   }
@@ -129,29 +206,12 @@
     error.textContent = message;
   }
 
-  function renderFromControl(control, playerId) {
-    const panel = playerPanel();
-    if (!panel || !control?.session) return false;
-    const player = (control.players || []).find((item) => Number(item.userId ?? item.playerId) === Number(playerId));
-    if (!player) return false;
-
-    const stats = player.stats || {};
-    const one = shotSummary(Number(stats.onePtMade || 0), Number(stats.onePtMiss || 0));
-    const two = shotSummary(Number(stats.twoPtMade || 0), Number(stats.twoPtMiss || 0));
-    const signature = JSON.stringify({
-      playerId: Number(playerId),
-      pts: Number(stats.pts || 0),
-      one,
-      two,
-      ast: Number(stats.ast || 0),
-      reb: Number(stats.reb || 0),
-      tov: Number(stats.tov || 0),
-      stl: Number(stats.stl || 0),
-      blk: Number(stats.blk || 0),
-      foul: Number(stats.foul || 0),
-      busy,
-    });
-
+  function renderStats(panel, playerId, rawStats) {
+    if (!panel) return false;
+    const stats = normalizeStats(rawStats);
+    const one = shotSummary(stats.onePtMade, stats.onePtMiss);
+    const two = shotSummary(stats.twoPtMade, stats.twoPtMiss);
+    const signature = JSON.stringify({ playerId: Number(playerId), stats, busy });
     const grid = panel.querySelector('.rp-courtside-stats');
     if (!grid) return false;
 
@@ -185,31 +245,74 @@
       });
       panel.dataset.rpShotSignature = signature;
     }
-
-    updateScoreboard(control.session);
     return true;
+  }
+
+  function cacheControl(control) {
+    if (!control?.session) return;
+    lastControl = control;
+    for (const player of control.players || []) {
+      const id = Number(player.userId ?? player.playerId);
+      if (!Number.isSafeInteger(id) || id === 0) continue;
+      playerCache.set(id, normalizeStats(player.stats || {}));
+    }
+  }
+
+  function renderFromControl(control, playerId) {
+    const panel = playerPanel();
+    if (!panel || !control?.session) return false;
+    cacheControl(control);
+    const player = (control.players || []).find((item) => Number(item.userId ?? item.playerId) === Number(playerId));
+    if (!player) return false;
+    renderStats(panel, playerId, player.stats || {});
+    updateScoreboard(control);
+    return true;
+  }
+
+  function stabilizePanel() {
+    const panel = playerPanel();
+    const playerId = selectedPlayerId(panel);
+    if (!panel || playerId === null) return null;
+    const fallback = readPanelFallback(panel, playerId);
+    renderStats(panel, playerId, fallback);
+    updateScoreboard();
+    return playerId;
   }
 
   async function refreshPanel() {
     const panel = playerPanel();
     const playerId = selectedPlayerId(panel);
-    if (!panel || playerId === null) return;
+    if (!panel || playerId === null || refreshInFlight) return;
+    refreshInFlight = true;
+    lastRefreshAt = Date.now();
     const sequence = ++refreshSequence;
     try {
       const data = await request('GET');
       if (sequence !== refreshSequence) return;
       renderFromControl(data?.control, playerId);
     } catch (_error) {
-      // The base courtside UI remains usable if the enhancement cannot hydrate.
+      // Keep the already-rendered 1PT/2PT scorer on screen. A temporary API
+      // failure must never restore the legacy PTS / MAKE / MISS controls.
+    } finally {
+      refreshInFlight = false;
     }
   }
 
-  function scheduleEnhance() {
+  function scheduleEnhance(forceRefresh = false) {
+    if (forceRefresh) pendingRefresh = true;
     if (scheduled) return;
     scheduled = true;
     window.requestAnimationFrame(() => {
       scheduled = false;
-      refreshPanel();
+      const playerId = stabilizePanel();
+      if (playerId === null) {
+        pendingRefresh = false;
+        return;
+      }
+      const needsInitialData = !playerCache.has(Number(playerId)) && (Date.now() - lastRefreshAt > 1000);
+      const shouldRefresh = pendingRefresh || needsInitialData;
+      pendingRefresh = false;
+      if (shouldRefresh) refreshPanel();
     });
   }
 
@@ -221,7 +324,8 @@
 
     busy = true;
     clearError(panel);
-    scheduleEnhance();
+    panel.dataset.rpShotSignature = '';
+    stabilizePanel();
     try {
       let payload;
       if (button.dataset.rpShotAction === 'shot') {
@@ -242,7 +346,7 @@
     } finally {
       busy = false;
       panel.dataset.rpShotSignature = '';
-      scheduleEnhance();
+      scheduleEnhance(true);
     }
   }
 
@@ -255,14 +359,14 @@
     handleShotAction(button);
   }, true);
 
-  window.addEventListener('realplay:admin-render', scheduleEnhance);
+  window.addEventListener('realplay:admin-render', () => scheduleEnhance(true));
 
   function attachObserver() {
     const adminRoot = root();
     if (!adminRoot || rootObserver) return Boolean(adminRoot);
-    rootObserver = new MutationObserver(scheduleEnhance);
+    rootObserver = new MutationObserver(() => scheduleEnhance(false));
     rootObserver.observe(adminRoot, { childList: true, subtree: true });
-    scheduleEnhance();
+    scheduleEnhance(true);
     return true;
   }
 
