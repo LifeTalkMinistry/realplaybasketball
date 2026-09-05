@@ -1,7 +1,7 @@
-/* REAL PLAY — PHYSICS CAROUSEL
- * Continuous, gesture-driven main menu motion. The active card keeps the
- * approved premium treatment while every visible card shares one physical
- * position model, so drag, momentum and spring settle stay synchronized.
+/* REAL PLAY — LIGHTWEIGHT PHYSICS CAROUSEL
+ * Performance authority for the main selector.
+ * Motion frames change only transform + opacity. Expensive glass, gradients,
+ * borders and shadows are static and only change when a card actually settles.
  */
 
 .rp-main-menu.rp-physics-menu .rp-main-menu-list{
@@ -16,65 +16,68 @@
   cursor:grabbing;
 }
 
-.rp-main-menu.rp-physics-menu .rp-main-menu-item{
-  --rp-y:0px;
-  --rp-scale:.52;
-  --rp-alpha:0;
-  --rp-detail:0;
-  --rp-detail-shift:12px;
-  --rp-rotate:0deg;
-  --rp-sat:.42;
-  --rp-bright:.82;
-  --rp-shell:.02;
-  --rp-border:.08;
-  --rp-blue-glow:0;
-  --rp-red-glow:0;
-
+/* Every card keeps the same geometry so settling never causes layout jumps. */
+.rp-main-menu.rp-physics-menu .rp-main-menu-item,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-prev,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active{
   left:50%!important;
   top:50%!important;
   width:min(88vw,365px)!important;
   min-height:348px!important;
   padding:48px 26px 92px!important;
-  border:1px solid rgba(118,161,205,var(--rp-border))!important;
   border-radius:27px!important;
-  background:
-    radial-gradient(78% 62% at 50% 36%,rgba(16,113,218,calc(var(--rp-shell) * .11)),transparent 58%),
-    radial-gradient(62% 54% at 92% 78%,rgba(142,24,42,calc(var(--rp-shell) * .08)),transparent 64%),
-    linear-gradient(158deg,
-      rgba(5,13,24,calc(var(--rp-shell) * .96)) 0%,
-      rgba(3,7,13,calc(var(--rp-shell) * .985)) 52%,
-      rgba(5,5,9,calc(var(--rp-shell) * .99)) 100%)!important;
-  box-shadow:
-    0 28px 84px rgba(0,0,0,calc(var(--rp-shell) * .48)),
-    -20px 4px 48px rgba(0,117,255,var(--rp-blue-glow)),
-    20px 5px 48px rgba(255,37,51,var(--rp-red-glow)),
-    inset 0 1px 0 rgba(255,255,255,calc(var(--rp-shell) * .055))!important;
-  color:#fff!important;
-  opacity:var(--rp-alpha)!important;
-  pointer-events:none;
   overflow:hidden;
-  transform:
-    translate3d(-50%,calc(-50% + var(--rp-y)),0)
-    perspective(1000px)
-    rotateX(var(--rp-rotate))
-    scale(var(--rp-scale))!important;
-  transform-origin:50% 50%;
-  filter:saturate(var(--rp-sat)) brightness(var(--rp-bright))!important;
   transition:none!important;
-  will-change:transform,opacity,filter;
+  filter:none!important;
+  transform-origin:50% 50%;
+  will-change:transform,opacity;
   backface-visibility:hidden;
-  contain:layout paint style;
+  -webkit-backface-visibility:hidden;
+  contain:paint;
 }
 
-.rp-main-menu.rp-physics-menu .rp-main-menu-item.rp-physics-near{
+/* Non-selected cards are already rasterized glass layers; only compositor
+   transform/opacity changes while they travel. */
+.rp-main-menu.rp-physics-menu .rp-main-menu-item{
+  border:1px solid rgba(95,145,198,.10)!important;
+  background:linear-gradient(158deg,rgba(5,13,24,.84),rgba(3,7,13,.91) 52%,rgba(5,5,9,.94))!important;
+  box-shadow:none!important;
+  pointer-events:none;
+}
+
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-prev,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active{
   pointer-events:auto;
 }
 
-.rp-main-menu.rp-physics-menu .rp-main-menu-item.rp-physics-offstage{
-  opacity:0!important;
-  pointer-events:none!important;
+/* Keep the premium visual only on the locked card. These properties do not
+   animate frame-by-frame, so the browser can cache the layer. */
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active{
+  border:1px solid transparent!important;
+  background:
+    radial-gradient(78% 62% at 50% 36%,rgba(16,113,218,.10),transparent 58%),
+    radial-gradient(62% 54% at 92% 78%,rgba(142,24,42,.075),transparent 64%),
+    linear-gradient(158deg,rgba(5,13,24,.955) 0%,rgba(3,7,13,.982) 52%,rgba(5,5,9,.988) 100%) padding-box,
+    linear-gradient(112deg,#1398ff 0%,rgba(52,145,232,.62) 28%,rgba(119,129,151,.24) 50%,rgba(190,64,78,.56) 74%,#ff3542 100%) border-box!important;
+  box-shadow:
+    0 24px 62px rgba(0,0,0,.43),
+    -13px 3px 34px rgba(0,117,255,.09),
+    13px 4px 34px rgba(255,37,51,.06),
+    inset 0 1px 0 rgba(255,255,255,.05)!important;
 }
 
+/* While physically moving, use a cheaper shadow on the selected layer.
+   This changes once at gesture start/end rather than every frame. */
+.rp-main-menu.rp-physics-menu.rp-physics-moving .rp-main-menu-item.slot-active{
+  box-shadow:0 16px 42px rgba(0,0,0,.34)!important;
+}
+
+/* Remove the PREVIOUS/NEXT decorative pseudo labels from the cinematic layer;
+   they compete with the card texture and add paint work during motion. */
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-prev::before,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next::before,
 .rp-main-menu.rp-physics-menu .rp-main-menu-item::before{
   content:''!important;
   position:absolute!important;
@@ -84,13 +87,21 @@
   height:auto!important;
   border-radius:inherit!important;
   background:
-    radial-gradient(circle at 50% 38%,rgba(31,154,255,calc(var(--rp-shell) * .12)),transparent 29%),
-    radial-gradient(circle at 50% 46%,transparent 0 33.5%,rgba(156,183,213,calc(var(--rp-shell) * .06)) 33.8%,transparent 34.6%),
-    linear-gradient(62deg,transparent 49.76%,rgba(139,167,202,calc(var(--rp-shell) * .042)) 50%,transparent 50.24%),
-    linear-gradient(-62deg,transparent 49.76%,rgba(139,167,202,calc(var(--rp-shell) * .036)) 50%,transparent 50.24%)!important;
+    radial-gradient(circle at 50% 40%,rgba(31,154,255,.055),transparent 31%),
+    radial-gradient(circle at 50% 47%,transparent 0 33.6%,rgba(156,183,213,.035) 33.9%,transparent 34.6%),
+    linear-gradient(62deg,transparent 49.8%,rgba(139,167,202,.022) 50%,transparent 50.2%),
+    linear-gradient(-62deg,transparent 49.8%,rgba(139,167,202,.02) 50%,transparent 50.2%)!important;
   transform:none!important;
   opacity:1!important;
   pointer-events:none!important;
+}
+
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active::before{
+  background:
+    radial-gradient(circle at 50% 38%,rgba(31,154,255,.10),transparent 29%),
+    radial-gradient(circle at 50% 46%,transparent 0 33.5%,rgba(156,183,213,.055) 33.8%,transparent 34.6%),
+    linear-gradient(62deg,transparent 49.76%,rgba(139,167,202,.035) 50%,transparent 50.24%),
+    linear-gradient(-62deg,transparent 49.76%,rgba(139,167,202,.032) 50%,transparent 50.24%)!important;
 }
 
 .rp-main-menu.rp-physics-menu .rp-main-menu-item small,
@@ -100,115 +111,63 @@
   z-index:1;
 }
 
+/* Nearby cards tease only the title. Full information appears after lock-in. */
 .rp-main-menu.rp-physics-menu .rp-main-menu-item small,
-.rp-main-menu.rp-physics-menu .rp-main-menu-item span{
-  display:block!important;
-  opacity:var(--rp-detail)!important;
-  transform:translateY(var(--rp-detail-shift));
+.rp-main-menu.rp-physics-menu .rp-main-menu-item span,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item::after{
+  opacity:0!important;
   transition:none!important;
 }
 
-.rp-main-menu.rp-physics-menu .rp-main-menu-item small{
-  margin:0 0 17px!important;
-  color:#35c8ff!important;
-  font-size:.68rem!important;
-  font-weight:900!important;
-  letter-spacing:.22em!important;
-  text-shadow:0 0 10px rgba(27,182,255,.32),0 0 24px rgba(0,126,255,.16)!important;
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active small,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active span,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active::after{
+  opacity:1!important;
 }
 
 .rp-main-menu.rp-physics-menu .rp-main-menu-item strong{
-  display:block;
+  color:#aab2be!important;
+  text-shadow:0 8px 20px rgba(0,0,0,.42)!important;
+}
+
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active strong{
   color:#f7f9fb!important;
-  font-size:clamp(3.3rem,14vw,4.45rem)!important;
-  line-height:.82!important;
-  letter-spacing:-.04em!important;
-  text-shadow:0 1px 0 rgba(255,255,255,.30),0 10px 22px rgba(0,0,0,.54),0 0 30px rgba(57,162,255,.08)!important;
-  -webkit-text-stroke:.2px rgba(255,255,255,.14);
+  text-shadow:0 1px 0 rgba(255,255,255,.30),0 10px 22px rgba(0,0,0,.54),0 0 26px rgba(57,162,255,.07)!important;
 }
 
-.rp-main-menu.rp-physics-menu .rp-main-menu-item span{
-  margin-top:20px!important;
-  color:#c1c8d1!important;
-  font-size:.62rem!important;
-  font-weight:900!important;
-  letter-spacing:.205em!important;
-  text-shadow:0 2px 12px rgba(0,0,0,.54)!important;
+/* Keep active CTA exactly functional/visible, but don't animate its paint. */
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active::after{
+  border:1px solid transparent!important;
+  background:
+    linear-gradient(102deg,rgba(7,32,61,.88),rgba(4,9,17,.94) 50%,rgba(33,8,16,.88)) padding-box,
+    linear-gradient(105deg,#36aaff 0%,rgba(72,157,230,.68) 32%,rgba(102,112,137,.34) 52%,rgba(185,62,78,.58) 76%,#ff4450 100%) border-box!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045)!important;
 }
 
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='3v3'] strong,
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='5v5'] strong{
-  font-size:clamp(5.2rem,24vw,7.25rem)!important;
-}
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='ranking'] strong{font-size:clamp(2.45rem,10.5vw,3.35rem)!important}
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='updates'] strong{font-size:clamp(3.25rem,14vw,4.4rem)!important}
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='world'] strong{font-size:clamp(3.7rem,16vw,5rem)!important}
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='profile'] strong{font-size:clamp(3.2rem,14vw,4.35rem)!important}
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='settings'] strong{font-size:clamp(2.95rem,13vw,4rem)!important}
-
-.rp-main-menu.rp-physics-menu .rp-main-menu-item::after{
-  position:absolute!important;
-  z-index:2!important;
-  left:50%!important;
-  top:auto!important;
-  bottom:28px!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  width:calc(100% - 58px)!important;
-  min-height:48px!important;
-  box-sizing:border-box;
-  border:1px solid rgba(82,170,247,calc(var(--rp-detail) * .54))!important;
-  border-radius:13px!important;
-  background:linear-gradient(102deg,rgba(7,32,61,calc(var(--rp-detail) * .88)),rgba(4,9,17,calc(var(--rp-detail) * .94)) 50%,rgba(33,8,16,calc(var(--rp-detail) * .88)))!important;
-  box-shadow:-12px 0 26px rgba(0,117,255,calc(var(--rp-detail) * .09)),12px 0 24px rgba(255,38,51,calc(var(--rp-detail) * .065))!important;
-  color:#32c5ff!important;
-  font-family:var(--rp-display)!important;
-  font-size:.7rem!important;
-  font-style:normal!important;
-  font-weight:900!important;
-  letter-spacing:.16em!important;
-  opacity:var(--rp-detail)!important;
-  transform:translateX(-50%) translateY(var(--rp-detail-shift))!important;
-  white-space:nowrap;
-  pointer-events:none!important;
-}
-
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='3v3']::after{content:'ENTER BETA SEASON  →'!important}
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='ranking']::after{content:'ENTER RANKING GAMES  →'!important}
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='5v5']::after{content:'VIEW 5V5  →'!important}
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='updates']::after{content:'OPEN UPDATES  →'!important}
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='world']::after{content:'ENTER WORLD  →'!important}
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='profile']::after{content:'OPEN PROFILE  →'!important}
-.rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='settings']::after{content:'OPEN SETTINGS  →'!important}
-
+/* Inline transform supplied by main-menu.js always wins. */
 .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active:active{
-  transform:
-    translate3d(-50%,calc(-50% + var(--rp-y)),0)
-    perspective(1000px)
-    rotateX(var(--rp-rotate))
-    scale(calc(var(--rp-scale) * .992))!important;
+  filter:none!important;
 }
 
 @media(max-height:760px){
-  .rp-main-menu.rp-physics-menu .rp-main-menu-item{
+  .rp-main-menu.rp-physics-menu .rp-main-menu-item,
+  .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-prev,
+  .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next,
+  .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active{
     min-height:300px!important;
     padding:38px 22px 78px!important;
     border-radius:23px!important;
   }
-  .rp-main-menu.rp-physics-menu .rp-main-menu-item small{margin-bottom:12px!important;font-size:.6rem!important}
-  .rp-main-menu.rp-physics-menu .rp-main-menu-item span{margin-top:15px!important;font-size:.54rem!important}
-  .rp-main-menu.rp-physics-menu .rp-main-menu-item::after{bottom:21px!important;min-height:43px!important;font-size:.62rem!important}
-  .rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='3v3'] strong,
-  .rp-main-menu.rp-physics-menu .rp-main-menu-item[data-rp-main-action='5v5'] strong{font-size:clamp(4.55rem,21vw,6rem)!important}
 }
 
 @media(max-height:650px){
-  .rp-main-menu.rp-physics-menu .rp-main-menu-item{
+  .rp-main-menu.rp-physics-menu .rp-main-menu-item,
+  .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-prev,
+  .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next,
+  .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active{
     min-height:254px!important;
     padding:30px 19px 66px!important;
   }
-  .rp-main-menu.rp-physics-menu .rp-main-menu-item::after{bottom:16px!important;min-height:39px!important}
 }
 
 @media(prefers-reduced-motion:reduce){
