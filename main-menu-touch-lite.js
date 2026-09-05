@@ -8,6 +8,8 @@
   const SWIPE_DISTANCE = 22;
   const FAST_FLICK_SPEED = 420;
   const MAX_FEEDBACK_PX = 16;
+  const POST_SWIPE_CLICK_GUARD_MS = 95;
+  const RETURN_CLASS_MS = 80;
 
   let pointerId = null;
   let startX = 0;
@@ -40,7 +42,7 @@
     pendingFeedback = 0;
     list.classList.add('rp-touch-lite-returning');
     list.style.transform = 'translate3d(0,0,0)';
-    window.setTimeout(() => list.classList.remove('rp-touch-lite-returning'), 140);
+    window.setTimeout(() => list.classList.remove('rp-touch-lite-returning'), RETURN_CLASS_MS);
   }
 
   function dispatchMove(direction) {
@@ -105,7 +107,7 @@
 
     if (!cancelled && verticalEnough && (distanceSwipe || fastFlick)) {
       if (event.cancelable) event.preventDefault();
-      suppressClickUntil = Date.now() + 420;
+      suppressClickUntil = Date.now() + POST_SWIPE_CLICK_GUARD_MS;
       dispatchMove(deltaY < 0 ? 1 : -1);
     }
   }
