@@ -4,10 +4,14 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
-  let cache = null;
+  let profileCache = null;
+  let gameCache = null;
   let cacheAt = 0;
   let loading = null;
   let scheduled = false;
+  let openMetricKey = null;
+  let selectedSeason = 'BETA_SEASON';
+  let selectedWindow = 'ALL';
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -37,27 +41,46 @@
     return attempts > 0 ? (made / attempts) * 100 : null;
   }
 
-  async function fetchProfile() {
-    const now = Date.now();
-    if (cache && now - cacheAt < 5000) return cache;
-    if (loading) return loading;
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  async function api(path) {
     const auth = token();
     if (!auth) return null;
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${auth}` },
+        cache: 'no-store',
+      });
+      if (!response.ok) return null;
+      return await response.json().catch(() => null);
+    } catch (_) {
+      return null;
+    }
+  }
 
-    loading = fetch(`${API_BASE_URL}/api/real-play/me`, {
-      headers: { Accept: 'application/json', Authorization: `Bearer ${auth}` },
-      cache: 'no-store',
-    })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        const data = await response.json().catch(() => null);
-        if (!data) return null;
-        cache = data;
-        cacheAt = Date.now();
-        return data;
-      })
-      .catch(() => null)
-      .finally(() => { loading = null; });
+  async function fetchData() {
+    const now = Date.now();
+    if (profileCache && gameCache && now - cacheAt < 5000) {
+      return { profile: profileCache, metricGames: gameCache };
+    }
+    if (loading) return loading;
+
+    loading = Promise.all([
+      api('/api/real-play/me'),
+      api('/api/real-play/career/metrics'),
+    ]).then(([profile, metricGames]) => {
+      if (profile) profileCache = profile;
+      if (metricGames) gameCache = metricGames;
+      if (profile || metricGames) cacheAt = Date.now();
+      return { profile: profileCache, metricGames: gameCache };
+    }).finally(() => { loading = null; });
 
     return loading;
   }
@@ -66,19 +89,7 @@
     return data?.careerStats || data?.career?.stats || data?.career || {};
   }
 
-  function receipt(label, value) {
-    return `<div><span>${label}</span><b>${value}</b></div>`;
-  }
-
-  function metricCard(metric) {
-    return `<button type="button" class="rp-profile-metric-card" data-rp-career-metric="${metric.key}" aria-expanded="false">
-      <strong>${metric.value}</strong>
-      <span>${metric.label}</span>
-      <small>${metric.short}</small>
-    </button>`;
-  }
-
-  function buildMetrics(data) {
+  function buildSummaryMetrics(data) {
     const stats = statsFrom(data);
     const games = Math.max(0, number(stats.games ?? stats.gamesPlayed));
     const pts = number(stats.pts ?? stats.points);
@@ -88,7 +99,6 @@
     const blk = number(stats.blk ?? stats.blocks);
     const tov = number(stats.tov ?? stats.to ?? stats.turnovers);
     const foul = number(stats.foul ?? stats.fouls);
-
     const oneMade = number(stats.onePtMade ?? stats.one_point_makes);
     const oneMiss = number(stats.onePtMiss ?? stats.one_point_misses);
     const twoMade = number(stats.twoPtMade ?? stats.two_point_makes);
@@ -99,95 +109,191 @@
     const oneAttempts = oneMade + oneMiss;
     const twoAttempts = twoMade + twoMiss;
 
-    const shootingPct = stats.shootingPct ?? ratioPercent(made, attempts);
-    const onePct = stats.onePtPct ?? ratioPercent(oneMade, oneAttempts);
-    const twoPct = stats.twoPtPct ?? ratioPercent(twoMade, twoAttempts);
-
     return [
-      {
-        key: 'ppg', label: 'PPG', short: 'POINTS / GAME', value: oneDecimal(stats.ppg ?? perGame(pts, games)),
-        title: 'POINTS PER GAME', description: 'Average points scored across official ranked games.',
-        receipts: [receipt('TOTAL POINTS', pts), receipt('OFFICIAL GAMES', games), receipt('CALCULATION', games ? `${pts} ÷ ${games}` : 'NO GAMES YET')],
-      },
-      {
-        key: 'apg', label: 'APG', short: 'ASSISTS / GAME', value: oneDecimal(stats.apg ?? perGame(ast, games)),
-        title: 'ASSISTS PER GAME', description: 'Average verified assists across official ranked games.',
-        receipts: [receipt('TOTAL ASSISTS', ast), receipt('OFFICIAL GAMES', games), receipt('CALCULATION', games ? `${ast} ÷ ${games}` : 'NO GAMES YET')],
-      },
-      {
-        key: 'rpg', label: 'RPG', short: 'REBOUNDS / GAME', value: oneDecimal(stats.rpg ?? perGame(reb, games)),
-        title: 'REBOUNDS PER GAME', description: 'Average verified rebounds across official ranked games.',
-        receipts: [receipt('TOTAL REBOUNDS', reb), receipt('OFFICIAL GAMES', games), receipt('CALCULATION', games ? `${reb} ÷ ${games}` : 'NO GAMES YET')],
-      },
-      {
-        key: 'spg', label: 'SPG', short: 'STEALS / GAME', value: oneDecimal(stats.spg ?? perGame(stl, games)),
-        title: 'STEALS PER GAME', description: 'Average verified steals across official ranked games.',
-        receipts: [receipt('TOTAL STEALS', stl), receipt('OFFICIAL GAMES', games), receipt('CALCULATION', games ? `${stl} ÷ ${games}` : 'NO GAMES YET')],
-      },
-      {
-        key: 'bpg', label: 'BPG', short: 'BLOCKS / GAME', value: oneDecimal(stats.bpg ?? perGame(blk, games)),
-        title: 'BLOCKS PER GAME', description: 'Average verified blocks across official ranked games.',
-        receipts: [receipt('TOTAL BLOCKS', blk), receipt('OFFICIAL GAMES', games), receipt('CALCULATION', games ? `${blk} ÷ ${games}` : 'NO GAMES YET')],
-      },
-      {
-        key: 'topg', label: 'TOPG', short: 'TURNOVERS / GAME', value: oneDecimal(stats.topg ?? perGame(tov, games)),
-        title: 'TURNOVERS PER GAME', description: 'Average turnovers recorded across official ranked games.',
-        receipts: [receipt('TOTAL TURNOVERS', tov), receipt('OFFICIAL GAMES', games), receipt('CALCULATION', games ? `${tov} ÷ ${games}` : 'NO GAMES YET')],
-      },
-      {
-        key: 'fpg', label: 'FPG', short: 'FOULS / GAME', value: oneDecimal(stats.fpg ?? perGame(foul, games)),
-        title: 'FOULS PER GAME', description: 'Average fouls recorded across official ranked games.',
-        receipts: [receipt('TOTAL FOULS', foul), receipt('OFFICIAL GAMES', games), receipt('CALCULATION', games ? `${foul} ÷ ${games}` : 'NO GAMES YET')],
-      },
-      {
-        key: 'shooting', label: 'SHOOTING %', short: 'ALL SHOTS', value: percent(shootingPct),
-        title: 'SHOOTING PERCENTAGE', description: 'All made 1PT and 2PT shots divided by all shot attempts.',
-        receipts: [receipt('MADE / ATTEMPTS', `${made} / ${attempts}`), receipt('1PT', `${oneMade}/${oneAttempts} · ${percent(onePct)}`), receipt('2PT', `${twoMade}/${twoAttempts} · ${percent(twoPct)}`)],
-      },
-      {
-        key: 'onept', label: '1PT %', short: 'INSIDE ARC', value: percent(onePct),
-        title: '1PT PERCENTAGE', description: 'Inside-arc makes divided by inside-arc attempts.',
-        receipts: [receipt('1PT MADE', oneMade), receipt('1PT ATTEMPTS', oneAttempts), receipt('RAW', `${oneMade} / ${oneAttempts}`)],
-      },
-      {
-        key: 'twopt', label: '2PT %', short: 'OUTSIDE ARC', value: percent(twoPct),
-        title: '2PT PERCENTAGE', description: 'Outside-arc makes divided by outside-arc attempts.',
-        receipts: [receipt('2PT MADE', twoMade), receipt('2PT ATTEMPTS', twoAttempts), receipt('RAW', `${twoMade} / ${twoAttempts}`)],
-      },
+      { key: 'ppg', label: 'PPG', short: 'POINTS / GAME', title: 'POINTS PER GAME', value: oneDecimal(stats.ppg ?? perGame(pts, games)) },
+      { key: 'apg', label: 'APG', short: 'ASSISTS / GAME', title: 'ASSISTS PER GAME', value: oneDecimal(stats.apg ?? perGame(ast, games)) },
+      { key: 'rpg', label: 'RPG', short: 'REBOUNDS / GAME', title: 'REBOUNDS PER GAME', value: oneDecimal(stats.rpg ?? perGame(reb, games)) },
+      { key: 'spg', label: 'SPG', short: 'STEALS / GAME', title: 'STEALS PER GAME', value: oneDecimal(stats.spg ?? perGame(stl, games)) },
+      { key: 'bpg', label: 'BPG', short: 'BLOCKS / GAME', title: 'BLOCKS PER GAME', value: oneDecimal(stats.bpg ?? perGame(blk, games)) },
+      { key: 'topg', label: 'TOPG', short: 'TURNOVERS / GAME', title: 'TURNOVERS PER GAME', value: oneDecimal(stats.topg ?? perGame(tov, games)) },
+      { key: 'fpg', label: 'FPG', short: 'FOULS / GAME', title: 'FOULS PER GAME', value: oneDecimal(stats.fpg ?? perGame(foul, games)) },
+      { key: 'shooting', label: 'SHOOTING %', short: 'ALL SHOTS', title: 'SHOOTING PERCENTAGE', value: percent(stats.shootingPct ?? ratioPercent(made, attempts)) },
+      { key: 'onept', label: '1PT %', short: 'INSIDE ARC', title: '1PT PERCENTAGE', value: percent(stats.onePtPct ?? ratioPercent(oneMade, oneAttempts)) },
+      { key: 'twopt', label: '2PT %', short: 'OUTSIDE ARC', title: '2PT PERCENTAGE', value: percent(stats.twoPtPct ?? ratioPercent(twoMade, twoAttempts)) },
     ];
   }
 
-  function renderDetail(shell, metric) {
-    const detail = shell.querySelector('[data-rp-metric-detail]');
-    if (!detail) return;
-    shell.querySelectorAll('[data-rp-career-metric]').forEach((card) => {
-      card.setAttribute('aria-expanded', card.dataset.rpCareerMetric === metric.key ? 'true' : 'false');
-    });
-    detail.hidden = false;
-    detail.innerHTML = `<div class="rp-profile-metric-detail-head">
-      <div><small>METRIC BREAKDOWN</small><strong>${metric.title}</strong></div>
-      <div class="rp-profile-metric-detail-value">${metric.value}</div>
-    </div>
-    <p>${metric.description}</p>
-    <div class="rp-profile-metric-receipts">${metric.receipts.join('')}</div>`;
+  function metricCard(metric) {
+    return `<button type="button" class="rp-profile-metric-card" data-rp-career-metric="${metric.key}">
+      <strong>${metric.value}</strong>
+      <span>${metric.label}</span>
+      <small>${metric.short}</small>
+    </button>`;
+  }
+
+  function selectedGames(metricGames) {
+    let games = Array.isArray(metricGames?.games) ? [...metricGames.games] : [];
+    if (selectedSeason === 'BETA_SEASON') {
+      games = games.filter((game) => !game.season || game.season === 'BETA_SEASON');
+    }
+    if (selectedWindow === 'LAST_5') return games.slice(0, 5);
+    if (selectedWindow === 'LAST_10') return games.slice(0, 10);
+    return games;
+  }
+
+  function sum(games, key) {
+    return games.reduce((total, game) => total + number(game?.[key]), 0);
+  }
+
+  function metricResult(key, games) {
+    const count = games.length;
+    const totals = {
+      pts: sum(games, 'pts'), ast: sum(games, 'ast'), reb: sum(games, 'reb'),
+      stl: sum(games, 'stl'), blk: sum(games, 'blk'), tov: sum(games, 'tov'), foul: sum(games, 'foul'),
+      made: sum(games, 'madeShots'), attempts: sum(games, 'shotAttempts'),
+      oneMade: sum(games, 'onePtMade'), oneAttempts: sum(games, 'onePtAttempts'),
+      twoMade: sum(games, 'twoPtMade'), twoAttempts: sum(games, 'twoPtAttempts'),
+    };
+
+    const config = {
+      ppg: { title: 'POINTS PER GAME', value: oneDecimal(perGame(totals.pts, count)), rawLabel: 'TOTAL POINTS', raw: totals.pts, gameKey: 'pts', gameSuffix: ' PTS' },
+      apg: { title: 'ASSISTS PER GAME', value: oneDecimal(perGame(totals.ast, count)), rawLabel: 'TOTAL ASSISTS', raw: totals.ast, gameKey: 'ast', gameSuffix: ' AST' },
+      rpg: { title: 'REBOUNDS PER GAME', value: oneDecimal(perGame(totals.reb, count)), rawLabel: 'TOTAL REBOUNDS', raw: totals.reb, gameKey: 'reb', gameSuffix: ' REB' },
+      spg: { title: 'STEALS PER GAME', value: oneDecimal(perGame(totals.stl, count)), rawLabel: 'TOTAL STEALS', raw: totals.stl, gameKey: 'stl', gameSuffix: ' STL' },
+      bpg: { title: 'BLOCKS PER GAME', value: oneDecimal(perGame(totals.blk, count)), rawLabel: 'TOTAL BLOCKS', raw: totals.blk, gameKey: 'blk', gameSuffix: ' BLK' },
+      topg: { title: 'TURNOVERS PER GAME', value: oneDecimal(perGame(totals.tov, count)), rawLabel: 'TOTAL TURNOVERS', raw: totals.tov, gameKey: 'tov', gameSuffix: ' TO' },
+      fpg: { title: 'FOULS PER GAME', value: oneDecimal(perGame(totals.foul, count)), rawLabel: 'TOTAL FOULS', raw: totals.foul, gameKey: 'foul', gameSuffix: ' FOUL' },
+      shooting: { title: 'SHOOTING PERCENTAGE', value: percent(ratioPercent(totals.made, totals.attempts)), rawLabel: 'MADE / ATTEMPTS', raw: `${totals.made} / ${totals.attempts}`, shot: 'all' },
+      onept: { title: '1PT PERCENTAGE', value: percent(ratioPercent(totals.oneMade, totals.oneAttempts)), rawLabel: '1PT MADE / ATTEMPTS', raw: `${totals.oneMade} / ${totals.oneAttempts}`, shot: 'one' },
+      twopt: { title: '2PT PERCENTAGE', value: percent(ratioPercent(totals.twoMade, totals.twoAttempts)), rawLabel: '2PT MADE / ATTEMPTS', raw: `${totals.twoMade} / ${totals.twoAttempts}`, shot: 'two' },
+    };
+    return { ...(config[key] || config.ppg), count, totals };
+  }
+
+  function formatDate(value) {
+    if (!value) return 'FINALIZED GAME';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'FINALIZED GAME';
+    return new Intl.DateTimeFormat('en-PH', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Manila' }).format(date).toUpperCase();
+  }
+
+  function gameMetricValue(game, result) {
+    if (result.gameKey) return `${number(game?.[result.gameKey])}${result.gameSuffix}`;
+    if (result.shot === 'one') return `${number(game?.onePtMade)}/${number(game?.onePtAttempts)} · ${percent(ratioPercent(number(game?.onePtMade), number(game?.onePtAttempts)))}`;
+    if (result.shot === 'two') return `${number(game?.twoPtMade)}/${number(game?.twoPtAttempts)} · ${percent(ratioPercent(number(game?.twoPtMade), number(game?.twoPtAttempts)))}`;
+    return `${number(game?.madeShots)}/${number(game?.shotAttempts)} · ${percent(ratioPercent(number(game?.madeShots), number(game?.shotAttempts)))}`;
+  }
+
+  function metricPage(profile) {
+    let page = profile.querySelector('[data-rp-metric-page]');
+    if (page) return page;
+    page = document.createElement('section');
+    page.className = 'rp-profile-metric-page';
+    page.dataset.rpMetricPage = 'true';
+    page.setAttribute('aria-hidden', 'true');
+    page.innerHTML = `<div class="rp-profile-metric-page-shell">
+      <header class="rp-profile-metric-page-topbar">
+        <button type="button" data-rp-metric-back aria-label="Back to profile">←</button>
+        <div><strong data-rp-metric-page-title>METRIC</strong><span>REAL PLAY CAREER ANALYTICS</span></div>
+      </header>
+      <main data-rp-metric-page-body></main>
+    </div>`;
+    profile.appendChild(page);
+    page.querySelector('[data-rp-metric-back]')?.addEventListener('click', closeMetricPage);
+    return page;
+  }
+
+  function renderMetricPage() {
+    const profile = document.querySelector('.rp-profile.open');
+    const page = profile?.querySelector('[data-rp-metric-page]');
+    if (!profile || !page || !openMetricKey) return;
+    const games = selectedGames(gameCache);
+    const result = metricResult(openMetricKey, games);
+    const title = page.querySelector('[data-rp-metric-page-title]');
+    const body = page.querySelector('[data-rp-metric-page-body]');
+    if (title) title.textContent = result.title;
+    if (!body) return;
+
+    const seasonLabel = selectedSeason === 'CAREER' ? 'CAREER / ALL TIME' : (gameCache?.seasonLabel || 'BETA SEASON');
+    const windowLabel = selectedWindow === 'LAST_5' ? 'LAST 5 GAMES' : selectedWindow === 'LAST_10' ? 'LAST 10 GAMES' : 'ALL GAMES';
+    const extraShooting = openMetricKey === 'shooting'
+      ? `<div class="rp-profile-metric-page-substats"><div><span>1PT</span><strong>${result.totals.oneMade}/${result.totals.oneAttempts}</strong><small>${percent(ratioPercent(result.totals.oneMade, result.totals.oneAttempts))}</small></div><div><span>2PT</span><strong>${result.totals.twoMade}/${result.totals.twoAttempts}</strong><small>${percent(ratioPercent(result.totals.twoMade, result.totals.twoAttempts))}</small></div></div>`
+      : '';
+
+    body.innerHTML = `<section class="rp-profile-metric-page-hero">
+        <small>${escapeHtml(seasonLabel)}</small>
+        <strong>${result.value}</strong>
+        <span>${result.title}</span>
+      </section>
+      <section class="rp-profile-metric-filters">
+        <div><label>TIMEFRAME</label><div class="rp-profile-metric-segment">
+          <button type="button" data-rp-season="BETA_SEASON" class="${selectedSeason === 'BETA_SEASON' ? 'active' : ''}">BETA SEASON</button>
+          <button type="button" data-rp-season="CAREER" class="${selectedSeason === 'CAREER' ? 'active' : ''}">CAREER</button>
+        </div></div>
+        <div><label>GAME WINDOW</label><div class="rp-profile-metric-segment three">
+          <button type="button" data-rp-window="ALL" class="${selectedWindow === 'ALL' ? 'active' : ''}">ALL</button>
+          <button type="button" data-rp-window="LAST_5" class="${selectedWindow === 'LAST_5' ? 'active' : ''}">LAST 5</button>
+          <button type="button" data-rp-window="LAST_10" class="${selectedWindow === 'LAST_10' ? 'active' : ''}">LAST 10</button>
+        </div></div>
+      </section>
+      <section class="rp-profile-metric-page-context">
+        <div><span>SEASON</span><strong>${escapeHtml(seasonLabel)}</strong></div>
+        <div><span>GAMES USED</span><strong>${result.count}</strong></div>
+        <div><span>WINDOW</span><strong>${windowLabel}</strong></div>
+        <div><span>${result.rawLabel}</span><strong>${result.raw}</strong></div>
+      </section>
+      ${extraShooting}
+      <section class="rp-profile-metric-game-list">
+        <header><small>GAME-BY-GAME</small><strong>${result.count} OFFICIAL GAME${result.count === 1 ? '' : 'S'}</strong></header>
+        ${games.length ? games.map((game) => `<article><div><strong>${escapeHtml(game.label || `RANKING GAME #${game.sessionId}`)}</strong><span>${formatDate(game.finalizedAt || game.startsAt)}</span></div><b>${escapeHtml(gameMetricValue(game, result))}</b></article>`).join('') : '<div class="rp-profile-metric-no-games">NO OFFICIAL GAMES IN THIS TIMEFRAME.</div>'}
+      </section>`;
+
+    body.querySelectorAll('[data-rp-season]').forEach((button) => button.addEventListener('click', () => {
+      selectedSeason = button.dataset.rpSeason;
+      renderMetricPage();
+    }));
+    body.querySelectorAll('[data-rp-window]').forEach((button) => button.addEventListener('click', () => {
+      selectedWindow = button.dataset.rpWindow;
+      renderMetricPage();
+    }));
+  }
+
+  function openMetricPage(key) {
+    const profile = document.querySelector('.rp-profile.open');
+    if (!profile || !gameCache) return;
+    openMetricKey = key;
+    selectedSeason = 'BETA_SEASON';
+    selectedWindow = 'ALL';
+    const page = metricPage(profile);
+    page.classList.add('open');
+    page.setAttribute('aria-hidden', 'false');
+    page.scrollTop = 0;
+    renderMetricPage();
+  }
+
+  function closeMetricPage() {
+    const page = document.querySelector('.rp-profile [data-rp-metric-page]');
+    if (!page) return;
+    page.classList.remove('open');
+    page.setAttribute('aria-hidden', 'true');
+    openMetricKey = null;
   }
 
   async function enhanceProfile() {
     const profile = document.querySelector('.rp-profile.open');
     const grid = profile?.querySelector('.rp-profile-stat-grid');
     if (!profile || !grid || grid.dataset.rpMetricsReplaced === 'true') return;
-
     const section = grid.closest('.rp-profile-section');
     if (!section) return;
     grid.dataset.rpMetricsReplaced = 'true';
 
-    const data = await fetchProfile();
-    if (!data || !profile.classList.contains('open') || !grid.isConnected) {
+    const { profile: data, metricGames } = await fetchData();
+    if (!data || !metricGames || !profile.classList.contains('open') || !grid.isConnected) {
       grid.dataset.rpMetricsReplaced = 'false';
       return;
     }
 
-    const metrics = buildMetrics(data);
+    const metrics = buildSummaryMetrics(data);
     section.querySelector('.rp-profile-section-head small')?.replaceChildren(document.createTextNode('CAREER METRICS'));
     section.querySelector('.rp-profile-section-head h2')?.replaceChildren(document.createTextNode('THE COURT KEEPS THE RECEIPTS.'));
 
@@ -199,15 +305,11 @@
       grid.insertAdjacentElement('afterend', shell);
     }
 
-    shell.innerHTML = `<div class="rp-profile-metrics-hint"><span>SWIPE METRICS</span><span>TAP FOR BREAKDOWN →</span></div>
-      <div class="rp-profile-metrics-carousel">${metrics.map(metricCard).join('')}</div>
-      <div class="rp-profile-metric-detail" data-rp-metric-detail hidden></div>`;
+    shell.innerHTML = `<div class="rp-profile-metrics-hint"><span>SWIPE METRICS</span><span>TAP TO OPEN →</span></div>
+      <div class="rp-profile-metrics-carousel">${metrics.map(metricCard).join('')}</div>`;
 
     shell.querySelectorAll('[data-rp-career-metric]').forEach((card) => {
-      card.addEventListener('click', () => {
-        const metric = metrics.find((item) => item.key === card.dataset.rpCareerMetric);
-        if (metric) renderDetail(shell, metric);
-      });
+      card.addEventListener('click', () => openMetricPage(card.dataset.rpCareerMetric));
     });
   }
 
@@ -222,19 +324,31 @@
 
   const observer = new MutationObserver(schedule);
   observer.observe(document.documentElement, { childList: true, subtree: true });
+
   document.addEventListener('click', (event) => {
     if (event.target.closest('[data-rp-main-action="profile"], [data-rp-open-profile]')) {
-      cache = null;
+      profileCache = null;
+      gameCache = null;
       cacheAt = 0;
       setTimeout(schedule, 0);
     }
   }, true);
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !openMetricKey) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    closeMetricPage();
+  }, true);
+
   window.addEventListener('focus', () => {
     if (document.querySelector('.rp-profile.open')) {
-      cache = null;
+      profileCache = null;
+      gameCache = null;
       cacheAt = 0;
       schedule();
     }
   });
+
   schedule();
 })();
