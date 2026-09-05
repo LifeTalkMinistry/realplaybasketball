@@ -2,9 +2,13 @@
   if (window.__realPlayCourtsideLiveInstalled) return;
   window.__realPlayCourtsideLiveInstalled = true;
 
+  const TOKEN_KEY = 'real_play_access_token';
+  const API_BASE_URL = 'https://api.clarapmc.com';
+
   let selectedUserId = null;
   let lastSnapshot = null;
   let scheduled = false;
+  let hydrationSequence = 0;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -22,7 +26,7 @@
   }
 
   function shortSessionTitle() {
-    const raw = root()?.querySelector('[data-admin-livebar] strong')?.textContent.trim() || 'CAREER GAME';
+    const raw = root()?.querySelector('[data-admin-livebar] strong')?.textContent.trim() || 'OPEN RANK GAME';
     const match = raw.match(/#\s*(\d+)/);
     return match ? `CAREER #${String(Number(match[1])).padStart(3, '0')}` : raw;
   }
@@ -41,7 +45,7 @@
     return [...scope.querySelectorAll('.rp-admin-stat-player')].map((card) => {
       const action = card.querySelector('[data-control-action="stat"]');
       if (!action) return null;
-      const stats = { PTS: 0, AST: 0, REB: 0, TO: 0 };
+      const stats = { PTS: 0, MAKE: 0, MISS: 0, AST: 0, REB: 0, TO: 0, STL: 0, BLK: 0, FOUL: 0 };
       card.querySelectorAll('.rp-admin-stat').forEach((box) => {
         const key = box.querySelector('label')?.textContent.trim().toUpperCase();
         if (key && Object.hasOwn(stats, key)) stats[key] = Number(box.querySelector('strong')?.textContent.trim() || 0);
@@ -57,6 +61,67 @@
       const bNum = Number(b.label.match(/#(\d+)/)?.[1] ?? 999);
       return aNum - bNum || a.label.localeCompare(b.label);
     });
+  }
+
+  function playerLabel(player) {
+    const number = player?.playerNumber === null || player?.playerNumber === undefined
+      ? '#--'
+      : `#${Number(player.playerNumber)}`;
+    return `${number} ${player?.playerName || 'REAL PLAY PLAYER'}`;
+  }
+
+  function snapshotFromControl(control) {
+    if (!control?.session) return null;
+    const players = (control.players || [])
+      .filter((player) => player.checkedIn && player.team)
+      .map((player) => ({
+        userId: String(player.userId ?? player.playerId ?? ''),
+        label: playerLabel(player),
+        team: String(player.team || '').toUpperCase(),
+        stats: {
+          PTS: Number(player.stats?.pts || 0),
+          MAKE: Number(player.stats?.make || 0),
+          MISS: Number(player.stats?.miss || 0),
+          AST: Number(player.stats?.ast || 0),
+          REB: Number(player.stats?.reb || 0),
+          TO: Number(player.stats?.tov || 0),
+          STL: Number(player.stats?.stl || 0),
+          BLK: Number(player.stats?.blk || 0),
+          FOUL: Number(player.stats?.foul || 0),
+        },
+      }))
+      .sort((a, b) => {
+        const aNum = Number(a.label.match(/#(\d+)/)?.[1] ?? 999);
+        const bNum = Number(b.label.match(/#(\d+)/)?.[1] ?? 999);
+        return aNum - bNum || a.label.localeCompare(b.label);
+      });
+
+    return {
+      score: {
+        west: Number(control.session.westScore || 0),
+        east: Number(control.session.eastScore || 0),
+      },
+      players,
+      gameStatus: String(control.session.gameStatus || ''),
+    };
+  }
+
+  async function fetchExpandedSnapshot() {
+    const token = localStorage.getItem(TOKEN_KEY) || '';
+    if (!token) return null;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/real-play/admin/career/control`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) return null;
+      const data = await response.json().catch(() => null);
+      return snapshotFromControl(data?.control || null);
+    } catch (_) {
+      return null;
+    }
   }
 
   function scoreboardHtml(score) {
@@ -94,6 +159,10 @@
     </div>`;
   }
 
+  function statBox(player, label, stat) {
+    return `<div class="rp-courtside-stat"><label>${label}</label><strong>${player.stats[label]}</strong>${statActions(player, stat)}</div>`;
+  }
+
   function playerPanelHtml(player) {
     return `<section class="rp-courtside-player-panel">
       <div class="rp-courtside-player-panel-head">
@@ -101,10 +170,15 @@
         <button type="button" class="rp-courtside-close" data-courtside-close aria-label="Close player controls">×</button>
       </div>
       <div class="rp-courtside-stats">
-        <div class="rp-courtside-stat"><label>PTS</label><strong>${player.stats.PTS}</strong>${statActions(player, 'pts')}</div>
-        <div class="rp-courtside-stat"><label>AST</label><strong>${player.stats.AST}</strong>${statActions(player, 'ast')}</div>
-        <div class="rp-courtside-stat"><label>REB</label><strong>${player.stats.REB}</strong>${statActions(player, 'reb')}</div>
-        <div class="rp-courtside-stat"><label>TO</label><strong>${player.stats.TO}</strong>${statActions(player, 'tov')}</div>
+        ${statBox(player, 'PTS', 'pts')}
+        ${statBox(player, 'MAKE', 'make')}
+        ${statBox(player, 'MISS', 'miss')}
+        ${statBox(player, 'AST', 'ast')}
+        ${statBox(player, 'REB', 'reb')}
+        ${statBox(player, 'TO', 'tov')}
+        ${statBox(player, 'STL', 'stl')}
+        ${statBox(player, 'BLK', 'blk')}
+        ${statBox(player, 'FOUL', 'foul')}
       </div>
     </section>`;
   }
@@ -128,6 +202,18 @@
         ? playerPanelHtml(selected)
         : `<div class="rp-courtside-roster">${rosterHtml('WEST', snapshot.players)}${rosterHtml('EAST', snapshot.players)}</div><button type="button" class="rp-courtside-finish" data-courtside-finish>FINISH GAME</button>`}
     </div>`;
+  }
+
+  async function hydrateLive(fallbackSnapshot) {
+    const sequence = ++hydrationSequence;
+    renderLive(fallbackSnapshot);
+    const expanded = await fetchExpandedSnapshot();
+    if (sequence !== hydrationSequence || !expanded || expanded.gameStatus !== 'live') return;
+    const adminRoot = root();
+    if (!adminRoot?.classList.contains('open')) return;
+    const active = adminRoot.querySelector('.rp-admin-tab.active')?.dataset.adminTab || '';
+    if (active !== 'live') return;
+    renderLive(expanded);
   }
 
   function renderPregame(scope) {
@@ -197,7 +283,7 @@
         return;
       }
       if (state === 'LIVE') {
-        renderLive({ score: parseScoreboard(adminBody), players: parsePlayers(adminBody) });
+        hydrateLive({ score: parseScoreboard(adminBody), players: parsePlayers(adminBody), gameStatus: 'live' });
         return;
       }
     }
@@ -207,6 +293,7 @@
       return;
     }
 
+    hydrationSequence += 1;
     selectedUserId = null;
     lastSnapshot = null;
     adminRoot.classList.remove('rp-courtside-locked');
