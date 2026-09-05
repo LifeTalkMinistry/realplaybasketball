@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260904-admin-settings-session-sync-v1';
+  const version = '20260905-admin-player-autocomplete-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
