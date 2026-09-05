@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260906-main-menu-physics-v2';
+  const version = '20260906-main-menu-physics-v3';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -113,6 +113,7 @@
       'real-play-profile-intro.js',
       'real-play-profile-metrics.js',
       'main-menu.js',
+      'main-menu-touch-lite.js',
       'player-number-recovery.js',
       'ranking-games.js',
       'ranking-games-info-toggle.js',
