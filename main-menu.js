@@ -109,6 +109,9 @@
   let springFrame = 0;
   let springVelocity = 0;
   let springTarget = null;
+  let dragFrame = 0;
+  let pendingPointerY = null;
+  let visualStepPx = 184;
   let noticeAction = 'close';
 
   menu.classList.add('rp-physics-menu');
@@ -142,50 +145,34 @@
     return delta;
   }
 
-  function visualStep() {
+  function updateGeometry() {
     const height = list?.clientHeight || 430;
-    return clamp(height * 0.43, 154, 224);
+    visualStepPx = clamp(height * 0.43, 154, 224);
   }
 
+  /* Hot path: compositor-only properties. No filters, gradients, shadows,
+     CSS custom properties or class toggles are changed per frame. */
   function renderPhysics() {
-    const step = visualStep();
+    const step = visualStepPx;
 
     items.forEach((item, index) => {
       const distance = wrappedDistance(index, position);
       const absolute = Math.abs(distance);
       const centered = 1 - smoothstep(Math.min(absolute, 1));
-      const beyond = clamp((absolute - 1) / 0.65, 0, 1);
+      const beyond = clamp((absolute - 1) / 0.62, 0, 1);
       const alpha = absolute <= 1
-        ? 0.19 + 0.81 * centered
-        : 0.19 * (1 - smoothstep(beyond));
+        ? 0.20 + 0.80 * centered
+        : 0.20 * (1 - smoothstep(beyond));
       const scale = absolute <= 1
-        ? 0.54 + 0.46 * centered
-        : 0.50 - 0.08 * smoothstep(beyond);
-      const detail = Math.pow(centered, 1.65);
-      const shell = 0.025 + 0.975 * Math.pow(centered, 2.15);
+        ? 0.60 + 0.40 * centered
+        : 0.56 - 0.08 * smoothstep(beyond);
       const signed = Math.sign(distance || 1);
       const y = signed * step * Math.pow(absolute, 0.94);
-      const rotate = clamp(-distance * 6, -9, 9);
-      const saturation = 0.42 + 0.58 * centered;
-      const brightness = 0.78 + 0.22 * centered;
-      const detailShift = (1 - detail) * 12;
-      const offstage = absolute > 1.62;
+      const rotate = clamp(-distance * 5.2, -7.5, 7.5);
+      const visibleOpacity = absolute > 1.62 ? 0 : alpha;
 
-      item.style.setProperty('--rp-y', `${y.toFixed(2)}px`);
-      item.style.setProperty('--rp-scale', scale.toFixed(4));
-      item.style.setProperty('--rp-alpha', offstage ? '0' : alpha.toFixed(4));
-      item.style.setProperty('--rp-detail', detail.toFixed(4));
-      item.style.setProperty('--rp-detail-shift', `${detailShift.toFixed(2)}px`);
-      item.style.setProperty('--rp-rotate', `${rotate.toFixed(2)}deg`);
-      item.style.setProperty('--rp-sat', saturation.toFixed(3));
-      item.style.setProperty('--rp-bright', brightness.toFixed(3));
-      item.style.setProperty('--rp-shell', shell.toFixed(4));
-      item.style.setProperty('--rp-border', (0.08 + 0.82 * shell).toFixed(4));
-      item.style.setProperty('--rp-blue-glow', (0.13 * shell).toFixed(4));
-      item.style.setProperty('--rp-red-glow', (0.09 * shell).toFixed(4));
-      item.style.zIndex = String(1000 - Math.round(absolute * 100));
-      item.classList.toggle('rp-physics-offstage', offstage);
-      item.classList.toggle('rp-physics-near', absolute < 1.18);
+      item.style.transform = `translate3d(-50%,-50%,0) translate3d(0,${y.toFixed(2)}px,0) rotateX(${rotate.toFixed(2)}deg) scale(${scale.toFixed(4)})`;
+      item.style.opacity = visibleOpacity.toFixed(4);
     });
   }
 
@@ -210,6 +197,33 @@
     renderPhysics();
   }
 
+  function cancelDragFrame() {
+    if (dragFrame) cancelAnimationFrame(dragFrame);
+    dragFrame = 0;
+  }
+
+  function applyPendingDrag() {
+    dragFrame = 0;
+    if (pointerId === null || pendingPointerY === null) return;
+    const deltaFromStart = pendingPointerY - pointerStartY;
+    const dragUnits = clamp(-deltaFromStart / DRAG_STEP_PX, -MAX_DRAG_ITEMS, MAX_DRAG_ITEMS);
+    position = dragStartPosition + dragUnits;
+    renderPhysics();
+  }
+
+  function scheduleDragRender(clientY) {
+    pendingPointerY = clientY;
+    if (dragFrame) return;
+    dragFrame = requestAnimationFrame(applyPendingDrag);
+  }
+
+  function flushPendingDrag() {
+    if (!dragFrame) return;
+    cancelAnimationFrame(dragFrame);
+    dragFrame = 0;
+    applyPendingDrag();
+  }
+
   function cancelSpring() {
     if (springFrame) cancelAnimationFrame(springFrame);
     springFrame = 0;
@@ -219,10 +233,13 @@
 
   function commitSettled(target) {
     cancelSpring();
+    cancelDragFrame();
     const previousIndex = activeIndex;
     activeIndex = normalizeIndex(Math.round(target));
     position = activeIndex;
     springVelocity = 0;
+    pendingPointerY = null;
+    menu.classList.remove('rp-physics-moving');
     renderSelector();
 
     if (previousIndex !== activeIndex) {
@@ -244,7 +261,7 @@
 
     springTarget = target;
     springVelocity = clamp(initialVelocity, -7, 7);
-    menu.classList.add('rp-physics-settling');
+    menu.classList.add('rp-physics-settling', 'rp-physics-moving');
     let lastAt = performance.now();
 
     const tick = (now) => {
@@ -433,6 +450,7 @@
   list?.addEventListener('pointerdown', (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     cancelSpring();
+    cancelDragFrame();
     pointerId = event.pointerId;
     pointerStartY = event.clientY;
     pointerLastY = event.clientY;
@@ -440,6 +458,8 @@
     pointerVelocityY = 0;
     dragDistance = 0;
     dragStartPosition = position;
+    pendingPointerY = event.clientY;
+    menu.classList.add('rp-physics-moving');
     list.classList.add('rp-physics-dragging');
     try { list.setPointerCapture(pointerId); } catch (_error) {}
   });
@@ -448,22 +468,19 @@
     if (pointerId === null || event.pointerId !== pointerId) return;
     const now = performance.now();
     const elapsed = Math.max(8, now - pointerLastAt);
-    const deltaFromStart = event.clientY - pointerStartY;
     const frameVelocity = (event.clientY - pointerLastY) / (elapsed / 1000);
 
     pointerVelocityY = pointerVelocityY * 0.72 + frameVelocity * 0.28;
     pointerLastY = event.clientY;
     pointerLastAt = now;
-    dragDistance = Math.max(dragDistance, Math.abs(deltaFromStart));
-
-    const dragUnits = clamp(-deltaFromStart / DRAG_STEP_PX, -MAX_DRAG_ITEMS, MAX_DRAG_ITEMS);
-    position = dragStartPosition + dragUnits;
-    renderPhysics();
-  });
+    dragDistance = Math.max(dragDistance, Math.abs(event.clientY - pointerStartY));
+    scheduleDragRender(event.clientY);
+  }, { passive: true });
 
   function releasePointer(event, cancelled = false) {
     if (pointerId === null || (event?.pointerId !== undefined && event.pointerId !== pointerId)) return;
 
+    flushPendingDrag();
     const releasedPointer = pointerId;
     pointerId = null;
     list?.classList.remove('rp-physics-dragging');
@@ -568,13 +585,20 @@
     }
   }
 
+  updateGeometry();
   renderSelector();
   refreshOvr();
   window.addEventListener('focus', refreshOvr);
-  window.addEventListener('resize', renderPhysics, { passive: true });
+  window.addEventListener('resize', () => {
+    updateGeometry();
+    renderPhysics();
+  }, { passive: true });
 
   if ('ResizeObserver' in window && list) {
-    const observer = new ResizeObserver(() => renderPhysics());
+    const observer = new ResizeObserver(() => {
+      updateGeometry();
+      renderPhysics();
+    });
     observer.observe(list);
   }
 })();
