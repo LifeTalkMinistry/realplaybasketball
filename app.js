@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-admin-player-autocomplete-v1';
+  const version = '20260905-admin-player-roster-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
