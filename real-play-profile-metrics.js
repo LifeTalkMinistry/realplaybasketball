@@ -10,6 +10,9 @@
   let loading = null;
   let scheduled = false;
   let openMetricKey = null;
+  let selectedMode = 'OPEN_RANKING';
+  let selectedGameFormat = 'ALL';
+  let selectedPlayerFormat = 'ALL';
   let selectedSeason = 'BETA_SEASON';
   let selectedWindow = 'ALL';
 
@@ -131,14 +134,60 @@
     </button>`;
   }
 
-  function selectedGames(metricGames) {
+  function modeKey(game) {
+    return String(game?.competitionContext || 'open_ranking').toUpperCase();
+  }
+
+  function gameFormatKey(game) {
+    if (game?.rulesetFamily === 'standard') return String(game.standardPreset || 'standard_3v3').toUpperCase();
+    if (game?.rulesetFamily === 'race_to') return `RACE_${number(game.targetScore)}`;
+    return 'LEGACY';
+  }
+
+  function playerFormatKey(game) {
+    return String(game?.playerFormat || 'LEGACY').toUpperCase();
+  }
+
+  function gameFormatLabel(key) {
+    if (key === 'STANDARD_3V3') return 'STANDARD 3V3';
+    if (key === 'RACE_8') return 'RACE TO 8';
+    if (key === 'RACE_16') return 'RACE TO 16';
+    if (key === 'RACE_21') return 'RACE TO 21';
+    if (key === 'LEGACY') return 'LEGACY';
+    return 'ALL';
+  }
+
+  function modeLabel(key) {
+    if (key === 'OPEN_RANKING') return 'OPEN RANKING';
+    if (key === 'LEAGUE') return 'LEAGUE';
+    return key.replaceAll('_', ' ');
+  }
+
+  function baseGames(metricGames) {
     let games = Array.isArray(metricGames?.games) ? [...metricGames.games] : [];
-    if (selectedSeason === 'BETA_SEASON') {
-      games = games.filter((game) => !game.season || game.season === 'BETA_SEASON');
-    }
+    if (selectedSeason === 'BETA_SEASON') games = games.filter((game) => !game.season || game.season === 'BETA_SEASON');
+    return games;
+  }
+
+  function selectedGames(metricGames) {
+    let games = baseGames(metricGames);
+    if (selectedMode !== 'ALL') games = games.filter((game) => modeKey(game) === selectedMode);
+    if (selectedGameFormat !== 'ALL') games = games.filter((game) => gameFormatKey(game) === selectedGameFormat);
+    if (selectedPlayerFormat !== 'ALL') games = games.filter((game) => playerFormatKey(game) === selectedPlayerFormat);
     if (selectedWindow === 'LAST_5') return games.slice(0, 5);
     if (selectedWindow === 'LAST_10') return games.slice(0, 10);
     return games;
+  }
+
+  function availableOptions(metricGames) {
+    const games = baseGames(metricGames);
+    const modes = [...new Set(games.map(modeKey))];
+    if (!modes.includes('OPEN_RANKING')) modes.unshift('OPEN_RANKING');
+    const scopedMode = selectedMode === 'ALL' ? games : games.filter((game) => modeKey(game) === selectedMode);
+    const formats = [...new Set(scopedMode.map(gameFormatKey))];
+    const scopedFormat = selectedGameFormat === 'ALL' ? scopedMode : scopedMode.filter((game) => gameFormatKey(game) === selectedGameFormat);
+    const playerFormats = [...new Set(scopedFormat.map(playerFormatKey).filter((value) => value !== 'LEGACY'))];
+    return { modes, formats, playerFormats };
   }
 
   function sum(games, key) {
@@ -203,10 +252,19 @@
     return page;
   }
 
+  function filterButtons(options, selected, dataName, labeler) {
+    return options.map((key) => `<button type="button" data-${dataName}="${escapeHtml(key)}" class="${selected === key ? 'active' : ''}">${escapeHtml(labeler(key))}</button>`).join('');
+  }
+
   function renderMetricPage() {
     const profile = document.querySelector('.rp-profile.open');
     const page = profile?.querySelector('[data-rp-metric-page]');
     if (!profile || !page || !openMetricKey) return;
+    const options = availableOptions(gameCache);
+    if (selectedMode !== 'ALL' && !options.modes.includes(selectedMode)) selectedMode = options.modes[0] || 'OPEN_RANKING';
+    if (selectedGameFormat !== 'ALL' && !options.formats.includes(selectedGameFormat)) selectedGameFormat = 'ALL';
+    if (selectedPlayerFormat !== 'ALL' && !options.playerFormats.includes(selectedPlayerFormat)) selectedPlayerFormat = 'ALL';
+
     const games = selectedGames(gameCache);
     const result = metricResult(openMetricKey, games);
     const title = page.querySelector('[data-rp-metric-page-title]');
@@ -216,16 +274,31 @@
 
     const seasonLabel = selectedSeason === 'CAREER' ? 'CAREER / ALL TIME' : (gameCache?.seasonLabel || 'BETA SEASON');
     const windowLabel = selectedWindow === 'LAST_5' ? 'LAST 5 GAMES' : selectedWindow === 'LAST_10' ? 'LAST 10 GAMES' : 'ALL GAMES';
+    const modeText = selectedMode === 'ALL' ? 'ALL MODES' : modeLabel(selectedMode);
+    const gameFormatText = selectedGameFormat === 'ALL' ? 'ALL GAME FORMATS' : gameFormatLabel(selectedGameFormat);
+    const playerFormatText = selectedPlayerFormat === 'ALL' ? 'ALL PLAYER FORMATS' : selectedPlayerFormat;
+    const heroContext = [modeText, gameFormatText, selectedPlayerFormat === 'ALL' ? null : playerFormatText].filter(Boolean).join(' · ');
     const extraShooting = openMetricKey === 'shooting'
       ? `<div class="rp-profile-metric-page-substats"><div><span>1PT</span><strong>${result.totals.oneMade}/${result.totals.oneAttempts}</strong><small>${percent(ratioPercent(result.totals.oneMade, result.totals.oneAttempts))}</small></div><div><span>2PT</span><strong>${result.totals.twoMade}/${result.totals.twoAttempts}</strong><small>${percent(ratioPercent(result.totals.twoMade, result.totals.twoAttempts))}</small></div></div>`
       : '';
 
     body.innerHTML = `<section class="rp-profile-metric-page-hero">
-        <small>${escapeHtml(seasonLabel)}</small>
+        <small>${escapeHtml(heroContext)}</small>
         <strong>${result.value}</strong>
         <span>${result.title}</span>
       </section>
       <section class="rp-profile-metric-filters">
+        <div><label>MODE</label><div class="rp-profile-metric-segment context">
+          ${filterButtons(options.modes, selectedMode, 'rp-mode', modeLabel)}
+        </div></div>
+        <div><label>GAME FORMAT</label><div class="rp-profile-metric-segment context">
+          <button type="button" data-rp-game-format="ALL" class="${selectedGameFormat === 'ALL' ? 'active' : ''}">ALL</button>
+          ${filterButtons(options.formats, selectedGameFormat, 'rp-game-format', gameFormatLabel)}
+        </div></div>
+        ${options.playerFormats.length ? `<div><label>PLAYER FORMAT</label><div class="rp-profile-metric-segment context">
+          <button type="button" data-rp-player-format="ALL" class="${selectedPlayerFormat === 'ALL' ? 'active' : ''}">ALL</button>
+          ${filterButtons(options.playerFormats, selectedPlayerFormat, 'rp-player-format', (key) => key)}
+        </div></div>` : ''}
         <div><label>TIMEFRAME</label><div class="rp-profile-metric-segment">
           <button type="button" data-rp-season="BETA_SEASON" class="${selectedSeason === 'BETA_SEASON' ? 'active' : ''}">BETA SEASON</button>
           <button type="button" data-rp-season="CAREER" class="${selectedSeason === 'CAREER' ? 'active' : ''}">CAREER</button>
@@ -237,17 +310,34 @@
         </div></div>
       </section>
       <section class="rp-profile-metric-page-context">
-        <div><span>SEASON</span><strong>${escapeHtml(seasonLabel)}</strong></div>
+        <div><span>MODE</span><strong>${escapeHtml(modeText)}</strong></div>
+        <div><span>GAME FORMAT</span><strong>${escapeHtml(gameFormatText)}</strong></div>
         <div><span>GAMES USED</span><strong>${result.count}</strong></div>
-        <div><span>WINDOW</span><strong>${windowLabel}</strong></div>
         <div><span>${result.rawLabel}</span><strong>${result.raw}</strong></div>
+        <div><span>TIMEFRAME</span><strong>${escapeHtml(seasonLabel)}</strong></div>
+        <div><span>WINDOW</span><strong>${windowLabel}</strong></div>
       </section>
       ${extraShooting}
       <section class="rp-profile-metric-game-list">
         <header><small>GAME-BY-GAME</small><strong>${result.count} OFFICIAL GAME${result.count === 1 ? '' : 'S'}</strong></header>
-        ${games.length ? games.map((game) => `<article><div><strong>${escapeHtml(game.label || `RANKING GAME #${game.sessionId}`)}</strong><span>${formatDate(game.finalizedAt || game.startsAt)}</span></div><b>${escapeHtml(gameMetricValue(game, result))}</b></article>`).join('') : '<div class="rp-profile-metric-no-games">NO OFFICIAL GAMES IN THIS TIMEFRAME.</div>'}
+        ${games.length ? games.map((game) => `<article><div><strong>${escapeHtml(game.label || `RANKING GAME #${game.sessionId}`)}</strong><span>${escapeHtml(game.rulesLabel || 'LEGACY / UNSPECIFIED')} · ${formatDate(game.finalizedAt || game.startsAt)}</span></div><b>${escapeHtml(gameMetricValue(game, result))}</b></article>`).join('') : '<div class="rp-profile-metric-no-games">NO OFFICIAL GAMES IN THIS FILTER.</div>'}
       </section>`;
 
+    body.querySelectorAll('[data-rp-mode]').forEach((button) => button.addEventListener('click', () => {
+      selectedMode = button.dataset.rpMode;
+      selectedGameFormat = 'ALL';
+      selectedPlayerFormat = 'ALL';
+      renderMetricPage();
+    }));
+    body.querySelectorAll('[data-rp-game-format]').forEach((button) => button.addEventListener('click', () => {
+      selectedGameFormat = button.dataset.rpGameFormat;
+      selectedPlayerFormat = 'ALL';
+      renderMetricPage();
+    }));
+    body.querySelectorAll('[data-rp-player-format]').forEach((button) => button.addEventListener('click', () => {
+      selectedPlayerFormat = button.dataset.rpPlayerFormat;
+      renderMetricPage();
+    }));
     body.querySelectorAll('[data-rp-season]').forEach((button) => button.addEventListener('click', () => {
       selectedSeason = button.dataset.rpSeason;
       renderMetricPage();
@@ -262,6 +352,11 @@
     const profile = document.querySelector('.rp-profile.open');
     if (!profile || !gameCache) return;
     openMetricKey = key;
+    const allGames = Array.isArray(gameCache?.games) ? gameCache.games : [];
+    const modes = [...new Set(allGames.map(modeKey))];
+    selectedMode = modes.includes('OPEN_RANKING') ? 'OPEN_RANKING' : (modes[0] || 'OPEN_RANKING');
+    selectedGameFormat = 'ALL';
+    selectedPlayerFormat = 'ALL';
     selectedSeason = 'BETA_SEASON';
     selectedWindow = 'ALL';
     const page = metricPage(profile);
