@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-player-number-recovery-v2';
+  const version = '20260905-shot-breakdown-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -68,6 +68,7 @@
     'public-carousel-center-force.css',
     'public-founder-credit.css',
     'admin-courtside-live.css',
+    'admin-shot-breakdown.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
@@ -117,6 +118,7 @@
       'settings-panel.js',
       'player-admin-probe-guard.js',
       'admin-courtside-live.js',
+      'admin-shot-breakdown.js',
       'admin-access-bootstrap.js',
       'admin-live-refresh-fix.js',
     ];
