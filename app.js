@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-shot-breakdown-v1';
+  const version = '20260905-shot-authority-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
