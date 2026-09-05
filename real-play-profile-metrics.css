@@ -21,7 +21,7 @@
 .rp-profile-metric-page main{padding:18px 0 8px}
 
 .rp-profile-metric-page-hero{padding:22px 18px;border:1px solid rgba(72,215,255,.14);border-radius:22px;background:linear-gradient(145deg,rgba(10,25,39,.98),rgba(4,8,14,.98));box-shadow:0 22px 60px rgba(0,0,0,.28)}
-.rp-profile-metric-page-hero small{display:block;color:#49d7ff;font-size:.46rem;font-weight:950;letter-spacing:.12em}
+.rp-profile-metric-page-hero small{display:block;color:#49d7ff;font-size:.46rem;font-weight:950;letter-spacing:.12em;line-height:1.45}
 .rp-profile-metric-page-hero>strong{display:block;margin-top:9px;font-family:var(--rp-display,Arial,sans-serif);font-size:3rem;font-style:italic;font-weight:950;line-height:.95}
 .rp-profile-metric-page-hero>span{display:block;margin-top:8px;color:#8392a5;font-size:.56rem;font-weight:900;letter-spacing:.08em}
 
@@ -29,13 +29,16 @@
 .rp-profile-metric-filters label{display:block;margin-bottom:7px;color:#64768b;font-size:.43rem;font-weight:950;letter-spacing:.11em}
 .rp-profile-metric-segment{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .rp-profile-metric-segment.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.rp-profile-metric-segment.context{display:flex;gap:6px;overflow-x:auto;padding:1px 1px 4px;scroll-snap-type:x proximity;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.rp-profile-metric-segment.context::-webkit-scrollbar{display:none}
 .rp-profile-metric-segment button{min-height:38px;padding:8px;border:1px solid rgba(255,255,255,.07);border-radius:10px;color:#738397;background:#080e17;font-size:.46rem;font-weight:950;letter-spacing:.06em}
+.rp-profile-metric-segment.context button{flex:0 0 auto;min-width:94px;padding-inline:12px;scroll-snap-align:start;white-space:nowrap}
 .rp-profile-metric-segment button.active{color:#58dcff;border-color:rgba(72,215,255,.26);background:rgba(18,103,158,.16)}
 
 .rp-profile-metric-page-context{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
 .rp-profile-metric-page-context>div{min-height:68px;padding:11px;border:1px solid rgba(255,255,255,.065);border-radius:13px;background:#070c14}
 .rp-profile-metric-page-context span{display:block;color:#57697e;font-size:.4rem;font-weight:950;letter-spacing:.09em}
-.rp-profile-metric-page-context strong{display:block;margin-top:6px;font-family:var(--rp-display,Arial,sans-serif);font-size:.73rem;font-weight:950;line-height:1.2}
+.rp-profile-metric-page-context strong{display:block;margin-top:6px;font-family:var(--rp-display,Arial,sans-serif);font-size:.73rem;font-weight:950;line-height:1.2;overflow-wrap:anywhere}
 
 .rp-profile-metric-page-substats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
 .rp-profile-metric-page-substats>div{padding:13px;border:1px solid rgba(255,255,255,.065);border-radius:13px;background:#070c14}
@@ -51,7 +54,7 @@
 .rp-profile-metric-game-list article:first-of-type{border-top:0}
 .rp-profile-metric-game-list article>div{min-width:0}
 .rp-profile-metric-game-list article strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--rp-display,Arial,sans-serif);font-size:.63rem;font-style:italic;font-weight:950}
-.rp-profile-metric-game-list article span{display:block;margin-top:4px;color:#596b80;font-size:.4rem;font-weight:850;letter-spacing:.04em}
+.rp-profile-metric-game-list article span{display:block;margin-top:4px;color:#596b80;font-size:.4rem;font-weight:850;letter-spacing:.04em;line-height:1.4}
 .rp-profile-metric-game-list article>b{flex:none;color:#eaf8ff;font-family:var(--rp-display,Arial,sans-serif);font-size:.66rem;font-weight:950;text-align:right}
 .rp-profile-metric-no-games{padding:28px 12px;color:#5d6f84;font-size:.5rem;font-weight:900;text-align:center}
 
