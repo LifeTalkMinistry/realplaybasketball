@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-admin-player-roster-v2';
+  const version = '20260905-admin-live-refresh-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -115,6 +115,7 @@
       'settings-panel.js',
       'player-admin-probe-guard.js',
       'admin-access-bootstrap.js',
+      'admin-live-refresh-fix.js',
     ];
 
     for (const href of enhancements) {
