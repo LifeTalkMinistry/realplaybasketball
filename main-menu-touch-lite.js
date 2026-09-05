@@ -11,8 +11,10 @@
   const FAST_FLICK_SPEED = 420;
   const FOLLOW_LIMIT = 0.92;
   const POST_SWIPE_CLICK_GUARD_MS = 95;
+  const USE_NATIVE_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
 
-  let pointerId = null;
+  let gestureKind = null;
+  let gestureId = null;
   let startX = 0;
   let startY = 0;
   let lastY = 0;
@@ -24,6 +26,8 @@
   let basePosition = 0;
   let visualStepPx = 184;
   let visibleRecords = [];
+
+  document.documentElement.dataset.rpTouchPhysics = 'v7';
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -40,6 +44,20 @@
     while (distance > half) distance -= items.length;
     while (distance < -half) distance += items.length;
     return distance;
+  }
+
+  function snapshotVisibleItems() {
+    const activeIndex = items.findIndex((item) => item.classList.contains('slot-active'));
+    basePosition = activeIndex >= 0 ? activeIndex : 0;
+    visualStepPx = clamp((list.clientHeight || 430) * 0.43, 154, 224);
+    visibleRecords = items
+      .map((item, index) => ({
+        item,
+        index,
+        transform: item.style.transform,
+        opacity: item.style.opacity,
+      }))
+      .filter(({ item }) => !item.classList.contains('slot-hidden'));
   }
 
   function renderFollow() {
@@ -94,84 +112,59 @@
     });
   }
 
-  /* Clear the old whole-list feedback from earlier builds. The cards themselves
-     now follow the finger, which is both more physical and cheaper to composite. */
-  list.style.transform = '';
+  function beginGesture(kind, id, x, y) {
+    if (gestureKind !== null) return false;
 
-  list.addEventListener('pointerdown', (event) => {
-    if (event.pointerType === 'mouse') return;
-
-    event.stopImmediatePropagation();
-    pointerId = event.pointerId;
-    startX = event.clientX;
-    startY = event.clientY;
-    lastY = event.clientY;
+    gestureKind = kind;
+    gestureId = id;
+    startX = x;
+    startY = y;
+    lastY = y;
     lastAt = performance.now();
     velocityY = 0;
     pendingProgress = 0;
 
-    const activeIndex = items.findIndex((item) => item.classList.contains('slot-active'));
-    basePosition = activeIndex >= 0 ? activeIndex : 0;
-    visualStepPx = clamp((list.clientHeight || 430) * 0.43, 154, 224);
-    visibleRecords = items
-      .map((item, index) => ({
-        item,
-        index,
-        transform: item.style.transform,
-        opacity: item.style.opacity,
-      }))
-      .filter(({ item }) => !item.classList.contains('slot-hidden'));
-
+    snapshotVisibleItems();
     list.classList.add('rp-touch-lite-active');
     menu.classList.add('rp-physics-moving');
+    return true;
+  }
 
-    try { list.setPointerCapture(pointerId); } catch (_error) {}
-  }, { capture: true });
-
-  list.addEventListener('pointermove', (event) => {
-    if (pointerId === null || event.pointerId !== pointerId) return;
-
-    event.stopImmediatePropagation();
-    if (event.cancelable) event.preventDefault();
+  function moveGesture(x, y) {
+    if (gestureKind === null) return;
 
     const now = performance.now();
     const elapsed = Math.max(8, now - lastAt);
-    const frameVelocity = (event.clientY - lastY) / (elapsed / 1000);
+    const frameVelocity = (y - lastY) / (elapsed / 1000);
     velocityY = velocityY * 0.58 + frameVelocity * 0.42;
-    lastY = event.clientY;
+    lastY = y;
     lastAt = now;
 
-    const deltaY = event.clientY - startY;
-    const deltaX = event.clientX - startX;
-    if (Math.abs(deltaY) >= Math.abs(deltaX) * 0.55) scheduleFollow(deltaY);
-  }, { capture: true, passive: false });
+    const deltaY = y - startY;
+    const deltaX = x - startX;
+    if (Math.abs(deltaY) >= Math.abs(deltaX) * 0.55) {
+      scheduleFollow(deltaY);
+    }
+  }
 
-  function finishPointer(event, cancelled = false) {
-    if (pointerId === null || event.pointerId !== pointerId) return;
+  function finishGesture(x, y, cancelled = false) {
+    if (gestureKind === null) return;
 
-    event.stopImmediatePropagation();
     cancelFollowFrame();
 
-    const releasedId = pointerId;
-    pointerId = null;
-    list.classList.remove('rp-touch-lite-active');
-
-    try { list.releasePointerCapture(releasedId); } catch (_error) {}
-
-    const deltaY = event.clientY - startY;
-    const deltaX = event.clientX - startX;
+    const deltaY = y - startY;
+    const deltaX = x - startX;
     const verticalEnough = Math.abs(deltaY) >= Math.abs(deltaX) * 0.62;
     const distanceSwipe = Math.abs(deltaY) >= SWIPE_DISTANCE;
     const fastFlick = Math.abs(velocityY) >= FAST_FLICK_SPEED && Math.abs(deltaY) >= 8;
     const shouldMove = !cancelled && verticalEnough && (distanceSwipe || fastFlick);
 
-    if (shouldMove) {
-      if (event.cancelable) event.preventDefault();
-      suppressClickUntil = Date.now() + POST_SWIPE_CLICK_GUARD_MS;
+    gestureKind = null;
+    gestureId = null;
+    list.classList.remove('rp-touch-lite-active');
 
-      /* Keep the exact finger-follow transforms in place. main-menu.js changes
-         the selection immediately; the fast-snap CSS then carries those same
-         layers the short remaining distance into the locked position. */
+    if (shouldMove) {
+      suppressClickUntil = Date.now() + POST_SWIPE_CLICK_GUARD_MS;
       dispatchMove(deltaY < 0 ? 1 : -1);
     } else {
       menu.classList.remove('rp-physics-moving');
@@ -182,10 +175,99 @@
     visibleRecords = [];
   }
 
+  function findTouch(touchList, identifier) {
+    for (let index = 0; index < touchList.length; index += 1) {
+      const touch = touchList[index];
+      if (touch.identifier === identifier) return touch;
+    }
+    return null;
+  }
+
+  /* iOS/Safari can deliver the release reliably while coalescing PointerEvent
+     movement in standalone/mobile contexts. On touch-capable devices we use
+     native touchmove as the authoritative finger stream and suppress only the
+     duplicate touch PointerEvents before they reach main-menu.js. */
+  if (USE_NATIVE_TOUCH) {
+    list.addEventListener('touchstart', (event) => {
+      if (gestureKind !== null || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      beginGesture('touch', touch.identifier, touch.clientX, touch.clientY);
+    }, { capture: true, passive: true });
+
+    list.addEventListener('touchmove', (event) => {
+      if (gestureKind !== 'touch') return;
+      const touch = findTouch(event.touches, gestureId);
+      if (!touch) return;
+
+      event.stopImmediatePropagation();
+      if (event.cancelable) event.preventDefault();
+      moveGesture(touch.clientX, touch.clientY);
+    }, { capture: true, passive: false });
+
+    list.addEventListener('touchend', (event) => {
+      if (gestureKind !== 'touch') return;
+      const touch = findTouch(event.changedTouches, gestureId);
+      if (!touch) return;
+
+      event.stopImmediatePropagation();
+      if (event.cancelable) event.preventDefault();
+      finishGesture(touch.clientX, touch.clientY, false);
+    }, { capture: true, passive: false });
+
+    list.addEventListener('touchcancel', (event) => {
+      if (gestureKind !== 'touch') return;
+      const touch = findTouch(event.changedTouches, gestureId);
+      const x = touch?.clientX ?? startX;
+      const y = touch?.clientY ?? lastY;
+      event.stopImmediatePropagation();
+      finishGesture(x, y, true);
+    }, { capture: true, passive: false });
+  }
+
+  list.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'mouse') return;
+
+    if (USE_NATIVE_TOUCH && event.pointerType === 'touch') {
+      event.stopImmediatePropagation();
+      return;
+    }
+
+    event.stopImmediatePropagation();
+    if (!beginGesture('pointer', event.pointerId, event.clientX, event.clientY)) return;
+    try { list.setPointerCapture(event.pointerId); } catch (_error) {}
+  }, { capture: true });
+
+  list.addEventListener('pointermove', (event) => {
+    if (USE_NATIVE_TOUCH && event.pointerType === 'touch') {
+      event.stopImmediatePropagation();
+      return;
+    }
+    if (gestureKind !== 'pointer' || event.pointerId !== gestureId) return;
+
+    event.stopImmediatePropagation();
+    if (event.cancelable) event.preventDefault();
+    moveGesture(event.clientX, event.clientY);
+  }, { capture: true, passive: false });
+
+  function finishPointer(event, cancelled = false) {
+    if (USE_NATIVE_TOUCH && event.pointerType === 'touch') {
+      event.stopImmediatePropagation();
+      return;
+    }
+    if (gestureKind !== 'pointer' || event.pointerId !== gestureId) return;
+
+    event.stopImmediatePropagation();
+    const releasedId = gestureId;
+    try { list.releasePointerCapture(releasedId); } catch (_error) {}
+    finishGesture(event.clientX, event.clientY, cancelled);
+  }
+
   list.addEventListener('pointerup', (event) => finishPointer(event, false), { capture: true, passive: false });
   list.addEventListener('pointercancel', (event) => finishPointer(event, true), { capture: true, passive: false });
   list.addEventListener('lostpointercapture', (event) => {
-    if (pointerId !== null && event.pointerId === pointerId) finishPointer(event, true);
+    if (gestureKind === 'pointer' && event.pointerId === gestureId) {
+      finishGesture(startX, lastY, true);
+    }
   }, { capture: true });
 
   list.addEventListener('click', (event) => {
@@ -193,4 +275,6 @@
     event.preventDefault();
     event.stopImmediatePropagation();
   }, { capture: true });
+
+  list.style.transform = '';
 })();
