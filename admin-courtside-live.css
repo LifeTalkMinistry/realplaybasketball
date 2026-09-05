@@ -197,8 +197,8 @@
 
 .rp-courtside-stats{
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:6px;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
 }
 
 .rp-courtside-stat{
@@ -335,7 +335,7 @@
   .rp-courtside-roster{gap:7px}
   .rp-courtside-team-head{padding-inline:9px}
   .rp-courtside-player{padding-inline:9px;font-size:.64rem}
-  .rp-courtside-stats{gap:4px}
+  .rp-courtside-stats{gap:5px}
   .rp-courtside-stat{padding-inline:2px}
   .rp-courtside-stat-actions button{font-size:.7rem}
 }
