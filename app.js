@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-expanded-courtside-stats-v1';
+  const version = '20260905-player-number-recovery-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -109,6 +109,7 @@
       'real-play-profile.js',
       'real-play-profile-intro.js',
       'main-menu.js',
+      'player-number-recovery.js',
       'ranking-games.js',
       'ranking-games-info-toggle.js',
       'ranking-games-session-cleanup.js',
