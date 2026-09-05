@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-courtside-stable-v3';
+  const version = '20260905-career-metrics-carousel-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -55,6 +55,7 @@
     'real-play-world-chat-cleanup.css',
     'real-play-profile.css',
     'real-play-profile-intro.css',
+    'real-play-profile-metrics.css',
     'membership.css',
     'real-play-brand-system.css',
     'main-menu-brand-overrides.css',
@@ -109,6 +110,7 @@
       'real-play-world-chat-cleanup.js',
       'real-play-profile.js',
       'real-play-profile-intro.js',
+      'real-play-profile-metrics.js',
       'main-menu.js',
       'player-number-recovery.js',
       'ranking-games.js',
