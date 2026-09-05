@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-game-rules-v4';
+  const version = '20260905-game-rules-v5';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -121,6 +121,7 @@
       'player-admin-probe-guard.js',
       'admin-courtside-live.js',
       'admin-access-bootstrap.js',
+      'admin-game-rotation.js',
       'admin-live-refresh-fix.js',
     ];
 
