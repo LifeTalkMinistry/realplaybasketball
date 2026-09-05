@@ -28,7 +28,8 @@
     const form = document.querySelector('[data-auth-number-request-form]');
     if (!accountNumber || !numberBox || !form) return;
 
-    const missing = ['#--', '#—', '#?'].includes(accountNumber.textContent.trim());
+    const accountNumberText = accountNumber.textContent.trim();
+    const missing = ['#--', '#—', '#?'].includes(accountNumberText);
     ensureStyle();
     numberBox.classList.toggle('rp-number-missing', missing);
 
@@ -52,13 +53,19 @@
       setText(nextNumber, 'Choose your current number first.');
       setText(nextStatus, 'After your current number is secured, next-month options work normally.');
     } else {
+      // The account panel is the authority. Once /api/real-play/me reports a
+      // real current number, copy it into the main-menu identity badge instead
+      // of leaving the temporary recovery marker (#?) behind.
+      setText(numberBox, accountNumberText);
       numberBox.removeAttribute('role');
       numberBox.removeAttribute('tabindex');
       numberBox.removeAttribute('aria-label');
+
       if (form.dataset.currentNumberRecovery === '1') {
         delete form.dataset.currentNumberRecovery;
         setNodeValue(label?.firstChild, 'Want a different number next month? ');
         if (submit && !submit.disabled) setText(submit, 'CHECK / REQUEST');
+        setText(note, 'If the number is owned, the current player keeps it through month-end. Higher confirmed Real Play support can earn next-month priority. Exact support amounts are never shown to other players.');
       }
     }
   }
