@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-shot-authority-v2';
+  const version = '20260905-courtside-stable-v3';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -118,7 +118,6 @@
       'settings-panel.js',
       'player-admin-probe-guard.js',
       'admin-courtside-live.js',
-      'admin-shot-breakdown.js',
       'admin-access-bootstrap.js',
       'admin-live-refresh-fix.js',
     ];
