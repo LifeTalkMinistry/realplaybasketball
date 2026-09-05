@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-game-rules-v6';
+  const version = '20260906-live-stat-stable-v7';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -119,6 +119,7 @@
       'overlay-focus-release.js',
       'settings-panel.js',
       'player-admin-probe-guard.js',
+      'admin-live-stat-stability.js',
       'admin-courtside-live.js',
       'admin-access-bootstrap.js',
       'admin-game-rotation.js',
