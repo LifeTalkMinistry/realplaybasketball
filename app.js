@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-admin-live-refresh-v1';
+  const version = '20260905-admin-scroll-stability-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
