@@ -155,7 +155,7 @@
       start?.before(card);
     }
 
-    const preview = saved || draftRules();
+    const preview = locked ? saved : draftRules();
     const lockClass = locked ? 'locked' : saved ? 'saved' : '';
     const lockText = locked ? 'LOCKED' : saved ? 'CONFIRMED' : 'NOT SET';
     const race = draft.family === 'race_to';
@@ -178,7 +178,7 @@
           ${optionButton('STANDARD 3V3', 'data-rp-standard-preset', 'standard_3v3', true, true)}
         </div></div>`}
       </div>
-      <div class="rp-game-rules-summary"><small>${saved ? 'SAVED RULES' : 'PREVIEW'}</small><strong>${esc(rulesLabel(preview))}</strong><span>${esc(rulesDetail(preview))}</span></div>
+      <div class="rp-game-rules-summary"><small>${saved ? 'CURRENT / PREVIEW' : 'PREVIEW'}</small><strong>${esc(rulesLabel(preview))}</strong><span>${esc(rulesDetail(preview))}</span></div>
       ${locked ? '' : `<button type="button" class="rp-game-rules-confirm" data-rp-confirm-rules ${busy ? 'disabled' : ''}>${busy ? 'SAVING...' : saved ? 'UPDATE GAME RULES' : 'CONFIRM GAME RULES'}</button>`}
       <p class="rp-game-rules-notice ${noticeType}">${esc(notice || (saved ? validation.text : 'Rules must be confirmed before START GAME.'))}</p>`;
 
@@ -234,7 +234,8 @@
       }
       return { reached: false, overtime: false, text: '' };
     }
-    if (session.gamePhase === 'overtime') {
+    const overtimeActive = Boolean(session.overtime?.active || session.gamePhase === 'overtime');
+    if (overtimeActive) {
       const westStart = Number(session.overtime?.westStartScore ?? score.west);
       const eastStart = Number(session.overtime?.eastStartScore ?? score.east);
       const target = Number(session.overtime?.targetPoints || 2);
@@ -271,7 +272,8 @@
       return `${bar}${banner}<div class="rp-live-race-panel"><small>OPEN RANKING · FLEXIBLE RULES</small><strong>RACE TO ${Number(rules.targetScore)}</strong><span>${esc(String(rules.playerFormat || '').toUpperCase())} · ${score.west}–${score.east}</span></div><div class="rp-live-rule-error" data-rp-live-rule-error>${esc(noticeType === 'error' ? notice : '')}</div>`;
     }
 
-    const gameLeft = session.gamePhase === 'overtime' ? null : effectiveRemaining(session.gameClock);
+    const overtimeActive = Boolean(session.overtime?.active || session.gamePhase === 'overtime');
+    const gameLeft = overtimeActive ? null : effectiveRemaining(session.gameClock);
     const shotLeft = effectiveRemaining(session.shotClock);
     const timeoutLeft = effectiveRemaining({
       remainingMs: session.timeouts?.activeRemainingMs,
@@ -281,20 +283,20 @@
     const timeoutTeam = session.timeouts?.activeTeam || null;
     const clockRunning = Boolean(session.gameClock?.running);
     const shotRunning = Boolean(session.shotClock?.running);
-    const paused = !timeoutTeam && ((session.gamePhase === 'paused') || (session.gamePhase === 'overtime' && !shotRunning));
+    const paused = !timeoutTeam && ((session.gamePhase === 'paused') || (overtimeActive && !shotRunning));
     const westRemaining = remainingTimeouts(session, 'west');
     const eastRemaining = remainingTimeouts(session, 'east');
 
     return `${bar}${banner}<section class="rp-live-clock-panel">
       <div class="rp-live-clocks">
-        <div class="rp-live-clock ${gameLeft === 0 ? 'expired' : ''}"><small>GAME CLOCK</small><strong data-rp-game-clock>${session.gamePhase === 'overtime' ? 'OT' : formatGameClock(gameLeft)}</strong><span class="rp-live-clock-status">${session.gamePhase === 'overtime' ? 'FIRST TO 2' : timeoutTeam ? 'STOPPED · TIMEOUT' : clockRunning ? 'RUNNING' : 'STOPPED'}</span></div>
+        <div class="rp-live-clock ${gameLeft === 0 ? 'expired' : ''}"><small>GAME CLOCK</small><strong data-rp-game-clock>${overtimeActive ? 'OT' : formatGameClock(gameLeft)}</strong><span class="rp-live-clock-status">${overtimeActive ? 'FIRST TO 2' : timeoutTeam ? 'STOPPED · TIMEOUT' : clockRunning ? 'RUNNING' : 'STOPPED'}</span></div>
         <div class="rp-live-clock shot ${shotLeft === 0 ? 'expired' : ''}"><small>SHOT CLOCK</small><strong data-rp-shot-clock>${formatShotClock(shotLeft)}</strong><span class="rp-live-clock-status">${shotLeft === 0 ? 'EXPIRED' : shotRunning ? 'RUNNING' : 'STOPPED'}</span></div>
       </div>
       ${timeoutTeam ? `<div class="rp-live-timeout-overlay"><small>${esc(timeoutTeam.toUpperCase())} TIMEOUT</small><strong data-rp-timeout-clock>${formatShotClock(timeoutLeft)}</strong><span>FULL 30-SECOND TIMEOUT · GAME STOPPED</span></div>` : `<div class="rp-live-clock-actions">
         <button type="button" class="rp-live-rule-action ${paused ? 'primary' : ''}" data-rp-live-rule-action="${paused ? 'resume-clock' : 'pause-clock'}">${paused ? 'RESUME GAME' : 'STOP CLOCK'}</button>
         <button type="button" class="rp-live-rule-action" data-rp-live-rule-action="reset-shot-clock">RESET SHOT · 12</button>
       </div>
-      ${session.gamePhase === 'overtime' ? '' : `<div class="rp-live-clock-actions three"><button type="button" class="rp-live-rule-action" data-rp-live-rule-action="adjust-game-clock" data-delta-seconds="-5">−5 SEC</button><button type="button" class="rp-live-rule-action" disabled>MANUAL TIME</button><button type="button" class="rp-live-rule-action" data-rp-live-rule-action="adjust-game-clock" data-delta-seconds="5">+5 SEC</button></div>`}
+      ${overtimeActive ? '' : `<div class="rp-live-clock-actions three"><button type="button" class="rp-live-rule-action" data-rp-live-rule-action="adjust-game-clock" data-delta-seconds="-5">−5 SEC</button><button type="button" class="rp-live-rule-action" disabled>MANUAL TIME</button><button type="button" class="rp-live-rule-action" data-rp-live-rule-action="adjust-game-clock" data-delta-seconds="5">+5 SEC</button></div>`}
       <div class="rp-live-timeouts">
         <div class="rp-live-timeout-team"><div><span>WEST TIMEOUT</span><strong>${westRemaining} LEFT</strong></div><button type="button" class="rp-live-rule-action" data-rp-live-rule-action="timeout" data-team="west" ${westRemaining < 1 ? 'disabled' : ''}>CALL TIMEOUT</button></div>
         <div class="rp-live-timeout-team"><div><span>EAST TIMEOUT</span><strong>${eastRemaining} LEFT</strong></div><button type="button" class="rp-live-rule-action" data-rp-live-rule-action="timeout" data-team="east" ${eastRemaining < 1 ? 'disabled' : ''}>CALL TIMEOUT</button></div>
@@ -320,12 +322,23 @@
 
   function updateClockText() {
     const adminRoot = root();
+    const adminBody = body();
     const session = controlCache?.session;
-    if (!adminRoot?.classList.contains('open') || !session || session.gameStatus !== 'live') return;
+    if (!adminRoot?.classList.contains('open')) return;
+
+    const active = adminRoot.querySelector('.rp-admin-tab.active')?.dataset.adminTab || '';
+    if (active === 'live') {
+      if (adminBody?.querySelector('[data-courtside-pregame]') && !adminBody.querySelector('[data-rp-game-rules-card]')) schedule();
+      if (adminBody?.querySelector('[data-courtside-view]:not([data-courtside-review])') && !adminBody.querySelector('[data-rp-live-rules-controls]')) schedule();
+    }
+    if (active === 'finalize' && adminBody?.querySelector('[data-courtside-review]') && !adminBody.querySelector('[data-rp-review-rules]')) schedule();
+
+    if (!session || session.gameStatus !== 'live') return;
     const game = adminRoot.querySelector('[data-rp-game-clock]');
     const shot = adminRoot.querySelector('[data-rp-shot-clock]');
     const timeout = adminRoot.querySelector('[data-rp-timeout-clock]');
-    if (game && session.gamePhase !== 'overtime') game.textContent = formatGameClock(effectiveRemaining(session.gameClock));
+    const overtimeActive = Boolean(session.overtime?.active || session.gamePhase === 'overtime');
+    if (game && !overtimeActive) game.textContent = formatGameClock(effectiveRemaining(session.gameClock));
     if (shot) shot.textContent = formatShotClock(effectiveRemaining(session.shotClock));
     if (timeout) {
       const left = effectiveRemaining({
@@ -514,9 +527,6 @@
     if (!adminRoot?.classList.contains('open')) return;
     if (!controlCache || adminRoot.querySelector('.rp-admin-tab.active')?.dataset.adminTab === 'live') hydrate(true);
   });
-
-  const observer = new MutationObserver(() => schedule());
-  observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.addEventListener('focus', () => {
     if (root()?.classList.contains('open')) hydrate(true);
