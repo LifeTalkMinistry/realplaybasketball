@@ -27,7 +27,7 @@
   let visualStepPx = 184;
   let visibleRecords = [];
 
-  document.documentElement.dataset.rpTouchPhysics = 'v7';
+  document.documentElement.dataset.rpTouchPhysics = 'v8';
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -173,6 +173,7 @@
 
     pendingProgress = 0;
     visibleRecords = [];
+    return shouldMove;
   }
 
   function findTouch(touchList, identifier) {
@@ -183,10 +184,9 @@
     return null;
   }
 
-  /* iOS/Safari can deliver the release reliably while coalescing PointerEvent
-     movement in standalone/mobile contexts. On touch-capable devices we use
-     native touchmove as the authoritative finger stream and suppress only the
-     duplicate touch PointerEvents before they reach main-menu.js. */
+  /* Mobile Safari / standalone mode may coalesce PointerEvent movement even
+     though pointerup still arrives. Native touchmove is therefore the mobile
+     source of truth; mouse/desktop remains on the original pointer physics. */
   if (USE_NATIVE_TOUCH) {
     list.addEventListener('touchstart', (event) => {
       if (gestureKind !== null || event.touches.length !== 1) return;
@@ -200,7 +200,10 @@
       if (!touch) return;
 
       event.stopImmediatePropagation();
-      if (event.cancelable) event.preventDefault();
+      const deltaY = touch.clientY - startY;
+      const deltaX = touch.clientX - startX;
+      const isVertical = Math.abs(deltaY) >= Math.abs(deltaX) * 0.55;
+      if (event.cancelable && isVertical && Math.abs(deltaY) >= 4) event.preventDefault();
       moveGesture(touch.clientX, touch.clientY);
     }, { capture: true, passive: false });
 
@@ -210,7 +213,6 @@
       if (!touch) return;
 
       event.stopImmediatePropagation();
-      if (event.cancelable) event.preventDefault();
       finishGesture(touch.clientX, touch.clientY, false);
     }, { capture: true, passive: false });
 
