@@ -1,0 +1,97 @@
+.rp-shot-points,
+.rp-shot-card{
+  min-height:118px;
+}
+
+.rp-shot-points strong{
+  margin-bottom:9px;
+  font-size:1.5rem;
+}
+
+.rp-shot-auto{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  border:1px solid rgba(126,173,232,.08);
+  border-radius:8px;
+  color:#52677d;
+  background:#07111d;
+  font:950 .5rem var(--rp-display,Arial,sans-serif);
+  letter-spacing:.12em;
+}
+
+.rp-shot-card strong{
+  margin-bottom:2px;
+  font-size:1.05rem;
+  white-space:nowrap;
+}
+
+.rp-shot-meta{
+  display:block;
+  min-height:15px;
+  margin-bottom:6px;
+  overflow:hidden;
+  color:#52677d;
+  font:900 .4rem var(--rp-body,Arial,sans-serif);
+  letter-spacing:.05em;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.rp-shot-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+}
+
+.rp-shot-actions button{
+  min-width:0;
+  min-height:34px;
+  padding:0 2px;
+  border:1px solid rgba(126,173,232,.12);
+  border-radius:8px;
+  color:#d4dfeb;
+  background:#0a1725;
+  font:950 .52rem var(--rp-display,Arial,sans-serif);
+}
+
+.rp-shot-actions button.make{
+  border-color:rgba(67,232,255,.24);
+  color:#eafbff;
+  background:#0a1c28;
+}
+
+.rp-shot-actions button:disabled,
+.rp-shot-undo:disabled{
+  opacity:.35;
+}
+
+.rp-shot-undo{
+  width:100%;
+  min-height:38px;
+  margin-top:8px;
+  border:1px solid rgba(126,173,232,.11);
+  border-radius:10px;
+  color:#7f93aa;
+  background:#050c15;
+  font:950 .55rem var(--rp-display,Arial,sans-serif);
+  letter-spacing:.09em;
+}
+
+.rp-shot-error{
+  margin-top:8px;
+  padding:8px 10px;
+  border:1px solid rgba(255,96,118,.22);
+  border-radius:9px;
+  color:#ff91a2;
+  background:rgba(112,18,40,.18);
+  font-size:.56rem;
+  font-weight:850;
+  line-height:1.35;
+}
+
+@media(max-width:380px){
+  .rp-shot-actions button{font-size:.48rem}
+  .rp-shot-meta{font-size:.37rem}
+}
