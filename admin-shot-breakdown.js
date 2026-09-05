@@ -107,8 +107,10 @@
       const label = side.querySelector('small')?.textContent.trim().toUpperCase();
       const value = side.querySelector('strong');
       if (!value) return;
-      if (label === 'WEST') value.textContent = String(Number(session.westScore || 0));
-      if (label === 'EAST') value.textContent = String(Number(session.eastScore || 0));
+      let next = null;
+      if (label === 'WEST') next = String(Number(session.westScore || 0));
+      if (label === 'EAST') next = String(Number(session.eastScore || 0));
+      if (next !== null && value.textContent !== next) value.textContent = next;
     });
   }
 
@@ -156,8 +158,8 @@
     if (panel.dataset.rpShotSignature !== signature) {
       grid.innerHTML = [
         pointsCard(stats.pts),
-        shotCard(playerId, 1, one, 'INSIDE'),
-        shotCard(playerId, 2, two, 'OUTSIDE'),
+        shotCard(playerId, 1, one, 'INSIDE ARC'),
+        shotCard(playerId, 2, two, 'OUTSIDE ARC'),
         normalStat(playerId, 'AST', stats.ast, 'ast'),
         normalStat(playerId, 'REB', stats.reb, 'reb'),
         normalStat(playerId, 'TO', stats.tov, 'tov'),
