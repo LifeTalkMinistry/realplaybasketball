@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-career-metric-pages-v2';
+  const version = '20260905-game-rules-v4';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -65,8 +65,7 @@
     'settings-panel.css',
     'auth-welcome-cleanup.css',
     'public-landing-cleanup.css',
-    'public-origin-center.css',
-    'public-carousel-center-force.css',
+    'public-origin-center-force.css',
     'public-founder-credit.css',
     'admin-courtside-live.css',
     'admin-shot-breakdown.css',
