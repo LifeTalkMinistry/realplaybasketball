@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260906-live-stat-stable-v7';
+  const version = '20260906-main-menu-physics-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -62,6 +62,7 @@
     'main-menu-cinematic.css',
     'main-menu-ball-background.css',
     'main-menu-card-premium.css',
+    'main-menu-physics.css',
     'settings-panel.css',
     'auth-welcome-cleanup.css',
     'public-landing-cleanup.css',
