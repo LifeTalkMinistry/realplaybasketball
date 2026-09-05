@@ -155,9 +155,15 @@
         <span class="rp-admin-player-avatar">${esc(initials(state.selected.playerName))}</span>
         <span class="rp-admin-player-copy"><strong>${esc(state.selected.playerName)}</strong><small>${esc(state.selected.email || 'REAL PLAY ACCOUNT')}</small></span>
         <button type="button" class="rp-admin-player-change" data-rp-admin-player-clear>CHANGE</button>`;
-      note.textContent = 'This check-in attaches directly to the selected Real Play account and its official history.';
-      submit.textContent = state.sessionStarted === false ? 'START SESSION FIRST' : 'ADD & CHECK IN';
-      submit.disabled = state.sessionStarted === false;
+      if (state.sessionStarted === false) {
+        note.textContent = 'Add this registered account to the confirmed roster now. Physical check-in stays locked until START SESSION.';
+        submit.textContent = 'ADD TO ROSTER';
+        submit.disabled = false;
+      } else {
+        note.textContent = 'This check-in attaches directly to the selected Real Play account and its official history.';
+        submit.textContent = 'ADD & CHECK IN';
+        submit.disabled = false;
+      }
       return;
     }
 
@@ -196,7 +202,7 @@
           <span class="rp-admin-player-copy"><strong>${esc(player.playerName)}</strong><small>${esc(player.email || 'REAL PLAY ACCOUNT')}</small></span>
           <span class="rp-admin-player-tag">SELECT</span>
         </button>`).join('');
-      note.textContent = 'Select the correct account below. The selected account ID is used for check-in, so duplicate names are safe.';
+      note.textContent = 'Select the correct account below. The selected account ID is used so duplicate names are safe.';
       submit.textContent = 'SELECT A PLAYER';
       submit.disabled = true;
       return;
@@ -276,17 +282,18 @@
       }
       return;
     }
-    if (state.sessionStarted === false) {
+    if (!state.selected && state.sessionStarted === false) {
       if (status) {
-        status.textContent = 'Start the session first, then check this player in.';
+        status.textContent = 'Start the session first before adding an unclaimed walk-in player.';
         status.classList.add('error');
       }
       return;
     }
 
+    const addingToRosterOnly = Boolean(state.selected && state.sessionStarted === false);
     if (submit) {
       submit.disabled = true;
-      submit.textContent = 'ADDING…';
+      submit.textContent = addingToRosterOnly ? 'ADDING TO ROSTER…' : 'ADDING…';
     }
     if (input) input.disabled = true;
     if (status) {
@@ -306,7 +313,9 @@
       directoryLoadedAt = 0;
       if (status) {
         status.textContent = state.selected
-          ? `${playerName} checked in using the existing Real Play account.`
+          ? (addingToRosterOnly
+              ? `${playerName} added to the confirmed roster. Check them in after START SESSION.`
+              : `${playerName} checked in using the existing Real Play account.`)
           : `${playerName} added as an unclaimed player and checked in.`;
         status.classList.remove('error');
       }
@@ -319,7 +328,7 @@
       window.dispatchEvent(new Event('focus'));
     } catch (error) {
       if (status) {
-        status.textContent = error.message || 'Player could not be checked in.';
+        status.textContent = error.message || 'Player could not be added.';
         status.classList.add('error');
       }
       if (input) input.disabled = false;
