@@ -88,14 +88,105 @@
   const noticeTitle = notice.querySelector('[data-rp-main-notice-title]');
   const noticeCopy = notice.querySelector('[data-rp-main-notice-copy]');
   const noticeButton = notice.querySelector('[data-rp-main-notice-close]');
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+  const DRAG_STEP_PX = 172;
+  const MAX_DRAG_ITEMS = 1.12;
+  const PROJECTION_SECONDS = 0.18;
+  const SPRING = { mass: 0.92, stiffness: 238, damping: 29 };
+
   let activeIndex = 0;
-  let pointerStartY = null;
+  let position = 0;
+  let pointerId = null;
+  let pointerStartY = 0;
+  let dragStartPosition = 0;
+  let pointerLastY = 0;
+  let pointerLastAt = 0;
+  let pointerVelocityY = 0;
+  let dragDistance = 0;
   let suppressClickUntil = 0;
   let lastWheelAt = 0;
+  let springFrame = 0;
+  let springVelocity = 0;
+  let springTarget = null;
   let noticeAction = 'close';
 
+  menu.classList.add('rp-physics-menu');
+
   function normalizeIndex(index) {
-    return (index + items.length) % items.length;
+    return ((index % items.length) + items.length) % items.length;
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function smoothstep(value) {
+    const t = clamp(value, 0, 1);
+    return t * t * (3 - 2 * t);
+  }
+
+  function wrappedDistance(index, currentPosition) {
+    let distance = index - currentPosition;
+    const half = items.length / 2;
+    while (distance > half) distance -= items.length;
+    while (distance < -half) distance += items.length;
+    return distance;
+  }
+
+  function shortestDelta(fromIndex, toIndex) {
+    let delta = toIndex - fromIndex;
+    const half = items.length / 2;
+    if (delta > half) delta -= items.length;
+    if (delta < -half) delta += items.length;
+    return delta;
+  }
+
+  function visualStep() {
+    const height = list?.clientHeight || 430;
+    return clamp(height * 0.43, 154, 224);
+  }
+
+  function renderPhysics() {
+    const step = visualStep();
+
+    items.forEach((item, index) => {
+      const distance = wrappedDistance(index, position);
+      const absolute = Math.abs(distance);
+      const centered = 1 - smoothstep(Math.min(absolute, 1));
+      const beyond = clamp((absolute - 1) / 0.65, 0, 1);
+      const alpha = absolute <= 1
+        ? 0.19 + 0.81 * centered
+        : 0.19 * (1 - smoothstep(beyond));
+      const scale = absolute <= 1
+        ? 0.54 + 0.46 * centered
+        : 0.50 - 0.08 * smoothstep(beyond);
+      const detail = Math.pow(centered, 1.65);
+      const shell = 0.025 + 0.975 * Math.pow(centered, 2.15);
+      const signed = Math.sign(distance || 1);
+      const y = signed * step * Math.pow(absolute, 0.94);
+      const rotate = clamp(-distance * 6, -9, 9);
+      const saturation = 0.42 + 0.58 * centered;
+      const brightness = 0.78 + 0.22 * centered;
+      const detailShift = (1 - detail) * 12;
+      const offstage = absolute > 1.62;
+
+      item.style.setProperty('--rp-y', `${y.toFixed(2)}px`);
+      item.style.setProperty('--rp-scale', scale.toFixed(4));
+      item.style.setProperty('--rp-alpha', offstage ? '0' : alpha.toFixed(4));
+      item.style.setProperty('--rp-detail', detail.toFixed(4));
+      item.style.setProperty('--rp-detail-shift', `${detailShift.toFixed(2)}px`);
+      item.style.setProperty('--rp-rotate', `${rotate.toFixed(2)}deg`);
+      item.style.setProperty('--rp-sat', saturation.toFixed(3));
+      item.style.setProperty('--rp-bright', brightness.toFixed(3));
+      item.style.setProperty('--rp-shell', shell.toFixed(4));
+      item.style.setProperty('--rp-border', (0.08 + 0.82 * shell).toFixed(4));
+      item.style.setProperty('--rp-blue-glow', (0.13 * shell).toFixed(4));
+      item.style.setProperty('--rp-red-glow', (0.09 * shell).toFixed(4));
+      item.style.zIndex = String(1000 - Math.round(absolute * 100));
+      item.classList.toggle('rp-physics-offstage', offstage);
+      item.classList.toggle('rp-physics-near', absolute < 1.18);
+    });
   }
 
   function renderSelector() {
@@ -116,15 +207,82 @@
     });
 
     list?.setAttribute('aria-activedescendant', items[activeIndex]?.id || '');
+    renderPhysics();
   }
 
-  function selectIndex(index) {
-    activeIndex = normalizeIndex(index);
+  function cancelSpring() {
+    if (springFrame) cancelAnimationFrame(springFrame);
+    springFrame = 0;
+    springTarget = null;
+    menu.classList.remove('rp-physics-settling');
+  }
+
+  function commitSettled(target) {
+    cancelSpring();
+    const previousIndex = activeIndex;
+    activeIndex = normalizeIndex(Math.round(target));
+    position = activeIndex;
+    springVelocity = 0;
     renderSelector();
+
+    if (previousIndex !== activeIndex) {
+      try {
+        if ('vibrate' in navigator) navigator.vibrate(8);
+      } catch (_error) {
+        // Haptics are optional and unsupported on some mobile browsers.
+      }
+    }
+  }
+
+  function springTo(target, initialVelocity = 0) {
+    cancelSpring();
+
+    if (reducedMotion?.matches) {
+      commitSettled(target);
+      return;
+    }
+
+    springTarget = target;
+    springVelocity = clamp(initialVelocity, -7, 7);
+    menu.classList.add('rp-physics-settling');
+    let lastAt = performance.now();
+
+    const tick = (now) => {
+      const dt = clamp((now - lastAt) / 1000, 0.001, 0.032);
+      lastAt = now;
+
+      const displacement = position - springTarget;
+      const force = (-SPRING.stiffness * displacement) - (SPRING.damping * springVelocity);
+      const acceleration = force / SPRING.mass;
+
+      springVelocity += acceleration * dt;
+      position += springVelocity * dt;
+      renderPhysics();
+
+      if (Math.abs(position - springTarget) < 0.0012 && Math.abs(springVelocity) < 0.012) {
+        commitSettled(springTarget);
+        return;
+      }
+
+      springFrame = requestAnimationFrame(tick);
+    };
+
+    springFrame = requestAnimationFrame(tick);
   }
 
   function moveSelection(direction) {
-    selectIndex(activeIndex + direction);
+    if (!direction) return;
+    springTo(activeIndex + (direction > 0 ? 1 : -1), direction * 1.1);
+  }
+
+  function selectIndex(index) {
+    const normalized = normalizeIndex(index);
+    const delta = shortestDelta(activeIndex, normalized);
+    if (!delta) {
+      springTo(activeIndex, 0);
+      return;
+    }
+    springTo(activeIndex + clamp(delta, -1, 1), Math.sign(delta) * 0.9);
   }
 
   function showNotice({ kicker, title, copy, button = 'GOT IT', action = 'close' }) {
@@ -274,25 +432,71 @@
 
   list?.addEventListener('pointerdown', (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    cancelSpring();
+    pointerId = event.pointerId;
     pointerStartY = event.clientY;
+    pointerLastY = event.clientY;
+    pointerLastAt = performance.now();
+    pointerVelocityY = 0;
+    dragDistance = 0;
+    dragStartPosition = position;
+    list.classList.add('rp-physics-dragging');
+    try { list.setPointerCapture(pointerId); } catch (_error) {}
   });
 
-  list?.addEventListener('pointerup', (event) => {
-    if (pointerStartY === null) return;
-    const deltaY = event.clientY - pointerStartY;
-    pointerStartY = null;
-    if (Math.abs(deltaY) < 28) return;
-    suppressClickUntil = Date.now() + 350;
-    moveSelection(deltaY < 0 ? 1 : -1);
+  list?.addEventListener('pointermove', (event) => {
+    if (pointerId === null || event.pointerId !== pointerId) return;
+    const now = performance.now();
+    const elapsed = Math.max(8, now - pointerLastAt);
+    const deltaFromStart = event.clientY - pointerStartY;
+    const frameVelocity = (event.clientY - pointerLastY) / (elapsed / 1000);
+
+    pointerVelocityY = pointerVelocityY * 0.72 + frameVelocity * 0.28;
+    pointerLastY = event.clientY;
+    pointerLastAt = now;
+    dragDistance = Math.max(dragDistance, Math.abs(deltaFromStart));
+
+    const dragUnits = clamp(-deltaFromStart / DRAG_STEP_PX, -MAX_DRAG_ITEMS, MAX_DRAG_ITEMS);
+    position = dragStartPosition + dragUnits;
+    renderPhysics();
   });
 
-  list?.addEventListener('pointercancel', () => {
-    pointerStartY = null;
+  function releasePointer(event, cancelled = false) {
+    if (pointerId === null || (event?.pointerId !== undefined && event.pointerId !== pointerId)) return;
+
+    const releasedPointer = pointerId;
+    pointerId = null;
+    list?.classList.remove('rp-physics-dragging');
+    try { list?.releasePointerCapture(releasedPointer); } catch (_error) {}
+
+    if (cancelled) {
+      springTo(activeIndex, 0);
+      return;
+    }
+
+    if (dragDistance > 8) suppressClickUntil = Date.now() + 360;
+
+    const velocityItems = clamp(-pointerVelocityY / DRAG_STEP_PX, -6, 6);
+    const projected = position + velocityItems * PROJECTION_SECONDS;
+    const origin = activeIndex;
+    let target = Math.round(projected);
+    target = clamp(target, origin - 1, origin + 1);
+
+    const moved = Math.abs(position - origin);
+    if (moved < 0.16 && Math.abs(velocityItems) < 0.72) target = origin;
+
+    springTo(target, velocityItems);
+  }
+
+  list?.addEventListener('pointerup', (event) => releasePointer(event, false));
+  list?.addEventListener('pointercancel', (event) => releasePointer(event, true));
+  list?.addEventListener('lostpointercapture', (event) => {
+    if (pointerId !== null && event.pointerId === pointerId) releasePointer(event, true);
   });
 
   list?.addEventListener('wheel', (event) => {
     const now = Date.now();
-    if (Math.abs(event.deltaY) < 12 || now - lastWheelAt < 220) return;
+    if (Math.abs(event.deltaY) < 10 || now - lastWheelAt < 190) return;
     lastWheelAt = now;
     event.preventDefault();
     moveSelection(event.deltaY > 0 ? 1 : -1);
@@ -367,4 +571,10 @@
   renderSelector();
   refreshOvr();
   window.addEventListener('focus', refreshOvr);
+  window.addEventListener('resize', renderPhysics, { passive: true });
+
+  if ('ResizeObserver' in window && list) {
+    const observer = new ResizeObserver(() => renderPhysics());
+    observer.observe(list);
+  }
 })();
