@@ -1,6 +1,6 @@
 /* REAL PLAY — FAST SNAP RESPONSE
- * Keeps the lightweight carousel smooth while making the selection feel immediate.
- * State changes happen instantly; only transform/opacity visually settle for a short time.
+ * The cards follow the finger with zero transition lag while touching, then
+ * finish the final few pixels with a short compositor-only settle.
  */
 
 .rp-main-menu.rp-physics-menu .rp-main-menu-item,
@@ -8,16 +8,20 @@
 .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next,
 .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active{
   transition:
-    transform 155ms cubic-bezier(.18,.82,.28,1),
-    opacity 105ms linear!important;
+    transform 145ms cubic-bezier(.18,.82,.28,1),
+    opacity 95ms linear!important;
 }
 
-/* The whole selector gives only a tiny return after the finger releases. */
-.rp-main-menu-list.rp-touch-lite-returning{
-  transition:transform 72ms cubic-bezier(.2,.8,.3,1)!important;
+/* While the finger is physically on the selector there must be no easing.
+   Every rendered transform is the current finger position. */
+.rp-main-menu-list.rp-touch-lite-active .rp-main-menu-item,
+.rp-main-menu-list.rp-touch-lite-active .rp-main-menu-item.slot-prev,
+.rp-main-menu-list.rp-touch-lite-active .rp-main-menu-item.slot-next,
+.rp-main-menu-list.rp-touch-lite-active .rp-main-menu-item.slot-active{
+  transition:none!important;
 }
 
-/* Selected destination can be tapped while the last few visual frames finish. */
+/* Selected destination can be tapped while the last visual frames finish. */
 .rp-main-menu.rp-physics-menu.rp-physics-moving .rp-main-menu-item.slot-active{
   pointer-events:auto!important;
 }
