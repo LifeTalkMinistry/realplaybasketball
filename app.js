@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-player-number-recovery-v1';
+  const version = '20260905-player-number-recovery-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
