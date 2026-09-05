@@ -1,0 +1,24 @@
+/* Swipeable Real Play career metrics */
+.rp-profile-metrics-shell{margin-top:14px}
+.rp-profile-metrics-hint{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;color:#526579;font-size:.42rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+.rp-profile-metrics-carousel{display:flex;gap:8px;overflow-x:auto;padding:2px 1px 8px;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.rp-profile-metrics-carousel::-webkit-scrollbar{display:none}
+.rp-profile-metric-card{flex:0 0 106px;min-height:94px;padding:13px 9px;border:1px solid rgba(255,255,255,.07);border-radius:14px;color:#f7fbff;background:#070c14;text-align:left;scroll-snap-align:start;cursor:pointer;transition:border-color .16s ease,background .16s ease,transform .16s ease}
+.rp-profile-metric-card:active{transform:scale(.98)}
+.rp-profile-metric-card[aria-expanded="true"]{border-color:rgba(72,215,255,.32);background:linear-gradient(145deg,rgba(13,48,70,.72),#070c14)}
+.rp-profile-metric-card strong{display:block;font-family:var(--rp-display,Arial,sans-serif);font-size:1.35rem;font-weight:950;line-height:1}
+.rp-profile-metric-card span{display:block;margin-top:7px;color:#6e7f93;font-size:.47rem;font-weight:950;letter-spacing:.09em}
+.rp-profile-metric-card small{display:block;margin-top:4px;color:#435367;font-size:.38rem;font-weight:850;letter-spacing:.05em;line-height:1.25}
+.rp-profile-metric-detail{margin-top:4px;padding:13px;border:1px solid rgba(72,215,255,.14);border-radius:14px;background:linear-gradient(145deg,rgba(10,28,42,.9),rgba(5,10,17,.95))}
+.rp-profile-metric-detail[hidden]{display:none}
+.rp-profile-metric-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.rp-profile-metric-detail-head small{display:block;color:#48d7ff;font-size:.43rem;font-weight:950;letter-spacing:.12em}
+.rp-profile-metric-detail-head strong{display:block;margin-top:3px;font-family:var(--rp-display,Arial,sans-serif);font-size:1rem;font-style:italic;font-weight:950}
+.rp-profile-metric-detail-value{flex:none;font-family:var(--rp-display,Arial,sans-serif);font-size:1.35rem;font-weight:950;color:#fff}
+.rp-profile-metric-detail p{margin:9px 0 0;color:#7d8ca0;font-size:.52rem;font-weight:750;line-height:1.5}
+.rp-profile-metric-receipts{display:grid;gap:6px;margin-top:10px}
+.rp-profile-metric-receipts div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 9px;border-radius:9px;background:#070d15}
+.rp-profile-metric-receipts span{color:#64768b;font-size:.43rem;font-weight:900;letter-spacing:.06em}
+.rp-profile-metric-receipts b{font-family:var(--rp-display,Arial,sans-serif);font-size:.57rem;font-weight:950;text-align:right}
+.rp-profile-stat-grid[data-rp-metrics-replaced="true"]{display:none!important}
+@media(min-width:560px){.rp-profile-metric-card{flex-basis:118px}}
