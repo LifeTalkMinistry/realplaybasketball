@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260906-main-menu-physics-v1';
+  const version = '20260906-main-menu-physics-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
