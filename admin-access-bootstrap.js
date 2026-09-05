@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260904-session-manage-v2';
+  const ADMIN_ASSET_VERSION = '20260905-player-autocomplete-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -20,6 +20,7 @@
     'admin-game-control.js',
     'admin-session-start.js',
     'admin-game-control-simplify.js',
+    'admin-player-search.js',
     'admin-courtside-live.js',
     'admin-session-picker.js',
     'admin-score-dom-sync.js',
