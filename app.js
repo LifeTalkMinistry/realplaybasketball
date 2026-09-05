@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260905-admin-scroll-stability-v1';
+  const version = '20260905-expanded-courtside-stats-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -67,6 +67,7 @@
     'public-origin-center.css',
     'public-carousel-center-force.css',
     'public-founder-credit.css',
+    'admin-courtside-live.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
@@ -114,6 +115,7 @@
       'overlay-focus-release.js',
       'settings-panel.js',
       'player-admin-probe-guard.js',
+      'admin-courtside-live.js',
       'admin-access-bootstrap.js',
       'admin-live-refresh-fix.js',
     ];
