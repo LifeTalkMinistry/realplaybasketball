@@ -1,22 +1,28 @@
-/* REAL PLAY — LIGHTWEIGHT PHYSICS CAROUSEL
- * Performance authority for the main selector.
- * Motion frames change only transform + opacity. Expensive glass, gradients,
- * borders and shadows are static and only change when a card actually settles.
+/* REAL PLAY — ULTRALIGHT CAROUSEL RENDERING
+ * Main menu motion is intentionally compositor-first for mobile.
+ * Only the active/previous/next items exist in the render path and all
+ * backdrop blur / animated paint-heavy effects are disabled.
  */
 
 .rp-main-menu.rp-physics-menu .rp-main-menu-list{
   overflow:visible;
-  perspective:1100px;
+  perspective:none!important;
   touch-action:none;
   cursor:grab;
   -webkit-tap-highlight-color:transparent;
+  will-change:transform;
+  transform:translate3d(0,0,0);
 }
 
-.rp-main-menu.rp-physics-menu .rp-main-menu-list.rp-physics-dragging{
+.rp-main-menu.rp-physics-menu .rp-main-menu-list.rp-physics-dragging,
+.rp-main-menu.rp-physics-menu .rp-main-menu-list.rp-touch-lite-active{
   cursor:grabbing;
 }
 
-/* Every card keeps the same geometry so settling never causes layout jumps. */
+.rp-main-menu.rp-physics-menu .rp-main-menu-list.rp-touch-lite-returning{
+  transition:transform 140ms cubic-bezier(.2,.8,.2,1);
+}
+
 .rp-main-menu.rp-physics-menu .rp-main-menu-item,
 .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-prev,
 .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next,
@@ -30,6 +36,8 @@
   overflow:hidden;
   transition:none!important;
   filter:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
   transform-origin:50% 50%;
   will-change:transform,opacity;
   backface-visibility:hidden;
@@ -37,71 +45,65 @@
   contain:paint;
 }
 
-/* Non-selected cards are already rasterized glass layers; only compositor
-   transform/opacity changes while they travel. */
-.rp-main-menu.rp-physics-menu .rp-main-menu-item{
-  border:1px solid rgba(95,145,198,.10)!important;
-  background:linear-gradient(158deg,rgba(5,13,24,.84),rgba(3,7,13,.91) 52%,rgba(5,5,9,.94))!important;
-  box-shadow:none!important;
-  pointer-events:none;
+/* The other four menu entries are removed from paint/compositing entirely.
+   The selector only ever moves one item at a time, so three layers are enough. */
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-hidden{
+  display:none!important;
 }
 
+/* Adjacent options are deliberately just lightweight title layers. */
 .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-prev,
-.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next,
-.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active{
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next{
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
   pointer-events:auto;
 }
 
-/* Keep the premium visual only on the locked card. These properties do not
-   animate frame-by-frame, so the browser can cache the layer. */
-.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active{
-  border:1px solid transparent!important;
-  background:
-    radial-gradient(78% 62% at 50% 36%,rgba(16,113,218,.10),transparent 58%),
-    radial-gradient(62% 54% at 92% 78%,rgba(142,24,42,.075),transparent 64%),
-    linear-gradient(158deg,rgba(5,13,24,.955) 0%,rgba(3,7,13,.982) 52%,rgba(5,5,9,.988) 100%) padding-box,
-    linear-gradient(112deg,#1398ff 0%,rgba(52,145,232,.62) 28%,rgba(119,129,151,.24) 50%,rgba(190,64,78,.56) 74%,#ff3542 100%) border-box!important;
-  box-shadow:
-    0 24px 62px rgba(0,0,0,.43),
-    -13px 3px 34px rgba(0,117,255,.09),
-    13px 4px 34px rgba(255,37,51,.06),
-    inset 0 1px 0 rgba(255,255,255,.05)!important;
-}
-
-/* While physically moving, use a cheaper shadow on the selected layer.
-   This changes once at gesture start/end rather than every frame. */
-.rp-main-menu.rp-physics-menu.rp-physics-moving .rp-main-menu-item.slot-active{
-  box-shadow:0 16px 42px rgba(0,0,0,.34)!important;
-}
-
-/* Remove the PREVIOUS/NEXT decorative pseudo labels from the cinematic layer;
-   they compete with the card texture and add paint work during motion. */
 .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-prev::before,
 .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next::before,
-.rp-main-menu.rp-physics-menu .rp-main-menu-item::before{
-  content:''!important;
-  position:absolute!important;
-  z-index:0!important;
-  inset:0!important;
-  width:auto!important;
-  height:auto!important;
-  border-radius:inherit!important;
-  background:
-    radial-gradient(circle at 50% 40%,rgba(31,154,255,.055),transparent 31%),
-    radial-gradient(circle at 50% 47%,transparent 0 33.6%,rgba(156,183,213,.035) 33.9%,transparent 34.6%),
-    linear-gradient(62deg,transparent 49.8%,rgba(139,167,202,.022) 50%,transparent 50.2%),
-    linear-gradient(-62deg,transparent 49.8%,rgba(139,167,202,.02) 50%,transparent 50.2%)!important;
-  transform:none!important;
-  opacity:1!important;
-  pointer-events:none!important;
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-prev::after,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next::after{
+  display:none!important;
 }
 
-.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active::before{
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-prev small,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-prev span,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next small,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next span{
+  display:none!important;
+}
+
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-prev strong,
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-next strong{
+  color:#9da7b5!important;
+  text-shadow:none!important;
+}
+
+/* Only the locked card keeps the premium frame. Backdrop blur is permanently
+   removed because transforming a blurred backdrop is costly on mobile GPUs. */
+.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active{
+  pointer-events:auto;
+  border:1px solid transparent!important;
   background:
-    radial-gradient(circle at 50% 38%,rgba(31,154,255,.10),transparent 29%),
-    radial-gradient(circle at 50% 46%,transparent 0 33.5%,rgba(156,183,213,.055) 33.8%,transparent 34.6%),
-    linear-gradient(62deg,transparent 49.76%,rgba(139,167,202,.035) 50%,transparent 50.24%),
-    linear-gradient(-62deg,transparent 49.76%,rgba(139,167,202,.032) 50%,transparent 50.24%)!important;
+    linear-gradient(158deg,rgba(5,13,24,.965) 0%,rgba(3,7,13,.985) 52%,rgba(5,5,9,.99) 100%) padding-box,
+    linear-gradient(112deg,#1398ff 0%,rgba(52,145,232,.58) 28%,rgba(119,129,151,.22) 50%,rgba(190,64,78,.50) 74%,#ff3542 100%) border-box!important;
+  box-shadow:
+    0 20px 50px rgba(0,0,0,.39),
+    -9px 2px 24px rgba(0,117,255,.07),
+    9px 3px 24px rgba(255,37,51,.045)!important;
+}
+
+/* During movement the active card temporarily becomes a cheap flat layer.
+   This is a one-time state switch, not a per-frame paint animation. */
+.rp-main-menu.rp-physics-menu.rp-physics-moving .rp-main-menu-item.slot-active{
+  border-color:rgba(79,137,196,.18)!important;
+  background:#040912!important;
+  box-shadow:none!important;
+}
+
+.rp-main-menu.rp-physics-menu .rp-main-menu-item::before{
+  display:none!important;
 }
 
 .rp-main-menu.rp-physics-menu .rp-main-menu-item small,
@@ -111,42 +113,21 @@
   z-index:1;
 }
 
-/* Nearby cards tease only the title. Full information appears after lock-in. */
-.rp-main-menu.rp-physics-menu .rp-main-menu-item small,
-.rp-main-menu.rp-physics-menu .rp-main-menu-item span,
-.rp-main-menu.rp-physics-menu .rp-main-menu-item::after{
-  opacity:0!important;
-  transition:none!important;
-}
-
-.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active small,
-.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active span,
-.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active::after{
-  opacity:1!important;
-}
-
-.rp-main-menu.rp-physics-menu .rp-main-menu-item strong{
-  color:#aab2be!important;
-  text-shadow:0 8px 20px rgba(0,0,0,.42)!important;
-}
-
 .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active strong{
   color:#f7f9fb!important;
-  text-shadow:0 1px 0 rgba(255,255,255,.30),0 10px 22px rgba(0,0,0,.54),0 0 26px rgba(57,162,255,.07)!important;
+  text-shadow:0 8px 18px rgba(0,0,0,.46)!important;
 }
 
-/* Keep active CTA exactly functional/visible, but don't animate its paint. */
+.rp-main-menu.rp-physics-menu.rp-physics-moving .rp-main-menu-item.slot-active strong{
+  text-shadow:none!important;
+}
+
 .rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active::after{
-  border:1px solid transparent!important;
-  background:
-    linear-gradient(102deg,rgba(7,32,61,.88),rgba(4,9,17,.94) 50%,rgba(33,8,16,.88)) padding-box,
-    linear-gradient(105deg,#36aaff 0%,rgba(72,157,230,.68) 32%,rgba(102,112,137,.34) 52%,rgba(185,62,78,.58) 76%,#ff4450 100%) border-box!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.045)!important;
+  box-shadow:none!important;
 }
 
-/* Inline transform supplied by main-menu.js always wins. */
-.rp-main-menu.rp-physics-menu .rp-main-menu-item.slot-active:active{
-  filter:none!important;
+.rp-main-menu.rp-physics-menu.rp-physics-moving .rp-main-menu-item.slot-active::after{
+  opacity:0!important;
 }
 
 @media(max-height:760px){
