@@ -7,8 +7,9 @@
 
   let selectedUserId = null;
   let lastSnapshot = null;
-  let scheduled = false;
   let hydrationSequence = 0;
+  let shotBusy = false;
+  let refreshPromise = null;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -31,30 +32,72 @@
     return match ? `CAREER #${String(Number(match[1])).padStart(3, '0')}` : raw;
   }
 
+  function number(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+  }
+
+  function normalizeStats(stats = {}) {
+    const normalized = {
+      onePtMade: number(stats.onePtMade),
+      onePtMiss: number(stats.onePtMiss),
+      twoPtMade: number(stats.twoPtMade),
+      twoPtMiss: number(stats.twoPtMiss),
+      AST: number(stats.AST ?? stats.ast),
+      REB: number(stats.REB ?? stats.reb),
+      TO: number(stats.TO ?? stats.tov),
+      STL: number(stats.STL ?? stats.stl),
+      BLK: number(stats.BLK ?? stats.blk),
+      FOUL: number(stats.FOUL ?? stats.foul),
+    };
+    normalized.PTS = normalized.onePtMade + (2 * normalized.twoPtMade);
+    return normalized;
+  }
+
+  function shotSummary(made, missed) {
+    const attempts = made + missed;
+    return {
+      made,
+      attempts,
+      percent: attempts ? `${Math.round((made / attempts) * 100)}%` : '—',
+    };
+  }
+
   function parseScoreboard(scope) {
     const sides = [...scope.querySelectorAll('.rp-admin-score-side')].map((side) => ({
       team: side.querySelector('small')?.textContent.trim().toUpperCase() || '',
-      score: Number(side.querySelector('strong')?.textContent.trim() || 0),
+      score: number(side.querySelector('strong')?.textContent.trim()),
     }));
-    const west = sides.find((side) => side.team === 'WEST')?.score || 0;
-    const east = sides.find((side) => side.team === 'EAST')?.score || 0;
-    return { west, east };
+    return {
+      west: sides.find((side) => side.team === 'WEST')?.score || 0,
+      east: sides.find((side) => side.team === 'EAST')?.score || 0,
+    };
   }
 
   function parsePlayers(scope) {
     return [...scope.querySelectorAll('.rp-admin-stat-player')].map((card) => {
       const action = card.querySelector('[data-control-action="stat"]');
       if (!action) return null;
-      const stats = { PTS: 0, MAKE: 0, MISS: 0, AST: 0, REB: 0, TO: 0, STL: 0, BLK: 0, FOUL: 0 };
+      const userId = String(action.dataset.userId || '');
+      const cached = lastSnapshot?.players.find((player) => player.userId === userId);
+      const stats = normalizeStats(cached?.stats || {});
+
       card.querySelectorAll('.rp-admin-stat').forEach((box) => {
         const key = box.querySelector('label')?.textContent.trim().toUpperCase();
-        if (key && Object.hasOwn(stats, key)) stats[key] = Number(box.querySelector('strong')?.textContent.trim() || 0);
+        const value = number(box.querySelector('strong')?.textContent.trim());
+        if (key === 'AST') stats.AST = value;
+        else if (key === 'REB') stats.REB = value;
+        else if (key === 'TO') stats.TO = value;
+        else if (key === 'STL') stats.STL = value;
+        else if (key === 'BLK') stats.BLK = value;
+        else if (key === 'FOUL') stats.FOUL = value;
       });
+
       return {
-        userId: String(action.dataset.userId || ''),
-        label: card.querySelector('.rp-admin-stat-player-head strong')?.textContent.trim() || 'PLAYER',
-        team: card.querySelector('.rp-admin-stat-player-head .rp-admin-pill')?.textContent.trim().toUpperCase() || '',
-        stats,
+        userId,
+        label: card.querySelector('.rp-admin-stat-player-head strong')?.textContent.trim() || cached?.label || 'PLAYER',
+        team: card.querySelector('.rp-admin-stat-player-head .rp-admin-pill')?.textContent.trim().toUpperCase() || cached?.team || '',
+        stats: normalizeStats(stats),
       };
     }).filter(Boolean).sort((a, b) => {
       const aNum = Number(a.label.match(/#(\d+)/)?.[1] ?? 999);
@@ -64,10 +107,10 @@
   }
 
   function playerLabel(player) {
-    const number = player?.playerNumber === null || player?.playerNumber === undefined
+    const playerNumber = player?.playerNumber === null || player?.playerNumber === undefined
       ? '#--'
       : `#${Number(player.playerNumber)}`;
-    return `${number} ${player?.playerName || 'REAL PLAY PLAYER'}`;
+    return `${playerNumber} ${player?.playerName || 'REAL PLAY PLAYER'}`;
   }
 
   function snapshotFromControl(control) {
@@ -78,17 +121,7 @@
         userId: String(player.userId ?? player.playerId ?? ''),
         label: playerLabel(player),
         team: String(player.team || '').toUpperCase(),
-        stats: {
-          PTS: Number(player.stats?.pts || 0),
-          MAKE: Number(player.stats?.make || 0),
-          MISS: Number(player.stats?.miss || 0),
-          AST: Number(player.stats?.ast || 0),
-          REB: Number(player.stats?.reb || 0),
-          TO: Number(player.stats?.tov || 0),
-          STL: Number(player.stats?.stl || 0),
-          BLK: Number(player.stats?.blk || 0),
-          FOUL: Number(player.stats?.foul || 0),
-        },
+        stats: normalizeStats(player.stats || {}),
       }))
       .sort((a, b) => {
         const aNum = Number(a.label.match(/#(\d+)/)?.[1] ?? 999);
@@ -96,28 +129,44 @@
         return aNum - bNum || a.label.localeCompare(b.label);
       });
 
+    const score = { west: 0, east: 0 };
+    players.forEach((player) => {
+      if (player.team === 'WEST') score.west += player.stats.PTS;
+      if (player.team === 'EAST') score.east += player.stats.PTS;
+    });
+
     return {
-      score: {
-        west: Number(control.session.westScore || 0),
-        east: Number(control.session.eastScore || 0),
-      },
+      score,
       players,
       gameStatus: String(control.session.gameStatus || ''),
     };
   }
 
-  async function fetchExpandedSnapshot() {
+  async function controlRequest(method = 'GET', payload) {
     const token = localStorage.getItem(TOKEN_KEY) || '';
-    if (!token) return null;
+    if (!token) throw new Error('Admin session is not available.');
+    const response = await fetch(`${API_BASE_URL}/api/real-play/admin/career/control`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...(payload !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: payload !== undefined ? JSON.stringify(payload) : undefined,
+      cache: 'no-store',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(data?.message || data?.error || `Request failed (${response.status}).`);
+      error.code = data?.code || null;
+      throw error;
+    }
+    return data;
+  }
+
+  async function fetchExpandedSnapshot() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/real-play/admin/career/control`, {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) return null;
-      const data = await response.json().catch(() => null);
+      const data = await controlRequest('GET');
       return snapshotFromControl(data?.control || null);
     } catch (_) {
       return null;
@@ -126,9 +175,9 @@
 
   function scoreboardHtml(score) {
     return `<div class="rp-admin-scoreboard">
-      <div class="rp-admin-score-side"><small>WEST</small><strong>${score.west}</strong></div>
+      <div class="rp-admin-score-side"><small>WEST</small><strong>${number(score.west)}</strong></div>
       <div class="rp-admin-score-dash">—</div>
-      <div class="rp-admin-score-side"><small>EAST</small><strong>${score.east}</strong></div>
+      <div class="rp-admin-score-side"><small>EAST</small><strong>${number(score.east)}</strong></div>
     </div>`;
   }
 
@@ -145,14 +194,6 @@
 
   function statActions(player, stat) {
     const userId = esc(player.userId);
-    if (stat === 'pts') {
-      return `<div class="rp-courtside-stat-actions points">
-        <button type="button" data-control-action="stat" data-user-id="${userId}" data-stat="pts" data-delta="-1">−</button>
-        <button type="button" data-control-action="stat" data-user-id="${userId}" data-stat="pts" data-delta="1">+1</button>
-        <button type="button" data-control-action="stat" data-user-id="${userId}" data-stat="pts" data-delta="2">+2</button>
-        <button type="button" data-control-action="stat" data-user-id="${userId}" data-stat="pts" data-delta="3">+3</button>
-      </div>`;
-    }
     return `<div class="rp-courtside-stat-actions">
       <button type="button" data-control-action="stat" data-user-id="${userId}" data-stat="${stat}" data-delta="-1">−</button>
       <button type="button" data-control-action="stat" data-user-id="${userId}" data-stat="${stat}" data-delta="1">+</button>
@@ -160,19 +201,39 @@
   }
 
   function statBox(player, label, stat) {
-    return `<div class="rp-courtside-stat"><label>${label}</label><strong>${player.stats[label]}</strong>${statActions(player, stat)}</div>`;
+    return `<div class="rp-courtside-stat"><label>${label}</label><strong>${number(player.stats[label])}</strong>${statActions(player, stat)}</div>`;
+  }
+
+  function pointsCard(player) {
+    return `<div class="rp-courtside-stat rp-shot-points"><label>PTS</label><strong>${number(player.stats.PTS)}</strong><span class="rp-shot-auto">AUTO</span></div>`;
+  }
+
+  function shotCard(player, shotValue, summary, rangeLabel) {
+    const userId = esc(player.userId);
+    return `<div class="rp-courtside-stat rp-shot-card">
+      <label>${shotValue}PT</label>
+      <strong>${summary.made} / ${summary.attempts}</strong>
+      <span class="rp-shot-meta">${summary.percent} · ${rangeLabel}</span>
+      <div class="rp-shot-actions">
+        <button type="button" data-rp-shot-action="shot" data-user-id="${userId}" data-shot-value="${shotValue}" data-result="miss" ${shotBusy ? 'disabled' : ''}>MISS</button>
+        <button type="button" class="make" data-rp-shot-action="shot" data-user-id="${userId}" data-shot-value="${shotValue}" data-result="make" ${shotBusy ? 'disabled' : ''}>MAKE</button>
+      </div>
+    </div>`;
   }
 
   function playerPanelHtml(player) {
+    const one = shotSummary(player.stats.onePtMade, player.stats.onePtMiss);
+    const two = shotSummary(player.stats.twoPtMade, player.stats.twoPtMiss);
+    const attempts = one.attempts + two.attempts;
     return `<section class="rp-courtside-player-panel">
       <div class="rp-courtside-player-panel-head">
         <div><span class="rp-courtside-state">${esc(player.team)}</span><strong>${esc(player.label)}</strong></div>
         <button type="button" class="rp-courtside-close" data-courtside-close aria-label="Close player controls">×</button>
       </div>
       <div class="rp-courtside-stats">
-        ${statBox(player, 'PTS', 'pts')}
-        ${statBox(player, 'MAKE', 'make')}
-        ${statBox(player, 'MISS', 'miss')}
+        ${pointsCard(player)}
+        ${shotCard(player, 1, one, 'INSIDE ARC')}
+        ${shotCard(player, 2, two, 'OUTSIDE ARC')}
         ${statBox(player, 'AST', 'ast')}
         ${statBox(player, 'REB', 'reb')}
         ${statBox(player, 'TO', 'tov')}
@@ -180,6 +241,8 @@
         ${statBox(player, 'BLK', 'blk')}
         ${statBox(player, 'FOUL', 'foul')}
       </div>
+      <button type="button" class="rp-shot-undo" data-rp-shot-action="undo-shot" data-user-id="${esc(player.userId)}" ${shotBusy || attempts === 0 ? 'disabled' : ''}>UNDO LAST SHOT</button>
+      <div class="rp-shot-error" data-rp-shot-error hidden></div>
     </section>`;
   }
 
@@ -204,16 +267,25 @@
     </div>`;
   }
 
-  async function hydrateLive(fallbackSnapshot) {
+  async function refreshSnapshot() {
+    if (refreshPromise) return refreshPromise;
     const sequence = ++hydrationSequence;
-    renderLive(fallbackSnapshot);
-    const expanded = await fetchExpandedSnapshot();
-    if (sequence !== hydrationSequence || !expanded || expanded.gameStatus !== 'live') return;
-    const adminRoot = root();
-    if (!adminRoot?.classList.contains('open')) return;
-    const active = adminRoot.querySelector('.rp-admin-tab.active')?.dataset.adminTab || '';
-    if (active !== 'live') return;
-    renderLive(expanded);
+    refreshPromise = (async () => {
+      const expanded = await fetchExpandedSnapshot();
+      if (sequence !== hydrationSequence || !expanded || expanded.gameStatus !== 'live') return;
+      const adminRoot = root();
+      if (!adminRoot?.classList.contains('open')) return;
+      if (adminRoot.querySelector('.rp-admin-tab.active')?.dataset.adminTab !== 'live') return;
+      renderLive(expanded);
+    })().finally(() => {
+      refreshPromise = null;
+    });
+    return refreshPromise;
+  }
+
+  function hydrateLive(fallbackSnapshot) {
+    renderLive(lastSnapshot || fallbackSnapshot);
+    refreshSnapshot();
   }
 
   function renderPregame(scope) {
@@ -299,9 +371,49 @@
     adminRoot.classList.remove('rp-courtside-locked');
   }
 
+  async function handleShotAction(button) {
+    if (shotBusy) return;
+    const userId = Number(button.dataset.userId);
+    if (!Number.isSafeInteger(userId) || userId === 0) return;
+
+    shotBusy = true;
+    if (lastSnapshot) renderLive(lastSnapshot);
+    try {
+      const payload = button.dataset.rpShotAction === 'shot'
+        ? {
+            action: 'shot',
+            userId,
+            shotValue: Number(button.dataset.shotValue),
+            result: String(button.dataset.result || ''),
+          }
+        : { action: 'undo-shot', userId };
+      const data = await controlRequest('POST', payload);
+      const next = snapshotFromControl(data?.control || null);
+      if (next) renderLive(next);
+    } catch (error) {
+      const panel = body()?.querySelector('.rp-courtside-player-panel');
+      const errorBox = panel?.querySelector('[data-rp-shot-error]');
+      if (errorBox) {
+        errorBox.hidden = false;
+        errorBox.textContent = error.message || 'Unable to record that shot.';
+      }
+    } finally {
+      shotBusy = false;
+      if (lastSnapshot) renderLive(lastSnapshot);
+    }
+  }
+
   document.addEventListener('click', (event) => {
     const adminRoot = root();
     if (!adminRoot || !adminRoot.contains(event.target)) return;
+
+    const shotButton = event.target.closest('[data-rp-shot-action]');
+    if (shotButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      handleShotAction(shotButton);
+      return;
+    }
 
     const player = event.target.closest('[data-courtside-player]');
     if (player) {
@@ -327,15 +439,26 @@
     if (event.target.closest('[data-courtside-back]')) {
       adminRoot.querySelector('[data-admin-tab="live"]')?.click();
     }
+  }, true);
+
+  // The base admin screen rebuilds its body whenever live server state changes.
+  // Restore the stable courtside view synchronously in the same event turn so
+  // the legacy PTS/MAKE/MISS layout is never painted between refreshes.
+  window.addEventListener('realplay:admin-render', () => {
+    const adminRoot = root();
+    const adminBody = body();
+    if (!adminRoot || !adminBody || !adminRoot.classList.contains('open')) return;
+    const active = adminRoot.querySelector('.rp-admin-tab.active')?.dataset.adminTab || '';
+    const state = adminBody.querySelector('.rp-admin-title .rp-admin-kicker')?.textContent.trim().toUpperCase() || '';
+
+    if (active === 'live' && state === 'LIVE' && lastSnapshot?.gameStatus === 'live') {
+      renderLive(lastSnapshot);
+      refreshSnapshot();
+      return;
+    }
+
+    enhance();
   });
 
-  window.addEventListener('realplay:admin-render', () => {
-    if (scheduled) return;
-    scheduled = true;
-    window.requestAnimationFrame(() => {
-      scheduled = false;
-      enhance();
-    });
-  });
   enhance();
 })();
