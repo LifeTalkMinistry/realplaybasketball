@@ -17,7 +17,7 @@
   if (!document.querySelector('link[href^="profile-ownership.css"]')) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'profile-ownership.css?v=20260906-profile-ownership-v1';
+    link.href = 'profile-ownership.css?v=20260907-ownership-disputes-v1';
     document.head.appendChild(link);
   }
 
@@ -157,10 +157,12 @@
         </div>`;
   }
 
-  loadScript('auth-account-name-bridge.js?v=20260906-name-carry-v1', () => {
-    loadScript('auth-ownership-core.js?v=20260906-name-carry-v1', () => {
-      loadScript('profile-experience.js', () => {
-        loadScript('support.js', () => loadScript('support-admin.js'));
+  loadScript('auth-account-name-bridge.js?v=20260907-ownership-disputes-v1', () => {
+    loadScript('auth-ownership-core.js?v=20260907-ownership-disputes-v1', () => {
+      loadScript('auth-ownership-disputes.js?v=20260907-ownership-disputes-v1', () => {
+        loadScript('profile-experience.js', () => {
+          loadScript('support.js', () => loadScript('support-admin.js'));
+        });
       });
     });
   });
