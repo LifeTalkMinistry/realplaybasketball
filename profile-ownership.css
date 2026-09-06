@@ -1,0 +1,154 @@
+/* Real Play account -> player identity ownership flow. */
+.auth-profile-choice{
+  display:grid;
+  gap:12px;
+}
+.auth-profile-choice button,
+.auth-profile-choice-action{
+  width:100%;
+  min-height:64px;
+  padding:13px 16px;
+  border:1px solid rgba(89,176,255,.24);
+  border-radius:14px;
+  color:#eef8ff;
+  background:linear-gradient(180deg,rgba(8,23,39,.96),rgba(4,11,20,.98));
+  text-align:left;
+  cursor:pointer;
+}
+.auth-profile-choice button strong{
+  display:block;
+  font-family:var(--rp-display,Impact,sans-serif);
+  font-size:.92rem;
+  font-style:italic;
+  letter-spacing:.07em;
+}
+.auth-profile-choice button span{
+  display:block;
+  margin-top:5px;
+  color:#7f94aa;
+  font-size:.68rem;
+  line-height:1.42;
+}
+.auth-profile-choice button:first-child{
+  border-color:rgba(39,205,255,.38);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 12px 30px rgba(0,112,255,.08);
+}
+.auth-profile-flow-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:13px;
+}
+.auth-profile-flow-head strong{
+  color:#f7fbff;
+  font-family:var(--rp-display,Impact,sans-serif);
+  font-size:1.02rem;
+  font-style:italic;
+  letter-spacing:.055em;
+}
+.auth-profile-back{
+  width:auto!important;
+  min-height:34px!important;
+  padding:0!important;
+  border:0!important;
+  color:#78cfff!important;
+  background:transparent!important;
+  font-size:.64rem!important;
+  letter-spacing:.1em!important;
+}
+.auth-claim-search{
+  display:grid;
+  gap:8px;
+}
+.auth-claim-results{
+  display:grid;
+  gap:9px;
+  max-height:310px;
+  margin-top:11px;
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+.auth-claim-card{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  border:1px solid rgba(126,173,232,.14);
+  border-radius:12px;
+  background:rgba(4,10,17,.82);
+}
+.auth-claim-card strong{
+  display:block;
+  overflow:hidden;
+  color:#f4f9ff;
+  font-size:.78rem;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.auth-claim-card span,
+.auth-claim-card small{
+  display:block;
+  margin-top:3px;
+  color:#7190ad;
+  font-size:.6rem;
+  line-height:1.35;
+}
+.auth-claim-card button{
+  width:auto;
+  min-height:38px;
+  padding:0 12px;
+  border:1px solid rgba(37,204,255,.35);
+  border-radius:10px;
+  color:#baf3ff;
+  background:rgba(12,79,109,.22);
+  font-family:var(--rp-display,Impact,sans-serif);
+  font-size:.66rem;
+  font-style:italic;
+  font-weight:900;
+  letter-spacing:.07em;
+  cursor:pointer;
+}
+.auth-claim-empty{
+  padding:20px 12px;
+  border:1px dashed rgba(126,173,232,.13);
+  border-radius:12px;
+  color:#6f8398;
+  text-align:center;
+  font-size:.67rem;
+  line-height:1.45;
+}
+.auth-ownership-badge{
+  display:block;
+  margin-top:8px;
+  padding:8px 10px;
+  border:1px solid rgba(255,190,74,.22);
+  border-radius:9px;
+  color:#ffd780;
+  background:rgba(98,65,9,.10);
+  font-size:.58rem;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-align:center;
+}
+.auth-ownership-badge.verified{
+  border-color:rgba(56,227,196,.26);
+  color:#78f0d8;
+  background:rgba(5,83,70,.12);
+}
+.auth-ownership-player-id{
+  display:block;
+  margin-top:4px;
+  color:#6d8197;
+  font-size:.56rem;
+  font-weight:800;
+  letter-spacing:.1em;
+  text-align:center;
+}
+.auth-choice-note{
+  margin:11px 2px 0;
+  color:#6f8498;
+  font-size:.64rem;
+  line-height:1.48;
+}
