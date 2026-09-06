@@ -5,7 +5,7 @@
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
   const MIN_QUERY = 2;
-  const MAX_RESULTS = 6;
+  const MAX_RESULTS = 8;
   const DIRECTORY_TTL_MS = 30_000;
 
   let directory = [];
@@ -49,15 +49,34 @@
     if (!force && directory.length && Date.now() - directoryLoadedAt < DIRECTORY_TTL_MS) return directory;
     if (directoryPromise) return directoryPromise;
 
-    directoryPromise = api('/api/real-play/admin/3v3/players')
-      .then((data) => {
-        directory = (Array.isArray(data?.players) ? data.players : [])
+    directoryPromise = Promise.all([
+      api('/api/real-play/admin/3v3/players'),
+      api('/api/real-play/profile-ownership/unclaimed'),
+    ])
+      .then(([registeredData, unclaimedData]) => {
+        const registered = (Array.isArray(registeredData?.players) ? registeredData.players : [])
           .map((player) => ({
             userId: Number(player?.userId),
+            playerId: null,
             playerName: String(player?.playerName || '').trim(),
             email: String(player?.email || '').trim(),
+            publicPlayerId: '',
+            unclaimed: false,
           }))
           .filter((player) => Number.isSafeInteger(player.userId) && player.userId > 0 && player.playerName);
+
+        const unclaimed = (Array.isArray(unclaimedData?.profiles) ? unclaimedData.profiles : [])
+          .map((player) => ({
+            userId: -Number(player?.playerId || player?.id),
+            playerId: Number(player?.playerId || player?.id),
+            playerName: String(player?.playerName || '').trim(),
+            email: '',
+            publicPlayerId: String(player?.publicPlayerId || '').trim(),
+            unclaimed: true,
+          }))
+          .filter((player) => Number.isSafeInteger(player.playerId) && player.playerId > 0 && player.playerName);
+
+        directory = [...registered, ...unclaimed];
         directoryLoadedAt = Date.now();
         return directory;
       })
@@ -70,11 +89,12 @@
     const q = query.toLowerCase();
     const name = player.playerName.toLowerCase();
     const email = player.email.toLowerCase();
-    if (name === q) return 0;
-    if (name.startsWith(q)) return 1;
+    const publicId = player.publicPlayerId.toLowerCase();
+    if (name === q || publicId === q) return 0;
+    if (name.startsWith(q) || publicId.startsWith(q)) return 1;
     if (email === q) return 2;
     if (email.startsWith(q)) return 3;
-    if (name.includes(q)) return 4;
+    if (name.includes(q) || publicId.includes(q)) return 4;
     if (email.includes(q)) return 5;
     return 99;
   }
@@ -104,6 +124,7 @@
       .rp-admin-player-copy{min-width:0;display:grid;gap:3px}.rp-admin-player-copy strong,.rp-admin-player-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .rp-admin-player-copy strong{color:#fff;font:900 12px/1.1 system-ui,sans-serif}.rp-admin-player-copy small{color:#7fa6bb;font:650 9px/1.2 system-ui,sans-serif;text-transform:none;letter-spacing:0}
       .rp-admin-player-tag{color:#49e6ff;font:900 8px/1 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}
+      .rp-admin-player-tag.unclaimed{color:#ffd36c}
       .rp-admin-player-change{min-height:30px;padding:0 9px;border:1px solid rgba(118,164,190,.24);border-radius:9px;background:#07131e;color:#9fc0d0;font:850 8px/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}
       .rp-admin-player-search-empty{padding:9px 10px;border:1px dashed rgba(118,164,190,.24);border-radius:11px;color:#7fa6bb;font:650 10px/1.4 system-ui,sans-serif}.rp-admin-player-search-empty strong{color:#dff8ff}
       .rp-admin-player-search-loading{color:#67dff1;font:800 9px/1.2 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}
@@ -145,17 +166,31 @@
     const query = input.value.trim();
 
     if (help) help.textContent = state.selected
-      ? 'Existing Real Play account selected.'
-      : 'Type a player name or email. Matching accounts appear automatically.';
+      ? (state.selected.unclaimed ? 'Existing unclaimed Real Play profile selected.' : 'Existing Real Play account selected.')
+      : 'Type a player name, email, or Player ID. Accounts and unclaimed profiles appear automatically.';
 
     if (state.selected) {
       suggestions.hidden = true;
       selectedBox.hidden = false;
+      const detail = state.selected.unclaimed
+        ? `${state.selected.publicPlayerId || 'UNCLAIMED PROFILE'} · UNCLAIMED`
+        : (state.selected.email || 'REAL PLAY ACCOUNT');
       selectedBox.innerHTML = `
         <span class="rp-admin-player-avatar">${esc(initials(state.selected.playerName))}</span>
-        <span class="rp-admin-player-copy"><strong>${esc(state.selected.playerName)}</strong><small>${esc(state.selected.email || 'REAL PLAY ACCOUNT')}</small></span>
+        <span class="rp-admin-player-copy"><strong>${esc(state.selected.playerName)}</strong><small>${esc(detail)}</small></span>
         <button type="button" class="rp-admin-player-change" data-rp-admin-player-clear>CHANGE</button>`;
-      if (state.sessionStarted === false) {
+
+      if (state.selected.unclaimed) {
+        if (state.sessionStarted === false) {
+          note.textContent = 'This player profile already exists. Start the session before checking this unclaimed player in.';
+          submit.textContent = 'START SESSION FIRST';
+          submit.disabled = true;
+        } else {
+          note.textContent = 'This check-in uses the existing unclaimed Player Profile so its game history stays attached to that identity.';
+          submit.textContent = 'CHECK IN UNCLAIMED PLAYER';
+          submit.disabled = false;
+        }
+      } else if (state.sessionStarted === false) {
         note.textContent = 'Add this registered account to the confirmed roster now. Physical check-in stays locked until START SESSION.';
         submit.textContent = 'ADD TO ROSTER';
         submit.disabled = false;
@@ -173,7 +208,7 @@
     if (query.length < MIN_QUERY) {
       suggestions.hidden = true;
       suggestions.innerHTML = '';
-      note.textContent = 'Search existing Real Play accounts first. If no account is found, you can add an unclaimed player.';
+      note.textContent = 'Search Real Play players first. Registered accounts and existing unclaimed profiles are both searchable here.';
       submit.textContent = 'SEARCH PLAYER';
       submit.disabled = true;
       return;
@@ -189,28 +224,33 @@
 
     if (state.error) {
       suggestions.innerHTML = `<div class="rp-admin-player-search-empty">${esc(state.error)}</div>`;
-      note.textContent = 'Player search is temporarily unavailable. Try again before creating an unclaimed player.';
+      note.textContent = 'Player search is temporarily unavailable. Try again before creating another profile.';
       submit.textContent = 'SEARCH PLAYER';
       submit.disabled = true;
       return;
     }
 
     if (state.matches.length) {
-      suggestions.innerHTML = state.matches.map((player) => `
-        <button type="button" class="rp-admin-player-suggestion" data-rp-admin-player-result="${player.userId}">
-          <span class="rp-admin-player-avatar">${esc(initials(player.playerName))}</span>
-          <span class="rp-admin-player-copy"><strong>${esc(player.playerName)}</strong><small>${esc(player.email || 'REAL PLAY ACCOUNT')}</small></span>
-          <span class="rp-admin-player-tag">SELECT</span>
-        </button>`).join('');
-      note.textContent = 'Select the correct account below. The selected account ID is used so duplicate names are safe.';
+      suggestions.innerHTML = state.matches.map((player) => {
+        const detail = player.unclaimed
+          ? `${player.publicPlayerId || 'UNCLAIMED PROFILE'} · UNCLAIMED`
+          : (player.email || 'REAL PLAY ACCOUNT');
+        return `
+          <button type="button" class="rp-admin-player-suggestion" data-rp-admin-player-result="${player.userId}">
+            <span class="rp-admin-player-avatar">${esc(initials(player.playerName))}</span>
+            <span class="rp-admin-player-copy"><strong>${esc(player.playerName)}</strong><small>${esc(detail)}</small></span>
+            <span class="rp-admin-player-tag${player.unclaimed ? ' unclaimed' : ''}">${player.unclaimed ? 'UNCLAIMED' : 'SELECT'}</span>
+          </button>`;
+      }).join('');
+      note.textContent = 'Select the exact player identity below. Unclaimed profiles keep the same Player ID and history when claimed later.';
       submit.textContent = 'SELECT A PLAYER';
       submit.disabled = true;
       return;
     }
 
     if (state.searched) {
-      suggestions.innerHTML = `<div class="rp-admin-player-search-empty"><strong>NO ACCOUNT FOUND.</strong><br>You can add “${esc(query)}” as an unclaimed player.</div>`;
-      note.textContent = 'No matching Real Play account was found. This fallback creates an unclaimed identity that can be claimed later.';
+      suggestions.innerHTML = `<div class="rp-admin-player-search-empty"><strong>NO PLAYER PROFILE FOUND.</strong><br>You can add “${esc(query)}” as a new unclaimed player.</div>`;
+      note.textContent = 'No matching account or unclaimed Player Profile was found. This fallback creates a new unclaimed identity.';
       submit.textContent = state.sessionStarted === false ? 'START SESSION FIRST' : 'ADD AS UNCLAIMED & CHECK IN';
       submit.disabled = state.sessionStarted === false;
       return;
@@ -231,7 +271,7 @@
     render(form);
   }
 
-  async function search(form) {
+  async function search(form, force = false) {
     const state = stateFor(form);
     const { input } = refs(form);
     if (!input) return;
@@ -251,12 +291,12 @@
     state.loading = true;
     render(form);
     try {
-      await loadDirectory();
+      await loadDirectory(force);
       if (!input.isConnected || input.value.trim() !== query) return;
       state.matches = matchesFor(query);
       state.searched = true;
     } catch (error) {
-      state.error = error.message || 'Unable to search Real Play accounts.';
+      state.error = error.message || 'Unable to search Real Play players.';
     } finally {
       state.loading = false;
       if (input.isConnected && input.value.trim() === query) render(form);
@@ -277,20 +317,20 @@
 
     if (!state.selected && state.matches.length) {
       if (status) {
-        status.textContent = 'Select the correct existing Real Play account first.';
+        status.textContent = 'Select the correct existing Real Play player first.';
         status.classList.add('error');
       }
       return;
     }
-    if (!state.selected && state.sessionStarted === false) {
+    if ((!state.selected || state.selected.unclaimed) && state.sessionStarted === false) {
       if (status) {
-        status.textContent = 'Start the session first before adding an unclaimed walk-in player.';
+        status.textContent = 'Start the session first before checking in an unclaimed player.';
         status.classList.add('error');
       }
       return;
     }
 
-    const addingToRosterOnly = Boolean(state.selected && state.sessionStarted === false);
+    const addingToRosterOnly = Boolean(state.selected && !state.selected.unclaimed && state.sessionStarted === false);
     if (submit) {
       submit.disabled = true;
       submit.textContent = addingToRosterOnly ? 'ADDING TO ROSTER…' : 'ADDING…';
@@ -302,28 +342,32 @@
     }
 
     try {
-      await api('/api/real-play/admin/career/control', {
-        method: 'POST',
-        body: state.selected
-          ? { action: 'add-player', userId: state.selected.userId, playerName: state.selected.playerName }
-          : { action: 'add-player', playerName },
-      });
+      const body = state.selected && !state.selected.unclaimed
+        ? { action: 'add-player', userId: state.selected.userId, playerName: state.selected.playerName }
+        : { action: 'add-player', playerName };
+
+      await api('/api/real-play/admin/career/control', { method: 'POST', body });
 
       directory = [];
       directoryLoadedAt = 0;
       if (status) {
-        status.textContent = state.selected
-          ? (addingToRosterOnly
-              ? `${playerName} added to the confirmed roster. Check them in after START SESSION.`
-              : `${playerName} checked in using the existing Real Play account.`)
-          : `${playerName} added as an unclaimed player and checked in.`;
+        status.textContent = state.selected?.unclaimed
+          ? `${playerName} checked in using the existing ${state.selected.publicPlayerId || 'unclaimed Player Profile'}.`
+          : state.selected
+            ? (addingToRosterOnly
+                ? `${playerName} added to the confirmed roster. Check them in after START SESSION.`
+                : `${playerName} checked in using the existing Real Play account.`)
+            : `${playerName} added as a new unclaimed player and checked in.`;
         status.classList.remove('error');
       }
 
       state.selected = null;
       state.matches = [];
       state.searched = false;
-      if (input) input.value = '';
+      if (input) {
+        input.value = '';
+        input.disabled = false;
+      }
       await window.__realPlayRefreshAdminGameControl?.();
       window.dispatchEvent(new Event('focus'));
     } catch (error) {
@@ -345,7 +389,7 @@
     ensureStyles();
     form.dataset.rpPlayerSearchReady = '1';
     if (label.firstChild) label.firstChild.nodeValue = 'Search Real Play player ';
-    input.placeholder = 'Type player name or email';
+    input.placeholder = 'Type player name, email, or Player ID';
     input.autocomplete = 'off';
     input.enterKeyHint = 'search';
 
@@ -415,6 +459,15 @@
   function scan() {
     document.querySelectorAll('[data-admin-manual-player-form]').forEach(upgrade);
   }
+
+  window.addEventListener('realplay:unclaimed-player-created', () => {
+    directory = [];
+    directoryLoadedAt = 0;
+    document.querySelectorAll('[data-admin-manual-player-form]').forEach((form) => {
+      const input = form.querySelector('input[name="playerName"]');
+      if (input?.value.trim().length >= MIN_QUERY) search(form, true);
+    });
+  });
 
   const observer = new MutationObserver(scan);
   observer.observe(document.documentElement, { childList: true, subtree: true });
