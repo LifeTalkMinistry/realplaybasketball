@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260907-youtube-source-v1';
+  const ADMIN_ASSET_VERSION = '20260907-desktop-video-score-desk-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -19,6 +19,7 @@
     'admin-recorded-scoring.css',
     'admin-recorded-scoring-draft.css',
     'admin-recorded-scoring-youtube.css',
+    'admin-recorded-scoring-desktop.css',
     'real-play-admin-brand-overrides.css',
   ];
   const ADMIN_SCRIPTS = [
@@ -41,6 +42,9 @@
     // YouTube is a hosting/player adapter layered over the same recorded
     // scoring workflow. The official event/timestamp model remains unchanged.
     'admin-recorded-scoring-youtube.js',
+    // Desktop layout only rearranges the scoring workspace. Mobile stays on
+    // the existing stacked workflow and all score/timestamp logic is shared.
+    'admin-recorded-scoring-desktop.js',
     'admin-recorded-scoring-lock.js',
     'admin-session-picker.js',
     'admin-score-dom-sync.js',
