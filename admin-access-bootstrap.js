@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260906-unclaimed-player-search-v2';
+  const ADMIN_ASSET_VERSION = '20260907-recorded-scoring-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -16,6 +16,7 @@
     'admin-shot-breakdown.css',
     'admin-game-rules.css',
     'admin-player-ownership.css',
+    'admin-recorded-scoring.css',
     'real-play-admin-brand-overrides.css',
   ];
   const ADMIN_SCRIPTS = [
@@ -27,6 +28,7 @@
     'admin-player-ownership.js',
     'admin-courtside-live.js',
     'admin-game-rules.js',
+    'admin-recorded-scoring.js',
     'admin-session-picker.js',
     'admin-score-dom-sync.js',
     'admin-season-control.js',
