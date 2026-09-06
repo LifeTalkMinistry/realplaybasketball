@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260907-desktop-video-score-desk-v1';
+  const ADMIN_ASSET_VERSION = '20260907-score-confirmation-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -18,6 +18,7 @@
     'admin-player-ownership.css',
     'admin-recorded-scoring.css',
     'admin-recorded-scoring-draft.css',
+    'admin-recorded-scoring-score-confirmation.css',
     'admin-recorded-scoring-youtube.css',
     'admin-recorded-scoring-desktop.css',
     'real-play-admin-brand-overrides.css',
@@ -34,8 +35,11 @@
     // Guard first so a scorer tap can never fall through to a retired
     // per-event backend write while the local draft is still booting.
     'admin-recorded-scoring-draft-guard.js',
-    // Draft second so it owns shot/stat/undo/finish taps before the legacy
-    // recorded scorer registers its capture listener.
+    // Confirmation listens before the draft consumes scorer taps, then shows
+    // a short in-video acknowledgement only for MADE baskets.
+    'admin-recorded-scoring-score-confirmation.js',
+    // Draft owns shot/stat/undo/finish taps before the legacy recorded scorer
+    // registers its capture listener.
     'admin-recorded-scoring-draft.js',
     'admin-recorded-scoring-cancel.js',
     'admin-recorded-scoring.js',
