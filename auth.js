@@ -14,6 +14,13 @@
     document.head.appendChild(link);
   }
 
+  if (!document.querySelector('link[href^="profile-ownership.css"]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'profile-ownership.css?v=20260906-profile-ownership-v1';
+    document.head.appendChild(link);
+  }
+
   const supportGrid = document.querySelector('#support .support-grid');
   if (supportGrid) {
     supportGrid.classList.add('support-grid-live');
@@ -150,7 +157,7 @@
         </div>`;
   }
 
-  loadScript('auth-core.js', () => {
+  loadScript('auth-ownership-core.js?v=20260906-profile-ownership-v1', () => {
     loadScript('profile-experience.js', () => {
       loadScript('support.js', () => loadScript('support-admin.js'));
     });
