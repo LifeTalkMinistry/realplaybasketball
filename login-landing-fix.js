@@ -4,6 +4,8 @@
     const overlay = document.querySelector('[data-auth-overlay]');
     const closeButton = document.querySelector('[data-auth-close]');
     const accountView = document.querySelector('[data-auth-view="account"]');
+    const signupTab = document.querySelector('[data-auth-tab="signup"]');
+    if (signupTab) signupTab.textContent = 'CREATE ACCOUNT';
     if (!status || !overlay || !accountView) return false;
 
     let previousLoggedIn = !accountView.hidden;
@@ -11,7 +13,7 @@
     const routeToMainMenu = () => {
       const loggedIn = !accountView.hidden;
       const message = (status.textContent || '').trim();
-      const successfulExistingLogin = loggedIn && /welcome back\. your real play profile is ready\./i.test(message);
+      const successfulExistingLogin = loggedIn && /^welcome back\.?/i.test(message);
       const becameLoggedIn = loggedIn && !previousLoggedIn;
 
       if (overlay.classList.contains('open') && (successfulExistingLogin || becameLoggedIn && /welcome back/i.test(message))) {
