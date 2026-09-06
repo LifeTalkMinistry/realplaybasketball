@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260906-public-landing-scale-v2';
+  const version = '20260906-player-ownership-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
