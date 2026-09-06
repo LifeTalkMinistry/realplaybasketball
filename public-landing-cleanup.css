@@ -1,5 +1,6 @@
 /* REAL PLAY public landing surgical cleanup.
-   Remove the legacy divider beneath the BASKETBALL wordmark. */
+   Keep the guest title screen focused on the brand and player creation.
+   Membership pricing now belongs at the actual League reservation decision. */
 .rp-app.rp-guest .rp-public-landing .rp-public-title::after{
   content:none!important;
   display:none!important;
@@ -10,4 +11,21 @@
   background:none!important;
   box-shadow:none!important;
   border:0!important;
+}
+
+/* Do not lead with the paid League price on the public entry screen. */
+.rp-app.rp-guest .rp-public-landing .rp-public-price,
+.rp-app.rp-guest .rp-public-landing .rp-public-value-trigger{
+  display:none!important;
+}
+
+/* Preserve deliberate breathing room after removing the old price block. */
+.rp-app.rp-guest .rp-public-landing .rp-public-cta{
+  margin-top:clamp(68px,11svh,112px);
+}
+
+@media(max-height:700px){
+  .rp-app.rp-guest .rp-public-landing .rp-public-cta{
+    margin-top:44px;
+  }
 }
