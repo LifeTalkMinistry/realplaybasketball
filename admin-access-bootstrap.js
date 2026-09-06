@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260907-recorded-draft-sheet-v2';
+  const ADMIN_ASSET_VERSION = '20260907-recorded-video-cancel-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -35,6 +35,7 @@
     // Draft second so it owns shot/stat/undo/finish taps before the legacy
     // recorded scorer registers its capture listener.
     'admin-recorded-scoring-draft.js',
+    'admin-recorded-scoring-cancel.js',
     'admin-recorded-scoring.js',
     'admin-recorded-scoring-lock.js',
     'admin-session-picker.js',
