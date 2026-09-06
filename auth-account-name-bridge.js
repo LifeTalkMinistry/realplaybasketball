@@ -60,8 +60,8 @@
 
     const name = savedName() || await recoverNameFromAccount();
     if (!name) {
-      // Legacy fallback: only leave the field visible if the account name cannot
-      // be recovered. Normal register/login flows never need to type it twice.
+      // Legacy fallback only: keep the field visible if an older session has no
+      // recoverable account name. Normal register/login flows never ask twice.
       return;
     }
 
@@ -70,16 +70,6 @@
     input.autocomplete = 'off';
     const field = input.closest('.auth-field');
     if (field) field.hidden = true;
-
-    let summary = form.querySelector('[data-carried-player-name]');
-    if (!summary) {
-      summary = document.createElement('div');
-      summary.className = 'auth-carried-player-name';
-      summary.dataset.carriedPlayerName = '';
-      summary.innerHTML = '<span>PLAYER NAME</span><strong></strong><small>Carried from your Real Play account.</small>';
-      form.prepend(summary);
-    }
-    summary.querySelector('strong').textContent = name;
   }
 
   const observer = new MutationObserver(() => {
