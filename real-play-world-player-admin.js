@@ -268,7 +268,11 @@
     if (!selectedPlayer) return;
     const action = form.dataset.adminForm;
     const submit = form.querySelector('button[type="submit"]');
-    if (submit) submit.disabled = true;
+    if (submit?.dataset.busy === 'true') return;
+    if (submit) {
+      submit.dataset.busy = 'true';
+      submit.disabled = true;
+    }
     setSheetStatus('SAVING...');
 
     try {
@@ -293,7 +297,10 @@
       }, 350);
     } catch (error) {
       setSheetStatus(error.message || 'Could not complete that admin action.', 'error');
-      if (submit) submit.disabled = false;
+      if (submit) {
+        submit.dataset.busy = 'false';
+        submit.disabled = false;
+      }
     }
   }
 
@@ -316,13 +323,6 @@
       else if (action === 'suspend') renderSuspension(false);
       else if (action === 'reactivate') renderSuspension(true);
       else if (action === 'delete_account') renderDelete();
-      return;
-    }
-
-    const form = event.target.closest('form[data-admin-form]');
-    if (form && event.target.matches('button[type="submit"]')) {
-      event.preventDefault();
-      submitAdminAction(form);
     }
   }
 
