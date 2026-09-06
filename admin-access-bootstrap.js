@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260907-recorded-video-cancel-v1';
+  const ADMIN_ASSET_VERSION = '20260907-youtube-source-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -18,6 +18,7 @@
     'admin-player-ownership.css',
     'admin-recorded-scoring.css',
     'admin-recorded-scoring-draft.css',
+    'admin-recorded-scoring-youtube.css',
     'real-play-admin-brand-overrides.css',
   ];
   const ADMIN_SCRIPTS = [
@@ -37,6 +38,9 @@
     'admin-recorded-scoring-draft.js',
     'admin-recorded-scoring-cancel.js',
     'admin-recorded-scoring.js',
+    // YouTube is a hosting/player adapter layered over the same recorded
+    // scoring workflow. The official event/timestamp model remains unchanged.
+    'admin-recorded-scoring-youtube.js',
     'admin-recorded-scoring-lock.js',
     'admin-session-picker.js',
     'admin-score-dom-sync.js',
