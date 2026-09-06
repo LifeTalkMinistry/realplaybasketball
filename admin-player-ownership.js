@@ -104,6 +104,9 @@
         });
         input.value = '';
         createStatus.textContent = `${data?.profile?.playerName || playerName} created as ${data?.profile?.publicPlayerId || 'an unclaimed player'}.`;
+        window.dispatchEvent(new CustomEvent('realplay:unclaimed-player-created', {
+          detail: { profile: data?.profile || null },
+        }));
       } catch (error) {
         createStatus.classList.add('error');
         createStatus.textContent = error.message || 'Could not create the player profile.';
@@ -130,6 +133,9 @@
           body: { playerId, decision },
         });
         await loadClaims(panel);
+        if (decision === 'reject') {
+          window.dispatchEvent(new Event('realplay:unclaimed-player-created'));
+        }
       } catch (error) {
         window.alert(error.message || 'Ownership review failed.');
         button.disabled = false;
