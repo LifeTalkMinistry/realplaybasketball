@@ -1,0 +1,15 @@
+.rp-admin-ownership{display:grid;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(117,174,209,.12)}
+.rp-admin-ownership-card{padding:13px;border:1px solid rgba(117,174,209,.18);border-radius:13px;background:rgba(3,13,21,.68)}
+.rp-admin-ownership-card>small{display:block;color:#62dfff;font:900 9px/1 system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase}
+.rp-admin-ownership-card>strong{display:block;margin-top:5px;color:#f4fbff;font:italic 900 18px/1 var(--rp-display,Impact,sans-serif);letter-spacing:.02em}
+.rp-admin-ownership-card>p{margin:7px 0 0;color:#7594aa;font:600 10px/1.45 system-ui,sans-serif}
+.rp-admin-unclaimed-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:10px}
+.rp-admin-unclaimed-form input{min-width:0;min-height:43px;padding:0 11px;border:1px solid rgba(117,174,209,.24);border-radius:10px;background:#06131e;color:#fff;font:700 12px/1 system-ui,sans-serif;outline:none}
+.rp-admin-unclaimed-form button{min-height:43px;padding:0 13px;border:0;border-radius:10px;background:#138da2;color:#001018;font:900 10px/1 system-ui,sans-serif;letter-spacing:.08em;cursor:pointer}
+.rp-admin-ownership-status{min-height:0;margin-top:7px;color:#6fa9bf;font:600 9px/1.4 system-ui,sans-serif}.rp-admin-ownership-status.error{color:#ff8e9c}
+.rp-admin-claims{display:grid;gap:8px;margin-top:10px}
+.rp-admin-claim{padding:10px;border:1px solid rgba(117,174,209,.14);border-radius:11px;background:#06131e}
+.rp-admin-claim-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.rp-admin-claim-head strong{color:#fff;font:900 12px/1.15 system-ui,sans-serif}.rp-admin-claim-head span{color:#4fdfff;font:900 8px/1 system-ui,sans-serif;letter-spacing:.08em}
+.rp-admin-claim small{display:block;margin-top:4px;color:#7897ad;font:600 9px/1.35 system-ui,sans-serif;word-break:break-word}
+.rp-admin-claim-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.rp-admin-claim-actions button{min-height:36px;border-radius:9px;font:900 9px/1 system-ui,sans-serif;letter-spacing:.07em;cursor:pointer}.rp-admin-claim-approve{border:1px solid rgba(65,235,204,.28);background:rgba(20,112,90,.22);color:#78f0d8}.rp-admin-claim-reject{border:1px solid rgba(255,106,126,.24);background:rgba(100,22,34,.18);color:#ff9eaa}
+.rp-admin-claims-empty{padding:10px;border:1px dashed rgba(117,174,209,.16);border-radius:10px;color:#6f8ba0;font:600 9px/1.4 system-ui,sans-serif;text-align:center}
