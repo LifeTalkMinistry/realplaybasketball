@@ -1,15 +1,39 @@
-.rp-admin-ownership{display:grid;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(117,174,209,.12)}
-.rp-admin-ownership-card{padding:13px;border:1px solid rgba(117,174,209,.18);border-radius:13px;background:rgba(3,13,21,.68)}
+.rp-admin-ownership-title{margin-bottom:11px}
+.rp-admin-ownership-tabs{position:sticky;top:127px;z-index:6;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 12px;padding:7px;border:1px solid rgba(117,174,209,.12);border-radius:14px;background:rgba(2,8,14,.94);backdrop-filter:blur(14px)}
+.rp-admin-ownership-tab{min-height:38px;border:1px solid transparent;border-radius:10px;color:#708ba1;background:transparent;font:900 9px/1 var(--rp-display,Impact,sans-serif);letter-spacing:.07em;cursor:pointer}
+.rp-admin-ownership-tab.active{color:#fff;border-color:rgba(55,218,255,.28);background:rgba(22,116,255,.16)}
+.rp-admin-ownership-workspace{display:grid;gap:11px}
+.rp-admin-ownership-card{padding:14px;border:1px solid rgba(117,174,209,.18);border-radius:15px;background:rgba(3,13,21,.76)}
 .rp-admin-ownership-card>small{display:block;color:#62dfff;font:900 9px/1 system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase}
 .rp-admin-ownership-card>strong{display:block;margin-top:5px;color:#f4fbff;font:italic 900 18px/1 var(--rp-display,Impact,sans-serif);letter-spacing:.02em}
 .rp-admin-ownership-card>p{margin:7px 0 0;color:#7594aa;font:600 10px/1.45 system-ui,sans-serif}
-.rp-admin-unclaimed-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:10px}
-.rp-admin-unclaimed-form input{min-width:0;min-height:43px;padding:0 11px;border:1px solid rgba(117,174,209,.24);border-radius:10px;background:#06131e;color:#fff;font:700 12px/1 system-ui,sans-serif;outline:none}
-.rp-admin-unclaimed-form button{min-height:43px;padding:0 13px;border:0;border-radius:10px;background:#138da2;color:#001018;font:900 10px/1 system-ui,sans-serif;letter-spacing:.08em;cursor:pointer}
+.rp-admin-ownership-create{border-color:rgba(55,218,255,.22);background:linear-gradient(145deg,rgba(4,25,37,.88),rgba(3,13,21,.78))}
+.rp-admin-unclaimed-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:11px}
+.rp-admin-unclaimed-form input,.rp-admin-ownership-search input{box-sizing:border-box;min-width:0;min-height:43px;padding:0 11px;border:1px solid rgba(117,174,209,.24);border-radius:10px;background:#06131e;color:#fff;font:700 12px/1 system-ui,sans-serif;outline:none}
+.rp-admin-unclaimed-form input:focus,.rp-admin-ownership-search input:focus{border-color:rgba(55,218,255,.5);box-shadow:0 0 0 3px rgba(55,218,255,.05)}
+.rp-admin-unclaimed-form button{min-height:43px;padding:0 14px;border:0;border-radius:10px;background:#138da2;color:#001018;font:900 10px/1 system-ui,sans-serif;letter-spacing:.08em;cursor:pointer}
+.rp-admin-unclaimed-form button:disabled{opacity:.45}
 .rp-admin-ownership-status{min-height:0;margin-top:7px;color:#6fa9bf;font:600 9px/1.4 system-ui,sans-serif}.rp-admin-ownership-status.error{color:#ff8e9c}
-.rp-admin-claims{display:grid;gap:8px;margin-top:10px}
-.rp-admin-claim{padding:10px;border:1px solid rgba(117,174,209,.14);border-radius:11px;background:#06131e}
-.rp-admin-claim-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.rp-admin-claim-head strong{color:#fff;font:900 12px/1.15 system-ui,sans-serif}.rp-admin-claim-head span{color:#4fdfff;font:900 8px/1 system-ui,sans-serif;letter-spacing:.08em}
+.rp-admin-ownership-search{display:grid;gap:6px;margin-top:12px;color:#6da2ba;font:900 8px/1 system-ui,sans-serif;letter-spacing:.1em}
+.rp-admin-ownership-search input{width:100%;font-size:11px;letter-spacing:0}
+.rp-admin-identities,.rp-admin-claims,.rp-admin-disputes{display:grid;gap:8px;margin-top:10px}
+.rp-admin-identity-card,.rp-admin-claim,.rp-admin-dispute{padding:11px;border:1px solid rgba(117,174,209,.14);border-radius:12px;background:#06131e}
+.rp-admin-identity-head,.rp-admin-claim-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.rp-admin-identity-head>div{min-width:0;display:grid;gap:4px}
+.rp-admin-identity-head strong,.rp-admin-claim-head strong{overflow:hidden;color:#fff;font:900 12px/1.15 system-ui,sans-serif;text-overflow:ellipsis;white-space:nowrap}
+.rp-admin-identity-head small,.rp-admin-claim-head span{color:#4fdfff;font:900 8px/1 system-ui,sans-serif;letter-spacing:.08em}
+.rp-admin-identity-status{flex:0 0 auto;padding:5px 7px;border-radius:999px;font:900 7px/1 system-ui,sans-serif;letter-spacing:.08em}.rp-admin-identity-status.unclaimed{border:1px solid rgba(88,214,255,.18);color:#6ddfff;background:rgba(44,147,184,.08)}
+.rp-admin-identity-card p{margin:7px 0 0;color:#7897ad;font:600 9px/1.4 system-ui,sans-serif}
 .rp-admin-claim small{display:block;margin-top:4px;color:#7897ad;font:600 9px/1.35 system-ui,sans-serif;word-break:break-word}
-.rp-admin-claim-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.rp-admin-claim-actions button{min-height:36px;border-radius:9px;font:900 9px/1 system-ui,sans-serif;letter-spacing:.07em;cursor:pointer}.rp-admin-claim-approve{border:1px solid rgba(65,235,204,.28);background:rgba(20,112,90,.22);color:#78f0d8}.rp-admin-claim-reject{border:1px solid rgba(255,106,126,.24);background:rgba(100,22,34,.18);color:#ff9eaa}
-.rp-admin-claims-empty{padding:10px;border:1px dashed rgba(117,174,209,.16);border-radius:10px;color:#6f8ba0;font:600 9px/1.4 system-ui,sans-serif;text-align:center}
+.rp-admin-claim-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.rp-admin-claim-actions button{min-height:38px;border-radius:9px;font:900 8px/1 system-ui,sans-serif;letter-spacing:.07em;cursor:pointer}.rp-admin-claim-approve{border:1px solid rgba(65,235,204,.28);background:rgba(20,112,90,.22);color:#78f0d8}.rp-admin-claim-reject{border:1px solid rgba(255,106,126,.24);background:rgba(100,22,34,.18);color:#ff9eaa}
+.rp-admin-dispute{border-color:rgba(255,175,70,.18);background:linear-gradient(145deg,#07151f,#09131b)}
+.rp-admin-dispute-summary{margin:7px 0 0;color:#849dad;font:600 9px/1.4 system-ui,sans-serif}
+.rp-admin-dispute-sides{display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);align-items:stretch;gap:5px;margin-top:11px}
+.rp-admin-dispute-side{min-width:0;padding:10px;border:1px solid rgba(117,174,209,.13);border-radius:10px;background:#040d15}
+.rp-admin-dispute-side.current{border-color:rgba(72,225,255,.18)}.rp-admin-dispute-side.challenger{border-color:rgba(255,177,76,.2)}
+.rp-admin-dispute-side small{display:block;color:#6f8fa4;font:900 7px/1.25 system-ui,sans-serif;letter-spacing:.08em}.rp-admin-dispute-side strong{display:block;overflow:hidden;margin-top:6px;color:#fff;font:900 10px/1.2 system-ui,sans-serif;text-overflow:ellipsis;white-space:nowrap}.rp-admin-dispute-side span{display:block;overflow:hidden;margin-top:4px;color:#7493a6;font:600 8px/1.25 system-ui,sans-serif;text-overflow:ellipsis;white-space:nowrap}
+.rp-admin-dispute-vs{display:grid;place-items:center;color:#597183;font:900 7px/1 system-ui,sans-serif}
+.rp-admin-dispute-reason{margin-top:9px;padding:9px;border-left:2px solid rgba(255,177,76,.36);background:rgba(255,177,76,.04)}.rp-admin-dispute-reason small{color:#c79155;font:900 7px/1 system-ui,sans-serif;letter-spacing:.08em}.rp-admin-dispute-reason p{margin:4px 0 0;color:#9aaebb;font:600 9px/1.4 system-ui,sans-serif}
+.rp-admin-dispute-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.rp-admin-dispute-actions button{min-height:39px;border:1px solid rgba(65,235,204,.24);border-radius:9px;color:#78f0d8;background:rgba(20,112,90,.18);font:900 8px/1 system-ui,sans-serif;letter-spacing:.05em;cursor:pointer}.rp-admin-dispute-actions button.challenger{border-color:rgba(255,177,76,.26);color:#ffc477;background:rgba(122,72,11,.18)}
+.rp-admin-claims-empty{padding:13px;border:1px dashed rgba(117,174,209,.16);border-radius:10px;color:#6f8ba0;font:600 9px/1.4 system-ui,sans-serif;text-align:center}.rp-admin-claims-empty.error{color:#ff8e9c;border-color:rgba(255,106,126,.2)}
+@media(max-width:390px){.rp-admin-ownership-tabs{top:127px}.rp-admin-dispute-sides{grid-template-columns:1fr}.rp-admin-dispute-vs{min-height:18px}.rp-admin-unclaimed-form{grid-template-columns:1fr}.rp-admin-unclaimed-form button{width:100%}}
