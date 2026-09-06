@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-score-confirmation-v1';
+  const version = '20260907-recorded-stat-controls-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -129,6 +129,7 @@
       'player-admin-probe-guard.js',
       'admin-live-stat-stability.js',
       'admin-courtside-live.js',
+      'admin-recorded-stat-controls-fix.js',
       'admin-access-bootstrap.js',
       'admin-game-rotation.js',
       'admin-live-refresh-fix.js',
