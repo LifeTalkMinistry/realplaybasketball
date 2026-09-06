@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260907-ownership-admin-v2';
+  const ADMIN_ASSET_VERSION = '20260907-recorded-scoring-lock-v2';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -29,6 +29,7 @@
     'admin-courtside-live.js',
     'admin-game-rules.js',
     'admin-recorded-scoring.js',
+    'admin-recorded-scoring-lock.js',
     'admin-session-picker.js',
     'admin-score-dom-sync.js',
     'admin-season-control.js',
