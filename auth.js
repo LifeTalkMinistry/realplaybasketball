@@ -157,9 +157,11 @@
         </div>`;
   }
 
-  loadScript('auth-ownership-core.js?v=20260906-profile-ownership-v1', () => {
-    loadScript('profile-experience.js', () => {
-      loadScript('support.js', () => loadScript('support-admin.js'));
+  loadScript('auth-account-name-bridge.js?v=20260906-name-carry-v1', () => {
+    loadScript('auth-ownership-core.js?v=20260906-name-carry-v1', () => {
+      loadScript('profile-experience.js', () => {
+        loadScript('support.js', () => loadScript('support-admin.js'));
+      });
     });
   });
 })();
