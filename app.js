@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-desktop-video-score-desk-v1';
+  const version = '20260907-score-confirmation-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
