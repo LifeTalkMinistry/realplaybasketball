@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260906-unclaimed-player-search-v2';
+  const version = '20260907-ownership-admin-v3';
   const html = document.documentElement;
   html.classList.add('js');
 
