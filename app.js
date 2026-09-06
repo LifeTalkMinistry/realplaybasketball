@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-player-admin-v4';
+  const version = '20260907-recorded-draft-sheet-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
