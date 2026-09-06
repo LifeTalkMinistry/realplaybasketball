@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-recorded-draft-sheet-v2';
+  const version = '20260907-recorded-video-cancel-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
