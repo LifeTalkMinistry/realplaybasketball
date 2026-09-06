@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260906-world-players-v1';
+  const version = '20260906-world-player-filters-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -114,6 +114,7 @@
       'real-play-profile-intro.js',
       'real-play-profile-metrics.js',
       'real-play-world-players.js',
+      'real-play-world-player-filters.js',
       'main-menu-fast-snap-bootstrap.js',
       'main-menu.js',
       'main-menu-fast-snap-restore.js',
