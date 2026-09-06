@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260907-admin-tabs-full-width-v1';
+  const ADMIN_ASSET_VERSION = '20260907-recorded-draft-sheet-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -17,6 +17,7 @@
     'admin-game-rules.css',
     'admin-player-ownership.css',
     'admin-recorded-scoring.css',
+    'admin-recorded-scoring-draft.css',
     'real-play-admin-brand-overrides.css',
   ];
   const ADMIN_SCRIPTS = [
@@ -28,6 +29,9 @@
     'admin-player-ownership.js',
     'admin-courtside-live.js',
     'admin-game-rules.js',
+    // This must load before admin-recorded-scoring.js so its capture listener
+    // turns scorer taps into a local score sheet instead of backend mutations.
+    'admin-recorded-scoring-draft.js',
     'admin-recorded-scoring.js',
     'admin-recorded-scoring-lock.js',
     'admin-session-picker.js',
