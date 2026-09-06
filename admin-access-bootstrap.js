@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260907-recorded-draft-sheet-v1';
+  const ADMIN_ASSET_VERSION = '20260907-recorded-draft-sheet-v2';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -29,8 +29,11 @@
     'admin-player-ownership.js',
     'admin-courtside-live.js',
     'admin-game-rules.js',
-    // This must load before admin-recorded-scoring.js so its capture listener
-    // turns scorer taps into a local score sheet instead of backend mutations.
+    // Guard first so a scorer tap can never fall through to a retired
+    // per-event backend write while the local draft is still booting.
+    'admin-recorded-scoring-draft-guard.js',
+    // Draft second so it owns shot/stat/undo/finish taps before the legacy
+    // recorded scorer registers its capture listener.
     'admin-recorded-scoring-draft.js',
     'admin-recorded-scoring.js',
     'admin-recorded-scoring-lock.js',
