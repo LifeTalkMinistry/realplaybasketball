@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260906-landing-price-to-reserve-v1';
+  const version = '20260906-public-landing-scale-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
