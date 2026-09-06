@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260906-hide-session-title-v1';
+  const version = '20260906-landing-price-to-reserve-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
