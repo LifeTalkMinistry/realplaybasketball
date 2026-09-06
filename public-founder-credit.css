@@ -2,12 +2,12 @@
 .rp-public-founder-credit{
   position:relative;
   width:min(100%,420px);
-  margin:30px auto 0;
-  padding-top:16px;
+  margin:34px auto 0;
+  padding-top:19px;
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:5px;
+  gap:7px;
   color:#6f7a88;
   text-align:center;
   text-transform:uppercase;
@@ -19,7 +19,7 @@
   position:absolute;
   top:0;
   left:50%;
-  width:58px;
+  width:72px;
   height:1px;
   transform:translateX(-50%);
   background:linear-gradient(90deg,rgba(10,163,255,.78),rgba(255,255,255,.18) 50%,rgba(255,43,63,.72));
@@ -27,15 +27,15 @@
 }
 
 .rp-public-founder-credit span{
-  font-size:.52rem;
+  font-size:.61rem;
   font-weight:800;
-  letter-spacing:.22em;
+  letter-spacing:.23em;
 }
 
 .rp-public-founder-credit strong{
-  color:#a7b0bd;
+  color:#b6bfcc;
   font-family:var(--rp-display);
-  font-size:.76rem;
+  font-size:.9rem;
   font-style:italic;
   font-weight:900;
   letter-spacing:.14em;
@@ -44,14 +44,31 @@
 
 @media(max-width:520px){
   .rp-public-founder-credit{
-    margin-top:26px;
-    padding-top:14px;
+    margin-top:31px;
+    padding-top:17px;
+  }
+
+  .rp-public-founder-credit span{
+    font-size:.58rem;
+  }
+
+  .rp-public-founder-credit strong{
+    font-size:.86rem;
   }
 }
 
 @media(max-height:700px){
   .rp-public-founder-credit{
-    margin-top:20px;
-    padding-top:12px;
+    margin-top:23px;
+    padding-top:13px;
+    gap:5px;
+  }
+
+  .rp-public-founder-credit span{
+    font-size:.53rem;
+  }
+
+  .rp-public-founder-credit strong{
+    font-size:.78rem;
   }
 }
