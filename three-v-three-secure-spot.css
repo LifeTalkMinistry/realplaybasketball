@@ -86,6 +86,19 @@
   cursor:pointer;
 }
 
+/* Price belongs at the paid League decision point, not on the public landing page. */
+.rp-3v3-session:not(.secured):not(.full):not(.live) .rp-3v3-session-action:not(:disabled)::after{
+  content:'₱599 / MONTH';
+  display:block;
+  margin-top:4px;
+  font-family:inherit;
+  font-size:.58rem;
+  font-style:normal;
+  font-weight:800;
+  letter-spacing:.14em;
+  opacity:.82;
+}
+
 .rp-3v3-session-action:disabled{
   cursor:default;
   box-shadow:none;
