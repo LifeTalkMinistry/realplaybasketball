@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260906-world-player-filters-v1';
+  const version = '20260906-unclaimed-player-search-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
