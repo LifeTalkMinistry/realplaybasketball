@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260905-game-rules-v5';
+  const ADMIN_ASSET_VERSION = '20260906-player-ownership-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -15,6 +15,7 @@
     'admin-courtside-live.css',
     'admin-shot-breakdown.css',
     'admin-game-rules.css',
+    'admin-player-ownership.css',
     'real-play-admin-brand-overrides.css',
   ];
   const ADMIN_SCRIPTS = [
@@ -23,6 +24,7 @@
     'admin-session-start.js',
     'admin-game-control-simplify.js',
     'admin-player-search.js',
+    'admin-player-ownership.js',
     'admin-courtside-live.js',
     'admin-game-rules.js',
     'admin-session-picker.js',
