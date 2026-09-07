@@ -102,6 +102,64 @@
     return exactName[0] || null;
   }
 
+  function directoryPlayerForStat(players, player) {
+    if (!Array.isArray(players) || !player) return null;
+
+    const targetIds = [
+      player?.userId,
+      player?.user_id,
+      player?.playerId,
+      player?.player_id,
+      player?.id,
+    ].filter((value) => value !== null && value !== undefined && value !== '').map(String);
+
+    if (targetIds.length) {
+      const idMatch = players.find((candidate) => {
+        const candidateIds = [
+          candidate?.userId,
+          candidate?.user_id,
+          candidate?.playerId,
+          candidate?.player_id,
+          candidate?.id,
+        ].filter((value) => value !== null && value !== undefined && value !== '').map(String);
+        return candidateIds.some((value) => targetIds.includes(value));
+      });
+      if (idMatch) return idMatch;
+    }
+
+    return findDirectoryPlayer(players, player);
+  }
+
+  async function hydrateReplayPlayerNumbers(data) {
+    const stats = Array.isArray(data?.playerStats) ? data.playerStats : [];
+    if (!stats.length) return data;
+
+    const missingNumber = stats.some((player) => {
+      const value = player?.playerNumber ?? player?.player_number;
+      return value === null || value === undefined || value === '';
+    });
+    if (!missingNumber) return data;
+
+    try {
+      const directory = await loadCommunityPlayers();
+      const players = Array.isArray(directory?.players) ? directory.players : [];
+      stats.forEach((player) => {
+        const current = player?.playerNumber ?? player?.player_number;
+        if (current !== null && current !== undefined && current !== '') return;
+
+        const match = directoryPlayerForStat(players, player);
+        const resolved = match?.playerNumber ?? match?.player_number;
+        if (resolved === null || resolved === undefined || resolved === '') return;
+
+        player.playerNumber = resolved;
+      });
+    } catch (error) {
+      console.warn('[Real Play] Could not resolve replay jersey numbers from player profiles.', error);
+    }
+
+    return data;
+  }
+
   async function openPlayerProfile(player, button) {
     if (!player || !button || button.disabled) return;
     const originalText = 'VIEW PROFILE';
@@ -364,6 +422,8 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || sequence !== requestSequence) return;
+      await hydrateReplayPlayerNumbers(data);
+      if (sequence !== requestSequence) return;
       installStats(data, sequence);
     } catch (_) {}
   }
