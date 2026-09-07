@@ -77,3 +77,19 @@
 .rp-profile-section:has(.rp-profile-stat-grid) .rp-profile-metrics-hint{
   display:none!important;
 }
+
+/* Recent history cleanup: rename the main heading while keeping the existing
+   RECENT HISTORY eyebrow and FINALIZED GAMES label untouched. */
+.rp-profile-history .rp-profile-section-head h2{
+  font-size:0!important;
+}
+
+.rp-profile-history .rp-profile-section-head h2::after{
+  content:'RECENT GAMES';
+  color:#fff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:1rem;
+  font-style:italic;
+  font-weight:950;
+  line-height:1.05;
+}
