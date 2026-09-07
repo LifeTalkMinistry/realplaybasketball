@@ -239,10 +239,11 @@
 
   function recognitionBadgesHtml(player) {
     const list = currentRecognitions.get(playerKey(player)) || [];
-    if (!list.length) return '';
-    return `<span class="rp-career-replay-recognition-badges" aria-label="Player recognitions">${list.map((award) =>
-      `<span class="rp-career-replay-recognition-badge rp-recognition-${esc(award.type)}" data-rp-career-recognition="${esc(award.type)}" data-rp-career-recognition-player="${esc(playerKey(player))}" title="${esc(award.title)}">${award.icon}</span>`
-    ).join('')}</span>`;
+    const award = list[0];
+    if (!award) return '';
+    return `<span class="rp-career-replay-recognition-badges" aria-label="Highest player recognition">
+      <span class="rp-career-replay-recognition-badge rp-recognition-${esc(award.type)}" data-rp-career-recognition="${esc(award.type)}" data-rp-career-recognition-player="${esc(playerKey(player))}" title="${esc(award.title)}">${award.icon}</span>
+    </span>`;
   }
 
   function closeRecognitionModal() {
