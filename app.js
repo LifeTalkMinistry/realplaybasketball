@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-world-player-metrics-v1';
+  const version = '20260907-replay-clock-under-score-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
