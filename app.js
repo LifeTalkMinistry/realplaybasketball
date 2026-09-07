@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-visitor-mode-v2';
+  const version = '20260907-visitor-v2-replay-assist-after-score-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -109,7 +109,7 @@
       'career-beta-play.js',
       'career-game-replay.js',
       'career-game-replay-marker-cleanup.js',
-      'career-game-replay-assist-sequence.js',
+      'career-game-replay-assist-sequence-v2.js',
       'career-game-replay-fullscreen-back.js',
       'career-game-replay-stats.js',
       'career-game-replay-winner.js',
