@@ -39,3 +39,46 @@ body.rp-career-replay-open{overflow:hidden}
    heading above them. */
 .rp-career-replay-markers{display:grid!important}
 .rp-career-replay-markers-head{display:none!important}
+
+
+/* Replay interaction refinement: playback buttons live on the video while the
+   timeline remains visible below it. Made baskets are compact ball markers on
+   that timeline rather than a separate stamp carousel. */
+.rp-career-replay-video-controls{
+  position:absolute;z-index:4;inset:0;display:flex;align-items:flex-end;justify-content:space-between;
+  padding:14px;box-sizing:border-box;pointer-events:none;opacity:0;
+  background:linear-gradient(to top,rgba(0,0,0,.48),transparent 42%);
+  transition:opacity .18s ease
+}
+.rp-career-replay-video-controls.show{opacity:1}
+.rp-career-replay-video-controls button{
+  width:44px;height:44px;padding:0;border:1px solid rgba(117,213,238,.28);border-radius:12px;
+  background:rgba(4,22,32,.82);color:#e9fbff;font-size:1rem;font-weight:950;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);pointer-events:auto
+}
+.rp-career-replay-video-controls-right{display:flex;gap:8px}
+.rp-career-replay-timeline-wrap{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;
+  padding:8px 10px;border:1px solid rgba(92,151,177,.19);border-radius:12px;background:#06131d
+}
+.rp-career-replay-timeline{position:relative;min-width:0;height:34px;display:flex;align-items:center}
+.rp-career-replay-timeline input[type=range]{position:relative;z-index:1;width:100%;min-width:0;accent-color:#2fd5ee}
+.rp-career-replay-timeline-markers{position:absolute;z-index:2;left:8px;right:8px;top:50%;height:0;pointer-events:none}
+.rp-career-replay-timeline-marker{
+  position:absolute;top:0;transform:translate(-50%,-50%);width:22px;height:22px;padding:0;
+  display:grid;place-items:center;border:0;border-radius:50%;background:transparent;
+  font-size:15px;line-height:1;cursor:pointer;pointer-events:auto;transition:transform .14s ease,filter .14s ease
+}
+.rp-career-replay-timeline-marker.active{transform:translate(-50%,-50%) scale(1.24);filter:drop-shadow(0 0 5px rgba(47,213,238,.85))}
+.rp-career-replay-markers{display:none!important}
+.rp-career-replay-controls{display:none!important}
+.rp-career-replay-score-pop{display:none!important}
+@media(max-width:620px){
+  .rp-career-replay-video-controls{padding:10px}
+  .rp-career-replay-video-controls button{width:40px;height:40px;border-radius:10px}
+  .rp-career-replay-timeline-wrap{grid-template-columns:1fr;gap:2px}
+  .rp-career-replay-clock{text-align:center}
+}
+@media(prefers-reduced-motion:reduce){
+  .rp-career-replay-video-controls,.rp-career-replay-timeline-marker{transition:none}
+}
