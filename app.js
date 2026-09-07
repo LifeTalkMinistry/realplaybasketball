@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-remove-legacy-bottom-nav-v1';
+  const version = '20260907-replay-correction-use-existing-scorer-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
