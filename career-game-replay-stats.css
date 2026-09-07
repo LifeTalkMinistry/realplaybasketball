@@ -670,3 +670,11 @@
   border-color:rgba(201,206,214,.10);
   background:#070c14;
 }
+
+
+/* Keep the PLAYER header cell visually identical to the other stat headers.
+   It remains sticky for horizontal scrolling, but carries no separate tint. */
+.rp-career-replay-stat-grid-head > .rp-career-replay-stat-identity{
+  background:#060b12!important;
+  box-shadow:none!important;
+}
