@@ -180,3 +180,65 @@ body.rp-career-replay-open{overflow:hidden}
 .rp-career-replay-score span{
   color:#7d8795;
 }
+
+
+/* Refine in-video SCORE recognition: larger, premium, team-aware Real Play card. */
+.rp-career-replay-score-pop{
+  width:min(82%,430px);
+  min-height:64px;
+  padding:13px 16px;
+  gap:6px 18px;
+  border:1px solid transparent;
+  border-radius:15px;
+  background:
+    linear-gradient(158deg,rgba(5,11,18,.94),rgba(3,6,11,.97)) padding-box,
+    linear-gradient(112deg,rgba(19,152,255,.48),rgba(119,129,151,.18) 50%,rgba(255,53,66,.42)) border-box;
+  box-shadow:
+    0 16px 42px rgba(0,0,0,.40),
+    -10px 0 30px rgba(0,117,255,.07),
+    10px 0 30px rgba(255,37,51,.05);
+}
+.rp-career-replay-score-pop.team-west{
+  background:
+    linear-gradient(158deg,rgba(5,12,21,.95),rgba(3,7,13,.98)) padding-box,
+    linear-gradient(105deg,#1398ff,rgba(73,149,222,.38) 68%,rgba(201,206,214,.12)) border-box;
+  box-shadow:0 16px 42px rgba(0,0,0,.40),-14px 0 34px rgba(0,117,255,.12);
+}
+.rp-career-replay-score-pop.team-east{
+  background:
+    linear-gradient(158deg,rgba(13,7,11,.95),rgba(5,5,8,.98)) padding-box,
+    linear-gradient(105deg,rgba(201,206,214,.12),rgba(180,64,78,.40) 32%,#ff3542) border-box;
+  box-shadow:0 16px 42px rgba(0,0,0,.40),14px 0 34px rgba(255,37,51,.10);
+}
+.rp-career-replay-score-pop small{
+  color:#aab4c1;
+  font-size:.54rem;
+  letter-spacing:.16em;
+}
+.rp-career-replay-score-pop.team-west small{color:#46b6ff}
+.rp-career-replay-score-pop.team-east small{color:#ff6670}
+.rp-career-replay-score-pop strong{
+  color:#fff;
+  font-size:1.25rem;
+  letter-spacing:.015em;
+}
+.rp-career-replay-score-pop p{
+  color:#909cab;
+  font-size:.63rem;
+}
+.rp-career-replay-score-pop b{
+  color:#61efbd;
+  font-size:1.95rem;
+  text-shadow:0 0 18px rgba(52,225,170,.18);
+}
+@media(max-width:620px){
+  .rp-career-replay-score-pop{
+    width:88%;
+    min-height:58px;
+    padding:11px 13px;
+    bottom:8%;
+  }
+  .rp-career-replay-score-pop strong{font-size:1.05rem}
+  .rp-career-replay-score-pop p{font-size:.56rem}
+  .rp-career-replay-score-pop b{font-size:1.6rem}
+}
