@@ -5,12 +5,14 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
   const ASSIST_VISIBLE_MS = 1500;
+  const ASSIST_DELAY_MS = 2000;
   const ASSIST_AFTER_SCORE_WINDOW_MS = 15000;
 
   let replayData = null;
   let replaySessionId = 0;
   let scoreWasVisible = false;
   let assistTimer = null;
+  let assistDelayTimer = null;
   let activeScorePop = null;
 
   const normalize = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -97,9 +99,14 @@
   document.head.appendChild(style);
 
   function clearAssistTimer() {
-    if (!assistTimer) return;
-    clearTimeout(assistTimer);
-    assistTimer = null;
+    if (assistTimer) {
+      clearTimeout(assistTimer);
+      assistTimer = null;
+    }
+    if (assistDelayTimer) {
+      clearTimeout(assistDelayTimer);
+      assistDelayTimer = null;
+    }
   }
 
   function ensureAssistPop() {
@@ -366,7 +373,12 @@
     } else if (!visible && scoreWasVisible) {
       const marker = currentScoreMarker(pop);
       const assistName = assistNameForMarker(marker);
-      if (assistName) showAssist(assistName);
+      if (assistName) {
+        assistDelayTimer = setTimeout(() => {
+          assistDelayTimer = null;
+          showAssist(assistName);
+        }, ASSIST_DELAY_MS);
+      }
     }
     scoreWasVisible = visible;
   }
