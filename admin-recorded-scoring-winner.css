@@ -1,0 +1,44 @@
+.rp-video-scoreboard.rp-video-scoreboard-winner{
+  grid-template-columns:1fr !important;
+  place-items:center;
+  min-height:76px;
+  border-color:rgba(61,232,184,.34);
+  background:
+    radial-gradient(circle at 50% 48%,rgba(44,220,178,.13),transparent 68%),
+    #07121b;
+  box-shadow:inset 0 0 0 1px rgba(61,232,184,.04);
+}
+
+.rp-video-scoreboard.rp-video-scoreboard-winner > div:not(.rp-video-winner-only),
+.rp-video-scoreboard.rp-video-scoreboard-winner > span{
+  display:none !important;
+}
+
+.rp-video-scoreboard .rp-video-winner-only{
+  grid-column:1 / -1;
+  width:100%;
+  display:grid;
+  place-items:center;
+  min-height:58px;
+  padding:8px 14px;
+  color:#fff;
+  font-family:var(--rp-display);
+  font-size:clamp(1.55rem,3vw,2.15rem);
+  font-style:italic;
+  font-weight:900;
+  letter-spacing:.08em;
+  line-height:1;
+  text-align:center;
+  text-transform:uppercase;
+  text-shadow:0 0 24px rgba(60,232,188,.14);
+}
+
+@media(max-width:640px){
+  .rp-video-scoreboard.rp-video-scoreboard-winner{
+    min-height:70px;
+  }
+  .rp-video-scoreboard .rp-video-winner-only{
+    min-height:52px;
+    font-size:1.48rem;
+  }
+}
