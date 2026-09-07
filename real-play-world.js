@@ -5,6 +5,8 @@
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
   const COMMUNITY_URL = `${API_BASE_URL}/api/real-play/community`;
+  const PUBLIC_COMMUNITY_URL = `${API_BASE_URL}/api/real-play/public/community`;
+  const PUBLIC_ACTIONS = new Set(['bootstrap', 'feed', 'channels', 'chat', 'players', 'player_profile']);
 
   let panel = null;
   let activeTab = 'world';
@@ -45,10 +47,37 @@
     return localStorage.getItem(TOKEN_KEY) || '';
   }
 
+  function visitor() {
+    return Boolean(window.RealPlayVisitor?.isActive?.());
+  }
+
+  function askToJoin(copy) {
+    window.RealPlayVisitor?.requireAccount?.({
+      title: 'JOIN THE CONVERSATION',
+      copy: copy || 'Create your Real Play player to post, react, comment and chat with the community.',
+    });
+  }
+
   async function community(action, payload = {}) {
     const accessToken = token();
+    if (!accessToken && visitor() && PUBLIC_ACTIONS.has(action)) {
+      const response = await fetch(PUBLIC_COMMUNITY_URL, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, ...payload }),
+        cache: 'no-store',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(data?.message || data?.error || 'Real Play World could not complete that request.');
+        error.status = response.status;
+        throw error;
+      }
+      return data;
+    }
     if (!accessToken) {
-      const error = new Error('Please log in to Real Play first.');
+      if (visitor()) askToJoin();
+      const error = new Error(visitor() ? 'Create your Real Play player to interact.' : 'Please log in to Real Play first.');
       error.status = 401;
       throw error;
     }
@@ -97,7 +126,7 @@
             <form class="rp-world-composer" data-world-post-form>
               <div class="rp-world-composer-avatar" data-world-me-avatar>RP</div>
               <label><span class="sr-only">Create a World post</span><textarea maxlength="1200" rows="3" placeholder="Share something with Real Play..." data-world-post-input required></textarea></label>
-              <div class="rp-world-composer-foot"><small>REAL PLAY COMMUNITY</small><button type="submit" data-world-post-button>POST</button></div>
+              <div class="rp-world-composer-foot"><small data-world-composer-label>REAL PLAY COMMUNITY</small><button type="submit" data-world-post-button>POST</button></div>
             </form>
             <p class="rp-world-status" data-world-status aria-live="polite"></p>
             <div class="rp-world-feed" data-world-feed></div>
@@ -120,6 +149,16 @@
     panel.querySelectorAll('[data-world-tab]').forEach((button) => button.addEventListener('click', () => switchTab(button.dataset.worldTab)));
     panel.querySelector('[data-world-post-form]')?.addEventListener('submit', createPost);
     panel.querySelector('[data-chat-form]')?.addEventListener('submit', sendChat);
+    panel.querySelector('[data-world-post-input]')?.addEventListener('focus', (event) => {
+      if (!visitor()) return;
+      askToJoin('Create your Real Play player to publish posts and join the World conversation.');
+      event.currentTarget.blur();
+    });
+    panel.querySelector('[data-chat-input]')?.addEventListener('focus', (event) => {
+      if (!visitor()) return;
+      askToJoin('Create your Real Play player to send messages in World Chat.');
+      event.currentTarget.blur();
+    });
     panel.querySelector('[data-chat-input]')?.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
@@ -155,18 +194,26 @@
 
   function renderMe() {
     const avatar = panel?.querySelector('[data-world-me-avatar]');
-    if (avatar) avatar.textContent = initials(me?.playerName);
+    const label = panel?.querySelector('[data-world-composer-label]');
+    const input = panel?.querySelector('[data-world-post-input]');
+    if (avatar) avatar.textContent = visitor() ? 'V' : initials(me?.playerName);
+    if (label) label.textContent = visitor() ? 'VISITOR · READ ONLY' : 'REAL PLAY COMMUNITY';
+    if (input) input.placeholder = visitor() ? 'Create your player to post...' : 'Share something with Real Play...';
+    panel?.classList.toggle('rp-world-visitor', visitor());
   }
 
   function renderFeed() {
     const root = panel?.querySelector('[data-world-feed]');
     if (!root) return;
     if (!feed.length) {
-      root.innerHTML = '<div class="rp-world-empty"><strong>WORLD IS READY.</strong><p>Start the first community post.</p></div>';
+      root.innerHTML = visitor()
+        ? '<div class="rp-world-empty"><strong>WORLD IS READY.</strong><p>Community posts will appear here.</p></div>'
+        : '<div class="rp-world-empty"><strong>WORLD IS READY.</strong><p>Start the first community post.</p></div>';
       return;
     }
     root.innerHTML = feed.map((post) => {
       const comments = Array.isArray(post.comments) ? post.comments : [];
+      const commentForm = visitor() ? '' : '<form class="rp-world-comment-form" data-comment-form hidden><input type="text" maxlength="500" placeholder="Write a comment..." data-comment-input required /><button type="submit">POST</button></form>';
       return `
         <article class="rp-world-post" data-post-id="${esc(post.id)}">
           <header class="rp-world-post-head"><div class="rp-world-avatar">${esc(initials(post.author?.playerName))}</div><div class="rp-world-post-author"><strong>${esc(post.author?.playerName || 'REAL PLAY PLAYER')}</strong><span>${esc(timeLabel(post.createdAt))}</span></div></header>
@@ -177,7 +224,7 @@
           </div>
           <div class="rp-world-comments${comments.length ? ' has-comments' : ''}" data-post-comments>
             ${comments.map((comment) => `<div class="rp-world-comment"><div class="rp-world-comment-avatar">${esc(initials(comment.author?.playerName))}</div><div><p><strong>${esc(comment.author?.playerName || 'REAL PLAY PLAYER')}</strong><span>${esc(timeLabel(comment.createdAt))}</span></p><b>${esc(comment.body)}</b></div></div>`).join('')}
-            <form class="rp-world-comment-form" data-comment-form hidden><input type="text" maxlength="500" placeholder="Write a comment..." data-comment-input required /><button type="submit">POST</button></form>
+            ${commentForm}
           </div>
         </article>`;
     }).join('');
@@ -191,7 +238,9 @@
         <span>${channel.type === 'world' ? '◎' : '◉'}</span><div><strong>${esc(channel.name)}</strong><small>${esc(channel.subtitle)}</small></div>
       </button>`).join('');
     if (channels.length === 1) {
-      root.insertAdjacentHTML('beforeend', '<div class="rp-chat-team-waiting"><strong>TEAM CHAT</strong><span>Select or receive a Real Play team to unlock your team chat.</span></div>');
+      root.insertAdjacentHTML('beforeend', visitor()
+        ? '<div class="rp-chat-team-waiting"><strong>TEAM CHAT</strong><span>Create your player and join a team to unlock team chat.</span></div>'
+        : '<div class="rp-chat-team-waiting"><strong>TEAM CHAT</strong><span>Select or receive a Real Play team to unlock your team chat.</span></div>');
     }
   }
 
@@ -203,11 +252,11 @@
     if (!thread || !title || !subtitle || !input) return;
     const channel = channels.find((item) => item.id === currentChannel) || channels[0] || { id: 'world', name: 'WORLD CHAT', subtitle: 'Everyone in Real Play' };
     title.textContent = channel.name;
-    subtitle.textContent = channel.subtitle;
-    input.placeholder = `Message ${channel.name.replace(/ CHAT$/i, '')}...`;
+    subtitle.textContent = visitor() ? `${channel.subtitle} · READ ONLY` : channel.subtitle;
+    input.placeholder = visitor() ? 'Create your player to message...' : `Message ${channel.name.replace(/ CHAT$/i, '')}...`;
     thread.innerHTML = messages.length
       ? messages.map((message) => `<div class="rp-chat-message${message.mine ? ' mine' : ''}"><div class="rp-chat-message-avatar">${esc(initials(message.author?.playerName))}</div><div class="rp-chat-bubble">${message.mine ? '' : `<strong>${esc(message.author?.playerName || 'REAL PLAY PLAYER')}</strong>`}<p>${esc(message.body)}</p><span>${esc(timeLabel(message.createdAt))}</span></div></div>`).join('')
-      : '<div class="rp-chat-empty"><strong>NO MESSAGES YET.</strong><span>Start the conversation.</span></div>';
+      : '<div class="rp-chat-empty"><strong>NO MESSAGES YET.</strong><span>World Chat is ready.</span></div>';
     if (scroll || forceChatBottom) requestAnimationFrame(() => {
       thread.scrollTop = thread.scrollHeight;
       forceChatBottom = false;
@@ -228,7 +277,7 @@
     if (!quiet) setStatus('LOADING WORLD...');
     try {
       const data = await community('bootstrap');
-      me = data.me || me;
+      me = data.me || null;
       feed = Array.isArray(data.feed) ? data.feed : [];
       channels = Array.isArray(data.channels) && data.channels.length ? data.channels : [{ id: 'world', type: 'world', key: 'world', name: 'WORLD CHAT', subtitle: 'Everyone in Real Play' }];
       if (!channels.some((channel) => channel.id === currentChannel)) currentChannel = channels[0].id;
@@ -237,7 +286,7 @@
       if (activeTab === 'chats') await refreshChat({ quiet: true });
     } catch (error) {
       if (!quiet) setStatus(error.message || 'World could not load.', 'error');
-      if (error.status === 401) {
+      if (error.status === 401 && !visitor()) {
         closeWorld();
         document.querySelector('[data-auth-open]')?.click();
       }
@@ -281,6 +330,10 @@
 
   async function createPost(event) {
     event.preventDefault();
+    if (visitor()) {
+      askToJoin('Create your Real Play player to publish posts and join the World conversation.');
+      return;
+    }
     const input = panel?.querySelector('[data-world-post-input]');
     const button = panel?.querySelector('[data-world-post-button]');
     const body = String(input?.value || '').trim();
@@ -306,6 +359,10 @@
     const post = event.target.closest('[data-post-id]');
     if (!post) return;
     if (event.target.closest('[data-post-comment-toggle]')) {
+      if (visitor()) {
+        askToJoin('Create your Real Play player to comment and join this conversation.');
+        return;
+      }
       const form = post.querySelector('[data-comment-form]');
       if (form) {
         form.hidden = !form.hidden;
@@ -315,6 +372,10 @@
     }
     const like = event.target.closest('[data-post-like]');
     if (!like) return;
+    if (visitor()) {
+      askToJoin('Create your Real Play player to react to community posts.');
+      return;
+    }
     like.disabled = true;
     try {
       const data = await community('toggle_like', { postId: post.dataset.postId });
@@ -330,6 +391,10 @@
     const form = event.target.closest('[data-comment-form]');
     if (!form) return;
     event.preventDefault();
+    if (visitor()) {
+      askToJoin('Create your Real Play player to comment and join this conversation.');
+      return;
+    }
     const post = form.closest('[data-post-id]');
     const input = form.querySelector('[data-comment-input]');
     const button = form.querySelector('button[type="submit"]');
@@ -362,6 +427,10 @@
 
   async function sendChat(event) {
     event.preventDefault();
+    if (visitor()) {
+      askToJoin('Create your Real Play player to send messages in World Chat.');
+      return;
+    }
     const input = panel?.querySelector('[data-chat-input]');
     const button = panel?.querySelector('[data-chat-send]');
     const body = String(input?.value || '').trim();
@@ -419,6 +488,7 @@
     messages = [];
     forceChatBottom = true;
     renderTabs();
+    renderMe();
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-world-open');
@@ -484,5 +554,5 @@
     observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 
-  window.RealPlayWorld = { open: openWorld, close: closeWorld };
+  window.RealPlayWorld = { open: openWorld, close: closeWorld, community };
 })();
