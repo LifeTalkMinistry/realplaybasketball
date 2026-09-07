@@ -117,7 +117,7 @@
     pop.className = 'rp-career-replay-assist-pop';
     pop.dataset.rpCareerAssistPop = '1';
     pop.setAttribute('aria-live', 'polite');
-    pop.innerHTML = '<span>AST</span><strong data-rp-career-assist-name>PLAYER</strong>';
+    pop.innerHTML = '<span>ASSIST BY</span><strong data-rp-career-assist-name>PLAYER</strong>';
     stage.appendChild(pop);
     return pop;
   }
@@ -134,7 +134,7 @@
     const pop = ensureAssistPop();
     if (!pop) return;
     const label = pop.querySelector('[data-rp-career-assist-name]');
-    if (label) label.textContent = cleanName;
+    if (label) label.textContent = assistIdentity(cleanName);
     pop.classList.add('show');
     assistTimer = setTimeout(() => {
       pop.classList.remove('show');
@@ -155,6 +155,31 @@
 
   function directAssistName(marker) {
     return String(marker?.assistPlayerName ?? marker?.assist_player_name ?? '').trim();
+  }
+
+  function playerRecordByName(name) {
+    const target = normalize(name);
+    if (!target) return null;
+    const pools = [
+      replayData?.playerStats,
+      replayData?.players,
+      replayData?.roster,
+      replayData?.game?.players,
+      replayData?.game?.roster,
+    ];
+    for (const pool of pools) {
+      if (!Array.isArray(pool)) continue;
+      const match = pool.find((player) => normalize(player?.playerName ?? player?.player_name ?? player?.name) === target);
+      if (match) return match;
+    }
+    return null;
+  }
+
+  function assistIdentity(name) {
+    const player = playerRecordByName(name);
+    const rawNumber = player?.playerNumber ?? player?.player_number;
+    const number = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '#--' : `#${Number(rawNumber)}`;
+    return `${number} - ${String(name || 'REAL PLAY PLAYER').trim()}`;
   }
 
   function scoreFingerprint(pop) {
