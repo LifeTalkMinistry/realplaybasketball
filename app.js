@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-profile-topbar-cleanup-v7';
+  const version = '20260908-player-id-badge-v8';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -135,6 +135,7 @@
       'real-play-profile-metrics.js',
       'real-play-world-players.js',
       'visitor-world-players.js',
+      'player-id-badge.js',
       'real-play-world-score-order-fix.js',
       'profile-game-replay-link.js',
       'real-play-world-player-filters.js',
