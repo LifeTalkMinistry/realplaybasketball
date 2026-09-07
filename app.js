@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-visitor-public-replay-resolution-v3';
+  const version = '20260907-recorded-scoring-input-stability-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
