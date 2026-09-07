@@ -48,6 +48,16 @@
   .rp-profile-name > h1{font-size:2rem!important}
 }
 
+/* Profile topbar cleanup: keep PROFILE only; remove redundant subtitle. */
+.rp-profile-topbar > div > span{
+  display:none!important;
+}
+
+.rp-profile-topbar > div{
+  display:flex!important;
+  align-items:center!important;
+}
+
 /* Career metrics cleanup: retain one clear section title only. */
 .rp-profile-section:has(.rp-profile-stat-grid) .rp-profile-section-head{
   display:block!important;
