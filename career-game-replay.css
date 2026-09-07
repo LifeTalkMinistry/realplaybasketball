@@ -391,3 +391,97 @@ body.rp-career-replay-open{overflow:hidden}
   .rp-career-replay-assist-pop strong,
   .rp-career-replay-positive-pop strong{font-size:.78rem!important;max-width:190px!important}
 }
+
+
+/* Compact stacked score recognition:
+   TEAM
+   Player Name
+   SCORE +1/+2
+   Uses the existing card footprint without leaving dead horizontal space. */
+.rp-career-replay-score-pop{
+  left:auto!important;
+  right:10px!important;
+  bottom:10px!important;
+  width:auto!important;
+  min-width:150px!important;
+  max-width:min(58%,250px)!important;
+  min-height:0!important;
+  display:grid!important;
+  grid-template-columns:1fr auto!important;
+  grid-template-rows:auto auto auto!important;
+  gap:3px 8px!important;
+  padding:10px 12px!important;
+  transform:translateY(7px)!important;
+  text-align:center!important;
+}
+.rp-career-replay-score-pop.show{
+  transform:translateY(0)!important;
+}
+.rp-career-replay-score-pop::before{
+  content:attr(data-rp-career-score-team);
+  grid-column:1/-1;
+  color:#8b95a3;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.48rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.12em;
+  line-height:1;
+  text-align:center;
+}
+.rp-career-replay-score-pop.team-west::before{color:#46b6ff}
+.rp-career-replay-score-pop.team-east::before{color:#ff6670}
+
+.rp-career-replay-score-pop small{
+  display:none!important;
+}
+.rp-career-replay-score-pop>div{
+  display:contents!important;
+}
+.rp-career-replay-score-pop strong{
+  grid-column:1/-1!important;
+  grid-row:2!important;
+  max-width:210px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  color:#fff!important;
+  font-size:.92rem!important;
+  line-height:1.1!important;
+  text-align:center!important;
+}
+.rp-career-replay-score-pop p{
+  grid-column:1!important;
+  grid-row:3!important;
+  justify-self:end!important;
+  margin:0!important;
+  color:#8d99a8!important;
+  font-size:.5rem!important;
+  font-weight:950!important;
+  letter-spacing:.11em!important;
+  line-height:1!important;
+}
+.rp-career-replay-score-pop b{
+  grid-column:2!important;
+  grid-row:3!important;
+  justify-self:start!important;
+  align-self:center!important;
+  color:#61efbd!important;
+  font-size:.86rem!important;
+  line-height:1!important;
+}
+@media(max-width:620px){
+  .rp-career-replay-score-pop{
+    right:8px!important;
+    bottom:8px!important;
+    min-width:142px!important;
+    max-width:62%!important;
+    padding:9px 10px!important;
+  }
+  .rp-career-replay-score-pop strong{
+    max-width:180px!important;
+    font-size:.86rem!important;
+  }
+  .rp-career-replay-score-pop p{font-size:.47rem!important}
+  .rp-career-replay-score-pop b{font-size:.8rem!important}
+}
