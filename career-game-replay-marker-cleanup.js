@@ -138,12 +138,25 @@
     cleanScorePops(root);
   }
 
+  function cleanScorePopFromMutationTarget(target) {
+    const element = target instanceof Element ? target : target?.parentElement;
+    const pop = element?.closest?.('[data-rp-career-score-pop]');
+    if (pop) cleanScorePop(pop);
+  }
+
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
+      cleanScorePopFromMutationTarget(mutation.target);
+
       if (mutation.target instanceof Element) cleanReplayUi(mutation.target);
+
       for (const node of mutation.addedNodes) {
-        if (!(node instanceof Element)) continue;
-        cleanReplayUi(node);
+        if (node instanceof Element) {
+          cleanReplayUi(node);
+          cleanScorePopFromMutationTarget(node);
+        } else {
+          cleanScorePopFromMutationTarget(node);
+        }
       }
     }
   });
