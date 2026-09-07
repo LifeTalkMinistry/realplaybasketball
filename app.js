@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-replay-fullscreen-back-v1';
+  const version = '20260907-replay-final-winner-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -51,6 +51,7 @@
     'career-beta-play.css',
     'career-game-replay.css',
     'career-game-replay-stats.css',
+    'career-game-replay-winner.css',
     'real-play-updates.css',
     'real-play-updates-cleanup.css',
     'real-play-updates-game-detail.css',
@@ -107,6 +108,7 @@
       'career-game-replay.js',
       'career-game-replay-fullscreen-back.js',
       'career-game-replay-stats.js',
+      'career-game-replay-winner.js',
       'membership-bootstrap.js',
       'career-beta-leaderboard.js',
       'three-v-three-beta.js',
