@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-open-rank-auto-id-v1';
+  const version = '20260908-replay-comments-viewport-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -115,6 +115,7 @@
       'career-game-replay-positive-events.js',
       'career-game-replay-fullscreen-back.js',
       'career-game-replay-stats.js',
+      'career-game-replay-comments-viewport.js',
       'career-game-replay-winner.js',
       'membership-bootstrap.js',
       'career-beta-leaderboard.js',
