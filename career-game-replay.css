@@ -138,3 +138,45 @@ body.rp-career-replay-open{overflow:hidden}
 @media(prefers-reduced-transparency:reduce){
   .rp-career-replay::before{opacity:.38}
 }
+
+
+/* REAL PLAY brand alignment: black base with restrained West-blue / East-red accents. */
+.rp-career-replay-topbar{
+  border-bottom-color:rgba(255,255,255,.07);
+  background:rgba(2,3,7,.94);
+}
+.rp-career-replay-back,
+.rp-career-replay-video-controls button{
+  border-color:rgba(201,206,214,.14);
+  background:linear-gradient(160deg,#0a0d12,#05070b);
+  color:#f7f9fb;
+}
+.rp-career-replay-back:focus-visible,
+.rp-career-replay-video-controls button:focus-visible{
+  outline:1px solid rgba(8,108,255,.48);
+  outline-offset:2px;
+}
+.rp-career-replay-stage{
+  border-color:rgba(201,206,214,.14);
+  box-shadow:
+    -12px 0 30px rgba(0,117,255,.06),
+    12px 0 30px rgba(255,37,51,.045);
+}
+.rp-career-replay-timeline-wrap{
+  border:1px solid transparent;
+  background:
+    linear-gradient(158deg,rgba(5,13,24,.955),rgba(3,7,13,.985) 52%,rgba(5,5,9,.99)) padding-box,
+    linear-gradient(105deg,rgba(19,152,255,.62),rgba(109,120,145,.18) 50%,rgba(255,53,66,.54)) border-box;
+  box-shadow:
+    -10px 0 26px rgba(0,117,255,.055),
+    10px 0 24px rgba(255,38,51,.04);
+}
+.rp-career-replay-timeline input[type=range]{
+  accent-color:#1398ff;
+}
+.rp-career-replay-clock{
+  color:#8b95a3;
+}
+.rp-career-replay-score span{
+  color:#7d8795;
+}
