@@ -11,6 +11,8 @@
   let lastPlayerTrigger = null;
   let rosterCache = null;
   let rosterCacheAt = 0;
+  let currentSessionId = 0;
+  let commentsRequestId = 0;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -256,6 +258,113 @@
     });
   }
 
+  function commentTime(value) {
+    const date = new Date(value || 0);
+    if (!Number.isFinite(date.getTime())) return '';
+    return date.toLocaleString([], {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+
+  function commentsHtml(comments) {
+    if (!comments.length) {
+      return '<div class="rp-career-replay-comments-empty">NO COMMENTS YET.<br><span>BE THE FIRST TO JOIN THE GAME DISCUSSION.</span></div>';
+    }
+    return comments.map((comment) => `
+      <article class="rp-career-replay-comment">
+        <div class="rp-career-replay-comment-head">
+          <strong>${esc(comment.playerName || 'REAL PLAY USER')}</strong>
+          <time>${esc(commentTime(comment.createdAt))}</time>
+        </div>
+        <p>${esc(comment.body || '')}</p>
+      </article>`).join('');
+  }
+
+  async function loadComments(section, sessionId = currentSessionId) {
+    const id = Number(sessionId || 0);
+    if (!section || !Number.isSafeInteger(id) || id < 1) return;
+    const list = section.querySelector('[data-rp-career-comments-list]');
+    if (!list) return;
+    const requestId = ++commentsRequestId;
+    list.innerHTML = '<div class="rp-career-replay-comments-loading">LOADING COMMENTS…</div>';
+
+    try {
+      const auth = localStorage.getItem(TOKEN_KEY) || '';
+      if (!auth) throw new Error('Sign in to view comments.');
+      const response = await fetch(`${API_BASE_URL}/api/real-play/career/games/${encodeURIComponent(id)}/comments`, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${auth}` },
+        cache: 'no-store',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.message || data?.error || 'Comments could not load.');
+      if (requestId !== commentsRequestId || !list.isConnected) return;
+      const comments = Array.isArray(data?.comments) ? data.comments : [];
+      list.innerHTML = commentsHtml(comments);
+      list.scrollTop = list.scrollHeight;
+    } catch (error) {
+      if (requestId !== commentsRequestId || !list.isConnected) return;
+      list.innerHTML = `<div class="rp-career-replay-comments-error">${esc(error.message || 'Comments could not load.')}</div>`;
+    }
+  }
+
+  function setMainStatsView(section, view) {
+    if (!section || !['stats', 'comments'].includes(view)) return;
+    section.querySelectorAll('[data-rp-career-main-tab]').forEach((button) => {
+      const active = button.dataset.rpCareerMainTab === view;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    section.querySelectorAll('[data-rp-career-main-panel]').forEach((panel) => {
+      panel.hidden = panel.dataset.rpCareerMainPanel !== view;
+    });
+    if (view === 'comments') loadComments(section).catch(() => {});
+  }
+
+  async function submitComment(section, form) {
+    if (!section || !form || form.dataset.submitting === '1') return;
+    const input = form.querySelector('[data-rp-career-comment-input]');
+    const button = form.querySelector('[data-rp-career-comment-submit]');
+    const body = String(input?.value || '').trim();
+    if (!body) return;
+
+    form.dataset.submitting = '1';
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'SENDING…';
+    }
+
+    try {
+      const auth = localStorage.getItem(TOKEN_KEY) || '';
+      if (!auth) throw new Error('Sign in to comment.');
+      const response = await fetch(`${API_BASE_URL}/api/real-play/career/games/${encodeURIComponent(currentSessionId)}/comments`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${auth}`,
+        },
+        body: JSON.stringify({ body }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.message || data?.error || 'Comment could not be posted.');
+      if (input) input.value = '';
+      await loadComments(section);
+    } catch (error) {
+      const list = section.querySelector('[data-rp-career-comments-list]');
+      if (list) list.insertAdjacentHTML('beforeend', `<div class="rp-career-replay-comments-error">${esc(error.message || 'Comment could not be posted.')}</div>`);
+    } finally {
+      delete form.dataset.submitting;
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'SEND';
+      }
+      input?.focus({ preventScroll: true });
+    }
+  }
+
   function markerBelongsToPlayer(marker, player) {
     const markerId = marker?.playerId ?? marker?.player_id ?? null;
     const playerId = player?.playerId ?? player?.player_id ?? player?.id ?? null;
@@ -399,13 +508,30 @@
     const section = document.createElement('section');
     section.className = 'rp-career-replay-stats';
     section.dataset.rpCareerReplayStats = '1';
+    currentSessionId = Number(data?.game?.sessionId || 0);
     section.innerHTML = `
-      <div class="rp-career-replay-stats-head"><div><small>OFFICIAL BOX SCORE</small><strong>PLAYER STATS</strong></div><span>VERIFIED FROM VIDEO REVIEW</span></div>
-      <div class="rp-career-replay-stat-tabs" role="tablist" aria-label="Choose team stats">
-        <button type="button" class="active" role="tab" aria-selected="true" data-rp-career-stat-team="west">WEST</button>
-        <button type="button" role="tab" aria-selected="false" tabindex="-1" data-rp-career-stat-team="east">EAST</button>
+      <div class="rp-career-replay-main-tabs" role="tablist" aria-label="Game information">
+        <button type="button" class="active" role="tab" aria-selected="true" data-rp-career-main-tab="stats">PLAYER STATS</button>
+        <button type="button" role="tab" aria-selected="false" data-rp-career-main-tab="comments">COMMENTS</button>
       </div>
-      <div class="rp-career-replay-stat-teams">${teamBlock('west', stats, true)}${teamBlock('east', stats, false)}</div>`;
+
+      <div data-rp-career-main-panel="stats">
+        <div class="rp-career-replay-stat-tabs" role="tablist" aria-label="Choose team stats">
+          <button type="button" class="active" role="tab" aria-selected="true" data-rp-career-stat-team="west">WEST</button>
+          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-rp-career-stat-team="east">EAST</button>
+        </div>
+        <div class="rp-career-replay-stat-teams">${teamBlock('west', stats, true)}${teamBlock('east', stats, false)}</div>
+      </div>
+
+      <div class="rp-career-replay-comments-panel" data-rp-career-main-panel="comments" hidden>
+        <div class="rp-career-replay-comments-list" data-rp-career-comments-list>
+          <div class="rp-career-replay-comments-loading">LOADING COMMENTS…</div>
+        </div>
+        <form class="rp-career-replay-comment-form" data-rp-career-comment-form>
+          <textarea maxlength="500" rows="2" placeholder="Add a comment…" aria-label="Add a game comment" data-rp-career-comment-input></textarea>
+          <button type="submit" data-rp-career-comment-submit>SEND</button>
+        </form>
+      </div>`;
     main.appendChild(section);
   }
 
@@ -466,6 +592,13 @@
       return;
     }
 
+    const mainTab = event.target.closest('[data-rp-career-main-tab]');
+    if (mainTab) {
+      const section = mainTab.closest('[data-rp-career-replay-stats]');
+      setMainStatsView(section, mainTab.dataset.rpCareerMainTab);
+      return;
+    }
+
     const teamButton = event.target.closest('[data-rp-career-stat-team]');
     if (teamButton) {
       const section = teamButton.closest('[data-rp-career-replay-stats]');
@@ -476,6 +609,14 @@
     const trigger = event.target.closest('[data-rp-career-replay-session]');
     if (!trigger) return;
     loadStats(trigger.dataset.rpCareerReplaySession);
+  }, true);
+
+  document.addEventListener('submit', (event) => {
+    const form = event.target.closest?.('[data-rp-career-comment-form]');
+    if (!form) return;
+    event.preventDefault();
+    const section = form.closest('[data-rp-career-replay-stats]');
+    submitComment(section, form).catch(() => {});
   }, true);
 
   document.addEventListener('keydown', (event) => {
