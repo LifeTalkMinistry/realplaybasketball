@@ -223,12 +223,8 @@
       <div class="rp-career-replay-stage" data-rp-career-replay-stage>
         <div data-rp-career-replay-media></div>
         <div class="rp-career-replay-score-pop" data-rp-career-score-pop aria-live="polite">
-          <small>SCORE CONFIRMED</small>
-          <div>
-            <strong data-rp-career-score-name>PLAYER</strong>
-            <p data-rp-career-score-detail>2PT MADE</p>
-          </div>
-          <b data-rp-career-score-value>+2</b>
+          <span data-rp-career-score-team>WEST</span>
+          <strong data-rp-career-score-name>PLAYER +1</strong>
         </div>
         <div class="rp-career-replay-video-controls" data-rp-career-replay-video-controls>
           <button type="button" data-rp-career-replay-play aria-label="Play or pause">▶</button>
@@ -477,12 +473,10 @@
     if (activeMarkerId !== id) {
       activeMarkerId = id;
       const name = pop.querySelector('[data-rp-career-score-name]');
-      const detail = pop.querySelector('[data-rp-career-score-detail]');
-      const value = pop.querySelector('[data-rp-career-score-value]');
-      if (name) name.textContent = recognitionIdentity(hit);
-      if (detail) detail.textContent = 'SCORE';
-      if (value) value.textContent = `+${Number(hit.shotValue || 0)}`;
-      pop.dataset.rpCareerScoreTeam = String(hit.team || '').toUpperCase();
+      const team = pop.querySelector('[data-rp-career-score-team]');
+      const teamName = String(hit.team || '').toUpperCase() || 'TEAM';
+      if (team) team.textContent = teamName;
+      if (name) name.textContent = `${recognitionIdentity(hit)}  +${Number(hit.shotValue || 0)}`;
       pop.classList.toggle('team-west', String(hit.team || '').toLowerCase() === 'west');
       pop.classList.toggle('team-east', String(hit.team || '').toLowerCase() === 'east');
     }
