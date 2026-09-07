@@ -33,6 +33,11 @@
     return Number.isSafeInteger(id) && id > 0 ? id : null;
   }
 
+  function cachedSessionIdFrom(card) {
+    const id = Number(card?.dataset?.rpProfileGameSession || 0);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+  }
+
   function gameIndex(card) {
     const history = card?.closest('.rp-profile-history');
     if (!history) return -1;
@@ -81,18 +86,49 @@
     return games;
   }
 
-  function openReplay(sessionId) {
+  function closeSourceProfile(card) {
+    const ownProfile = card?.closest('.rp-profile');
+    if (ownProfile) {
+      if (window.RealPlayProfile?.close) {
+        window.RealPlayProfile.close();
+      } else {
+        ownProfile.classList.remove('open');
+        ownProfile.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('rp-profile-open');
+      }
+      return;
+    }
+
+    const publicProfile = card?.closest('[data-rp-public-profile], .rp-public-player-profile');
+    if (!publicProfile) return;
+    const closeButton = publicProfile.querySelector('[data-rp-public-profile-close], [data-rp-profile-close], [data-rp-player-profile-close]');
+    if (closeButton) {
+      closeButton.click();
+      return;
+    }
+    publicProfile.classList.remove('open');
+    publicProfile.setAttribute('aria-hidden', 'true');
+  }
+
+  function openReplay(sessionId, sourceCard = null) {
     const id = Number(sessionId);
     if (!Number.isSafeInteger(id) || id < 1) return false;
 
-    // Reuse the canonical replay viewer through a hidden session trigger.
+    closeSourceProfile(sourceCard);
+
+    // Reuse the canonical full-game viewer. The temporary trigger is consumed
+    // by career-game-replay.js, so profile history always lands on the exact
+    // same game page used everywhere else in Real Play.
     const proxy = document.createElement('button');
     proxy.type = 'button';
     proxy.hidden = true;
     proxy.dataset.rpCareerReplaySession = String(id);
     document.body.appendChild(proxy);
-    proxy.click();
-    window.setTimeout(() => proxy.remove(), 0);
+    requestAnimationFrame(() => {
+      if (!proxy.isConnected) return;
+      proxy.click();
+      window.setTimeout(() => proxy.remove(), 0);
+    });
     return true;
   }
 
@@ -100,25 +136,42 @@
     if (!card) return;
     card.classList.toggle('rp-profile-game-replay-loading', Boolean(busy));
     card.setAttribute('aria-busy', busy ? 'true' : 'false');
+    const hint = card.querySelector('.rp-profile-game-open-hint span');
+    if (hint) hint.textContent = busy ? 'OPENING GAME…' : 'VIEW GAME';
   }
 
   async function handleGameCard(card) {
     if (!card || resolving) return;
+
+    const alreadyResolved = cachedSessionIdFrom(card);
+    if (alreadyResolved) {
+      openReplay(alreadyResolved, card);
+      return;
+    }
+
     const index = gameIndex(card);
     if (index < 0) return;
 
     resolving = true;
     setCardBusy(card, true);
     try {
-      const publicProfile = card.closest('[data-rp-public-profile]');
+      const publicProfile = card.closest('[data-rp-public-profile], .rp-public-player-profile');
       const games = publicProfile
         ? await loadPublicGames(currentPublicPlayerId)
         : await loadOwnGames();
       const id = sessionIdFrom(games[index]);
-      if (!id) throw new Error('This game does not have a verified replay yet.');
-      openReplay(id);
+      if (!id) throw new Error('This game does not have a verified game page yet.');
+      card.dataset.rpProfileGameSession = String(id);
+      if (!openReplay(id, card)) throw new Error('This game could not be opened.');
     } catch (error) {
-      console.warn('[Real Play] Profile replay could not open.', error);
+      console.warn('[Real Play] Profile game page could not open.', error);
+      const hint = card.querySelector('.rp-profile-game-open-hint span');
+      if (hint) {
+        hint.textContent = 'GAME UNAVAILABLE';
+        window.setTimeout(() => {
+          if (hint.isConnected) hint.textContent = 'VIEW GAME';
+        }, 1800);
+      }
     } finally {
       resolving = false;
       setCardBusy(card, false);
