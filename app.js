@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-recorded-scoring-input-stability-v1';
+  const version = '20260907-recorded-assist-score-link-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
