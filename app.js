@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-visitor-replay-v1';
+  const version = '20260907-visitor-replay-admin-edit-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -150,6 +150,7 @@
       'admin-recorded-stat-controls-fix.js',
       'admin-recorded-scoring-winner.js',
       'admin-access-bootstrap.js',
+      'career-game-replay-admin-edit.js',
       'admin-game-rotation.js',
       'admin-live-refresh-fix.js',
     ];
