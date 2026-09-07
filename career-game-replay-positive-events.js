@@ -126,7 +126,7 @@
     let pop = stage.querySelector('[data-rp-career-positive-pop]');
     if (pop) return pop;
     pop = document.createElement('div');
-    pop.className = 'rp-career-replay-positive-pop';
+    pop.className = 'rp-career-replay-positive-pop rp-career-replay-stat-pop';
     pop.dataset.rpCareerPositivePop = '1';
     pop.setAttribute('aria-live', 'polite');
     pop.innerHTML = '<span data-rp-career-positive-type>REBOUND BY</span><strong data-rp-career-positive-name>PLAYER</strong>';
