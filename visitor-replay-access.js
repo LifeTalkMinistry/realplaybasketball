@@ -10,6 +10,7 @@
 
   let bridgeExpiresAt = 0;
   let cleanupTimer = null;
+  let currentPublicPlayerId = null;
 
   function realToken() {
     const value = localStorage.getItem(TOKEN_KEY) || '';
@@ -54,6 +55,16 @@
     return headers;
   }
 
+  function jsonResponse(data, sourceResponse) {
+    const headers = new Headers(sourceResponse?.headers || undefined);
+    headers.set('Content-Type', 'application/json');
+    return new Response(JSON.stringify(data ?? {}), {
+      status: sourceResponse?.status || 200,
+      statusText: sourceResponse?.statusText || '',
+      headers,
+    });
+  }
+
   window.fetch = function realPlayVisitorReplayFetch(input, init = {}) {
     const rawUrl = typeof input === 'string' ? input : input?.url;
     const url = String(rawUrl || '');
@@ -78,6 +89,27 @@
             });
           }
         }
+
+        // The legacy profile replay linker still treats the visitor-owned public
+        // profile panel as "my profile" and asks /me for recent games. Translate
+        // that one temporary read into the selected public player's profile so
+        // the canonical replay viewer can resolve the correct session id.
+        if (/\/api\/real-play\/me(?:[?#]|$)/.test(url)
+            && Number.isSafeInteger(currentPublicPlayerId)
+            && currentPublicPlayerId > 0) {
+          return originalFetch(`${API_BASE_URL}/api/real-play/public/community`, {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action: 'player_profile', playerId: currentPublicPlayerId }),
+            cache: 'no-store',
+          }).then(async (response) => {
+            const data = await response.json().catch(() => ({}));
+            return jsonResponse(data?.player || data, response);
+          });
+        }
       }
     } catch (_error) {
       // Fall through to the original request path.
@@ -86,21 +118,34 @@
     return originalFetch(input, init);
   };
 
-  // Public profile game cards resolve their session id asynchronously before
-  // they trigger the canonical replay viewer. Keep one temporary sentinel alive
-  // across that lookup so both the player-profile read and replay request are
-  // transparently redirected to the visitor-safe public endpoints.
+  // Keep track of the public player selected before visitor-world-players stops
+  // propagation on the row click. This listener is installed earlier, so it
+  // records the identity without changing the visitor UI behavior.
   document.addEventListener('click', (event) => {
     if (!visitorActive()) return;
+
+    const playerRow = event.target?.closest?.('[data-world-player-id]');
+    if (playerRow) {
+      const playerId = Number(playerRow.dataset.worldPlayerId);
+      if (Number.isSafeInteger(playerId) && playerId > 0) currentPublicPlayerId = playerId;
+      return;
+    }
+
     const card = event.target?.closest?.('.rp-profile-history .rp-profile-game');
     if (card) armBridge();
   }, true);
 
   window.addEventListener('realplay:visitorchange', (event) => {
-    if (!event?.detail?.visitor) clearBridge();
+    if (!event?.detail?.visitor) {
+      currentPublicPlayerId = null;
+      clearBridge();
+    }
   });
 
   window.addEventListener('storage', (event) => {
-    if (event.key === VISITOR_KEY && event.newValue !== '1') clearBridge();
+    if (event.key === VISITOR_KEY && event.newValue !== '1') {
+      currentPublicPlayerId = null;
+      clearBridge();
+    }
   });
 })();
