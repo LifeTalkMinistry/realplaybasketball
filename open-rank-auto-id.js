@@ -18,7 +18,7 @@
         if (firstText) firstText.textContent = 'Optional display name';
 
         const helper = document.createElement('small');
-        helper.textContent = 'OFFICIAL GAME ID IS ASSIGNED AUTOMATICALLY · OPEN RANK #001, #002, #003…';
+        helper.textContent = 'OPEN RANK NUMBER IS ASSIGNED AUTOMATICALLY BY DEFAULT · ADMIN CAN CORRECT IT LATER.';
         helper.style.color = '#61748a';
         helper.style.fontSize = '.48rem';
         helper.style.fontWeight = '900';
@@ -47,13 +47,13 @@
       if (kicker?.textContent.trim() === 'BETA OPERATIONS') kicker.textContent = 'OPEN RANK OPERATIONS';
       const copy = adminTitle.querySelector('p');
       if (copy?.textContent.includes('Open the game your testers can join')) {
-        copy.textContent = 'Create the next official Open Rank. Its permanent game ID is assigned automatically.';
+        copy.textContent = 'Create the next official Open Rank. A number is assigned automatically by default and can be corrected by Admin.';
       }
     }
 
     document.querySelectorAll('.rp-admin-empty p').forEach((copy) => {
       if (copy.textContent.includes('Create the next Beta Career session')) {
-        copy.textContent = 'Create the next Open Rank below. The official game ID is automatic.';
+        copy.textContent = 'Create the next Open Rank below. Admin can correct its public Open Rank number later.';
       }
     });
   }
