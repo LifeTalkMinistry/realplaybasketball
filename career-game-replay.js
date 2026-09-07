@@ -171,13 +171,12 @@
     decorateTimer = setTimeout(() => decorateRecentGames().catch(() => {}), 120);
   }
 
-  function markerListHtml(markers) {
-    if (!markers.length) return '<div class="rp-career-replay-marker-list"><span>No made-basket markers were recorded for this game.</span></div>';
-    return `<div class="rp-career-replay-marker-list">${markers.map((marker) => `
-      <button type="button" class="rp-career-replay-marker" data-rp-career-replay-marker="${Number(marker.replayStartMs || 0)}">
-        <strong>🏀 ${esc(marker.playerName || 'REAL PLAY PLAYER')} · +${Number(marker.shotValue || 0)}</strong>
-        <small>${formatTime(marker.videoTimestampMs)} · replay from ${formatTime(marker.replayStartMs)}</small>
-      </button>`).join('')}</div>`;
+  function timelineMarkersHtml(markers) {
+    if (!markers.length) return '';
+    return markers.map((marker) => {
+      const stamp = Math.max(0, Number(marker.videoTimestampMs || 0));
+      return `<button type="button" class="rp-career-replay-timeline-marker" data-rp-career-replay-marker="${Number(marker.replayStartMs || 0)}" data-rp-career-marker-stamp="${stamp}" aria-label="Jump to made basket at ${formatTime(stamp)}" title="${formatTime(stamp)}">🏀</button>`;
+    }).join('');
   }
 
   function renderReplay(data) {
@@ -196,22 +195,22 @@
       </div>
       <div class="rp-career-replay-stage" data-rp-career-replay-stage>
         <div data-rp-career-replay-media></div>
-        <div class="rp-career-replay-score-pop" data-rp-career-score-pop aria-live="polite">
-          <small>SCORE CONFIRMED</small><div><strong data-rp-career-score-name>PLAYER</strong><p data-rp-career-score-detail>2PT MADE</p></div><b data-rp-career-score-value>+2</b>
+        <div class="rp-career-replay-video-controls" data-rp-career-replay-video-controls>
+          <button type="button" data-rp-career-replay-play aria-label="Play or pause">▶</button>
+          <div class="rp-career-replay-video-controls-right">
+            <button type="button" data-rp-career-replay-mute aria-label="Mute or unmute">🔊</button>
+            <button type="button" data-rp-career-replay-fullscreen aria-label="Fullscreen">⛶</button>
+          </div>
         </div>
       </div>
-      <div class="rp-career-replay-controls">
-        <button type="button" data-rp-career-replay-play aria-label="Play or pause">▶</button>
-        <input type="range" min="0" max="1000" step="1" value="0" data-rp-career-replay-seek aria-label="Video position">
+      <div class="rp-career-replay-timeline-wrap">
+        <div class="rp-career-replay-timeline">
+          <input type="range" min="0" max="1000" step="1" value="0" data-rp-career-replay-seek aria-label="Video position">
+          <div class="rp-career-replay-timeline-markers" data-rp-career-replay-timeline-markers>${timelineMarkersHtml(markers)}</div>
+        </div>
         <span class="rp-career-replay-clock" data-rp-career-replay-clock>0:00 / 0:00</span>
-        <button type="button" data-rp-career-replay-mute aria-label="Mute or unmute">🔊</button>
-        <button type="button" data-rp-career-replay-fullscreen aria-label="Fullscreen">⛶</button>
       </div>
-      <div class="rp-career-replay-hostnote">${sourceType === 'youtube' ? 'VIDEO HOSTED BY YOUTUBE · OFFICIAL REAL PLAY GAME DATA' : 'VIDEO HOSTED BY REAL PLAY · OFFICIAL REAL PLAY GAME DATA'}</div>
-      <section class="rp-career-replay-markers">
-        <div class="rp-career-replay-markers-head"><strong>🏀 MADE BASKETS</strong><span>Tap to replay from 5 seconds before the score.</span></div>
-        ${markerListHtml(markers)}
-      </section>`;
+      <div class="rp-career-replay-hostnote">${sourceType === 'youtube' ? 'VIDEO HOSTED BY YOUTUBE · OFFICIAL REAL PLAY GAME DATA' : 'VIDEO HOSTED BY REAL PLAY · OFFICIAL REAL PLAY GAME DATA'}</div>`;
 
     const titleNode = ensureViewer().querySelector('[data-rp-career-replay-title]');
     if (titleNode) titleNode.textContent = game.title || 'REAL PLAY GAME';
@@ -470,7 +469,15 @@
     if (play) play.textContent = lastPlaying ? '❚❚' : '▶';
     const mute = viewer.querySelector('[data-rp-career-replay-mute]');
     if (mute) mute.textContent = lastMuted ? '🔇' : '🔊';
-    updateScorePop(lastCurrentMs);
+
+    const markerLayer = viewer.querySelector('[data-rp-career-replay-timeline-markers]');
+    if (markerLayer && lastDurationMs > 0) {
+      markerLayer.querySelectorAll('[data-rp-career-marker-stamp]').forEach((marker) => {
+        const stamp = Number(marker.dataset.rpCareerMarkerStamp || 0);
+        marker.style.left = `${Math.max(0, Math.min(100, stamp / lastDurationMs * 100))}%`;
+        marker.classList.toggle('active', Math.abs(lastCurrentMs - stamp) < 1600);
+      });
+    }
   }
 
   function startTicker() {
@@ -480,19 +487,45 @@
 
   function bindControls() {
     const root = ensureViewer();
-    root.querySelector('[data-rp-career-replay-play]')?.addEventListener('click', togglePlay);
-    root.querySelector('[data-rp-career-replay-mute]')?.addEventListener('click', toggleMute);
+    const stage = root.querySelector('[data-rp-career-replay-stage]');
+    const overlay = root.querySelector('[data-rp-career-replay-video-controls]');
+    let controlsTimer = null;
+
+    const showControls = () => {
+      if (!overlay) return;
+      overlay.classList.add('show');
+      if (controlsTimer) clearTimeout(controlsTimer);
+      controlsTimer = setTimeout(() => overlay.classList.remove('show'), 2600);
+    };
+
+    stage?.addEventListener('click', (event) => {
+      if (event.target.closest('button')) return;
+      showControls();
+    });
+
+    root.querySelector('[data-rp-career-replay-play]')?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      togglePlay();
+      showControls();
+    });
+    root.querySelector('[data-rp-career-replay-mute]')?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      toggleMute();
+      showControls();
+    });
     root.querySelector('[data-rp-career-replay-seek]')?.addEventListener('input', (event) => {
       if (!lastDurationMs) return;
       seekToMs(lastDurationMs * (Number(event.target.value || 0) / 1000), false);
     });
-    root.querySelector('[data-rp-career-replay-fullscreen]')?.addEventListener('click', () => {
-      const stage = root.querySelector('[data-rp-career-replay-stage]');
+    root.querySelector('[data-rp-career-replay-fullscreen]')?.addEventListener('click', (event) => {
+      event.stopPropagation();
       stage?.requestFullscreen?.().catch?.(() => {});
+      showControls();
     });
     root.querySelectorAll('[data-rp-career-replay-marker]').forEach((button) => {
       button.addEventListener('click', () => seekToMs(Number(button.dataset.rpCareerReplayMarker || 0), true));
     });
+    showControls();
   }
 
   document.addEventListener('click', (event) => {
