@@ -455,6 +455,8 @@
       if (name) name.textContent = hit.playerName || 'REAL PLAY PLAYER';
       if (detail) detail.textContent = `${String(hit.team || '').toUpperCase()} · ${Number(hit.shotValue || 0)}PT MADE · ${formatTime(hit.videoTimestampMs)}`;
       if (value) value.textContent = `+${Number(hit.shotValue || 0)}`;
+      pop.classList.toggle('team-west', String(hit.team || '').toLowerCase() === 'west');
+      pop.classList.toggle('team-east', String(hit.team || '').toLowerCase() === 'east');
     }
     pop.classList.add('show');
   }
