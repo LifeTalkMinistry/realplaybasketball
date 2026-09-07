@@ -323,3 +323,71 @@ body.rp-career-replay-open{overflow:hidden}
   .rp-career-replay-assist-pop span{font-size:.52rem!important}
   .rp-career-replay-assist-pop strong{font-size:.78rem!important;max-width:190px!important}
 }
+
+
+/* Apply the same premium Real Play recognition system to EVERY stat event.
+   Covers score, assist, rebound, steal and block so no legacy teal/small card remains. */
+.rp-career-replay-score-pop,
+.rp-career-replay-assist-pop,
+.rp-career-replay-positive-pop{
+  min-height:58px!important;
+  box-sizing:border-box!important;
+  border:1px solid transparent!important;
+  border-radius:14px!important;
+  background:
+    linear-gradient(158deg,rgba(5,11,18,.96),rgba(3,6,11,.985)) padding-box,
+    linear-gradient(112deg,rgba(19,152,255,.50),rgba(119,129,151,.18) 50%,rgba(255,53,66,.44)) border-box!important;
+  box-shadow:
+    0 16px 42px rgba(0,0,0,.40),
+    -10px 0 28px rgba(0,117,255,.065),
+    10px 0 28px rgba(255,37,51,.05)!important;
+  backdrop-filter:blur(10px)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+}
+
+.rp-career-replay-assist-pop,
+.rp-career-replay-positive-pop{
+  right:10px!important;
+  bottom:10px!important;
+  min-width:190px!important;
+  max-width:min(72%,360px)!important;
+  padding:10px 13px!important;
+  gap:.55rem!important;
+}
+
+.rp-career-replay-assist-pop span,
+.rp-career-replay-positive-pop span{
+  color:#46b6ff!important;
+  font-size:.58rem!important;
+  font-weight:950!important;
+  letter-spacing:.12em!important;
+}
+.rp-career-replay-assist-pop span::after,
+.rp-career-replay-positive-pop span::after{
+  color:#768392!important;
+  margin-left:.34rem!important;
+}
+.rp-career-replay-assist-pop strong,
+.rp-career-replay-positive-pop strong{
+  max-width:230px!important;
+  color:#fff!important;
+  font-size:.86rem!important;
+  font-style:italic!important;
+  font-weight:950!important;
+}
+
+@media(max-width:620px){
+  .rp-career-replay-assist-pop,
+  .rp-career-replay-positive-pop{
+    right:8px!important;
+    bottom:8px!important;
+    min-height:42px!important;
+    min-width:170px!important;
+    max-width:78%!important;
+    padding:9px 11px!important;
+  }
+  .rp-career-replay-assist-pop span,
+  .rp-career-replay-positive-pop span{font-size:.52rem!important}
+  .rp-career-replay-assist-pop strong,
+  .rp-career-replay-positive-pop strong{font-size:.78rem!important;max-width:190px!important}
+}
