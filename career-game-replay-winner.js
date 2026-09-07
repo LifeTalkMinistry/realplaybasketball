@@ -4,6 +4,8 @@
 
   let wasFinalScore = false;
   let showUntil = 0;
+  let observedPop = null;
+  let popObserver = null;
 
   function scoreNumbers(viewer) {
     const values = [...viewer.querySelectorAll('.rp-career-replay-score b')]
@@ -80,7 +82,15 @@
     const banner = ensureBanner(stage);
 
     if (isFinalScore && winner) {
-      pop.classList.add('rp-career-final-score-suppressed');
+      // This runs from a MutationObserver attached directly to the score card.
+      // MutationObserver callbacks run before the browser paints the DOM update,
+      // so the normal player score card is suppressed in the same rendering turn
+      // that it tries to become visible. The final basket therefore never flashes
+      // the scorer card, even for a single frame.
+      if (!pop.classList.contains('rp-career-final-score-suppressed')) {
+        pop.classList.add('rp-career-final-score-suppressed');
+      }
+
       const team = banner.querySelector('[data-rp-career-final-winner-team]');
       const score = banner.querySelector('[data-rp-career-final-winner-score]');
       if (team) team.textContent = `${winner.team} WINS`;
@@ -89,7 +99,9 @@
       if (!wasFinalScore) showUntil = Date.now() + 3200;
       wasFinalScore = true;
     } else {
-      pop.classList.remove('rp-career-final-score-suppressed');
+      if (pop.classList.contains('rp-career-final-score-suppressed')) {
+        pop.classList.remove('rp-career-final-score-suppressed');
+      }
       wasFinalScore = false;
     }
 
@@ -97,8 +109,54 @@
     else banner.classList.remove('show');
   }
 
-  const heartbeat = window.setInterval(sync, 100);
-  window.addEventListener('pagehide', () => window.clearInterval(heartbeat), { once: true });
-  document.addEventListener('fullscreenchange', sync);
+  function attachPopObserver() {
+    const viewer = document.querySelector('[data-rp-career-replay].open');
+    const pop = viewer?.querySelector('[data-rp-career-score-pop]') || null;
+
+    if (pop === observedPop) return;
+
+    popObserver?.disconnect();
+    popObserver = null;
+    observedPop = pop;
+
+    if (!pop) return;
+
+    popObserver = new MutationObserver(() => sync());
+    popObserver.observe(pop, {
+      attributes: true,
+      attributeFilter: ['class'],
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+
+    // Resolve the current frame immediately when attaching.
+    sync();
+  }
+
+  // The heartbeat only discovers when the replay DOM is created/replaced.
+  // Final-score suppression itself is mutation-driven and happens before paint.
+  const heartbeat = window.setInterval(() => {
+    attachPopObserver();
+    if (showUntil && Date.now() >= showUntil) sync();
+  }, 200);
+
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('[data-rp-career-replay-session]')) {
+      window.setTimeout(attachPopObserver, 0);
+    }
+  }, true);
+
+  window.addEventListener('pagehide', () => {
+    window.clearInterval(heartbeat);
+    popObserver?.disconnect();
+  }, { once: true });
+
+  document.addEventListener('fullscreenchange', () => {
+    attachPopObserver();
+    sync();
+  });
+
+  attachPopObserver();
   sync();
 })();
