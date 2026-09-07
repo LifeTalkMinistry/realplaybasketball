@@ -195,6 +195,14 @@
       </div>
       <div class="rp-career-replay-stage" data-rp-career-replay-stage>
         <div data-rp-career-replay-media></div>
+        <div class="rp-career-replay-score-pop" data-rp-career-score-pop aria-live="polite">
+          <small>SCORE CONFIRMED</small>
+          <div>
+            <strong data-rp-career-score-name>PLAYER</strong>
+            <p data-rp-career-score-detail>2PT MADE</p>
+          </div>
+          <b data-rp-career-score-value>+2</b>
+        </div>
         <div class="rp-career-replay-video-controls" data-rp-career-replay-video-controls>
           <button type="button" data-rp-career-replay-play aria-label="Play or pause">▶</button>
           <div class="rp-career-replay-video-controls-right">
@@ -478,6 +486,11 @@
         marker.classList.toggle('active', Math.abs(lastCurrentMs - stamp) < 1600);
       });
     }
+
+    // Keep the original in-video scoring recognition alive. The assist
+    // recognition scripts intentionally listen for this popup's show/hide
+    // sequence, so it must remain independent from the new timeline markers.
+    updateScorePop(lastCurrentMs);
   }
 
   function startTicker() {
