@@ -556,3 +556,117 @@
 @media(prefers-reduced-motion:reduce){
   .rp-career-recognition-modal,.rp-career-replay-recognition-badge{transition:none}
 }
+
+
+/* REAL PLAY brand alignment for replay stats/comments.
+   Preserve layout; replace cyan-heavy treatment with the main-menu black/blue/red system. */
+.rp-career-replay-stats{
+  border:1px solid transparent;
+  background:
+    linear-gradient(158deg,rgba(5,13,24,.97),rgba(3,7,13,.985) 52%,rgba(5,5,9,.992)) padding-box,
+    linear-gradient(112deg,#1398ff 0%,rgba(52,145,232,.48) 28%,rgba(119,129,151,.18) 50%,rgba(190,64,78,.42) 74%,#ff3542 100%) border-box;
+  box-shadow:
+    0 20px 56px rgba(0,0,0,.34),
+    -16px 0 34px rgba(0,117,255,.07),
+    16px 0 34px rgba(255,37,51,.05);
+}
+
+.rp-career-replay-main-tabs,
+.rp-career-replay-stat-tabs,
+.rp-career-replay-stat-team,
+.rp-career-replay-stat-grid-head,
+.rp-career-replay-stat-player>.rp-career-replay-stat-identity,
+.rp-career-replay-comments-panel{
+  background:#060b12;
+}
+.rp-career-replay-main-tabs,
+.rp-career-replay-stat-tabs{
+  border-color:rgba(201,206,214,.11);
+}
+.rp-career-replay-main-tabs button,
+.rp-career-replay-stat-tabs button{
+  color:#697382;
+}
+
+/* Main switcher: Player Stats owns the blue side; Comments owns the red side. */
+.rp-career-replay-main-tabs button[data-rp-career-main-tab="stats"].active{
+  color:#46b6ff;
+  background:linear-gradient(145deg,rgba(7,93,229,.22),rgba(9,27,47,.58));
+  box-shadow:inset 0 0 0 1px rgba(19,152,255,.30);
+}
+.rp-career-replay-main-tabs button[data-rp-career-main-tab="comments"].active{
+  color:#ff6b74;
+  background:linear-gradient(145deg,rgba(82,11,20,.52),rgba(31,7,12,.58));
+  box-shadow:inset 0 0 0 1px rgba(255,53,66,.28);
+}
+
+/* Team selector follows the core Real Play West-blue / East-red identity. */
+.rp-career-replay-stat-tabs button[data-rp-career-stat-team="west"].active{
+  color:#46b6ff;
+  background:linear-gradient(145deg,rgba(7,93,229,.24),rgba(8,28,50,.64));
+  box-shadow:inset 0 0 0 1px rgba(19,152,255,.34);
+}
+.rp-career-replay-stat-tabs button[data-rp-career-stat-team="east"].active{
+  color:#ff6670;
+  background:linear-gradient(145deg,rgba(104,14,24,.50),rgba(36,8,13,.64));
+  box-shadow:inset 0 0 0 1px rgba(255,53,66,.32);
+}
+
+.rp-career-replay-stat-grid-head{
+  color:#697382;
+}
+.rp-career-replay-stat-grid-head>.rp-career-replay-stat-identity,
+.rp-career-replay-stat-number,
+.rp-career-replay-stat-player-name,
+.rp-career-replay-stat-value b{
+  color:#f7f9fb;
+}
+.rp-career-replay-stat-player:hover,
+.rp-career-replay-stat-player:focus-visible{
+  background:rgba(8,108,255,.045);
+}
+.rp-career-replay-stat-player:focus-visible{
+  box-shadow:inset 0 0 0 1px rgba(8,108,255,.32);
+}
+.rp-career-replay-stat-scroll:focus-visible{
+  outline-color:rgba(8,108,255,.36);
+}
+
+.rp-career-replay-comment-form{
+  background:#05080d;
+}
+.rp-career-replay-comment-form textarea{
+  border-color:rgba(201,206,214,.12);
+  background:#070c14;
+  color:#f1f5f8;
+}
+.rp-career-replay-comment-form textarea:focus{
+  border-color:rgba(255,53,66,.34);
+  box-shadow:0 0 0 2px rgba(255,53,66,.05);
+}
+.rp-career-replay-comment-form button{
+  border-color:rgba(255,53,66,.28);
+  background:linear-gradient(105deg,rgba(7,93,229,.84),rgba(14,89,187,.72) 52%,rgba(117,16,29,.78));
+  color:#fff;
+}
+
+.rp-career-recognition-card{
+  border:1px solid transparent;
+  background:
+    radial-gradient(circle at 0% 0%,rgba(19,152,255,.10),transparent 35%),
+    radial-gradient(circle at 100% 100%,rgba(255,53,66,.07),transparent 38%),
+    linear-gradient(158deg,#080d14,#04070b) padding-box,
+    linear-gradient(112deg,rgba(19,152,255,.62),rgba(119,129,151,.18) 50%,rgba(255,53,66,.54)) border-box;
+}
+.rp-career-recognition-card>small{
+  color:#46b6ff;
+}
+.rp-career-recognition-close{
+  border-color:rgba(201,206,214,.14);
+  background:#080d15;
+  color:#fff;
+}
+.rp-career-recognition-metrics span{
+  border-color:rgba(201,206,214,.10);
+  background:#070c14;
+}
