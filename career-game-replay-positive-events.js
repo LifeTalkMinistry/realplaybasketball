@@ -207,10 +207,19 @@
   }
 
   function playerIdentity(name) {
-    const player = playerRecordByName(name);
+    const cleanName = String(name || 'REAL PLAY PLAYER').trim();
+    const player = playerRecordByName(cleanName);
     const rawNumber = player?.playerNumber ?? player?.player_number;
-    const number = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '#--' : `#${Number(rawNumber)}`;
-    return `${number} ${String(name || 'REAL PLAY PLAYER').trim()}`;
+    let number = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '' : `#${Number(rawNumber)}`;
+    if (!/^#\d+$/.test(number)) {
+      const target = normalize(cleanName);
+      const row = [...document.querySelectorAll('[data-rp-career-stat-player]')].find((node) =>
+        normalize(node.querySelector('.rp-career-replay-stat-player-name')?.textContent) === target
+      );
+      const visible = String(row?.querySelector('.rp-career-replay-stat-number')?.textContent || '').trim();
+      if (/^#\d+$/.test(visible)) number = visible;
+    }
+    return `${number || '#--'} ${cleanName}`;
   }
 
   function eventLabel(event) {
