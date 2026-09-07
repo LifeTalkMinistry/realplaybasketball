@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-recorded-assist-score-link-v1';
+  const version = '20260907-updates-session-rename-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -123,6 +123,7 @@
       'three-v-three-participants.js',
       'three-v-three-club-art.js',
       'real-play-updates.js',
+      'updates-session-title-admin.js',
       'real-play-updates-game-detail.js',
       'real-play-world.js',
       'real-play-world-chat-cleanup.js',
