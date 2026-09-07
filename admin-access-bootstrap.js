@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260907-recorded-scoring-input-stability-v1';
+  const ADMIN_ASSET_VERSION = '20260907-recorded-assist-score-link-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -35,6 +35,10 @@
     // Guard first so a scorer tap can never fall through to a retired
     // per-event backend write while the local draft is still booting.
     'admin-recorded-scoring-draft-guard.js',
+    // Capture MAKE -> AST interaction authority before the draft scorer. When
+    // the scorer records a legitimate AST immediately after the basket, this
+    // layer gives AST that basket's exact video timestamp.
+    'admin-recorded-scoring-assist-link.js',
     // Confirmation listens before the draft consumes scorer taps, then shows
     // a short in-video acknowledgement only for MADE baskets.
     'admin-recorded-scoring-score-confirmation.js',
