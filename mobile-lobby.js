@@ -41,9 +41,9 @@
       <section class="rp-player-strip" aria-label="Player identity">
         <div class="rp-player-id">
           <div class="rp-player-number" data-rp-number>#--</div>
-          <div class="rp-player-name"><strong data-rp-name>YOUR PLAYER</strong><span>REAL PLAY PLAYER</span></div>
+          <div class="rp-player-name"><strong data-rp-name>YOUR PLAYER</strong><span data-rp-player-label>REAL PLAY PLAYER</span></div>
         </div>
-        <div class="rp-player-rating"><strong data-rp-ovr>UNRANKED</strong><span>COMPLETE PLACEMENT</span></div>
+        <div class="rp-player-rating"><strong data-rp-ovr>UNRANKED</strong><span data-rp-rating-label>COMPLETE PLACEMENT</span></div>
       </section>
 
       <section class="rp-lobby-head" aria-label="Choose game mode">
@@ -87,6 +87,9 @@
   const profileChip = app.querySelector('[data-rp-profile]');
   const playerName = app.querySelector('[data-rp-name]');
   const playerNumber = app.querySelector('[data-rp-number]');
+  const playerOvr = app.querySelector('[data-rp-ovr]');
+  const playerLabel = app.querySelector('[data-rp-player-label]');
+  const ratingLabel = app.querySelector('[data-rp-rating-label]');
   const bottomNav = app.querySelector('[data-rp-bottom-nav]');
   const track = app.querySelector('[data-rp-mode-track]');
   const cards = [...app.querySelectorAll('.rp-mode-card')];
@@ -97,10 +100,12 @@
   const sheetCopy = app.querySelector('[data-rp-sheet-copy]');
   const sheetPrimary = app.querySelector('[data-rp-sheet-primary]');
   const TOKEN_KEY = 'real_play_access_token';
+  const VISITOR_KEY = 'real_play_visitor_mode';
   const API_BASE_URL = 'https://api.clarapmc.com';
 
   const hasToken = () => Boolean(window.localStorage.getItem(TOKEN_KEY));
   const isLoggedIn = () => hasToken() || Boolean(accountView && !accountView.hidden);
+  const isVisitor = () => !isLoggedIn() && window.localStorage.getItem(VISITOR_KEY) === '1';
 
   function applyIdentity(name, number) {
     const cleanName = String(name || '').trim();
@@ -128,12 +133,29 @@
 
   function syncPlayer() {
     const loggedIn = isLoggedIn();
+    const visitor = !loggedIn && isVisitor();
+    const insideApp = loggedIn || visitor;
+
+    if (loggedIn) window.localStorage.removeItem(VISITOR_KEY);
     app.classList.toggle('rp-authenticated', loggedIn);
-    app.classList.toggle('rp-guest', !loggedIn);
-    body.classList.toggle('rp-guest-active', !loggedIn);
-    if (bottomNav) bottomNav.style.display = loggedIn ? 'grid' : 'none';
+    app.classList.toggle('rp-visitor', visitor);
+    app.classList.toggle('rp-guest', !insideApp);
+    body.classList.toggle('rp-guest-active', !insideApp);
+    body.classList.toggle('rp-visitor-active', visitor);
+    if (bottomNav) bottomNav.style.display = insideApp ? 'grid' : 'none';
+
+    if (visitor) {
+      playerName.textContent = 'VISITOR';
+      playerNumber.textContent = '#--';
+      if (playerOvr) playerOvr.textContent = 'BROWSE';
+      if (playerLabel) playerLabel.textContent = 'READ-ONLY ACCESS';
+      if (ratingLabel) ratingLabel.textContent = 'CREATE A PLAYER TO COMPETE';
+      return;
+    }
     if (!loggedIn) return;
 
+    if (playerLabel) playerLabel.textContent = 'REAL PLAY PLAYER';
+    if (ratingLabel) ratingLabel.textContent = 'COMPLETE PLACEMENT';
     const name = (authName?.textContent || '').trim();
     const number = (authNumber?.textContent || '').trim();
     if (name && name !== 'REAL PLAY PLAYER') playerName.textContent = name.toUpperCase();
@@ -151,7 +173,18 @@
     }, 20);
   }
 
+  function requireAccount(reason = 'Create your Real Play player to use this feature.') {
+    if (!isVisitor()) return false;
+    if (window.RealPlayVisitor?.requireAccount) {
+      window.RealPlayVisitor.requireAccount({ copy: reason });
+    } else {
+      openAuth('signup');
+    }
+    return true;
+  }
+
   function openProfile() {
+    if (requireAccount('Create your Real Play player to unlock your own profile, stats and history.')) return;
     openAuth();
   }
 
@@ -195,9 +228,23 @@
   app.querySelector('[data-rp-entry-login]')?.addEventListener('click',()=>openAuth('login'));
   app.querySelector('[data-rp-entry-create]')?.addEventListener('click',()=>openAuth('signup'));
   profileChip?.addEventListener('click',openProfile);
-  app.querySelectorAll('[data-rp-select-mode]').forEach(button=>button.addEventListener('click',()=>openSheet(button.dataset.rpSelectMode)));
-  app.querySelectorAll('[data-rp-action]').forEach(button=>button.addEventListener('click',()=>{const action=button.dataset.rpAction;if(action==='profile')openProfile();else openSheet('',action);}));
-  app.querySelectorAll('[data-rp-nav]').forEach(button=>button.addEventListener('click',()=>{const action=button.dataset.rpNav;if(action==='play')track?.scrollTo({left:0,behavior:'smooth'});else if(action==='player')openProfile();else openSheet('',action==='career'?'career':'more');}));
+  app.querySelectorAll('[data-rp-select-mode]').forEach(button=>button.addEventListener('click',()=>{
+    if (requireAccount('Create your Real Play player to join official games and build your basketball record.')) return;
+    openSheet(button.dataset.rpSelectMode);
+  }));
+  app.querySelectorAll('[data-rp-action]').forEach(button=>button.addEventListener('click',()=>{
+    const action=button.dataset.rpAction;
+    if (action==='profile') return openProfile();
+    if (requireAccount(action === 'career' ? 'Create your player to build a Real Play career.' : 'Create your player to reserve and join Real Play sessions.')) return;
+    openSheet('',action);
+  }));
+  app.querySelectorAll('[data-rp-nav]').forEach(button=>button.addEventListener('click',()=>{
+    const action=button.dataset.rpNav;
+    if(action==='play') return track?.scrollTo({left:0,behavior:'smooth'});
+    if(action==='player') return openProfile();
+    if(action==='career' && requireAccount('Create your player to unlock your career, OVR and official history.')) return;
+    openSheet('',action==='career'?'career':'more');
+  }));
   app.querySelector('[data-rp-sheet-close]')?.addEventListener('click',closeSheet);
   sheet?.addEventListener('click',event=>{if(event.target===sheet)closeSheet();});
   sheetPrimary?.addEventListener('click',()=>{closeSheet();openProfile();});
@@ -205,5 +252,7 @@
   syncPlayer(); syncDots();
   if(accountView){const observer=new MutationObserver(syncPlayer);observer.observe(accountView,{attributes:true,attributeFilter:['hidden']});}
   [authName,authNumber].forEach(node=>{if(!node)return;const observer=new MutationObserver(syncPlayer);observer.observe(node,{childList:true,characterData:true,subtree:true});});
-  window.addEventListener('focus',refreshPlayerIdentity);
+  window.addEventListener('focus',()=>{ syncPlayer(); refreshPlayerIdentity(); });
+  window.addEventListener('storage',syncPlayer);
+  window.addEventListener('realplay:visitorchange',syncPlayer);
 })();
