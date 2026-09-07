@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-recorded-stat-controls-v2';
+  const version = '20260907-player-replay-score-overlay-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -49,6 +49,7 @@
     'three-v-three-club-themes.css',
     'career-beta.css',
     'career-beta-play.css',
+    'career-game-replay.css',
     'real-play-updates.css',
     'real-play-updates-cleanup.css',
     'real-play-world.css',
@@ -100,6 +101,7 @@
       'persistent-session-fix.js',
       'career-beta.js',
       'career-beta-play.js',
+      'career-game-replay.js',
       'membership-bootstrap.js',
       'career-beta-leaderboard.js',
       'three-v-three-beta.js',
