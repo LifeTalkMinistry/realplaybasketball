@@ -16,3 +16,8 @@
 
 @media(max-width:720px){.rp-career-replay-stats-head{align-items:flex-start}.rp-career-replay-stats-head>span{max-width:130px}.rp-career-replay-stat-tabs button{min-height:34px}.rp-career-player-detail-sheet{max-height:91vh}.rp-career-player-detail-hero{grid-template-columns:repeat(2,minmax(0,1fr))}.rp-career-player-detail-shooting{grid-template-columns:repeat(2,minmax(0,1fr))}.rp-career-player-detail-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.rp-career-replay-stat-player,.rp-career-player-detail,.rp-career-player-detail-sheet{transition:none}}
+
+/* Keep the section title only; the two helper labels are redundant in the replay UI. */
+.rp-career-replay-stats-head small,.rp-career-replay-stats-head>span{display:none!important}
+.rp-career-replay-stats-head{align-items:center;justify-content:flex-start}
+.rp-career-replay-stats-head strong{margin-top:0}
