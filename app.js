@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-profile-identity-cleanup-v1';
+  const version = '20260908-profile-identity-centered-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
