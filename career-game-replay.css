@@ -84,3 +84,57 @@ body.rp-career-replay-open{overflow:hidden}
 @media(prefers-reduced-motion:reduce){
   .rp-career-replay-video-controls,.rp-career-replay-timeline-marker{transition:none}
 }
+
+
+/* Reuse the exact main-menu basketball artwork as the replay page backdrop.
+   This is decorative only; all replay UI remains above it. */
+.rp-career-replay{
+  isolation:isolate;
+  background:
+    radial-gradient(circle at 8% 22%,rgba(8,89,191,.12),transparent 34%),
+    radial-gradient(circle at 96% 58%,rgba(112,9,20,.12),transparent 40%),
+    linear-gradient(180deg,#02060c 0%,#02060c 48%,#03050a 100%);
+}
+.rp-career-replay::before{
+  content:'';
+  position:fixed;
+  z-index:0;
+  left:50%;
+  top:56%;
+  width:min(150vw,760px);
+  aspect-ratio:2 / 3;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(2,3,7,.92) 0%,
+      rgba(2,3,7,.64) 18%,
+      rgba(2,3,7,.30) 40%,
+      rgba(2,3,7,.22) 66%,
+      rgba(2,3,7,.84) 100%
+    ),
+    url('assets/main-menu/main-menu-basketball-bg.png') center / cover no-repeat;
+  opacity:.58;
+  filter:brightness(.70) contrast(1.18) saturate(1.18);
+  -webkit-mask-image:radial-gradient(ellipse 82% 72% at 50% 58%,#000 0 58%,rgba(0,0,0,.92) 70%,rgba(0,0,0,.42) 84%,transparent 97%);
+  mask-image:radial-gradient(ellipse 82% 72% at 50% 58%,#000 0 58%,rgba(0,0,0,.92) 70%,rgba(0,0,0,.42) 84%,transparent 97%);
+}
+.rp-career-replay-shell{
+  position:relative;
+  z-index:1;
+}
+.rp-career-replay-topbar{
+  z-index:6;
+}
+
+@media(max-width:620px){
+  .rp-career-replay::before{
+    top:58%;
+    width:min(162vw,700px);
+    opacity:.52;
+  }
+}
+@media(prefers-reduced-transparency:reduce){
+  .rp-career-replay::before{opacity:.38}
+}
