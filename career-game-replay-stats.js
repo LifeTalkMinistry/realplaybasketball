@@ -137,22 +137,37 @@
     }
   }
 
+  function statIdentityHtml(player) {
+    const rawNumber = player?.playerNumber ?? player?.player_number;
+    const number = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '#--' : `#${Number(rawNumber)}`;
+    const name = String(player?.playerName ?? player?.player_name ?? 'REAL PLAY PLAYER');
+    return `<span class="rp-career-replay-stat-number">${esc(number)}</span><span class="rp-career-replay-stat-player-name" title="${esc(name)}">${esc(name)}</span>`;
+  }
+
   function statRow(player, index) {
-    const attempts1 = num(player.onePtMade) + num(player.onePtMiss);
-    const attempts2 = num(player.twoPtMade) + num(player.twoPtMiss);
     return `<button type="button" class="rp-career-replay-stat-player" data-rp-career-stat-player="${index}" aria-label="View detailed stats for ${esc(playerLabel(player))}">
-      <div class="rp-career-replay-stat-name"><strong>${esc(playerLabel(player))}</strong><small>${num(player.onePtMade)}/${attempts1} 1PT · ${num(player.twoPtMade)}/${attempts2} 2PT</small></div>
-      <div class="rp-career-replay-stat-line">
-        <span><b>${num(player.pts)}</b><small>PTS</small></span>
-        <span><b>${num(player.ast)}</b><small>AST</small></span>
-        <span><b>${num(player.reb)}</b><small>REB</small></span>
-        <span><b>${num(player.tov)}</b><small>TO</small></span>
-        <span><b>${num(player.stl)}</b><small>STL</small></span>
-        <span><b>${num(player.blk)}</b><small>BLK</small></span>
-        <span><b>${num(player.foul)}</b><small>FOUL</small></span>
-      </div>
-      <span class="rp-career-replay-stat-open" aria-hidden="true">VIEW BREAKDOWN ›</span>
+      <span class="rp-career-replay-stat-identity">${statIdentityHtml(player)}</span>
+      <span class="rp-career-replay-stat-value"><b>${num(player.pts)}</b></span>
+      <span class="rp-career-replay-stat-value"><b>${num(player.ast)}</b></span>
+      <span class="rp-career-replay-stat-value"><b>${num(player.reb)}</b></span>
+      <span class="rp-career-replay-stat-value"><b>${num(player.tov)}</b></span>
+      <span class="rp-career-replay-stat-value"><b>${num(player.stl)}</b></span>
+      <span class="rp-career-replay-stat-value"><b>${num(player.blk)}</b></span>
+      <span class="rp-career-replay-stat-value"><b>${num(player.foul)}</b></span>
     </button>`;
+  }
+
+  function statHeaderRow() {
+    return `<div class="rp-career-replay-stat-grid-head" aria-hidden="true">
+      <span class="rp-career-replay-stat-identity">PLAYER</span>
+      <span>PTS</span>
+      <span>AST</span>
+      <span>REB</span>
+      <span>TO</span>
+      <span>STL</span>
+      <span>BLK</span>
+      <span>FOUL</span>
+    </div>`;
   }
 
   function teamBlock(team, players, active = false) {
@@ -161,7 +176,12 @@
       .filter(({ player }) => String(player.team || '').toLowerCase() === team);
     return `<section class="rp-career-replay-stat-team" data-rp-career-stat-panel="${team}"${active ? '' : ' hidden'}>
       <header><strong>${team.toUpperCase()}</strong><span>${rows.length} PLAYERS</span></header>
-      <div>${rows.length ? rows.map(({ player, index }) => statRow(player, index)).join('') : '<p class="rp-career-replay-stat-empty">No verified player stats.</p>'}</div>
+      <div class="rp-career-replay-stat-scroll" tabindex="0" aria-label="${team.toUpperCase()} player statistics. Swipe horizontally for more categories.">
+        <div class="rp-career-replay-stat-grid">
+          ${statHeaderRow()}
+          ${rows.length ? rows.map(({ player, index }) => statRow(player, index)).join('') : '<p class="rp-career-replay-stat-empty">No verified player stats.</p>'}
+        </div>
+      </div>
     </section>`;
   }
 
