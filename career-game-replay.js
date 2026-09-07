@@ -453,8 +453,9 @@
       const detail = pop.querySelector('[data-rp-career-score-detail]');
       const value = pop.querySelector('[data-rp-career-score-value]');
       if (name) name.textContent = hit.playerName || 'REAL PLAY PLAYER';
-      if (detail) detail.textContent = `${String(hit.team || '').toUpperCase()} · ${Number(hit.shotValue || 0)}PT MADE · ${formatTime(hit.videoTimestampMs)}`;
+      if (detail) detail.textContent = 'SCORE';
       if (value) value.textContent = `+${Number(hit.shotValue || 0)}`;
+      pop.dataset.rpCareerScoreTeam = String(hit.team || '').toUpperCase();
       pop.classList.toggle('team-west', String(hit.team || '').toLowerCase() === 'west');
       pop.classList.toggle('team-east', String(hit.team || '').toLowerCase() === 'east');
     }
