@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-profile-load-fix-v9';
+  const version = '20260908-profile-ui-stability-v10';
   const html = document.documentElement;
   html.classList.add('js');
 
