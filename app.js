@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-replay-session-v1';
+  const version = '20260907-visitor-replay-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -107,6 +107,7 @@
       'persistent-session-fix.js',
       'career-beta.js',
       'career-beta-play.js',
+      'visitor-replay-access.js',
       'career-game-replay.js',
       'career-game-replay-marker-cleanup.js',
       'career-game-replay-assist-authority.js',
