@@ -85,7 +85,7 @@
     button.className = 'rp-public-visitor';
     button.dataset.publicVisitor = 'true';
     button.innerHTML = '<span>CONTINUE AS A VISITOR</span><b aria-hidden="true">→</b>';
-    cta.insertAdjacentElement('afterend', button);
+    cta.insertAdjacentElement('beforebegin', button);
     button.addEventListener('click', enter);
   }
 
