@@ -5,6 +5,8 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
   let requestSequence = 0;
+  let currentReplayData = null;
+  let lastPlayerTrigger = null;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -13,33 +15,56 @@
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 
+  const num = (value) => {
+    const parsed = Number(value || 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  function formatTime(ms) {
+    const total = Math.max(0, Math.floor(num(ms) / 1000));
+    const minutes = Math.floor(total / 60);
+    const seconds = total % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  function pct(made, attempts) {
+    return attempts > 0 ? `${Math.round((made / attempts) * 100)}%` : '—';
+  }
+
+  function normalizeName(value) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
   function playerLabel(player) {
     const number = player?.playerNumber === null || player?.playerNumber === undefined ? '#--' : `#${Number(player.playerNumber)}`;
     return `${number} ${player?.playerName || 'REAL PLAY PLAYER'}`;
   }
 
-  function statRow(player) {
-    const attempts1 = Number(player.onePtMade || 0) + Number(player.onePtMiss || 0);
-    const attempts2 = Number(player.twoPtMade || 0) + Number(player.twoPtMiss || 0);
-    return `<article class="rp-career-replay-stat-player">
-      <div class="rp-career-replay-stat-name"><strong>${esc(playerLabel(player))}</strong><small>${Number(player.onePtMade || 0)}/${attempts1} 1PT · ${Number(player.twoPtMade || 0)}/${attempts2} 2PT</small></div>
+  function statRow(player, index) {
+    const attempts1 = num(player.onePtMade) + num(player.onePtMiss);
+    const attempts2 = num(player.twoPtMade) + num(player.twoPtMiss);
+    return `<button type="button" class="rp-career-replay-stat-player" data-rp-career-stat-player="${index}" aria-label="View detailed stats for ${esc(playerLabel(player))}">
+      <div class="rp-career-replay-stat-name"><strong>${esc(playerLabel(player))}</strong><small>${num(player.onePtMade)}/${attempts1} 1PT · ${num(player.twoPtMade)}/${attempts2} 2PT</small></div>
       <div class="rp-career-replay-stat-line">
-        <span><b>${Number(player.pts || 0)}</b><small>PTS</small></span>
-        <span><b>${Number(player.ast || 0)}</b><small>AST</small></span>
-        <span><b>${Number(player.reb || 0)}</b><small>REB</small></span>
-        <span><b>${Number(player.tov || 0)}</b><small>TO</small></span>
-        <span><b>${Number(player.stl || 0)}</b><small>STL</small></span>
-        <span><b>${Number(player.blk || 0)}</b><small>BLK</small></span>
-        <span><b>${Number(player.foul || 0)}</b><small>FOUL</small></span>
+        <span><b>${num(player.pts)}</b><small>PTS</small></span>
+        <span><b>${num(player.ast)}</b><small>AST</small></span>
+        <span><b>${num(player.reb)}</b><small>REB</small></span>
+        <span><b>${num(player.tov)}</b><small>TO</small></span>
+        <span><b>${num(player.stl)}</b><small>STL</small></span>
+        <span><b>${num(player.blk)}</b><small>BLK</small></span>
+        <span><b>${num(player.foul)}</b><small>FOUL</small></span>
       </div>
-    </article>`;
+      <span class="rp-career-replay-stat-open" aria-hidden="true">VIEW BREAKDOWN ›</span>
+    </button>`;
   }
 
   function teamBlock(team, players, active = false) {
-    const rows = players.filter((player) => String(player.team || '').toLowerCase() === team);
+    const rows = players
+      .map((player, index) => ({ player, index }))
+      .filter(({ player }) => String(player.team || '').toLowerCase() === team);
     return `<section class="rp-career-replay-stat-team" data-rp-career-stat-panel="${team}"${active ? '' : ' hidden'}>
       <header><strong>${team.toUpperCase()}</strong><span>${rows.length} PLAYERS</span></header>
-      <div>${rows.length ? rows.map(statRow).join('') : '<p class="rp-career-replay-stat-empty">No verified player stats.</p>'}</div>
+      <div>${rows.length ? rows.map(({ player, index }) => statRow(player, index)).join('') : '<p class="rp-career-replay-stat-empty">No verified player stats.</p>'}</div>
     </section>`;
   }
 
@@ -56,6 +81,131 @@
     });
   }
 
+  function markerBelongsToPlayer(marker, player) {
+    const markerId = marker?.playerId ?? marker?.player_id ?? null;
+    const playerId = player?.playerId ?? player?.player_id ?? player?.id ?? null;
+    if (markerId !== null && playerId !== null && String(markerId) === String(playerId)) return true;
+    return normalizeName(marker?.playerName ?? marker?.player_name) === normalizeName(player?.playerName);
+  }
+
+  function timelineHtml(player, markers) {
+    const playerMarkers = markers
+      .filter((marker) => markerBelongsToPlayer(marker, player))
+      .sort((a, b) => num(a.videoTimestampMs) - num(b.videoTimestampMs));
+    if (!playerMarkers.length) {
+      return '<p class="rp-career-player-detail-empty">No made-basket timestamps were recorded for this player.</p>';
+    }
+    return playerMarkers.map((marker) => {
+      const shotValue = num(marker.shotValue) || 1;
+      const timestamp = num(marker.videoTimestampMs);
+      const replayStart = num(marker.replayStartMs);
+      return `<button type="button" class="rp-career-player-detail-marker" data-rp-player-marker="${replayStart}">
+        <span><b>🏀 ${shotValue}PT MADE</b><small>${formatTime(timestamp)} · replay from ${formatTime(replayStart)}</small></span>
+        <strong>WATCH ›</strong>
+      </button>`;
+    }).join('');
+  }
+
+  function closeBreakdown(restoreFocus = true) {
+    const detail = document.querySelector('[data-rp-career-player-detail]');
+    if (!detail) return;
+    detail.remove();
+    if (restoreFocus && lastPlayerTrigger?.isConnected) lastPlayerTrigger.focus({ preventScroll: true });
+    lastPlayerTrigger = null;
+  }
+
+  function openBreakdown(player, trigger) {
+    closeBreakdown(false);
+    lastPlayerTrigger = trigger || null;
+    const viewer = document.querySelector('[data-rp-career-replay].open');
+    if (!viewer) return;
+
+    const oneMade = num(player.onePtMade);
+    const oneMiss = num(player.onePtMiss);
+    const twoMade = num(player.twoPtMade);
+    const twoMiss = num(player.twoPtMiss);
+    const oneAttempts = oneMade + oneMiss;
+    const twoAttempts = twoMade + twoMiss;
+    const totalMade = oneMade + twoMade;
+    const totalMiss = oneMiss + twoMiss;
+    const totalAttempts = oneAttempts + twoAttempts;
+    const points = num(player.pts);
+    const onePoints = oneMade;
+    const twoPoints = twoMade * 2;
+    const scoringPoints = onePoints + twoPoints;
+    const oneMix = scoringPoints > 0 ? Math.round((onePoints / scoringPoints) * 100) : 0;
+    const twoMix = scoringPoints > 0 ? 100 - oneMix : 0;
+    const ast = num(player.ast);
+    const tov = num(player.tov);
+    const astTo = tov > 0 ? (ast / tov).toFixed(2) : (ast > 0 ? 'NO TO' : '—');
+    const pointsPerAttempt = totalAttempts > 0 ? (points / totalAttempts).toFixed(2) : '—';
+    const markers = Array.isArray(currentReplayData?.markers) ? currentReplayData.markers : [];
+    const team = String(player.team || '').toUpperCase() || 'TEAM';
+
+    const detail = document.createElement('div');
+    detail.className = 'rp-career-player-detail';
+    detail.dataset.rpCareerPlayerDetail = '1';
+    detail.setAttribute('role', 'dialog');
+    detail.setAttribute('aria-modal', 'true');
+    detail.setAttribute('aria-label', `${playerLabel(player)} game breakdown`);
+    detail.innerHTML = `
+      <div class="rp-career-player-detail-backdrop" data-rp-career-player-detail-close></div>
+      <section class="rp-career-player-detail-sheet">
+        <header class="rp-career-player-detail-head">
+          <div><small>${esc(team)} · GAME BREAKDOWN</small><strong>${esc(playerLabel(player))}</strong></div>
+          <button type="button" data-rp-career-player-detail-close aria-label="Close player breakdown">×</button>
+        </header>
+
+        <div class="rp-career-player-detail-hero">
+          <span><b>${points}</b><small>PTS</small></span>
+          <span><b>${pct(totalMade, totalAttempts)}</b><small>FG%</small></span>
+          <span><b>${pct(oneMade, oneAttempts)}</b><small>1PT%</small></span>
+          <span><b>${pct(twoMade, twoAttempts)}</b><small>2PT%</small></span>
+        </div>
+
+        <section class="rp-career-player-detail-section">
+          <div class="rp-career-player-detail-title"><strong>SHOOTING</strong><span>${totalMade}/${totalAttempts} TOTAL FG</span></div>
+          <div class="rp-career-player-detail-shooting">
+            <span><b>${oneMade}/${oneAttempts}</b><small>1PT MADE / ATT</small></span>
+            <span><b>${twoMade}/${twoAttempts}</b><small>2PT MADE / ATT</small></span>
+            <span><b>${totalMiss}</b><small>MISSED SHOTS</small></span>
+            <span><b>${totalAttempts}</b><small>SHOT ATTEMPTS</small></span>
+            <span><b>${pointsPerAttempt}</b><small>PTS / ATTEMPT</small></span>
+            <span><b>${astTo}</b><small>AST / TO</small></span>
+          </div>
+        </section>
+
+        <section class="rp-career-player-detail-section">
+          <div class="rp-career-player-detail-title"><strong>SCORING MIX</strong><span>${scoringPoints} VERIFIED PTS FROM MADE SHOTS</span></div>
+          <div class="rp-career-player-detail-mix">
+            <div><span>1PT</span><i><b style="width:${oneMix}%"></b></i><strong>${oneMix}%</strong></div>
+            <div><span>2PT</span><i><b style="width:${twoMix}%"></b></i><strong>${twoMix}%</strong></div>
+          </div>
+        </section>
+
+        <section class="rp-career-player-detail-section">
+          <div class="rp-career-player-detail-title"><strong>GAME STATS</strong><span>VIDEO-VERIFIED</span></div>
+          <div class="rp-career-player-detail-stats">
+            <span><b>${num(player.ast)}</b><small>AST</small></span>
+            <span><b>${num(player.reb)}</b><small>REB</small></span>
+            <span><b>${num(player.tov)}</b><small>TO</small></span>
+            <span><b>${num(player.stl)}</b><small>STL</small></span>
+            <span><b>${num(player.blk)}</b><small>BLK</small></span>
+            <span><b>${num(player.foul)}</b><small>FOUL</small></span>
+          </div>
+        </section>
+
+        <section class="rp-career-player-detail-section">
+          <div class="rp-career-player-detail-title"><strong>MADE BASKETS</strong><span>TAP TO REPLAY</span></div>
+          <div class="rp-career-player-detail-timeline">${timelineHtml(player, markers)}</div>
+        </section>
+      </section>`;
+
+    viewer.appendChild(detail);
+    requestAnimationFrame(() => detail.classList.add('open'));
+    detail.querySelector('button[data-rp-career-player-detail-close]')?.focus({ preventScroll: true });
+  }
+
   function installStats(data, sequence, attempt = 0) {
     if (sequence !== requestSequence) return;
     const viewer = document.querySelector('[data-rp-career-replay].open');
@@ -65,6 +215,8 @@
       return;
     }
 
+    closeBreakdown(false);
+    currentReplayData = data;
     main.querySelector('[data-rp-career-replay-stats]')?.remove();
     const stats = Array.isArray(data?.playerStats) ? data.playerStats : [];
     const section = document.createElement('section');
@@ -98,6 +250,32 @@
   }
 
   document.addEventListener('click', (event) => {
+    const close = event.target.closest('[data-rp-career-player-detail-close]');
+    if (close) {
+      closeBreakdown(true);
+      return;
+    }
+
+    const detailMarker = event.target.closest('[data-rp-player-marker]');
+    if (detailMarker) {
+      const replayStart = detailMarker.dataset.rpPlayerMarker;
+      const candidates = [...document.querySelectorAll('[data-rp-career-replay-marker]')];
+      const sourceMarker = candidates.find((marker) => marker.dataset.rpCareerReplayMarker === replayStart);
+      if (sourceMarker) {
+        closeBreakdown(false);
+        sourceMarker.click();
+      }
+      return;
+    }
+
+    const playerButton = event.target.closest('[data-rp-career-stat-player]');
+    if (playerButton) {
+      const index = Number(playerButton.dataset.rpCareerStatPlayer);
+      const player = Array.isArray(currentReplayData?.playerStats) ? currentReplayData.playerStats[index] : null;
+      if (player) openBreakdown(player, playerButton);
+      return;
+    }
+
     const teamButton = event.target.closest('[data-rp-career-stat-team]');
     if (teamButton) {
       const section = teamButton.closest('[data-rp-career-replay-stats]');
@@ -108,5 +286,12 @@
     const trigger = event.target.closest('[data-rp-career-replay-session]');
     if (!trigger) return;
     loadStats(trigger.dataset.rpCareerReplaySession);
+  }, true);
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !document.querySelector('[data-rp-career-player-detail]')) return;
+    event.preventDefault();
+    event.stopPropagation();
+    closeBreakdown(true);
   }, true);
 })();
