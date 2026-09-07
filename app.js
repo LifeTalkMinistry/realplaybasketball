@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-profile-identity-size-anchor-v3';
+  const version = '20260908-beta-career-metrics-cleanup-v4';
   const html = document.documentElement;
   html.classList.add('js');
 
