@@ -350,3 +350,15 @@
 .rp-career-replay-stat-team{
   border-top-color:transparent;
 }
+
+
+/* Correct target: visually attach the WEST/EAST team selector capsule itself
+   to the stats panel below it, without changing its buttons or table content. */
+.rp-career-replay-stat-tabs{
+  margin-bottom:-12px;
+  position:relative;
+  z-index:3;
+}
+.rp-career-replay-stat-team{
+  padding-top:12px;
+}
