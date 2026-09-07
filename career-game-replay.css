@@ -23,3 +23,10 @@ body.rp-career-replay-open{overflow:hidden}
 .rp-career-replay-markers{display:grid;gap:8px;padding:12px;border:1px solid rgba(89,151,177,.16);border-radius:14px;background:#06111a}.rp-career-replay-markers-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.rp-career-replay-markers-head strong{font-size:.56rem;font-weight:950;letter-spacing:.12em}.rp-career-replay-markers-head span{color:#6f91a0;font-size:.5rem;font-weight:800}.rp-career-replay-marker-list{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.rp-career-replay-marker-list::-webkit-scrollbar{display:none}.rp-career-replay-marker{flex:0 0 auto;display:grid;gap:3px;min-width:112px;padding:9px 10px;border:1px solid rgba(79,168,198,.2);border-radius:10px;background:#081b26;color:#dff8ff;text-align:left}.rp-career-replay-marker strong{font-size:.62rem;font-weight:900}.rp-career-replay-marker small{color:#729cac;font-size:.49rem;font-weight:800}
 @media(max-width:620px){.rp-career-replay-gamehead{grid-template-columns:1fr}.rp-career-replay-score{justify-content:flex-start}.rp-career-replay-controls{grid-template-columns:38px minmax(0,1fr) 38px 38px}.rp-career-replay-controls button{width:38px}.rp-career-replay-clock{grid-column:1/-1;grid-row:2;text-align:center}.rp-career-replay-score-pop{width:84%;bottom:8%;padding:9px 11px}.rp-career-replay-score-pop strong{font-size:.95rem}.rp-career-replay-score-pop b{font-size:1.45rem}}
 @media(prefers-reduced-motion:reduce){.rp-career-replay-score-pop{transition:none}}
+
+/* Replay header refinement: remove the redundant verification pill and keep
+   the session title optically centered against the back button. */
+.rp-career-replay-topbar{grid-template-columns:42px minmax(0,1fr) 42px}
+.rp-career-replay-title{text-align:center}
+.rp-career-replay-title strong{text-align:center}
+.rp-career-replay-verified{display:none!important}
