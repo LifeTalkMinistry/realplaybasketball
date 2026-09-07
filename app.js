@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-replay-header-centered-v1';
+  const version = '20260907-replay-score-centered-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
