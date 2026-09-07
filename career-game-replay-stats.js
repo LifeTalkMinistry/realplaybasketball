@@ -13,6 +13,7 @@
   let rosterCacheAt = 0;
   let currentSessionId = 0;
   let commentsRequestId = 0;
+  let currentRecognitions = new Map();
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -44,6 +45,242 @@
   function playerLabel(player) {
     const number = player?.playerNumber === null || player?.playerNumber === undefined ? '#--' : `#${Number(player.playerNumber)}`;
     return `${number} ${player?.playerName || 'REAL PLAY PLAYER'}`;
+  }
+
+  const RECOGNITION_META = {
+    overall_mvp: { icon: '👑', title: 'OVERALL MVP', rank: 100 },
+    team_mvp: { icon: '⭐', title: 'TEAM MVP', rank: 90 },
+    lethal_shooter: { icon: '🎯', title: 'LETHAL SHOOTER', rank: 70 },
+    bucket_getter: { icon: '🔥', title: 'BUCKET GETTER', rank: 65 },
+    floor_general: { icon: '🧠', title: 'FLOOR GENERAL', rank: 60 },
+    glass_cleaner: { icon: '🧹', title: 'GLASS CLEANER', rank: 55 },
+    pickpocket: { icon: '🥷', title: 'PICKPOCKET', rank: 50 },
+    rim_protector: { icon: '🛡️', title: 'RIM PROTECTOR', rank: 45 },
+  };
+
+  function playerKey(player) {
+    const id = player?.playerId ?? player?.player_id ?? player?.userId ?? player?.user_id ?? player?.id;
+    if (id !== null && id !== undefined && id !== '') return `id:${String(id)}`;
+    return `name:${normalizeName(player?.playerName ?? player?.player_name)}`;
+  }
+
+  function shotSummary(player) {
+    const oneMade = num(player?.onePtMade);
+    const oneMiss = num(player?.onePtMiss);
+    const twoMade = num(player?.twoPtMade);
+    const twoMiss = num(player?.twoPtMiss);
+    const made = oneMade + twoMade;
+    const attempts = made + oneMiss + twoMiss;
+    return {
+      oneMade,
+      oneMiss,
+      twoMade,
+      twoMiss,
+      made,
+      attempts,
+      fgPct: attempts > 0 ? made / attempts : 0,
+      misses: oneMiss + twoMiss,
+    };
+  }
+
+  function impactScore(player) {
+    const shooting = shotSummary(player);
+    return num(player?.pts)
+      + (num(player?.reb) * 1.2)
+      + (num(player?.ast) * 1.5)
+      + (num(player?.stl) * 2)
+      + (num(player?.blk) * 2)
+      - (num(player?.tov) * 1.5)
+      - (shooting.misses * 0.5)
+      - (num(player?.foul) * 0.25);
+  }
+
+  function compareMvp(a, b) {
+    const impactDiff = impactScore(b) - impactScore(a);
+    if (Math.abs(impactDiff) > 0.0001) return impactDiff;
+    const aShot = shotSummary(a);
+    const bShot = shotSummary(b);
+    if (bShot.fgPct !== aShot.fgPct) return bShot.fgPct - aShot.fgPct;
+    if (num(b?.pts) !== num(a?.pts)) return num(b?.pts) - num(a?.pts);
+    if (num(a?.tov) !== num(b?.tov)) return num(a?.tov) - num(b?.tov);
+    return playerLabel(a).localeCompare(playerLabel(b));
+  }
+
+  function leaders(players, valueFn, eligibleFn = () => true) {
+    const eligible = players.filter(eligibleFn);
+    if (!eligible.length) return [];
+    const best = Math.max(...eligible.map(valueFn));
+    if (!Number.isFinite(best) || best <= 0) return [];
+    return eligible.filter((player) => Math.abs(valueFn(player) - best) < 0.0001);
+  }
+
+  function addRecognition(map, player, type, details) {
+    const key = playerKey(player);
+    if (!key) return;
+    const list = map.get(key) || [];
+    list.push({ type, ...(RECOGNITION_META[type] || {}), details });
+    map.set(key, list);
+  }
+
+  function buildRecognitions(players) {
+    const map = new Map();
+    const valid = players.filter((player) => ['west', 'east'].includes(String(player?.team || '').toLowerCase()));
+    if (!valid.length) return map;
+
+    const overall = [...valid].sort(compareMvp)[0];
+    if (overall) {
+      const s = shotSummary(overall);
+      addRecognition(map, overall, 'overall_mvp', {
+        headline: `Great job for being the Overall MVP, ${overall.playerName || 'player'}.`,
+        explanation: `You produced the strongest all-around performance in this game across scoring, playmaking, rebounding, defense, efficiency, and ball security.`,
+        metrics: [
+          ['PTS', num(overall.pts)],
+          ['REB', num(overall.reb)],
+          ['AST', num(overall.ast)],
+          ['STL', num(overall.stl)],
+          ['BLK', num(overall.blk)],
+          ['FG%', s.attempts ? `${Math.round(s.fgPct * 100)}%` : '—'],
+          ['IMPACT', impactScore(overall).toFixed(1)],
+        ],
+        note: `Highest overall game-impact score among all ${valid.length} players, regardless of which team won.`,
+      });
+    }
+
+    for (const team of ['west', 'east']) {
+      const teamPlayers = valid.filter((player) => String(player.team || '').toLowerCase() === team);
+      const winner = [...teamPlayers].sort(compareMvp)[0];
+      if (!winner || playerKey(winner) === playerKey(overall)) continue;
+      const s = shotSummary(winner);
+      addRecognition(map, winner, 'team_mvp', {
+        headline: `Great job for being ${team.toUpperCase()} Team MVP.`,
+        explanation: `You delivered the strongest overall performance among your teammates in this game.`,
+        metrics: [
+          ['PTS', num(winner.pts)],
+          ['REB', num(winner.reb)],
+          ['AST', num(winner.ast)],
+          ['STL', num(winner.stl)],
+          ['BLK', num(winner.blk)],
+          ['FG%', s.attempts ? `${Math.round(s.fgPct * 100)}%` : '—'],
+          ['IMPACT', impactScore(winner).toFixed(1)],
+        ],
+        note: `Highest game-impact score among ${team.toUpperCase()} players.`,
+      });
+    }
+
+    const minShooterAttempts = 3;
+    leaders(valid, (player) => shotSummary(player).fgPct, (player) => shotSummary(player).attempts >= minShooterAttempts)
+      .forEach((player) => {
+        const s = shotSummary(player);
+        addRecognition(map, player, 'lethal_shooter', {
+          headline: `Lethal shooting performance.`,
+          explanation: `You had the highest qualified field-goal percentage in the game.`,
+          metrics: [
+            ['FG', `${s.made}/${s.attempts}`],
+            ['FG%', `${Math.round(s.fgPct * 100)}%`],
+            ['PTS', num(player.pts)],
+            ['1PT', `${s.oneMade}/${s.oneMade + s.oneMiss}`],
+            ['2PT', `${s.twoMade}/${s.twoMade + s.twoMiss}`],
+          ],
+          note: `Qualification requires at least ${minShooterAttempts} shot attempts so a single make does not automatically win the award.`,
+        });
+      });
+
+    leaders(valid, (player) => num(player.pts)).forEach((player) => {
+      addRecognition(map, player, 'bucket_getter', {
+        headline: `You were the game's Bucket Getter.`,
+        explanation: `You finished with the highest scoring total in this game.`,
+        metrics: [['PTS', num(player.pts)], ['FG', `${shotSummary(player).made}/${shotSummary(player).attempts}`], ['FG%', shotSummary(player).attempts ? `${Math.round(shotSummary(player).fgPct * 100)}%` : '—']],
+        note: `Highest point total among all players in this game.`,
+      });
+    });
+
+    leaders(valid, (player) => num(player.ast)).forEach((player) => {
+      addRecognition(map, player, 'floor_general', {
+        headline: `You ran the offense as the Floor General.`,
+        explanation: `You created the most verified scoring opportunities for teammates through assists.`,
+        metrics: [['AST', num(player.ast)], ['TO', num(player.tov)], ['AST/TO', num(player.tov) ? (num(player.ast) / num(player.tov)).toFixed(2) : (num(player.ast) ? 'NO TO' : '—')]],
+        note: `Highest assist total in the game.`,
+      });
+    });
+
+    leaders(valid, (player) => num(player.reb)).forEach((player) => {
+      addRecognition(map, player, 'glass_cleaner', {
+        headline: `You owned the glass.`,
+        explanation: `You collected more rebounds than any other player in this game.`,
+        metrics: [['REB', num(player.reb)], ['PTS', num(player.pts)], ['AST', num(player.ast)]],
+        note: `Highest rebound total in the game.`,
+      });
+    });
+
+    leaders(valid, (player) => num(player.stl)).forEach((player) => {
+      addRecognition(map, player, 'pickpocket', {
+        headline: `You earned the Pickpocket recognition.`,
+        explanation: `You disrupted possessions with the highest steal total in the game.`,
+        metrics: [['STL', num(player.stl)], ['TO', num(player.tov)], ['PTS', num(player.pts)]],
+        note: `Highest verified steal total in the game.`,
+      });
+    });
+
+    leaders(valid, (player) => num(player.blk)).forEach((player) => {
+      addRecognition(map, player, 'rim_protector', {
+        headline: `You protected the rim.`,
+        explanation: `You recorded the most blocked shots in the game.`,
+        metrics: [['BLK', num(player.blk)], ['REB', num(player.reb)], ['STL', num(player.stl)]],
+        note: `Highest verified block total in the game.`,
+      });
+    });
+
+    for (const [key, list] of map.entries()) {
+      list.sort((a, b) => (b.rank || 0) - (a.rank || 0));
+      map.set(key, list);
+    }
+    return map;
+  }
+
+  function recognitionBadgesHtml(player) {
+    const list = currentRecognitions.get(playerKey(player)) || [];
+    if (!list.length) return '';
+    return `<span class="rp-career-replay-recognition-badges" aria-label="Player recognitions">${list.map((award) =>
+      `<span class="rp-career-replay-recognition-badge rp-recognition-${esc(award.type)}" data-rp-career-recognition="${esc(award.type)}" data-rp-career-recognition-player="${esc(playerKey(player))}" title="${esc(award.title)}">${award.icon}</span>`
+    ).join('')}</span>`;
+  }
+
+  function closeRecognitionModal() {
+    document.querySelector('[data-rp-career-recognition-modal]')?.remove();
+  }
+
+  function openRecognitionModal(playerKeyValue, type) {
+    closeRecognitionModal();
+    const player = (currentReplayData?.playerStats || []).find((candidate) => playerKey(candidate) === playerKeyValue);
+    const award = (currentRecognitions.get(playerKeyValue) || []).find((item) => item.type === type);
+    const viewer = document.querySelector('[data-rp-career-replay].open');
+    if (!player || !award || !viewer) return;
+
+    const metrics = Array.isArray(award.details?.metrics) ? award.details.metrics : [];
+    const modal = document.createElement('div');
+    modal.className = 'rp-career-recognition-modal';
+    modal.dataset.rpCareerRecognitionModal = '1';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', `${award.title} recognition details`);
+    modal.innerHTML = `
+      <div class="rp-career-recognition-backdrop" data-rp-career-recognition-close></div>
+      <section class="rp-career-recognition-card">
+        <button type="button" class="rp-career-recognition-close" data-rp-career-recognition-close aria-label="Close recognition details">×</button>
+        <div class="rp-career-recognition-icon">${award.icon}</div>
+        <small>GAME RECOGNITION</small>
+        <h2>${esc(award.title)}</h2>
+        <h3>${esc(playerLabel(player))}</h3>
+        <p class="rp-career-recognition-headline">${esc(award.details?.headline || '')}</p>
+        <p class="rp-career-recognition-copy">${esc(award.details?.explanation || '')}</p>
+        <div class="rp-career-recognition-metrics">
+          ${metrics.map(([label, value]) => `<span><b>${esc(value)}</b><small>${esc(label)}</small></span>`).join('')}
+        </div>
+        <p class="rp-career-recognition-note">${esc(award.details?.note || '')}</p>
+      </section>`;
+    viewer.appendChild(modal);
+    requestAnimationFrame(() => modal.classList.add('open'));
+    modal.querySelector('[data-rp-career-recognition-close]')?.focus({ preventScroll: true });
   }
 
   function ensureProfileLinkStyles() {
@@ -201,7 +438,7 @@
     const rawNumber = player?.playerNumber ?? player?.player_number;
     const number = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '#--' : `#${Number(rawNumber)}`;
     const name = String(player?.playerName ?? player?.player_name ?? 'REAL PLAY PLAYER');
-    return `<span class="rp-career-replay-stat-number">${esc(number)}</span><span class="rp-career-replay-stat-player-name" title="${esc(name)}">${esc(name)}</span>`;
+    return `<span class="rp-career-replay-stat-number">${esc(number)}</span><span class="rp-career-replay-stat-player-name" title="${esc(name)}">${esc(name)}</span>${recognitionBadgesHtml(player)}`;
   }
 
   function statRow(player, index) {
@@ -504,6 +741,7 @@
     currentReplayData = data;
     main.querySelector('[data-rp-career-replay-stats]')?.remove();
     const stats = Array.isArray(data?.playerStats) ? data.playerStats : [];
+    currentRecognitions = buildRecognitions(stats);
     const section = document.createElement('section');
     section.className = 'rp-career-replay-stats';
     section.dataset.rpCareerReplayStats = '1';
@@ -556,6 +794,22 @@
   ensureProfileLinkStyles();
 
   document.addEventListener('click', (event) => {
+    const recognitionClose = event.target.closest('[data-rp-career-recognition-close]');
+    if (recognitionClose) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeRecognitionModal();
+      return;
+    }
+
+    const recognition = event.target.closest('[data-rp-career-recognition]');
+    if (recognition) {
+      event.preventDefault();
+      event.stopPropagation();
+      openRecognitionModal(recognition.dataset.rpCareerRecognitionPlayer, recognition.dataset.rpCareerRecognition);
+      return;
+    }
+
     const profileButton = event.target.closest('[data-rp-career-player-profile]');
     if (profileButton) {
       event.preventDefault();
@@ -619,7 +873,14 @@
   }, true);
 
   document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || !document.querySelector('[data-rp-career-player-detail]')) return;
+    if (event.key !== 'Escape') return;
+    if (document.querySelector('[data-rp-career-recognition-modal]')) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeRecognitionModal();
+      return;
+    }
+    if (!document.querySelector('[data-rp-career-player-detail]')) return;
     event.preventDefault();
     event.stopPropagation();
     closeBreakdown(true);
