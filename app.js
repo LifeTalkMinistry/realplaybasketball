@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-profile-game-route-v1';
+  const version = '20260908-profile-identity-cleanup-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -58,6 +58,7 @@
     'real-play-world.css',
     'real-play-world-chat-cleanup.css',
     'real-play-profile.css',
+    'profile-identity-cleanup.css',
     'real-play-profile-intro.css',
     'real-play-profile-metrics.css',
     'membership.css',
