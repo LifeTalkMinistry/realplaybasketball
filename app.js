@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-replay-clean-v1';
+  const version = '20260907-replay-stamps-headless-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
