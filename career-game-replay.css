@@ -34,3 +34,8 @@ body.rp-career-replay-open{overflow:hidden}
 /* Center the official final score directly under the centered session title. */
 .rp-career-replay-gamehead{grid-template-columns:1fr;place-items:center;text-align:center}
 .rp-career-replay-score{width:100%;justify-content:center;text-align:center}
+
+/* Keep the replay page focused on the game and official box score. The event
+   markers still exist in the replay data for playback logic, but the noisy
+   made-baskets strip is intentionally hidden from the viewer UI. */
+.rp-career-replay-markers{display:none!important}
