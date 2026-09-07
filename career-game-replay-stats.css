@@ -344,3 +344,9 @@
 .rp-career-replay-stat-teams{
   margin-top:0;
 }
+
+
+/* Remove the remaining seam between the WEST/EAST capsule and team stats panel. */
+.rp-career-replay-stat-team{
+  border-top-color:transparent;
+}
