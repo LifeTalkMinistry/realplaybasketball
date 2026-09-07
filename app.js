@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-replay-comments-viewport-v1';
+  const version = '20260908-player-label-cleanup-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
