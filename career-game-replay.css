@@ -35,7 +35,7 @@ body.rp-career-replay-open{overflow:hidden}
 .rp-career-replay-gamehead{grid-template-columns:1fr;place-items:center;text-align:center}
 .rp-career-replay-score{width:100%;justify-content:center;text-align:center}
 
-/* Keep the replay page focused on the game and official box score. The event
-   markers still exist in the replay data for playback logic, but the noisy
-   made-baskets strip is intentionally hidden from the viewer UI. */
-.rp-career-replay-markers{display:none!important}
+/* Keep every clickable score/timestamp stamp, but remove only the explanatory
+   heading above them. */
+.rp-career-replay-markers{display:grid!important}
+.rp-career-replay-markers-head{display:none!important}
