@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-visitor-mode-v1';
+  const version = '20260907-visitor-mode-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -128,6 +128,7 @@
       'real-play-profile-intro.js',
       'real-play-profile-metrics.js',
       'real-play-world-players.js',
+      'visitor-world-players.js',
       'real-play-world-score-order-fix.js',
       'profile-game-replay-link.js',
       'real-play-world-player-filters.js',
