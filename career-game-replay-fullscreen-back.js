@@ -39,11 +39,33 @@
     .rp-career-replay-stage:-webkit-full-screen .rp-career-replay-fullscreen-back{
       display:flex;
     }
+
+    /* Keep the live playback timestamp directly beneath the official score. */
+    .rp-career-replay-gamehead{
+      gap:4px!important;
+    }
+    .rp-career-replay-gamehead .rp-career-replay-clock{
+      display:block;
+      width:100%;
+      margin:0;
+      text-align:center;
+    }
+    .rp-career-replay-controls{
+      grid-template-columns:42px minmax(0,1fr) 42px 42px!important;
+    }
+
     @media(max-width:620px){
       .rp-career-replay-fullscreen-back{
         min-height:40px;
         padding:0 12px 0 10px;
         font-size:.62rem;
+      }
+      .rp-career-replay-controls{
+        grid-template-columns:38px minmax(0,1fr) 38px 38px!important;
+      }
+      .rp-career-replay-gamehead .rp-career-replay-clock{
+        grid-column:1/-1;
+        grid-row:2;
       }
     }
   `;
@@ -72,8 +94,19 @@
     stage.appendChild(button);
   }
 
+  function placeReplayClock() {
+    document.querySelectorAll('.rp-career-replay-gamehead').forEach((gamehead) => {
+      const score = gamehead.querySelector('.rp-career-replay-score');
+      const replayRoot = gamehead.closest('.rp-career-replay');
+      const clock = replayRoot?.querySelector('[data-rp-career-replay-clock]');
+      if (!score || !clock || clock.parentElement === gamehead) return;
+      score.insertAdjacentElement('afterend', clock);
+    });
+  }
+
   function enhance() {
     document.querySelectorAll('[data-rp-career-replay-stage]').forEach(ensureBackButton);
+    placeReplayClock();
   }
 
   document.addEventListener('click', (event) => {
