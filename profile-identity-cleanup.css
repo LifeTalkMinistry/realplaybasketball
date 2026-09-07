@@ -1,5 +1,6 @@
 /* Profile identity cleanup: keep only the actual jersey number and player name,
-   then present them as one centered identity lockup. */
+   then present them as one centered identity lockup. The original # jersey size
+   is the visual anchor, so both identity elements use that same scale. */
 .rp-profile-number > small,
 .rp-profile-name > small,
 .rp-profile-name > p{
@@ -15,35 +16,40 @@
   text-align:center!important;
 }
 
-.rp-profile-number{
+.rp-profile-number,
+.rp-profile-name{
   min-width:0!important;
+}
+
+.rp-profile-number{
   flex:0 0 auto!important;
 }
 
 .rp-profile-name{
-  min-width:0!important;
   flex:0 1 auto!important;
 }
 
 .rp-profile-number > strong,
 .rp-profile-name > h1{
   margin:0!important;
-  font-size:clamp(1.7rem,7vw,2.25rem)!important;
-  line-height:.95!important;
+  font-size:2.2rem!important;
+  line-height:.9!important;
   font-family:var(--rp-display,Arial,sans-serif)!important;
   font-style:italic!important;
   font-weight:950!important;
-}
-
-.rp-profile-name > h1{
-  max-width:min(58vw,270px)!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
   white-space:nowrap!important;
 }
 
-@media(max-width:390px){
-  .rp-profile-player{gap:14px!important}
+.rp-profile-name > h1{
+  max-width:none!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+
+/* Preserve the full original jersey-number scale on normal phone widths.
+   Only ultra-narrow screens get a small emergency reduction to prevent clipping. */
+@media(max-width:330px){
+  .rp-profile-player{gap:12px!important}
   .rp-profile-number > strong,
-  .rp-profile-name > h1{font-size:clamp(1.55rem,6.6vw,2rem)!important}
+  .rp-profile-name > h1{font-size:2rem!important}
 }
