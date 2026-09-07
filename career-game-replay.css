@@ -72,7 +72,9 @@ body.rp-career-replay-open{overflow:hidden}
 .rp-career-replay-timeline-marker.active{transform:translate(-50%,-50%) scale(1.24);filter:drop-shadow(0 0 5px rgba(47,213,238,.85))}
 .rp-career-replay-markers{display:none!important}
 .rp-career-replay-controls{display:none!important}
-.rp-career-replay-score-pop{display:none!important}
+/* Score recognition remains an in-video event overlay. It is intentionally
+   separate from the basketball markers on the permanent timeline. */
+.rp-career-replay-score-pop{display:flex!important}
 @media(max-width:620px){
   .rp-career-replay-video-controls{padding:10px}
   .rp-career-replay-video-controls button{width:40px;height:40px;border-radius:10px}
