@@ -222,7 +222,7 @@
       </div>
       <div class="rp-career-replay-stage" data-rp-career-replay-stage>
         <div data-rp-career-replay-media></div>
-        <div class="rp-career-replay-score-pop" data-rp-career-score-pop aria-live="polite">
+        <div class="rp-career-replay-score-pop rp-career-replay-stat-pop" data-rp-career-score-pop aria-live="polite">
           <span data-rp-career-score-label>SCORE BY</span>
           <strong data-rp-career-score-name>PLAYER</strong>
         </div>
