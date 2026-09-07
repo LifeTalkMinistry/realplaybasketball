@@ -30,3 +30,7 @@ body.rp-career-replay-open{overflow:hidden}
 .rp-career-replay-title{text-align:center}
 .rp-career-replay-title strong{text-align:center}
 .rp-career-replay-verified{display:none!important}
+
+/* Center the official final score directly under the centered session title. */
+.rp-career-replay-gamehead{grid-template-columns:1fr;place-items:center;text-align:center}
+.rp-career-replay-score{width:100%;justify-content:center;text-align:center}
