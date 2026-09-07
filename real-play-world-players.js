@@ -260,7 +260,7 @@
           <div class="rp-profile-game-main"><strong>${esc(gameLabel(game))}</strong><span>${esc(meta)}</span></div>
           <b class="${resultClass}">${esc(result)}</b>
           <div class="rp-profile-game-score">
-            <span>${esc(sideLabel(game, 'east'))}</span><strong>${gameScore(game, 'east')}</strong><i>—</i><strong>${gameScore(game, 'west')}</strong><span>${esc(sideLabel(game, 'west'))}</span>
+            <span>${esc(sideLabel(game, 'west'))}</span><strong>${gameScore(game, 'west')}</strong><i>—</i><strong>${gameScore(game, 'east')}</strong><span>${esc(sideLabel(game, 'east'))}</span>
           </div>
           <div class="rp-profile-game-stats"><span>${pts} PTS</span><span>${ast} AST</span><span>${reb} REB</span><span>${tov} TO</span></div>
           <div class="rp-profile-game-open-hint"><span>VIEW GAME</span><b>⌄</b></div>
@@ -268,7 +268,7 @@
         <div class="rp-profile-game-detail">
           <div class="rp-profile-final-board">
             <small>OFFICIAL FINAL</small>
-            <div><span>${esc(sideLabel(game, 'east'))}</span><strong>${gameScore(game, 'east')}</strong><i>—</i><strong>${gameScore(game, 'west')}</strong><span>${esc(sideLabel(game, 'west'))}</span></div>
+            <div><span>${esc(sideLabel(game, 'west'))}</span><strong>${gameScore(game, 'west')}</strong><i>—</i><strong>${gameScore(game, 'east')}</strong><span>${esc(sideLabel(game, 'east'))}</span></div>
           </div>
         </div>
       </details>`;
@@ -307,6 +307,10 @@
   function renderPublicProfile(player) {
     const root = publicProfilePanel?.querySelector('[data-rp-public-profile-content]');
     if (!root) return;
+    publicProfilePanel.__realPlayPublicPlayer = player || null;
+    if (player?.playerId) publicProfilePanel.dataset.rpPublicPlayerId = String(player.playerId);
+    else delete publicProfilePanel.dataset.rpPublicPlayerId;
+
     const stats = player?.careerStats || {};
     const jersey = player?.playerNumber === null || player?.playerNumber === undefined ? null : Number(player.playerNumber);
     const rating = player?.ovr === null || player?.ovr === undefined ? null : Number(player.ovr);
@@ -351,11 +355,17 @@
           ? recentGames.map(renderPublicGame).join('')
           : '<div class="rp-profile-no-games"><strong>NO OFFICIAL GAMES YET.</strong><p>This player’s verified game history will build here automatically.</p></div>'}
       </section>`;
+
+    window.dispatchEvent(new CustomEvent('realplay:public-profile-loaded', {
+      detail: { playerId: Number(player?.playerId || 0) || null },
+    }));
   }
 
   async function openPublicProfile(playerId) {
     if (loadingProfile) return;
     createPublicProfilePanel();
+    publicProfilePanel.__realPlayPublicPlayer = null;
+    delete publicProfilePanel.dataset.rpPublicPlayerId;
     publicProfilePanel.classList.add('open');
     publicProfilePanel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-profile-open');
