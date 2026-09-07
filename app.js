@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-replay-final-winner-v1';
+  const version = '20260907-replay-final-winner-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
