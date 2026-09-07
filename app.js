@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-recorded-winner-freeze-fix-v2';
+  const version = '20260907-update-result-game-detail-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -50,8 +50,10 @@
     'career-beta.css',
     'career-beta-play.css',
     'career-game-replay.css',
+    'career-game-replay-stats.css',
     'real-play-updates.css',
     'real-play-updates-cleanup.css',
+    'real-play-updates-game-detail.css',
     'real-play-world.css',
     'real-play-world-chat-cleanup.css',
     'real-play-profile.css',
@@ -103,6 +105,7 @@
       'career-beta.js',
       'career-beta-play.js',
       'career-game-replay.js',
+      'career-game-replay-stats.js',
       'membership-bootstrap.js',
       'career-beta-leaderboard.js',
       'three-v-three-beta.js',
@@ -111,6 +114,7 @@
       'three-v-three-participants.js',
       'three-v-three-club-art.js',
       'real-play-updates.js',
+      'real-play-updates-game-detail.js',
       'real-play-world.js',
       'real-play-world-chat-cleanup.js',
       'real-play-profile.js',
