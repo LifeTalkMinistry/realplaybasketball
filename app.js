@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-profile-replay-link-v2';
+  const version = '20260907-replay-player-profile-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -126,6 +126,7 @@
       'real-play-world-players.js',
       'real-play-world-score-order-fix.js',
       'profile-game-replay-link.js',
+      'career-game-replay-profile-link.js',
       'real-play-world-player-filters.js',
       'real-play-world-player-admin.js',
       'main-menu-fast-snap-bootstrap.js',
