@@ -1,26 +1,31 @@
 .rp-public-visitor{
-  width:min(100%,360px);
-  min-height:38px;
-  margin-top:13px;
-  padding:0 12px;
+  width:min(92%,330px);
+  min-height:48px;
+  margin:0 auto 14px;
+  padding:0 18px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  gap:8px;
-  border:0;
-  background:transparent;
-  color:#8ea0b8;
+  gap:10px;
+  border:1px solid rgba(69,198,255,.72);
+  border-radius:12px;
+  background:linear-gradient(180deg,#108eea 0%,#0965ce 100%);
+  color:#f7fbff;
+  box-shadow:0 10px 24px rgba(0,91,204,.22),inset 0 1px 0 rgba(255,255,255,.16);
   font-family:var(--rp-display,'Arial Narrow',sans-serif);
-  font-size:.62rem;
+  font-size:.82rem;
   font-style:italic;
   font-weight:900;
-  letter-spacing:.14em;
+  letter-spacing:.09em;
   text-transform:uppercase;
+  transition:transform .16s ease,filter .16s ease,box-shadow .16s ease;
 }
-.rp-public-visitor b{color:#18bdfd;font-size:.8rem;font-style:normal}
-.rp-public-visitor:hover,.rp-public-visitor:focus-visible{color:#eef7ff}
-.rp-public-visitor:focus-visible{outline:1px solid rgba(29,220,255,.48);outline-offset:3px;border-radius:10px}
-.rp-public-visitor+.rp-public-more{margin-top:24px}
+.rp-public-visitor b{color:#9be8ff;font-size:1rem;font-style:normal;line-height:1}
+.rp-public-visitor:hover,.rp-public-visitor:focus-visible{filter:brightness(1.08);box-shadow:0 12px 28px rgba(0,110,230,.28),inset 0 1px 0 rgba(255,255,255,.18)}
+.rp-public-visitor:active{transform:scale(.985)}
+.rp-public-visitor:focus-visible{outline:2px solid rgba(130,229,255,.72);outline-offset:3px}
+.rp-public-visitor+.rp-public-cta{margin-top:0}
+.rp-public-cta+.rp-public-more{margin-top:36px}
 
 body.rp-visitor-active{overflow-x:hidden}
 .rp-app.rp-visitor .rp-entry{display:none!important}
@@ -60,4 +65,5 @@ body.rp-visitor-active{overflow-x:hidden}
 .rp-visitor-gate-login{margin-top:9px;border:1px solid rgba(255,255,255,.1);color:#dce7f4;background:#0a1522}
 .rp-visitor-gate-later{min-height:40px;margin-top:5px;border:0;color:#65758a;background:transparent;font-size:.66rem}
 
+@media(max-width:380px){.rp-public-visitor{width:min(91%,310px);min-height:46px;font-size:.77rem}}
 @media(min-width:600px){.rp-visitor-gate{place-items:center}.rp-visitor-gate-card{padding:30px 24px 22px}}
