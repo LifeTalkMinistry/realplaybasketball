@@ -30,3 +30,223 @@
 .rp-profile-actions{margin-top:12px}.rp-profile-actions button,.rp-profile-empty button{width:100%;min-height:44px;border:1px solid rgba(63,208,255,.25);border-radius:14px;color:#48d7ff;background:rgba(11,78,125,.12);font-family:var(--rp-display,Arial,sans-serif);font-size:.62rem;font-weight:950;letter-spacing:.08em}.rp-profile-empty{margin-top:70px;padding:28px 20px;border:1px solid rgba(255,255,255,.08);border-radius:22px;background:rgba(5,9,15,.92);text-align:center}.rp-profile-empty small{color:#42d4ff;font-size:.48rem;font-weight:950;letter-spacing:.12em}.rp-profile-empty h1{margin:8px 0 0;font-family:var(--rp-display,Arial,sans-serif);font-size:1.7rem;font-style:italic;font-weight:950;line-height:1}.rp-profile-empty p{margin:12px 0 18px;color:#8190a3;font-size:.7rem;line-height:1.5}
 @media(max-width:380px){.rp-profile-shell{padding-inline:12px}.rp-profile-topbar{margin-inline:-12px;padding-inline:12px}.rp-profile-topbar>b{display:none}.rp-profile-topbar{grid-template-columns:42px 1fr}.rp-profile-hero{padding:15px}.rp-profile-player{grid-template-columns:66px 1fr;gap:12px}.rp-profile-number strong{font-size:1.85rem}.rp-profile-rating-row{gap:6px}.rp-profile-rating-row>div{padding:9px}.rp-profile-stat-grid{gap:6px}.rp-profile-section{padding:13px}.rp-profile-game-summary{padding:11px}.rp-profile-game-detail{padding-inline:11px}.rp-profile-final-board>div{gap:5px}.rp-profile-final-board strong{font-size:1.35rem}}
 @media(prefers-reduced-motion:reduce){.rp-profile-game,.rp-profile-game-open-hint b{transition:none}}
+
+
+/* 2026 profile refinement — align the real profile with the premium Real Play
+   blue/red identity while preserving all existing profile data and behavior. */
+.rp-profile{
+  isolation:isolate;
+  background:
+    radial-gradient(72% 38% at -10% 14%,rgba(8,108,255,.18),transparent 72%),
+    radial-gradient(62% 38% at 112% 38%,rgba(255,32,40,.10),transparent 74%),
+    linear-gradient(180deg,#030407 0%,#020204 52%,#040507 100%);
+}
+.rp-profile::before{
+  content:'';
+  position:fixed;
+  z-index:0;
+  left:50%;
+  top:36%;
+  width:min(142vw,760px);
+  aspect-ratio:2/3;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(2,3,7,.94),rgba(2,3,7,.64) 22%,rgba(2,3,7,.20) 50%,rgba(2,3,7,.78) 100%),
+    url('assets/main-menu/main-menu-basketball-bg.png') center/cover no-repeat;
+  opacity:.38;
+  filter:brightness(.72) contrast(1.18) saturate(1.18);
+  -webkit-mask-image:radial-gradient(ellipse 80% 67% at 50% 55%,#000 0 58%,rgba(0,0,0,.88) 72%,transparent 96%);
+  mask-image:radial-gradient(ellipse 80% 67% at 50% 55%,#000 0 58%,rgba(0,0,0,.88) 72%,transparent 96%);
+}
+.rp-profile-shell{position:relative;z-index:1}
+.rp-profile-topbar{
+  border-bottom-color:rgba(255,255,255,.065);
+  background:rgba(2,3,7,.94);
+}
+.rp-profile-back{
+  border-color:rgba(201,206,214,.12);
+  background:linear-gradient(160deg,#0a0d12,#05070b);
+}
+.rp-profile-topbar>b{
+  border-color:rgba(19,152,255,.28);
+  color:#46b6ff;
+  background:rgba(7,93,229,.10);
+}
+
+/* Hero identity card */
+.rp-profile-hero{
+  padding:0;
+  overflow:hidden;
+  border:1px solid transparent;
+  border-radius:24px;
+  background:
+    radial-gradient(70% 72% at 18% 26%,rgba(19,152,255,.10),transparent 62%),
+    radial-gradient(58% 70% at 96% 68%,rgba(255,53,66,.075),transparent 66%),
+    linear-gradient(158deg,rgba(5,13,24,.97),rgba(3,7,13,.985) 52%,rgba(5,5,9,.99)) padding-box,
+    linear-gradient(112deg,#1398ff 0%,rgba(52,145,232,.52) 28%,rgba(119,129,151,.20) 50%,rgba(190,64,78,.44) 74%,#ff3542 100%) border-box;
+  box-shadow:
+    0 28px 84px rgba(0,0,0,.44),
+    -18px 2px 48px rgba(0,117,255,.08),
+    18px 3px 48px rgba(255,37,51,.055);
+}
+.rp-profile-hero-glow{display:none}
+.rp-profile-identity-line{
+  min-height:50px;
+  padding:0 18px;
+  border-bottom:1px solid rgba(255,255,255,.055);
+  background:linear-gradient(90deg,rgba(7,93,229,.12),rgba(4,8,14,.72) 48%,rgba(83,11,20,.10));
+}
+.rp-profile-identity-line span{color:#35c8ff}
+.rp-profile-identity-line b{color:#7d8795}
+.rp-profile-player{
+  margin-top:0;
+  padding:24px 18px 0;
+}
+.rp-profile-number small,
+.rp-profile-name small{color:#697382}
+.rp-profile-number strong{
+  color:#20bfff;
+  font-size:2.75rem;
+  text-shadow:0 0 22px rgba(8,108,255,.16);
+}
+.rp-profile-name h1{
+  color:#f7f9fb;
+  text-shadow:0 3px 16px rgba(0,0,0,.48);
+}
+.rp-profile-name p{
+  color:#9aa4b2;
+  letter-spacing:.12em;
+}
+.rp-profile-rating-row{
+  margin:22px 18px 18px;
+  gap:10px;
+}
+.rp-profile-rating-row>div{
+  min-height:92px;
+  padding:13px;
+  border-color:rgba(201,206,214,.10);
+  border-radius:16px;
+  background:linear-gradient(160deg,rgba(7,12,20,.90),rgba(3,6,11,.94));
+}
+.rp-profile-rating-row>div:first-child{box-shadow:inset 2px 0 0 rgba(19,152,255,.35)}
+.rp-profile-rating-row>div:last-child{box-shadow:inset -2px 0 0 rgba(255,53,66,.28)}
+.rp-profile-rating-row span{color:#697382}
+.rp-profile-rating-row small{color:#566174}
+.rp-profile-ovr strong{color:#35c8ff}
+
+/* Make the optional player photo feel integrated into the hero instead of a
+   separate utility tile. */
+.rp-profile-player.rp-profile-player-with-photo{
+  grid-template-columns:auto minmax(0,1fr) 132px;
+  gap:14px;
+  align-items:center;
+  padding-top:18px;
+}
+.rp-profile-photo{
+  width:132px;
+  height:164px;
+  border-color:rgba(201,206,214,.13);
+  border-radius:18px;
+  background:
+    radial-gradient(circle at 45% 30%,rgba(19,152,255,.15),transparent 46%),
+    linear-gradient(160deg,#08111b,#03060b);
+  box-shadow:
+    -10px 0 28px rgba(0,117,255,.07),
+    10px 0 28px rgba(255,37,51,.045),
+    inset 0 0 0 1px rgba(255,255,255,.025);
+}
+.rp-profile-photo::before{
+  background:
+    radial-gradient(circle at 10% 50%,rgba(19,152,255,.12),transparent 52%),
+    radial-gradient(circle at 90% 64%,rgba(255,53,66,.08),transparent 54%);
+}
+.rp-profile-photo img{object-position:center top}
+.rp-profile-photo-shade{height:48%;background:linear-gradient(180deg,transparent,rgba(1,3,6,.78))}
+
+/* Career metrics */
+.rp-profile-section{
+  margin-top:14px;
+  padding:18px;
+  border:1px solid transparent;
+  border-radius:20px;
+  background:
+    linear-gradient(160deg,rgba(5,9,15,.965),rgba(3,6,11,.985)) padding-box,
+    linear-gradient(112deg,rgba(19,152,255,.48),rgba(119,129,151,.14) 48%,rgba(255,53,66,.36)) border-box;
+  box-shadow:0 18px 46px rgba(0,0,0,.24);
+}
+.rp-profile-section-head small{color:#35c8ff}
+.rp-profile-section-head h2{
+  color:#f7f9fb;
+  font-size:1.08rem;
+}
+.rp-profile-section-head>span{color:#697382}
+.rp-profile-stat-grid{
+  grid-template-columns:repeat(3,1fr);
+  gap:9px;
+}
+.rp-profile-stat-grid article{
+  min-height:76px;
+  padding:14px 8px;
+  border-color:rgba(201,206,214,.10);
+  border-radius:14px;
+  background:linear-gradient(160deg,#080d15,#05080d);
+}
+.rp-profile-stat-grid article:nth-child(3n+1){box-shadow:inset 2px 0 0 rgba(19,152,255,.25)}
+.rp-profile-stat-grid article:nth-child(3n){box-shadow:inset -2px 0 0 rgba(255,53,66,.18)}
+.rp-profile-stat-grid strong{color:#f7f9fb;font-size:1.55rem}
+.rp-profile-stat-grid span{color:#728092}
+
+/* Recent history cards */
+.rp-profile-history{gap:11px}
+.rp-profile-game{
+  border-color:rgba(201,206,214,.09);
+  border-radius:16px;
+  background:linear-gradient(158deg,rgba(7,12,20,.94),rgba(3,6,11,.98));
+}
+.rp-profile-game[open]{
+  border-color:rgba(19,152,255,.26);
+  background:linear-gradient(158deg,rgba(7,15,27,.96),rgba(3,6,11,.99));
+}
+.rp-profile-game-summary{padding:15px}
+.rp-profile-game-main strong{color:#f5f7fa;font-size:.82rem}
+.rp-profile-game-main span{color:#697382}
+.rp-profile-game-score{
+  border-color:rgba(201,206,214,.08);
+  background:#05080d;
+}
+.rp-profile-game-score span:first-child{color:#ff6670}
+.rp-profile-game-score span:last-child{color:#46b6ff}
+.rp-profile-game-score strong{font-size:1.15rem}
+.rp-profile-game-stats span{
+  color:#9aa4b2;
+  background:#0a1019;
+}
+.rp-profile-game-open-hint span{color:#728092}
+.rp-profile-game[open] .rp-profile-game-open-hint span{color:#46b6ff}
+
+/* Correct team-color identity in expanded box scores: West blue, East red. */
+.rp-profile-team-box.west{border-color:rgba(19,152,255,.20)}
+.rp-profile-team-box.east{border-color:rgba(255,53,66,.18)}
+.rp-profile-team-box.west>header{background:linear-gradient(90deg,rgba(7,93,229,.16),transparent)}
+.rp-profile-team-box.east>header{background:linear-gradient(90deg,rgba(117,16,29,.14),transparent)}
+
+@media(max-width:430px){
+  .rp-profile-player.rp-profile-player-with-photo{
+    grid-template-columns:64px minmax(0,1fr) 110px;
+    gap:9px;
+  }
+  .rp-profile-photo{width:110px;height:142px}
+  .rp-profile-rating-row{margin-inline:14px}
+  .rp-profile-player{padding-inline:14px}
+  .rp-profile-identity-line{padding-inline:14px}
+}
+@media(max-width:360px){
+  .rp-profile-player.rp-profile-player-with-photo{
+    grid-template-columns:54px minmax(0,1fr) 92px;
+  }
+  .rp-profile-photo{width:92px;height:122px}
+}
+@media(prefers-reduced-transparency:reduce){
+  .rp-profile::before{opacity:.22}
+}
