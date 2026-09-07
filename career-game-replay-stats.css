@@ -21,3 +21,146 @@
 .rp-career-replay-stats-head small,.rp-career-replay-stats-head>span{display:none!important}
 .rp-career-replay-stats-head{align-items:center;justify-content:flex-start}
 .rp-career-replay-stats-head strong{margin-top:0}
+
+
+/* Larger replay box score without increasing the outer container.
+   One horizontal table keeps category headers and every player row aligned.
+   The player identity column stays visible while the stat categories scroll. */
+.rp-career-replay-stat-team{overflow:hidden}
+.rp-career-replay-stat-team>header{position:relative;z-index:4}
+.rp-career-replay-stat-scroll{
+  width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.rp-career-replay-stat-scroll::-webkit-scrollbar{display:none}
+.rp-career-replay-stat-scroll:focus-visible{outline:1px solid rgba(83,220,243,.3);outline-offset:-1px}
+
+.rp-career-replay-stat-grid{
+  --rp-player-col:145px;
+  --rp-stat-col:68px;
+  width:max-content;
+  min-width:100%;
+}
+.rp-career-replay-stat-grid-head,
+.rp-career-replay-stat-player{
+  display:grid;
+  grid-template-columns:var(--rp-player-col) repeat(7,var(--rp-stat-col));
+  align-items:center;
+  min-width:max-content;
+}
+.rp-career-replay-stat-grid-head{
+  min-height:38px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background:#071722;
+  color:#628696;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.58rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.06em;
+  text-align:center;
+}
+.rp-career-replay-stat-grid-head>span{
+  display:grid;
+  place-items:center;
+  min-height:38px;
+  padding:0 6px;
+  box-sizing:border-box;
+}
+.rp-career-replay-stat-grid-head>.rp-career-replay-stat-identity{
+  position:sticky;
+  left:0;
+  z-index:3;
+  justify-items:start;
+  padding-left:12px;
+  background:#071722;
+  color:#dff8ff;
+  text-align:left;
+  box-shadow:8px 0 14px -14px rgba(0,0,0,.95);
+}
+
+.rp-career-replay-stat-player{
+  position:relative;
+  width:max-content;
+  min-height:58px;
+  padding:0;
+  border:0;
+  border-top:1px solid rgba(255,255,255,.045);
+  background:transparent;
+  color:inherit;
+  text-align:left;
+  font:inherit;
+  cursor:pointer;
+  transition:background .16s ease;
+}
+.rp-career-replay-stat-player:first-of-type{border-top:0}
+.rp-career-replay-stat-player:hover,
+.rp-career-replay-stat-player:focus-visible{background:rgba(60,199,225,.055);outline:none}
+.rp-career-replay-stat-player:focus-visible{box-shadow:inset 0 0 0 1px rgba(83,220,243,.32)}
+
+.rp-career-replay-stat-player>.rp-career-replay-stat-identity{
+  position:sticky;
+  left:0;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  width:var(--rp-player-col);
+  height:100%;
+  min-width:0;
+  padding:0 10px 0 12px;
+  box-sizing:border-box;
+  overflow:hidden;
+  background:#071722;
+  box-shadow:8px 0 14px -14px rgba(0,0,0,.95);
+}
+.rp-career-replay-stat-number{
+  flex:0 0 auto;
+  color:#dff8ff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.72rem;
+  font-style:italic;
+  font-weight:950;
+}
+.rp-career-replay-stat-player-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#edfaff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.72rem;
+  font-style:italic;
+  font-weight:950;
+}
+.rp-career-replay-stat-value{
+  display:grid;
+  place-items:center;
+  width:var(--rp-stat-col);
+  height:100%;
+  min-height:58px;
+  text-align:center;
+}
+.rp-career-replay-stat-value b{
+  color:#f4fdff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.9rem;
+  font-weight:950;
+}
+.rp-career-replay-stat-name,
+.rp-career-replay-stat-line,
+.rp-career-replay-stat-open{display:none!important}
+
+@media(max-width:420px){
+  .rp-career-replay-stat-grid{
+    --rp-player-col:136px;
+    --rp-stat-col:64px;
+  }
+  .rp-career-replay-stat-number,
+  .rp-career-replay-stat-player-name{font-size:.68rem}
+  .rp-career-replay-stat-value b{font-size:.86rem}
+}
