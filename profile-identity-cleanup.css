@@ -88,6 +88,41 @@
   display:none!important;
 }
 
+/* The base Profile still owns an older PTS/AST/REB/TO grid. The metrics
+   enhancer replaces it with PPG/APG/RPG/etc after its API response. Never
+   paint the older grid for one frame and then swap it underneath the user. */
+.rp-profile-section:has(.rp-profile-stat-grid) > .rp-profile-stat-grid{
+  display:none!important;
+}
+
+.rp-profile-section:has(.rp-profile-stat-grid):not(:has([data-rp-metrics-shell]))::after{
+  content:'LOADING CAREER METRICS…';
+  display:flex;
+  min-height:94px;
+  margin-top:14px;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(255,255,255,.065);
+  border-radius:14px;
+  color:#526579;
+  background:#070c14;
+  font-size:.44rem;
+  font-weight:950;
+  letter-spacing:.09em;
+}
+
+.rp-profile-section:has([data-rp-metrics-shell])::after{
+  display:none!important;
+}
+
+/* The earlier profile-intro experiment dynamically inserts a third identity
+   child. The current compact identity is jersey + name only, so keep that
+   experimental surface from briefly appearing during profile rerenders. */
+.rp-profile-player > .rp-profile-intro,
+.rp-profile-actions > .rp-profile-manage-intro{
+  display:none!important;
+}
+
 /* Recent games cleanup: show only the main RECENT GAMES title. */
 .rp-profile-history .rp-profile-section-head small,
 .rp-profile-history .rp-profile-section-head > span{
