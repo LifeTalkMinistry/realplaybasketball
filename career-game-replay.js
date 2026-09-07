@@ -3,8 +3,10 @@
   window.__realPlayCareerReplayInstalled = true;
 
   const API_BASE_URL = 'https://api.clarapmc.com';
+  const COMMUNITY_URL = `${API_BASE_URL}/api/real-play/community`;
   const TOKEN_KEY = 'real_play_access_token';
   const SCORE_POP_MS = 1800;
+  const ROSTER_CACHE_MS = 30000;
 
   let viewer = null;
   let replay = null;
@@ -20,6 +22,8 @@
   let decorateTimer = null;
   let stateCache = null;
   let stateCacheAt = 0;
+  let rosterCache = null;
+  let rosterCacheAt = 0;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -67,6 +71,95 @@
     const number = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '#--' : `#${Number(rawNumber)}`;
     const name = String(marker?.playerName ?? marker?.player_name ?? player?.playerName ?? player?.player_name ?? 'REAL PLAY PLAYER').trim();
     return `${number} ${name}`;
+  }
+
+
+  async function loadCommunityPlayers() {
+    if (rosterCache && Date.now() - rosterCacheAt < ROSTER_CACHE_MS) return rosterCache;
+    const auth = token();
+    if (!auth) return { players: [] };
+    const response = await fetch(COMMUNITY_URL, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${auth}`,
+      },
+      body: JSON.stringify({ action: 'players' }),
+      cache: 'no-store',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return { players: [] };
+    rosterCache = { players: Array.isArray(data?.players) ? data.players : [] };
+    rosterCacheAt = Date.now();
+    return rosterCache;
+  }
+
+  function directoryPlayerForReplay(players, player) {
+    if (!Array.isArray(players) || !player) return null;
+    const targetIds = [
+      player?.userId, player?.user_id, player?.playerId, player?.player_id, player?.id,
+    ].filter((value) => value !== null && value !== undefined && value !== '').map(String);
+
+    if (targetIds.length) {
+      const idMatch = players.find((candidate) => {
+        const candidateIds = [
+          candidate?.userId, candidate?.user_id, candidate?.playerId, candidate?.player_id, candidate?.id,
+        ].filter((value) => value !== null && value !== undefined && value !== '').map(String);
+        return candidateIds.some((value) => targetIds.includes(value));
+      });
+      if (idMatch) return idMatch;
+    }
+
+    const targetName = normalizePlayerName(player?.playerName ?? player?.player_name ?? player?.name);
+    if (!targetName) return null;
+    return players.find((candidate) =>
+      normalizePlayerName(candidate?.playerName ?? candidate?.player_name ?? candidate?.name) === targetName
+    ) || null;
+  }
+
+  async function hydrateReplayPlayerNumbers(data) {
+    const stats = Array.isArray(data?.playerStats) ? data.playerStats : [];
+    if (!stats.length) return data;
+
+    const needsNumbers = stats.some((player) => {
+      const value = player?.playerNumber ?? player?.player_number;
+      return value === null || value === undefined || value === '';
+    });
+    if (!needsNumbers) return data;
+
+    try {
+      const directory = await loadCommunityPlayers();
+      const players = directory?.players || [];
+      stats.forEach((player) => {
+        const current = player?.playerNumber ?? player?.player_number;
+        if (current !== null && current !== undefined && current !== '') return;
+        const match = directoryPlayerForReplay(players, player);
+        const resolved = match?.playerNumber ?? match?.player_number;
+        if (resolved === null || resolved === undefined || resolved === '') return;
+        player.playerNumber = resolved;
+      });
+
+      const markers = Array.isArray(data?.markers) ? data.markers : [];
+      markers.forEach((marker) => {
+        const current = marker?.playerNumber ?? marker?.player_number;
+        if (current !== null && current !== undefined && current !== '') return;
+        const markerId = marker?.playerId ?? marker?.player_id ?? marker?.userId ?? marker?.user_id;
+        const markerName = normalizePlayerName(marker?.playerName ?? marker?.player_name);
+        const replayPlayer = stats.find((player) => {
+          const playerId = player?.playerId ?? player?.player_id ?? player?.userId ?? player?.user_id ?? player?.id;
+          if (markerId !== null && markerId !== undefined && markerId !== '' && playerId !== null && playerId !== undefined && String(playerId) === String(markerId)) return true;
+          return markerName && normalizePlayerName(player?.playerName ?? player?.player_name) === markerName;
+        });
+        const match = replayPlayer || directoryPlayerForReplay(players, {
+          playerId: markerId,
+          playerName: marker?.playerName ?? marker?.player_name,
+        });
+        const resolved = match?.playerNumber ?? match?.player_number;
+        if (resolved !== null && resolved !== undefined && resolved !== '') marker.playerNumber = resolved;
+      });
+    } catch (_) {}
+    return data;
   }
 
   async function api(path) {
@@ -269,6 +362,7 @@
     if (main) main.innerHTML = '<div class="rp-career-replay-loading">LOADING VERIFIED FULL GAME…</div>';
     try {
       const data = await api(`/api/real-play/career/games/${encodeURIComponent(id)}/replay`);
+      await hydrateReplayPlayerNumbers(data);
       renderReplay(data);
     } catch (error) {
       renderReplayError(error.message || 'This full-game replay is not available yet.');
