@@ -7,15 +7,15 @@
   const VISIBLE_MS = 1500;
   const POLL_MS = 120;
   const TYPES = new Map([
-    ['reb', 'REB'],
-    ['rebound', 'REB'],
-    ['rebounds', 'REB'],
-    ['stl', 'STL'],
-    ['steal', 'STL'],
-    ['steals', 'STL'],
-    ['blk', 'BLK'],
-    ['block', 'BLK'],
-    ['blocks', 'BLK'],
+    ['reb', 'REBOUND BY'],
+    ['rebound', 'REBOUND BY'],
+    ['rebounds', 'REBOUND BY'],
+    ['stl', 'STEAL BY'],
+    ['steal', 'STEAL BY'],
+    ['steals', 'STEAL BY'],
+    ['blk', 'BLOCK BY'],
+    ['block', 'BLOCK BY'],
+    ['blocks', 'BLOCK BY'],
   ]);
 
   let replayData = null;
@@ -129,7 +129,7 @@
     pop.className = 'rp-career-replay-positive-pop';
     pop.dataset.rpCareerPositivePop = '1';
     pop.setAttribute('aria-live', 'polite');
-    pop.innerHTML = '<span data-rp-career-positive-type>REB</span><strong data-rp-career-positive-name>PLAYER</strong>';
+    pop.innerHTML = '<span data-rp-career-positive-type>REBOUND BY</span><strong data-rp-career-positive-name>PLAYER</strong>';
     stage.appendChild(pop);
     return pop;
   }
@@ -150,7 +150,7 @@
     const typeNode = pop.querySelector('[data-rp-career-positive-type]');
     const nameNode = pop.querySelector('[data-rp-career-positive-name]');
     if (typeNode) typeNode.textContent = item.label;
-    if (nameNode) nameNode.textContent = item.name || 'REAL PLAY PLAYER';
+    if (nameNode) nameNode.textContent = playerIdentity(item.name);
     activeKey = item.key;
     pop.classList.add('show');
     activeTimer = setTimeout(() => {
@@ -186,6 +186,31 @@
     if (String(direct || '').trim()) return String(direct).trim();
     const player = playerRecordFromId(event?.playerId ?? event?.player_id ?? event?.userId ?? event?.user_id);
     return String(player?.playerName ?? player?.player_name ?? player?.name ?? '').trim();
+  }
+
+  function playerRecordByName(name) {
+    const target = normalize(name);
+    if (!target) return null;
+    const pools = [
+      replayData?.playerStats,
+      replayData?.players,
+      replayData?.roster,
+      replayData?.game?.players,
+      replayData?.game?.roster,
+    ];
+    for (const pool of pools) {
+      if (!Array.isArray(pool)) continue;
+      const match = pool.find((player) => normalize(player?.playerName ?? player?.player_name ?? player?.name) === target);
+      if (match) return match;
+    }
+    return null;
+  }
+
+  function playerIdentity(name) {
+    const player = playerRecordByName(name);
+    const rawNumber = player?.playerNumber ?? player?.player_number;
+    const number = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '#--' : `#${Number(rawNumber)}`;
+    return `${number} ${String(name || 'REAL PLAY PLAYER').trim()}`;
   }
 
   function eventLabel(event) {
