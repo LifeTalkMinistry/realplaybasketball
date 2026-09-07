@@ -235,7 +235,6 @@
       .map((player, index) => ({ player, index }))
       .filter(({ player }) => String(player.team || '').toLowerCase() === team);
     return `<section class="rp-career-replay-stat-team" data-rp-career-stat-panel="${team}"${active ? '' : ' hidden'}>
-      <header><strong>${team.toUpperCase()}</strong><span>${rows.length} PLAYERS</span></header>
       <div class="rp-career-replay-stat-scroll" tabindex="0" aria-label="${team.toUpperCase()} player statistics. Swipe horizontally for more categories.">
         <div class="rp-career-replay-stat-grid">
           ${statHeaderRow()}
