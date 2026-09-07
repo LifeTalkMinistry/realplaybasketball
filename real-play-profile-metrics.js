@@ -4,10 +4,11 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
-  let profileCache = null;
-  let gameCache = null;
-  let cacheAt = 0;
-  let loading = null;
+
+  let ownProfileCache = null;
+  let ownGameCache = null;
+  let ownCacheAt = 0;
+  let ownLoading = null;
   let scheduled = false;
   let openMetricKey = null;
   let selectedMode = 'OPEN_RANKING';
@@ -53,6 +54,16 @@
       .replaceAll("'", '&#039;');
   }
 
+  function activeProfile() {
+    return document.querySelector('.rp-public-player-profile.open')
+      || document.querySelector('[data-rp-profile].open')
+      || document.querySelector('.rp-profile.open');
+  }
+
+  function isPublicProfile(profile) {
+    return Boolean(profile?.classList?.contains('rp-public-player-profile'));
+  }
+
   async function api(path) {
     const auth = token();
     if (!auth) return null;
@@ -68,24 +79,35 @@
     }
   }
 
-  async function fetchData() {
+  async function fetchOwnData() {
     const now = Date.now();
-    if (profileCache && gameCache && now - cacheAt < 5000) {
-      return { profile: profileCache, metricGames: gameCache };
+    if (ownProfileCache && ownGameCache && now - ownCacheAt < 5000) {
+      return { profile: ownProfileCache, metricGames: ownGameCache };
     }
-    if (loading) return loading;
+    if (ownLoading) return ownLoading;
 
-    loading = Promise.all([
+    ownLoading = Promise.all([
       api('/api/real-play/me'),
       api('/api/real-play/career/metrics'),
     ]).then(([profile, metricGames]) => {
-      if (profile) profileCache = profile;
-      if (metricGames) gameCache = metricGames;
-      if (profile || metricGames) cacheAt = Date.now();
-      return { profile: profileCache, metricGames: gameCache };
-    }).finally(() => { loading = null; });
+      if (profile) ownProfileCache = profile;
+      if (metricGames) ownGameCache = metricGames;
+      if (profile || metricGames) ownCacheAt = Date.now();
+      return { profile: ownProfileCache, metricGames: ownGameCache };
+    }).finally(() => { ownLoading = null; });
 
-    return loading;
+    return ownLoading;
+  }
+
+  async function fetchDataForProfile(profile) {
+    if (isPublicProfile(profile)) {
+      const selectedPlayer = profile.__realPlayPublicPlayer || null;
+      return {
+        profile: selectedPlayer,
+        metricGames: selectedPlayer?.metricGames || null,
+      };
+    }
+    return fetchOwnData();
   }
 
   function statsFrom(data) {
@@ -257,22 +279,24 @@
   }
 
   function renderMetricPage() {
-    const profile = document.querySelector('.rp-profile.open');
+    const profile = activeProfile();
     const page = profile?.querySelector('[data-rp-metric-page]');
-    if (!profile || !page || !openMetricKey) return;
-    const options = availableOptions(gameCache);
+    const metricGames = profile?.__realPlayMetricGames || null;
+    if (!profile || !page || !openMetricKey || !metricGames) return;
+
+    const options = availableOptions(metricGames);
     if (selectedMode !== 'ALL' && !options.modes.includes(selectedMode)) selectedMode = options.modes[0] || 'OPEN_RANKING';
     if (selectedGameFormat !== 'ALL' && !options.formats.includes(selectedGameFormat)) selectedGameFormat = 'ALL';
     if (selectedPlayerFormat !== 'ALL' && !options.playerFormats.includes(selectedPlayerFormat)) selectedPlayerFormat = 'ALL';
 
-    const games = selectedGames(gameCache);
+    const games = selectedGames(metricGames);
     const result = metricResult(openMetricKey, games);
     const title = page.querySelector('[data-rp-metric-page-title]');
     const body = page.querySelector('[data-rp-metric-page-body]');
     if (title) title.textContent = result.title;
     if (!body) return;
 
-    const seasonLabel = selectedSeason === 'CAREER' ? 'CAREER / ALL TIME' : (gameCache?.seasonLabel || 'BETA SEASON');
+    const seasonLabel = selectedSeason === 'CAREER' ? 'CAREER / ALL TIME' : (metricGames?.seasonLabel || 'BETA SEASON');
     const windowLabel = selectedWindow === 'LAST_5' ? 'LAST 5 GAMES' : selectedWindow === 'LAST_10' ? 'LAST 10 GAMES' : 'ALL GAMES';
     const modeText = selectedMode === 'ALL' ? 'ALL MODES' : modeLabel(selectedMode);
     const gameFormatText = selectedGameFormat === 'ALL' ? 'ALL GAME FORMATS' : gameFormatLabel(selectedGameFormat);
@@ -349,10 +373,12 @@
   }
 
   function openMetricPage(key) {
-    const profile = document.querySelector('.rp-profile.open');
-    if (!profile || !gameCache) return;
+    const profile = activeProfile();
+    const metricGames = profile?.__realPlayMetricGames || null;
+    if (!profile || !metricGames) return;
+
     openMetricKey = key;
-    const allGames = Array.isArray(gameCache?.games) ? gameCache.games : [];
+    const allGames = Array.isArray(metricGames?.games) ? metricGames.games : [];
     const modes = [...new Set(allGames.map(modeKey))];
     selectedMode = modes.includes('OPEN_RANKING') ? 'OPEN_RANKING' : (modes[0] || 'OPEN_RANKING');
     selectedGameFormat = 'ALL';
@@ -367,7 +393,8 @@
   }
 
   function closeMetricPage() {
-    const page = document.querySelector('.rp-profile [data-rp-metric-page]');
+    const profile = activeProfile();
+    const page = profile?.querySelector('[data-rp-metric-page]');
     if (!page) return;
     page.classList.remove('open');
     page.setAttribute('aria-hidden', 'true');
@@ -375,18 +402,25 @@
   }
 
   async function enhanceProfile() {
-    const profile = document.querySelector('.rp-profile.open');
+    const profile = activeProfile();
     const grid = profile?.querySelector('.rp-profile-stat-grid');
     if (!profile || !grid || grid.dataset.rpMetricsReplaced === 'true') return;
     const section = grid.closest('.rp-profile-section');
     if (!section) return;
     grid.dataset.rpMetricsReplaced = 'true';
 
-    const { profile: data, metricGames } = await fetchData();
-    if (!data || !metricGames || !profile.classList.contains('open') || !grid.isConnected) {
+    const expectedPublicId = isPublicProfile(profile) ? Number(profile.dataset.rpPublicPlayerId || 0) : null;
+    const { profile: data, metricGames } = await fetchDataForProfile(profile);
+    const sameIdentity = !isPublicProfile(profile)
+      || (expectedPublicId > 0 && Number(data?.playerId || 0) === expectedPublicId);
+
+    if (!data || !metricGames || !sameIdentity || !profile.classList.contains('open') || !grid.isConnected) {
       grid.dataset.rpMetricsReplaced = 'false';
       return;
     }
+
+    profile.__realPlayMetricProfile = data;
+    profile.__realPlayMetricGames = metricGames;
 
     const metrics = buildSummaryMetrics(data);
     section.querySelector('.rp-profile-section-head small')?.replaceChildren(document.createTextNode('CAREER METRICS'));
@@ -417,17 +451,32 @@
     });
   }
 
+  function resetOwnCache() {
+    ownProfileCache = null;
+    ownGameCache = null;
+    ownCacheAt = 0;
+  }
+
   const observer = new MutationObserver(schedule);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   document.addEventListener('click', (event) => {
     if (event.target.closest('[data-rp-main-action="profile"], [data-rp-open-profile]')) {
-      profileCache = null;
-      gameCache = null;
-      cacheAt = 0;
+      resetOwnCache();
       setTimeout(schedule, 0);
     }
   }, true);
+
+  window.addEventListener('realplay:public-profile-loaded', () => {
+    openMetricKey = null;
+    const profile = document.querySelector('.rp-public-player-profile.open');
+    const page = profile?.querySelector('[data-rp-metric-page]');
+    if (page) {
+      page.classList.remove('open');
+      page.setAttribute('aria-hidden', 'true');
+    }
+    setTimeout(schedule, 0);
+  });
 
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !openMetricKey) return;
@@ -437,12 +486,10 @@
   }, true);
 
   window.addEventListener('focus', () => {
-    if (document.querySelector('.rp-profile.open')) {
-      profileCache = null;
-      gameCache = null;
-      cacheAt = 0;
-      schedule();
-    }
+    const profile = activeProfile();
+    if (!profile) return;
+    if (!isPublicProfile(profile)) resetOwnCache();
+    schedule();
   });
 
   schedule();
