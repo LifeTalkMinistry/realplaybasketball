@@ -5,18 +5,18 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
   const STATS = [
-    { key: 'ast', label: 'AST', type: 'stat', aliases: ['ast', 'assist', 'assists'] },
-    { key: 'reb', label: 'REB', type: 'stat', aliases: ['reb', 'rebound', 'rebounds'] },
-    { key: 'to', label: 'TO', type: 'stat', aliases: ['to', 'tov', 'turnover', 'turnovers'] },
-    { key: 'stl', label: 'STL', type: 'stat', aliases: ['stl', 'steal', 'steals'] },
-    { key: 'blk', label: 'BLK', type: 'stat', aliases: ['blk', 'block', 'blocks'] },
-    { key: 'foul', label: 'FOUL', type: 'stat', aliases: ['foul', 'fouls'] },
+    { key: 'ast', label: 'AST', aliases: ['ast', 'assist', 'assists'] },
+    { key: 'reb', label: 'REB', aliases: ['reb', 'rebound', 'rebounds'] },
+    { key: 'to', label: 'TO', aliases: ['to', 'tov', 'turnover', 'turnovers'] },
+    { key: 'stl', label: 'STL', aliases: ['stl', 'steal', 'steals'] },
+    { key: 'blk', label: 'BLK', aliases: ['blk', 'block', 'blocks'] },
+    { key: 'foul', label: 'FOUL', aliases: ['foul', 'fouls'] },
   ];
   const SHOTS = [
-    { key: 'one-make', label: '1PT MAKE', type: 'shot', value: 1, result: 'make' },
-    { key: 'one-miss', label: '1PT MISS', type: 'shot', value: 1, result: 'miss' },
-    { key: 'two-make', label: '2PT MAKE', type: 'shot', value: 2, result: 'make' },
-    { key: 'two-miss', label: '2PT MISS', type: 'shot', value: 2, result: 'miss' },
+    { key: 'one-make', label: '1PT MAKE', value: 1, result: 'make' },
+    { key: 'one-miss', label: '1PT MISS', value: 1, result: 'miss' },
+    { key: 'two-make', label: '2PT MAKE', value: 2, result: 'make' },
+    { key: 'two-miss', label: '2PT MISS', value: 2, result: 'miss' },
   ];
 
   let currentSessionId = 0;
@@ -35,17 +35,9 @@
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 
-  function token() {
-    return localStorage.getItem(TOKEN_KEY) || '';
-  }
-
-  function adminVerified() {
-    return window.__realPlayAdminVerified === true;
-  }
-
-  function viewer() {
-    return document.querySelector('[data-rp-career-replay].open');
-  }
+  const token = () => localStorage.getItem(TOKEN_KEY) || '';
+  const adminVerified = () => window.__realPlayAdminVerified === true;
+  const viewer = () => document.querySelector('[data-rp-career-replay].open');
 
   function replayClockMs() {
     const text = String(viewer()?.querySelector('[data-rp-career-replay-clock]')?.textContent || '').split('/')[0].trim();
@@ -71,12 +63,10 @@
     if (!clean) return 0;
     const parts = clean.split(':').map(Number);
     if (parts.some((part) => !Number.isFinite(part) || part < 0)) return null;
-    let seconds = 0;
-    if (parts.length === 3) seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
-    else if (parts.length === 2) seconds = parts[0] * 60 + parts[1];
-    else if (parts.length === 1) seconds = parts[0];
-    else return null;
-    return Math.round(seconds * 1000);
+    if (parts.length === 3) return Math.round((parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000);
+    if (parts.length === 2) return Math.round((parts[0] * 60 + parts[1]) * 1000);
+    if (parts.length === 1) return Math.round(parts[0] * 1000);
+    return null;
   }
 
   async function api(sessionId, options = {}) {
@@ -93,11 +83,7 @@
       cache: 'no-store',
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const error = new Error(data?.message || data?.error || `Request failed (${response.status}).`);
-      error.code = data?.code || null;
-      throw error;
-    }
+    if (!response.ok) throw new Error(data?.message || data?.error || `Request failed (${response.status}).`);
     return data;
   }
 
@@ -105,42 +91,27 @@
     return {
       localId: `event-${Number(event?.id || 0)}-${index}`,
       playerId: Number(event?.playerId ?? event?.player_id),
-      eventType: String(event?.eventType ?? event?.event_type || '').toLowerCase(),
+      eventType: String(event?.eventType ?? event?.event_type ?? '').toLowerCase(),
       statKey: event?.statKey ?? event?.stat_key ?? null,
       shotValue: event?.shotValue ?? event?.shot_value ?? null,
       shotResult: event?.shotResult ?? event?.shot_result ?? null,
       videoTimestampMs: Number(event?.videoTimestampMs ?? event?.video_timestamp_ms ?? 0),
-      originalOrder: index,
     };
   }
 
-  function playerEvents(playerId) {
-    return draftEvents.filter((event) => Number(event.playerId) === Number(playerId));
-  }
-
-  function countShot(playerId, value, result) {
-    return playerEvents(playerId).filter((event) => event.eventType === 'shot'
-      && Number(event.shotValue) === Number(value)
-      && String(event.shotResult).toLowerCase() === result).length;
-  }
-
-  function countStat(playerId, aliases) {
-    return playerEvents(playerId).filter((event) => event.eventType === 'stat'
-      && aliases.includes(String(event.statKey || '').toLowerCase())).length;
-  }
+  const playerEvents = (playerId) => draftEvents.filter((event) => Number(event.playerId) === Number(playerId));
+  const countShot = (playerId, value, result) => playerEvents(playerId).filter((event) => event.eventType === 'shot'
+    && Number(event.shotValue) === Number(value)
+    && String(event.shotResult).toLowerCase() === result).length;
+  const countStat = (playerId, aliases) => playerEvents(playerId).filter((event) => event.eventType === 'stat'
+    && aliases.includes(String(event.statKey || '').toLowerCase())).length;
 
   function summary(playerId) {
     const oneMade = countShot(playerId, 1, 'make');
     const oneMiss = countShot(playerId, 1, 'miss');
     const twoMade = countShot(playerId, 2, 'make');
     const twoMiss = countShot(playerId, 2, 'miss');
-    const result = {
-      pts: oneMade + twoMade * 2,
-      oneMade,
-      oneMiss,
-      twoMade,
-      twoMiss,
-    };
+    const result = { pts: oneMade + twoMade * 2, oneMade, oneMiss, twoMade, twoMiss };
     STATS.forEach((stat) => { result[stat.key] = countStat(playerId, stat.aliases); });
     return result;
   }
@@ -163,20 +134,15 @@
   function removeLatest(playerId, predicate) {
     let bestIndex = -1;
     let bestTime = -1;
-    for (let index = 0; index < draftEvents.length; index += 1) {
-      const event = draftEvents[index];
-      if (Number(event.playerId) !== Number(playerId) || !predicate(event)) continue;
+    draftEvents.forEach((event, index) => {
+      if (Number(event.playerId) !== Number(playerId) || !predicate(event)) return;
       const time = Number(event.videoTimestampMs || 0);
-      if (time >= bestTime) {
-        bestTime = time;
-        bestIndex = index;
-      }
-    }
+      if (time >= bestTime) { bestTime = time; bestIndex = index; }
+    });
     if (bestIndex >= 0) draftEvents.splice(bestIndex, 1);
   }
 
   function addShot(playerId, value, result) {
-    const timestamp = currentTimestampMs();
     draftEvents.push({
       localId: `new-${Date.now()}-${Math.random()}`,
       playerId: Number(playerId),
@@ -184,13 +150,11 @@
       statKey: null,
       shotValue: Number(value),
       shotResult: result,
-      videoTimestampMs: timestamp,
-      originalOrder: draftEvents.length + 100000,
+      videoTimestampMs: currentTimestampMs(),
     });
   }
 
   function addStat(playerId, key) {
-    const timestamp = currentTimestampMs();
     draftEvents.push({
       localId: `new-${Date.now()}-${Math.random()}`,
       playerId: Number(playerId),
@@ -198,26 +162,22 @@
       statKey: key,
       shotValue: null,
       shotResult: null,
-      videoTimestampMs: timestamp,
-      originalOrder: draftEvents.length + 100000,
+      videoTimestampMs: currentTimestampMs(),
     });
   }
 
   function controlRow(playerId, item, count) {
-    return `<div class="rp-correction-control-row">
-      <span>${esc(item.label)}</span>
-      <div>
-        <button type="button" data-rp-correction-minus="${esc(item.key)}" data-player-id="${Number(playerId)}" ${count ? '' : 'disabled'} aria-label="Remove ${esc(item.label)}">−</button>
-        <strong>${count}</strong>
-        <button type="button" data-rp-correction-plus="${esc(item.key)}" data-player-id="${Number(playerId)}" aria-label="Add ${esc(item.label)}">+</button>
-      </div>
-    </div>`;
+    return `<div class="rp-correction-control-row"><span>${esc(item.label)}</span><div>
+      <button type="button" data-rp-correction-minus="${esc(item.key)}" data-player-id="${Number(playerId)}" ${count ? '' : 'disabled'}>−</button>
+      <strong>${count}</strong>
+      <button type="button" data-rp-correction-plus="${esc(item.key)}" data-player-id="${Number(playerId)}">+</button>
+    </div></div>`;
   }
 
   function playerCard(player) {
     const stats = summary(player.playerId);
     const expanded = Number(expandedPlayerId) === Number(player.playerId);
-    return `<article class="rp-correction-player ${expanded ? 'open' : ''}" data-player-card="${Number(player.playerId)}">
+    return `<article class="rp-correction-player ${expanded ? 'open' : ''}">
       <button type="button" class="rp-correction-player-head" data-rp-correction-expand="${Number(player.playerId)}">
         <div><small>${esc(String(player.team || '').toUpperCase())}${player.playerNumber === null ? '' : ` · #${Number(player.playerNumber)}`}</small><strong>${esc(player.playerName)}</strong></div>
         <div class="rp-correction-player-summary"><b>${stats.pts}</b><span>PTS</span><i>${expanded ? '−' : '+'}</i></div>
@@ -234,10 +194,7 @@
 
   function teamSection(team) {
     const players = (context?.players || []).filter((player) => String(player.team || '').toLowerCase() === team);
-    return `<section class="rp-correction-team">
-      <header><strong>${team.toUpperCase()}</strong><b>${teamScore(team)}</b></header>
-      <div>${players.map(playerCard).join('') || '<p class="rp-correction-empty">NO PLAYERS</p>'}</div>
-    </section>`;
+    return `<section class="rp-correction-team"><header><strong>${team.toUpperCase()}</strong><b>${teamScore(team)}</b></header><div>${players.map(playerCard).join('') || '<p class="rp-correction-empty">NO PLAYERS</p>'}</div></section>`;
   }
 
   function renderEditor() {
@@ -247,10 +204,8 @@
     body.innerHTML = `
       <div class="rp-correction-score"><div><small>WEST</small><strong>${teamScore('west')}</strong></div><span>—</span><div><small>EAST</small><strong>${teamScore('east')}</strong></div></div>
       ${notice ? `<div class="rp-correction-notice ${noticeError ? 'error' : ''}">${esc(notice)}</div>` : ''}
-      <div class="rp-correction-time-card">
-        <div><strong>VIDEO TIME FOR NEW EVENT</strong><small>Before tapping +, set the exact moment the stat happened. This keeps assists and replay data attached to the correct play.</small></div>
-        <div class="rp-correction-time-actions"><input type="text" inputmode="numeric" data-rp-correction-time value="${esc(editor.dataset.timeValue || formatTime(replayClockMs()))}" placeholder="0:59"><button type="button" data-rp-correction-use-time>USE REPLAY TIME</button></div>
-      </div>
+      <div class="rp-correction-time-card"><div><strong>VIDEO TIME FOR NEW EVENT</strong><small>Before tapping +, set the exact moment the stat happened. This keeps assists and replay data attached to the correct play.</small></div>
+        <div class="rp-correction-time-actions"><input type="text" inputmode="numeric" data-rp-correction-time value="${esc(editor.dataset.timeValue || formatTime(replayClockMs()))}" placeholder="0:59"><button type="button" data-rp-correction-use-time>USE REPLAY TIME</button></div></div>
       <div class="rp-correction-help"><strong>ADMIN CORRECTION</strong><span>− removes the latest matching event. + adds a new event at the video time above. PTS is calculated from 1PT/2PT makes.</span></div>
       <div class="rp-correction-teams">${teamSection('west')}${teamSection('east')}</div>
       <div class="rp-correction-save-wrap"><button type="button" data-rp-correction-save ${busy ? 'disabled' : ''}>${busy ? 'SAVING…' : 'SAVE OFFICIAL CORRECTION'}</button></div>`;
@@ -261,15 +216,10 @@
     editor = document.createElement('section');
     editor.className = 'rp-replay-correction';
     editor.setAttribute('aria-hidden', 'true');
-    editor.innerHTML = `
-      <div class="rp-correction-shell">
-        <header class="rp-correction-topbar">
-          <button type="button" data-rp-correction-close aria-label="Back to replay">←</button>
-          <div><small>REAL PLAY ADMIN</small><strong data-rp-correction-title>EDIT OFFICIAL STATS</strong></div>
-          <span>✎</span>
-        </header>
-        <main data-rp-correction-body></main>
-      </div>`;
+    editor.innerHTML = `<div class="rp-correction-shell"><header class="rp-correction-topbar">
+      <button type="button" data-rp-correction-close aria-label="Back to replay">←</button>
+      <div><small>REAL PLAY ADMIN</small><strong data-rp-correction-title>EDIT OFFICIAL STATS</strong></div><span>✎</span>
+      </header><main data-rp-correction-body></main></div>`;
     document.body.appendChild(editor);
     editor.addEventListener('click', handleEditorClick);
     return editor;
@@ -293,7 +243,6 @@
     root.dataset.timeValue = formatTime(replayClockMs());
     const body = root.querySelector('[data-rp-correction-body]');
     if (body) body.innerHTML = '<div class="rp-correction-loading">LOADING OFFICIAL SCORE SHEET…</div>';
-
     try {
       const data = await api(currentSessionId);
       context = data;
@@ -350,35 +299,32 @@
       return;
     }
     if (!window.confirm(`Save this official correction? Final score will be WEST ${west} – ${east} EAST.`)) return;
-
     busy = true;
     notice = '';
     noticeError = false;
     renderEditor();
     try {
-      const ordered = draftEvents
-        .map((event, index) => ({ ...event, submitOrder: index }))
+      const ordered = draftEvents.map((event, index) => ({ ...event, submitOrder: index }))
         .sort((a, b) => Number(a.videoTimestampMs || 0) - Number(b.videoTimestampMs || 0) || a.submitOrder - b.submitOrder);
       const result = await api(context.session.id, {
         method: 'POST',
-        json: {
-          events: ordered.map((event) => ({
-            playerId: Number(event.playerId),
-            eventType: event.eventType,
-            statKey: event.statKey,
-            shotValue: event.shotValue,
-            shotResult: event.shotResult,
-            videoTimestampMs: Number(event.videoTimestampMs || 0),
-          })),
-        },
+        json: { events: ordered.map((event) => ({
+          playerId: Number(event.playerId),
+          eventType: event.eventType,
+          statKey: event.statKey,
+          shotValue: event.shotValue,
+          shotResult: event.shotResult,
+          videoTimestampMs: Number(event.videoTimestampMs || 0),
+        })) },
       });
       busy = false;
       notice = `Official correction saved. WEST ${Number(result.westScore || 0)} – ${Number(result.eastScore || 0)} EAST.`;
       noticeError = false;
       renderEditor();
       window.setTimeout(() => {
+        const id = Number(context.session.id);
         closeEditor();
-        const trigger = document.querySelector(`[data-rp-career-replay-session="${Number(context.session.id)}"]`);
+        const trigger = document.querySelector(`[data-rp-career-replay-session="${id}"]`);
         if (trigger) trigger.click();
         else window.location.reload();
       }, 650);
@@ -391,28 +337,18 @@
   }
 
   function handleEditorClick(event) {
-    if (event.target.closest('[data-rp-correction-close]')) {
-      closeEditor();
-      return;
-    }
+    if (event.target.closest('[data-rp-correction-close]')) return closeEditor();
     const expand = event.target.closest('[data-rp-correction-expand]');
     if (expand) {
       saveTimeValue();
       const id = Number(expand.dataset.rpCorrectionExpand);
       expandedPlayerId = Number(expandedPlayerId) === id ? null : id;
-      renderEditor();
-      return;
+      return renderEditor();
     }
     const plus = event.target.closest('[data-rp-correction-plus]');
-    if (plus) {
-      changeEvent(plus, 'plus');
-      return;
-    }
+    if (plus) return changeEvent(plus, 'plus');
     const minus = event.target.closest('[data-rp-correction-minus]');
-    if (minus) {
-      changeEvent(minus, 'minus');
-      return;
-    }
+    if (minus) return changeEvent(minus, 'minus');
     if (event.target.closest('[data-rp-correction-use-time]')) {
       const input = editor.querySelector('[data-rp-correction-time]');
       const value = formatTime(replayClockMs());
@@ -423,9 +359,7 @@
     if (event.target.closest('[data-rp-correction-save]')) saveCorrection();
   }
 
-  function pencilSvg() {
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4.2L19.6 8.6a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8V20Zm11-13 2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  }
+  const pencilSvg = () => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4.2L19.6 8.6a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8V20Zm11-13 2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function syncPencil() {
     const root = viewer();
@@ -453,16 +387,12 @@
   const style = document.createElement('style');
   style.textContent = `
     .rp-replay-admin-edit{width:38px;height:38px;display:grid;place-items:center;justify-self:end;border:1px solid rgba(85,197,229,.22);border-radius:11px;background:#061722;color:#a7edf6;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.2)}
-    .rp-replay-admin-edit:hover{border-color:rgba(85,224,245,.5);background:#082331;color:#d9fbff}.rp-replay-admin-edit:active{transform:scale(.96)}
-    .rp-replay-admin-edit svg{width:17px;height:17px}
-    .rp-replay-correction{position:fixed;inset:0;z-index:100000;display:none;background:#020a11;color:#eafaff;overflow:auto;-webkit-overflow-scrolling:touch}
-    .rp-replay-correction.open{display:block}.rp-replay-correction-open{overflow:hidden!important}
+    .rp-replay-admin-edit:hover{border-color:rgba(85,224,245,.5);background:#082331;color:#d9fbff}.rp-replay-admin-edit:active{transform:scale(.96)}.rp-replay-admin-edit svg{width:17px;height:17px}
+    .rp-replay-correction{position:fixed;inset:0;z-index:100000;display:none;background:#020a11;color:#eafaff;overflow:auto;-webkit-overflow-scrolling:touch}.rp-replay-correction.open{display:block}.rp-replay-correction-open{overflow:hidden!important}
     .rp-correction-shell{width:min(760px,100%);min-height:100%;margin:0 auto;background:linear-gradient(180deg,#020b12,#04131d 55%,#020a11)}
     .rp-correction-topbar{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;min-height:70px;padding:0 16px;border-bottom:1px solid rgba(82,168,197,.16);background:rgba(2,10,17,.94);backdrop-filter:blur(12px)}
-    .rp-correction-topbar>button{width:38px;height:38px;border:1px solid rgba(85,197,229,.2);border-radius:11px;background:#061722;color:#dffaff;font-size:1rem}
-    .rp-correction-topbar>div{text-align:center;min-width:0}.rp-correction-topbar small{display:block;color:#5ea6b8;font-size:.48rem;font-weight:950;letter-spacing:.12em}.rp-correction-topbar strong{display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--rp-display,Arial,sans-serif);font-size:.84rem;font-style:italic;letter-spacing:.02em}.rp-correction-topbar>span{justify-self:end;color:#59d7e8;font-size:1rem}
-    .rp-correction-shell main{padding:18px 16px 34px}
-    .rp-correction-score{display:flex;align-items:center;justify-content:center;gap:18px;padding:15px;border:1px solid rgba(76,179,207,.16);border-radius:16px;background:#061722}.rp-correction-score div{text-align:center}.rp-correction-score small{display:block;color:#6d98a7;font-size:.48rem;font-weight:900}.rp-correction-score strong{display:block;margin-top:2px;font-size:1.55rem}.rp-correction-score span{color:#446773}
+    .rp-correction-topbar>button{width:38px;height:38px;border:1px solid rgba(85,197,229,.2);border-radius:11px;background:#061722;color:#dffaff;font-size:1rem}.rp-correction-topbar>div{text-align:center;min-width:0}.rp-correction-topbar small{display:block;color:#5ea6b8;font-size:.48rem;font-weight:950;letter-spacing:.12em}.rp-correction-topbar strong{display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--rp-display,Arial,sans-serif);font-size:.84rem;font-style:italic}.rp-correction-topbar>span{justify-self:end;color:#59d7e8;font-size:1rem}
+    .rp-correction-shell main{padding:18px 16px 34px}.rp-correction-score{display:flex;align-items:center;justify-content:center;gap:18px;padding:15px;border:1px solid rgba(76,179,207,.16);border-radius:16px;background:#061722}.rp-correction-score div{text-align:center}.rp-correction-score small{display:block;color:#6d98a7;font-size:.48rem;font-weight:900}.rp-correction-score strong{display:block;margin-top:2px;font-size:1.55rem}.rp-correction-score span{color:#446773}
     .rp-correction-time-card{display:grid;gap:12px;margin-top:14px;padding:14px;border:1px solid rgba(82,191,218,.16);border-radius:15px;background:#05131c}.rp-correction-time-card strong{display:block;font-size:.66rem;letter-spacing:.06em}.rp-correction-time-card small{display:block;margin-top:4px;color:#7ca1ad;font-size:.57rem;line-height:1.45}.rp-correction-time-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.rp-correction-time-actions input{min-width:0;height:42px;padding:0 12px;border:1px solid rgba(95,211,234,.22);border-radius:10px;background:#020b11;color:#fff;font-weight:900}.rp-correction-time-actions button{padding:0 12px;border:1px solid rgba(79,216,235,.24);border-radius:10px;background:#08212d;color:#8deaf5;font-size:.55rem;font-weight:950}
     .rp-correction-help{display:grid;gap:3px;margin:10px 0 15px;padding:10px 12px;border-radius:11px;background:rgba(54,180,202,.07)}.rp-correction-help strong{color:#65ddeb;font-size:.55rem;letter-spacing:.08em}.rp-correction-help span{color:#779ca8;font-size:.54rem;line-height:1.45}
     .rp-correction-teams{display:grid;gap:14px}.rp-correction-team{border:1px solid rgba(72,164,192,.15);border-radius:15px;overflow:hidden;background:#04121b}.rp-correction-team>header{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:#071b26}.rp-correction-team>header strong{color:#63dce9;font-size:.64rem;letter-spacing:.08em}.rp-correction-team>header b{font-size:1rem}
@@ -484,10 +414,9 @@
     }
   }, true);
 
-  const observer = new MutationObserver(() => syncPencil());
+  const observer = new MutationObserver(syncPencil);
   observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   window.setInterval(syncPencil, 700);
-
   window.addEventListener('storage', (event) => {
     if (event.key !== TOKEN_KEY) return;
     currentSessionId = 0;
