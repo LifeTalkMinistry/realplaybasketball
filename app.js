@@ -1,10 +1,10 @@
 (() => {
-  const version = '20260907-replay-assist-sequence-v1';
+  const version = '20260907-visitor-mode-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
   function restoreBaseSite() {
-    document.body?.classList.remove('rp-lobby-active', 'rp-guest-active', 'rp-3v3-open', 'rp-ranking-open');
+    document.body?.classList.remove('rp-lobby-active', 'rp-guest-active', 'rp-visitor-active', 'rp-3v3-open', 'rp-ranking-open');
     html.classList.remove('js');
   }
 
@@ -77,6 +77,7 @@
     'admin-courtside-live.css',
     'admin-shot-breakdown.css',
     'admin-recorded-scoring-winner.css',
+    'visitor-mode.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
@@ -100,6 +101,7 @@
 
     const enhancements = [
       'public-landing.js',
+      'visitor-mode.js',
       'public-founder-credit.js',
       'login-landing-fix.js',
       'persistent-session-fix.js',
