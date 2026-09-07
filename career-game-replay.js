@@ -65,11 +65,25 @@
     return players.find((player) => normalizePlayerName(player?.playerName ?? player?.player_name) === targetName) || null;
   }
 
+  function visibleJerseyNumberForName(name) {
+    const target = normalizePlayerName(name);
+    if (!target) return '';
+    const rows = [...document.querySelectorAll('[data-rp-career-stat-player]')];
+    for (const row of rows) {
+      const rowName = normalizePlayerName(row.querySelector('.rp-career-replay-stat-player-name')?.textContent);
+      if (rowName !== target) continue;
+      const text = String(row.querySelector('.rp-career-replay-stat-number')?.textContent || '').trim();
+      if (/^#\d+$/.test(text)) return text;
+    }
+    return '';
+  }
+
   function recognitionIdentity(marker) {
     const player = replayPlayerForMarker(marker);
-    const rawNumber = player?.playerNumber ?? player?.player_number ?? marker?.playerNumber ?? marker?.player_number;
-    const number = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '#--' : `#${Number(rawNumber)}`;
     const name = String(marker?.playerName ?? marker?.player_name ?? player?.playerName ?? player?.player_name ?? 'REAL PLAY PLAYER').trim();
+    const rawNumber = player?.playerNumber ?? player?.player_number ?? marker?.playerNumber ?? marker?.player_number;
+    const directNumber = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '' : `#${Number(rawNumber)}`;
+    const number = /^#\d+$/.test(directNumber) ? directNumber : (visibleJerseyNumberForName(name) || '#--');
     return `${number} ${name}`;
   }
 
