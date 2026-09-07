@@ -559,3 +559,83 @@ body.rp-career-replay-open{overflow:hidden}
   .rp-career-replay-assist-pop strong{font-size:.73rem!important}
   .rp-career-replay-score-pop b{font-size:.77rem!important}
 }
+
+
+/* Final score-recognition layout: allow a taller card so the team label,
+   player identity, and score value each get their own row. */
+.rp-career-replay-score-pop{
+  left:auto!important;
+  right:10px!important;
+  bottom:10px!important;
+  width:auto!important;
+  min-width:172px!important;
+  max-width:min(64%,280px)!important;
+  min-height:78px!important;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  grid-template-rows:auto auto auto!important;
+  justify-items:center!important;
+  align-items:center!important;
+  row-gap:5px!important;
+  padding:10px 14px!important;
+  text-align:center!important;
+}
+.rp-career-replay-score-pop::before{
+  content:attr(data-rp-career-score-team)!important;
+  grid-column:1!important;
+  grid-row:1!important;
+  align-self:end!important;
+  color:#8b95a3!important;
+  font-family:var(--rp-display,Arial,sans-serif)!important;
+  font-size:.5rem!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.14em!important;
+  line-height:1!important;
+  text-align:center!important;
+}
+.rp-career-replay-score-pop.team-west::before{color:#46b6ff!important}
+.rp-career-replay-score-pop.team-east::before{color:#ff6670!important}
+
+.rp-career-replay-score-pop>div{
+  display:contents!important;
+}
+.rp-career-replay-score-pop strong{
+  grid-column:1!important;
+  grid-row:2!important;
+  justify-self:center!important;
+  max-width:230px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  color:#fff!important;
+  font-size:.86rem!important;
+  line-height:1.1!important;
+  text-align:center!important;
+}
+.rp-career-replay-score-pop p{
+  display:none!important;
+}
+.rp-career-replay-score-pop b{
+  grid-column:1!important;
+  grid-row:3!important;
+  justify-self:center!important;
+  align-self:start!important;
+  color:#61efbd!important;
+  font-size:1rem!important;
+  line-height:1!important;
+  text-align:center!important;
+}
+
+@media(max-width:620px){
+  .rp-career-replay-score-pop{
+    right:8px!important;
+    bottom:8px!important;
+    min-width:164px!important;
+    max-width:68%!important;
+    min-height:72px!important;
+    padding:9px 12px!important;
+  }
+  .rp-career-replay-score-pop strong{font-size:.8rem!important;max-width:205px!important}
+  .rp-career-replay-score-pop b{font-size:.94rem!important}
+}
