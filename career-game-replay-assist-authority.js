@@ -114,7 +114,7 @@
     let pop = stage.querySelector('[data-rp-career-assist-pop]');
     if (pop) return pop;
     pop = document.createElement('div');
-    pop.className = 'rp-career-replay-assist-pop';
+    pop.className = 'rp-career-replay-assist-pop rp-career-replay-stat-pop';
     pop.dataset.rpCareerAssistPop = '1';
     pop.setAttribute('aria-live', 'polite');
     pop.innerHTML = '<span>ASSIST BY</span><strong data-rp-career-assist-name>PLAYER</strong>';
