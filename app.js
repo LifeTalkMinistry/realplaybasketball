@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-replay-popup-no-timestamp-v1';
+  const version = '20260907-replay-assist-sequence-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -107,6 +107,7 @@
       'career-beta-play.js',
       'career-game-replay.js',
       'career-game-replay-marker-cleanup.js',
+      'career-game-replay-assist-sequence.js',
       'career-game-replay-fullscreen-back.js',
       'career-game-replay-stats.js',
       'career-game-replay-winner.js',
