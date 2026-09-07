@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-player-replay-score-overlay-v1';
+  const version = '20260907-recorded-winner-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -73,6 +73,7 @@
     'public-founder-credit.css',
     'admin-courtside-live.css',
     'admin-shot-breakdown.css',
+    'admin-recorded-scoring-winner.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
@@ -132,6 +133,7 @@
       'admin-live-stat-stability.js',
       'admin-courtside-live.js',
       'admin-recorded-stat-controls-fix.js',
+      'admin-recorded-scoring-winner.js',
       'admin-access-bootstrap.js',
       'admin-game-rotation.js',
       'admin-live-refresh-fix.js',
