@@ -66,7 +66,7 @@
     const rawNumber = player?.playerNumber ?? player?.player_number ?? marker?.playerNumber ?? marker?.player_number;
     const number = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '#--' : `#${Number(rawNumber)}`;
     const name = String(marker?.playerName ?? marker?.player_name ?? player?.playerName ?? player?.player_name ?? 'REAL PLAY PLAYER').trim();
-    return `${number} - ${name} -`;
+    return `${number} ${name}`;
   }
 
   async function api(path) {
