@@ -328,3 +328,19 @@
   .rp-career-replay-comment-form{grid-template-columns:1fr}
   .rp-career-replay-comment-form button{width:100%}
 }
+
+
+/* Join only the WEST/EAST capsule to the stats panel beneath it.
+   Keep the capsule design and player table unchanged; remove only the visual gap. */
+[data-rp-career-main-panel="stats"]{
+  display:grid;
+  gap:0;
+}
+.rp-career-replay-stat-tabs{
+  margin-bottom:-1px;
+  position:relative;
+  z-index:2;
+}
+.rp-career-replay-stat-teams{
+  margin-top:0;
+}
