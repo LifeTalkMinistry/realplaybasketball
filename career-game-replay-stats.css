@@ -164,3 +164,167 @@
   .rp-career-replay-stat-player-name{font-size:.68rem}
   .rp-career-replay-stat-value b{font-size:.86rem}
 }
+
+
+/* Shared replay information container: PLAYER STATS and COMMENTS use the same
+   shell and switch content in place instead of competing for width. */
+.rp-career-replay-main-tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+  padding:4px;
+  border:1px solid rgba(84,150,176,.15);
+  border-radius:11px;
+  background:#071722;
+}
+.rp-career-replay-main-tabs button{
+  min-height:38px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:#668a9a;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.72rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.08em;
+  cursor:pointer;
+}
+.rp-career-replay-main-tabs button.active{
+  background:#0b2a39;
+  color:#62e5fa;
+  box-shadow:inset 0 0 0 1px rgba(83,220,243,.2);
+}
+[data-rp-career-main-panel][hidden]{display:none!important}
+
+.rp-career-replay-comments-panel{
+  display:grid;
+  grid-template-rows:minmax(180px,1fr) auto;
+  min-height:310px;
+  overflow:hidden;
+  border:1px solid rgba(84,150,176,.14);
+  border-radius:12px;
+  background:#071722;
+}
+.rp-career-replay-comments-list{
+  display:grid;
+  align-content:start;
+  gap:0;
+  max-height:360px;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+.rp-career-replay-comment{
+  padding:11px 12px;
+  border-bottom:1px solid rgba(255,255,255,.045);
+}
+.rp-career-replay-comment:last-child{border-bottom:0}
+.rp-career-replay-comment-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.rp-career-replay-comment-head strong{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#eafaff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.7rem;
+  font-style:italic;
+  font-weight:950;
+}
+.rp-career-replay-comment-head time{
+  flex:0 0 auto;
+  color:#56798a;
+  font-size:.42rem;
+  font-weight:850;
+}
+.rp-career-replay-comment p{
+  margin:5px 0 0;
+  color:#b9d2dc;
+  font-size:.68rem;
+  font-weight:650;
+  line-height:1.45;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+.rp-career-replay-comments-loading,
+.rp-career-replay-comments-error,
+.rp-career-replay-comments-empty{
+  display:grid;
+  place-items:center;
+  min-height:180px;
+  padding:22px 16px;
+  color:#668a9a;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.62rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.05em;
+  text-align:center;
+  line-height:1.45;
+}
+.rp-career-replay-comments-empty span{
+  color:#4f7384;
+  font-size:.48rem;
+  letter-spacing:.04em;
+}
+.rp-career-replay-comments-error{color:#ffaaaa}
+.rp-career-replay-comment-form{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:end;
+  padding:9px;
+  border-top:1px solid rgba(255,255,255,.06);
+  background:#06131d;
+}
+.rp-career-replay-comment-form textarea{
+  width:100%;
+  min-height:46px;
+  max-height:110px;
+  resize:vertical;
+  box-sizing:border-box;
+  padding:10px 11px;
+  border:1px solid rgba(81,151,178,.2);
+  border-radius:10px;
+  outline:none;
+  background:#081b26;
+  color:#e9faff;
+  font:inherit;
+  font-size:.66rem;
+  line-height:1.35;
+}
+.rp-career-replay-comment-form textarea::placeholder{color:#557988}
+.rp-career-replay-comment-form textarea:focus{
+  border-color:rgba(83,220,243,.38);
+  box-shadow:0 0 0 2px rgba(83,220,243,.06);
+}
+.rp-career-replay-comment-form button{
+  min-width:66px;
+  height:42px;
+  padding:0 10px;
+  border:1px solid rgba(83,220,243,.25);
+  border-radius:10px;
+  background:#0b2a39;
+  color:#62e5fa;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.54rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.08em;
+  cursor:pointer;
+}
+.rp-career-replay-comment-form button:disabled{opacity:.55;cursor:wait}
+
+@media(max-width:420px){
+  .rp-career-replay-main-tabs button{font-size:.66rem}
+  .rp-career-replay-comments-panel{min-height:300px}
+  .rp-career-replay-comments-list{max-height:330px}
+  .rp-career-replay-comment-form{grid-template-columns:1fr}
+  .rp-career-replay-comment-form button{width:100%}
+}
