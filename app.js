@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-recent-games-clean-header-v6';
+  const version = '20260908-profile-topbar-cleanup-v7';
   const html = document.documentElement;
   html.classList.add('js');
 
