@@ -370,6 +370,28 @@
     return findDirectoryPlayer(players, player);
   }
 
+  async function loadOwnCurrentNumber() {
+    const auth = localStorage.getItem(TOKEN_KEY) || '';
+    if (!auth) return null;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/real-play/me`, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${auth}` },
+        cache: 'no-store',
+      });
+      const me = await response.json().catch(() => ({}));
+      if (!response.ok) return null;
+      const raw = me?.currentNumber?.number ?? me?.current_number?.number;
+      const number = raw === null || raw === undefined || raw === '' ? null : Number(raw);
+      if (!Number.isFinite(number)) return null;
+      const profile = me?.profile || {};
+      const userId = profile?.user_id ?? profile?.userId ?? me?.userId ?? me?.user_id ?? null;
+      const name = profile?.player_name ?? profile?.playerName ?? profile?.name ?? '';
+      return { number, userId, name };
+    } catch (_) {
+      return null;
+    }
+  }
+
   async function hydrateReplayPlayerNumbers(data) {
     const stats = Array.isArray(data?.playerStats) ? data.playerStats : [];
     if (!stats.length) return data;
@@ -393,6 +415,31 @@
 
         player.playerNumber = resolved;
       });
+
+      // Own-profile fallback: /api/real-play/me is the authority for the logged-in
+      // player's current jersey number even when the community/replay record has none.
+      const own = await loadOwnCurrentNumber();
+      if (own?.number !== null && own?.number !== undefined) {
+        const ownName = normalizeName(own.name);
+        const ownUserId = own.userId === null || own.userId === undefined ? null : String(own.userId);
+        const ownPlayer = stats.find((player) => {
+          const ids = [
+            player?.userId,
+            player?.user_id,
+            player?.playerId,
+            player?.player_id,
+            player?.id,
+          ].filter((value) => value !== null && value !== undefined && value !== '').map(String);
+          if (ownUserId && ids.includes(ownUserId)) return true;
+          return ownName && normalizeName(player?.playerName ?? player?.player_name) === ownName;
+        });
+        if (ownPlayer) {
+          const current = ownPlayer?.playerNumber ?? ownPlayer?.player_number;
+          if (current === null || current === undefined || current === '') {
+            ownPlayer.playerNumber = own.number;
+          }
+        }
+      }
     } catch (error) {
       console.warn('[Real Play] Could not resolve replay jersey numbers from player profiles.', error);
     }
