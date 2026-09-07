@@ -35,12 +35,25 @@
     </article>`;
   }
 
-  function teamBlock(team, players) {
+  function teamBlock(team, players, active = false) {
     const rows = players.filter((player) => String(player.team || '').toLowerCase() === team);
-    return `<section class="rp-career-replay-stat-team">
+    return `<section class="rp-career-replay-stat-team" data-rp-career-stat-panel="${team}"${active ? '' : ' hidden'}>
       <header><strong>${team.toUpperCase()}</strong><span>${rows.length} PLAYERS</span></header>
       <div>${rows.length ? rows.map(statRow).join('') : '<p class="rp-career-replay-stat-empty">No verified player stats.</p>'}</div>
     </section>`;
+  }
+
+  function setActiveTeam(section, team) {
+    if (!section || !['west', 'east'].includes(team)) return;
+    section.querySelectorAll('[data-rp-career-stat-team]').forEach((button) => {
+      const active = button.dataset.rpCareerStatTeam === team;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+      button.tabIndex = active ? 0 : -1;
+    });
+    section.querySelectorAll('[data-rp-career-stat-panel]').forEach((panel) => {
+      panel.hidden = panel.dataset.rpCareerStatPanel !== team;
+    });
   }
 
   function installStats(data, sequence, attempt = 0) {
@@ -59,7 +72,11 @@
     section.dataset.rpCareerReplayStats = '1';
     section.innerHTML = `
       <div class="rp-career-replay-stats-head"><div><small>OFFICIAL BOX SCORE</small><strong>PLAYER STATS</strong></div><span>VERIFIED FROM VIDEO REVIEW</span></div>
-      <div class="rp-career-replay-stat-teams">${teamBlock('west', stats)}${teamBlock('east', stats)}</div>`;
+      <div class="rp-career-replay-stat-tabs" role="tablist" aria-label="Choose team stats">
+        <button type="button" class="active" role="tab" aria-selected="true" data-rp-career-stat-team="west">WEST</button>
+        <button type="button" role="tab" aria-selected="false" tabindex="-1" data-rp-career-stat-team="east">EAST</button>
+      </div>
+      <div class="rp-career-replay-stat-teams">${teamBlock('west', stats, true)}${teamBlock('east', stats, false)}</div>`;
     main.appendChild(section);
   }
 
@@ -81,6 +98,13 @@
   }
 
   document.addEventListener('click', (event) => {
+    const teamButton = event.target.closest('[data-rp-career-stat-team]');
+    if (teamButton) {
+      const section = teamButton.closest('[data-rp-career-replay-stats]');
+      setActiveTeam(section, teamButton.dataset.rpCareerStatTeam);
+      return;
+    }
+
     const trigger = event.target.closest('[data-rp-career-replay-session]');
     if (!trigger) return;
     loadStats(trigger.dataset.rpCareerReplaySession);
