@@ -831,3 +831,86 @@ body.rp-career-replay-open{overflow:hidden}
     border-radius:12px!important;
   }
 }
+
+
+/* Single source of truth for all in-video stat recognitions.
+   Matches the current clean ASSIST card: label on top, player identity below. */
+.rp-career-replay-stat-pop{
+  position:absolute!important;
+  z-index:5!important;
+  left:auto!important;
+  right:8px!important;
+  bottom:8px!important;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  grid-template-rows:auto auto!important;
+  justify-items:center!important;
+  align-items:center!important;
+  gap:5px!important;
+  width:auto!important;
+  min-width:164px!important;
+  max-width:70%!important;
+  min-height:0!important;
+  box-sizing:border-box!important;
+  padding:8px 10px!important;
+  border:1px solid transparent!important;
+  border-radius:10px!important;
+  background:
+    linear-gradient(158deg,rgba(5,11,18,.96),rgba(3,6,11,.985)) padding-box,
+    linear-gradient(112deg,rgba(19,152,255,.50),rgba(119,129,151,.18) 50%,rgba(255,53,66,.44)) border-box!important;
+  box-shadow:
+    0 12px 34px rgba(0,0,0,.34),
+    -8px 0 24px rgba(0,117,255,.06),
+    8px 0 24px rgba(255,37,51,.045)!important;
+  backdrop-filter:blur(10px)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+  text-align:center!important;
+  transform:translateY(7px)!important;
+  pointer-events:none!important;
+}
+.rp-career-replay-stat-pop.show{
+  opacity:1!important;
+  transform:translateY(0)!important;
+}
+.rp-career-replay-stat-pop>span{
+  grid-column:1!important;
+  grid-row:1!important;
+  color:#46b6ff!important;
+  font-family:var(--rp-body,Arial,sans-serif)!important;
+  font-size:.48rem!important;
+  font-weight:950!important;
+  line-height:1!important;
+  letter-spacing:.13em!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+}
+.rp-career-replay-stat-pop>span::after{
+  content:''!important;
+  margin:0!important;
+}
+.rp-career-replay-stat-pop>strong{
+  grid-column:1!important;
+  grid-row:2!important;
+  justify-self:center!important;
+  max-width:240px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  color:#fff!important;
+  font-family:var(--rp-display,Arial,sans-serif)!important;
+  font-size:.78rem!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  line-height:1!important;
+  text-align:center!important;
+}
+@media(min-width:621px){
+  .rp-career-replay-stat-pop{
+    right:10px!important;
+    bottom:10px!important;
+    min-width:176px!important;
+    max-width:min(66%,290px)!important;
+    padding:9px 11px!important;
+    border-radius:12px!important;
+  }
+}
