@@ -12,19 +12,19 @@
     { key: 'blk', label: 'BLK', aliases: ['blk', 'block', 'blocks'] },
     { key: 'foul', label: 'FOUL', aliases: ['foul', 'fouls'] },
   ];
-  const SHOTS = [
-    { key: 'one-make', label: '1PT MAKE', value: 1, result: 'make' },
-    { key: 'one-miss', label: '1PT MISS', value: 1, result: 'miss' },
-    { key: 'two-make', label: '2PT MAKE', value: 2, result: 'make' },
-    { key: 'two-miss', label: '2PT MISS', value: 2, result: 'miss' },
-  ];
 
   let currentSessionId = 0;
-  let editor = null;
+  let correctionActive = false;
+  let reviewMode = false;
   let context = null;
   let draftEvents = [];
-  let expandedPlayerId = null;
+  let selectedPlayerId = null;
   let busy = false;
+  let playheadMs = 0;
+  let streamUrl = '';
+  let youtubeId = '';
+  let youtubePlayer = null;
+  let clockTimer = null;
   let notice = '';
   let noticeError = false;
 
@@ -38,6 +38,13 @@
   const token = () => localStorage.getItem(TOKEN_KEY) || '';
   const adminVerified = () => window.__realPlayAdminVerified === true;
   const viewer = () => document.querySelector('[data-rp-career-replay].open');
+  const adminRoot = () => document.querySelector('.rp-admin-control');
+  const adminBody = () => adminRoot()?.querySelector('[data-admin-body]') || null;
+
+  function formatTime(ms) {
+    const total = Math.max(0, Math.floor(Number(ms || 0) / 1000));
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+  }
 
   function replayClockMs() {
     const text = String(viewer()?.querySelector('[data-rp-career-replay-clock]')?.textContent || '').split('/')[0].trim();
@@ -48,38 +55,18 @@
     return Math.round((parts[0] || 0) * 1000);
   }
 
-  function formatTime(ms) {
-    const total = Math.max(0, Math.floor(Number(ms || 0) / 1000));
-    const hours = Math.floor(total / 3600);
-    const minutes = Math.floor((total % 3600) / 60);
-    const seconds = total % 60;
-    return hours
-      ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-      : `${minutes}:${String(seconds).padStart(2, '0')}`;
-  }
-
-  function parseTime(value) {
-    const clean = String(value || '').trim();
-    if (!clean) return 0;
-    const parts = clean.split(':').map(Number);
-    if (parts.some((part) => !Number.isFinite(part) || part < 0)) return null;
-    if (parts.length === 3) return Math.round((parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000);
-    if (parts.length === 2) return Math.round((parts[0] * 60 + parts[1]) * 1000);
-    if (parts.length === 1) return Math.round(parts[0] * 1000);
-    return null;
-  }
-
-  async function api(sessionId, options = {}) {
+  async function api(path, options = {}) {
     const auth = token();
     if (!auth) throw new Error('Admin session is not available.');
-    const response = await fetch(`${API_BASE_URL}/api/real-play/admin/replay-corrections/${encodeURIComponent(sessionId)}`, {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
       method: options.method || 'GET',
       headers: {
         Accept: 'application/json',
         Authorization: `Bearer ${auth}`,
         ...(options.json !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...(options.headers || {}),
       },
-      body: options.json !== undefined ? JSON.stringify(options.json) : undefined,
+      body: options.json !== undefined ? JSON.stringify(options.json) : options.body,
       cache: 'no-store',
     });
     const data = await response.json().catch(() => ({}));
@@ -99,50 +86,86 @@
     };
   }
 
-  const playerEvents = (playerId) => draftEvents.filter((event) => Number(event.playerId) === Number(playerId));
-  const countShot = (playerId, value, result) => playerEvents(playerId).filter((event) => event.eventType === 'shot'
-    && Number(event.shotValue) === Number(value)
-    && String(event.shotResult).toLowerCase() === result).length;
-  const countStat = (playerId, aliases) => playerEvents(playerId).filter((event) => event.eventType === 'stat'
-    && aliases.includes(String(event.statKey || '').toLowerCase())).length;
+  function playerById(playerId) {
+    return (context?.players || []).find((player) => Number(player.playerId) === Number(playerId)) || null;
+  }
 
-  function summary(playerId) {
-    const oneMade = countShot(playerId, 1, 'make');
-    const oneMiss = countShot(playerId, 1, 'miss');
-    const twoMade = countShot(playerId, 2, 'make');
-    const twoMiss = countShot(playerId, 2, 'miss');
-    const result = { pts: oneMade + twoMade * 2, oneMade, oneMiss, twoMade, twoMiss };
-    STATS.forEach((stat) => { result[stat.key] = countStat(playerId, stat.aliases); });
-    return result;
+  function playerLabel(player) {
+    const number = player?.playerNumber === null || player?.playerNumber === undefined ? '#--' : `#${Number(player.playerNumber)}`;
+    return `${number} ${player?.playerName || 'REAL PLAY PLAYER'}`;
+  }
+
+  function playersForTeam(team) {
+    return (context?.players || []).filter((player) => String(player.team || '').toLowerCase() === team);
+  }
+
+  function playerEvents(playerId) {
+    return draftEvents.filter((event) => Number(event.playerId) === Number(playerId));
+  }
+
+  function shotCount(playerId, value, result) {
+    return playerEvents(playerId).filter((event) => event.eventType === 'shot'
+      && Number(event.shotValue) === Number(value)
+      && String(event.shotResult || '').toLowerCase() === result).length;
+  }
+
+  function statCount(playerId, stat) {
+    const item = STATS.find((entry) => entry.key === stat);
+    const aliases = item?.aliases || [stat];
+    return playerEvents(playerId).filter((event) => event.eventType === 'stat'
+      && aliases.includes(String(event.statKey || '').toLowerCase())).length;
+  }
+
+  function summaryForPlayer(playerId) {
+    const onePtMade = shotCount(playerId, 1, 'make');
+    const onePtMiss = shotCount(playerId, 1, 'miss');
+    const twoPtMade = shotCount(playerId, 2, 'make');
+    const twoPtMiss = shotCount(playerId, 2, 'miss');
+    return {
+      pts: onePtMade + twoPtMade * 2,
+      ast: statCount(playerId, 'ast'),
+      reb: statCount(playerId, 'reb'),
+      tov: statCount(playerId, 'to'),
+      stl: statCount(playerId, 'stl'),
+      blk: statCount(playerId, 'blk'),
+      foul: statCount(playerId, 'foul'),
+      onePtMade,
+      onePtMiss,
+      twoPtMade,
+      twoPtMiss,
+    };
   }
 
   function teamScore(team) {
-    return (context?.players || [])
-      .filter((player) => String(player.team || '').toLowerCase() === team)
-      .reduce((total, player) => total + summary(player.playerId).pts, 0);
+    return playersForTeam(team).reduce((total, player) => total + summaryForPlayer(player.playerId).pts, 0);
   }
 
-  function currentTimestampMs() {
-    const input = editor?.querySelector('[data-rp-correction-time]');
-    const ms = parseTime(input?.value || '');
-    if (ms === null) throw new Error('Use a valid video time such as 0:59 or 1:02:15.');
-    const duration = Number(context?.recording?.durationMs || 0);
-    if (duration > 0 && ms > duration + 2000) throw new Error('That timestamp is beyond this game video.');
-    return ms;
+  function currentVideoTimestamp() {
+    if (youtubePlayer?.getCurrentTime) {
+      const value = Number(youtubePlayer.getCurrentTime());
+      if (Number.isFinite(value)) return Math.max(0, Math.round(value * 1000));
+    }
+    const video = adminBody()?.querySelector('[data-rp-recorded-video]');
+    if (video) return Math.max(0, Math.round(Number(video.currentTime || 0) * 1000));
+    return Math.max(0, Number(playheadMs || 0));
   }
 
-  function removeLatest(playerId, predicate) {
-    let bestIndex = -1;
-    let bestTime = -1;
-    draftEvents.forEach((event, index) => {
-      if (Number(event.playerId) !== Number(playerId) || !predicate(event)) return;
-      const time = Number(event.videoTimestampMs || 0);
-      if (time >= bestTime) { bestTime = time; bestIndex = index; }
-    });
-    if (bestIndex >= 0) draftEvents.splice(bestIndex, 1);
+  function rememberPlayhead() {
+    playheadMs = currentVideoTimestamp();
+  }
+
+  function removeLatest(predicate) {
+    for (let index = draftEvents.length - 1; index >= 0; index -= 1) {
+      if (predicate(draftEvents[index])) {
+        draftEvents.splice(index, 1);
+        return true;
+      }
+    }
+    return false;
   }
 
   function addShot(playerId, value, result) {
+    const timestamp = currentVideoTimestamp();
     draftEvents.push({
       localId: `new-${Date.now()}-${Math.random()}`,
       playerId: Number(playerId),
@@ -150,163 +173,348 @@
       statKey: null,
       shotValue: Number(value),
       shotResult: result,
-      videoTimestampMs: currentTimestampMs(),
+      videoTimestampMs: timestamp,
     });
   }
 
-  function addStat(playerId, key) {
+  function addStat(playerId, stat) {
     draftEvents.push({
       localId: `new-${Date.now()}-${Math.random()}`,
       playerId: Number(playerId),
       eventType: 'stat',
-      statKey: key,
+      statKey: stat,
       shotValue: null,
       shotResult: null,
-      videoTimestampMs: currentTimestampMs(),
+      videoTimestampMs: currentVideoTimestamp(),
     });
   }
 
-  function controlRow(playerId, item, count) {
-    return `<div class="rp-correction-control-row"><span>${esc(item.label)}</span><div>
-      <button type="button" data-rp-correction-minus="${esc(item.key)}" data-player-id="${Number(playerId)}" ${count ? '' : 'disabled'}>−</button>
-      <strong>${count}</strong>
-      <button type="button" data-rp-correction-plus="${esc(item.key)}" data-player-id="${Number(playerId)}">+</button>
-    </div></div>`;
+  function shotCell(playerId, value, result, label) {
+    const count = shotCount(playerId, value, result);
+    return `<div class="rp-video-draft-shot">
+      <button type="button" class="rp-video-draft-minus" data-rp-draft-remove-shot data-value="${value}" data-result="${result}" ${count ? '' : 'disabled'}>−</button>
+      <button type="button" class="${result === 'make' ? 'make' : ''}" data-rp-video-shot data-value="${value}" data-result="${result}"><span>${label}</span><b>${count}</b></button>
+    </div>`;
   }
 
-  function playerCard(player) {
-    const stats = summary(player.playerId);
-    const expanded = Number(expandedPlayerId) === Number(player.playerId);
-    return `<article class="rp-correction-player ${expanded ? 'open' : ''}">
-      <button type="button" class="rp-correction-player-head" data-rp-correction-expand="${Number(player.playerId)}">
-        <div><small>${esc(String(player.team || '').toUpperCase())}${player.playerNumber === null ? '' : ` · #${Number(player.playerNumber)}`}</small><strong>${esc(player.playerName)}</strong></div>
-        <div class="rp-correction-player-summary"><b>${stats.pts}</b><span>PTS</span><i>${expanded ? '−' : '+'}</i></div>
-      </button>
-      ${expanded ? `<div class="rp-correction-player-body">
-        <div class="rp-correction-mini-line">${stats.ast} AST · ${stats.reb} REB · ${stats.to} TO · ${stats.stl} STL · ${stats.blk} BLK · ${stats.foul} FOUL</div>
-        <div class="rp-correction-section-label">SHOTS</div>
-        <div class="rp-correction-control-grid">${SHOTS.map((item) => controlRow(player.playerId, item, countShot(player.playerId, item.value, item.result))).join('')}</div>
-        <div class="rp-correction-section-label">PLAYER STATS</div>
-        <div class="rp-correction-control-grid">${STATS.map((item) => controlRow(player.playerId, item, countStat(player.playerId, item.aliases))).join('')}</div>
-      </div>` : ''}
-    </article>`;
+  function statCell(playerId, stat, label) {
+    const count = statCount(playerId, stat);
+    return `<div class="rp-video-draft-stat">
+      <span>${label}</span>
+      <div><button type="button" data-rp-draft-remove-stat="${stat}" ${count ? '' : 'disabled'}>−</button><strong>${count}</strong><button type="button" data-rp-video-stat="${stat}">+</button></div>
+    </div>`;
   }
 
-  function teamSection(team) {
-    const players = (context?.players || []).filter((player) => String(player.team || '').toLowerCase() === team);
-    return `<section class="rp-correction-team"><header><strong>${team.toUpperCase()}</strong><b>${teamScore(team)}</b></header><div>${players.map(playerCard).join('') || '<p class="rp-correction-empty">NO PLAYERS</p>'}</div></section>`;
+  function selectedPanelHtml() {
+    const player = playerById(selectedPlayerId);
+    if (!player) return '<div class="rp-video-select-prompt">SELECT A PLAYER TO SCORE AN EVENT</div>';
+    const stats = summaryForPlayer(player.playerId);
+    return `<section class="rp-video-player-panel rp-video-draft-panel">
+      <div class="rp-video-player-panel-head"><div><small>${esc(String(player.team || '').toUpperCase())} · OFFICIAL SCORE SHEET</small><strong>${esc(playerLabel(player))}</strong></div><button type="button" data-rp-video-close-player>×</button></div>
+      <div class="rp-video-player-line">${stats.pts} PTS · ${stats.ast} AST · ${stats.reb} REB · ${stats.stl} STL · ${stats.blk} BLK · ${stats.tov} TO · ${stats.foul} FOUL</div>
+      <div class="rp-video-shot-grid rp-video-draft-shot-grid">
+        ${shotCell(player.playerId, 1, 'miss', '1PT MISS')}
+        ${shotCell(player.playerId, 1, 'make', '1PT MAKE')}
+        ${shotCell(player.playerId, 2, 'miss', '2PT MISS')}
+        ${shotCell(player.playerId, 2, 'make', '2PT MAKE')}
+      </div>
+      <div class="rp-video-draft-stat-grid">
+        ${statCell(player.playerId, 'ast', 'AST')}
+        ${statCell(player.playerId, 'reb', 'REB')}
+        ${statCell(player.playerId, 'to', 'TO')}
+        ${statCell(player.playerId, 'stl', 'STL')}
+        ${statCell(player.playerId, 'blk', 'BLK')}
+        ${statCell(player.playerId, 'foul', 'FOUL')}
+      </div>
+    </section>`;
   }
 
-  function renderEditor() {
-    if (!editor || !context) return;
-    const body = editor.querySelector('[data-rp-correction-body]');
+  function rosterHtml(team) {
+    const players = playersForTeam(team);
+    return `<section class="rp-video-score-team"><div class="rp-video-score-team-head"><strong>${team.toUpperCase()}</strong><span>${players.length}</span></div>${players.map((player) => `<button type="button" class="rp-video-score-player ${Number(selectedPlayerId) === Number(player.playerId) ? 'active' : ''}" data-rp-video-select-player="${Number(player.playerId)}">${esc(playerLabel(player))}</button>`).join('')}</section>`;
+  }
+
+  function markerButtons() {
+    const duration = Number(context?.recording?.durationMs || 0);
+    if (!duration) return '';
+    return draftEvents
+      .filter((event) => event.eventType === 'shot' && String(event.shotResult) === 'make')
+      .map((event) => {
+        const stamp = Number(event.videoTimestampMs || 0);
+        const left = Math.max(0, Math.min(100, stamp / duration * 100));
+        const replayStart = Math.max(0, stamp - 5000);
+        return `<button type="button" class="rp-video-marker" style="left:${left}%" data-rp-video-marker="${replayStart}" title="${Number(event.shotValue)}PT make at ${formatTime(stamp)}">🏀</button>`;
+      }).join('');
+  }
+
+  function videoPlayerHtml() {
+    const media = youtubeId
+      ? '<div class="rp-correction-youtube-host" data-rp-correction-youtube></div>'
+      : streamUrl
+        ? `<video data-rp-recorded-video src="${esc(streamUrl)}" controls playsinline preload="metadata"></video>`
+        : '<div class="rp-video-player-unavailable">VIDEO STREAM IS PREPARING…</div>';
+    return `<div class="rp-video-player-wrap">
+      ${media}
+      <div class="rp-video-timebar"><span>VIDEO TIME</span><strong data-rp-video-time>${formatTime(playheadMs)}</strong></div>
+      <div class="rp-video-marker-rail"><i></i><div data-rp-video-markers>${markerButtons()}</div></div>
+      <div class="rp-video-marker-key"><span>🏀 MADE BASKET</span><small>Tap a ball to replay from 5 seconds before the make.</small></div>
+    </div>`;
+  }
+
+  function noticeHtml() {
+    if (!notice) return '';
+    return `<div class="rp-video-notice ${noticeError ? 'error' : 'success'}">${esc(notice)}</div>`;
+  }
+
+  function renderScoring() {
+    if (!correctionActive || reviewMode || !context) return;
+    const body = adminBody();
     if (!body) return;
-    body.innerHTML = `
-      <div class="rp-correction-score"><div><small>WEST</small><strong>${teamScore('west')}</strong></div><span>—</span><div><small>EAST</small><strong>${teamScore('east')}</strong></div></div>
-      ${notice ? `<div class="rp-correction-notice ${noticeError ? 'error' : ''}">${esc(notice)}</div>` : ''}
-      <div class="rp-correction-time-card"><div><strong>VIDEO TIME FOR NEW EVENT</strong><small>Before tapping +, set the exact moment the stat happened. This keeps assists and replay data attached to the correct play.</small></div>
-        <div class="rp-correction-time-actions"><input type="text" inputmode="numeric" data-rp-correction-time value="${esc(editor.dataset.timeValue || formatTime(replayClockMs()))}" placeholder="0:59"><button type="button" data-rp-correction-use-time>USE REPLAY TIME</button></div></div>
-      <div class="rp-correction-help"><strong>ADMIN CORRECTION</strong><span>− removes the latest matching event. + adds a new event at the video time above. PTS is calculated from 1PT/2PT makes.</span></div>
-      <div class="rp-correction-teams">${teamSection('west')}${teamSection('east')}</div>
-      <div class="rp-correction-save-wrap"><button type="button" data-rp-correction-save ${busy ? 'disabled' : ''}>${busy ? 'SAVING…' : 'SAVE OFFICIAL CORRECTION'}</button></div>`;
+    body.innerHTML = `<div class="rp-video-screen rp-video-scoring-screen" data-rp-replay-correction-mode>
+      <div class="rp-admin-title"><span class="rp-admin-kicker">RECORDED SCORING</span><h1>WATCH &amp; SCORE</h1><p>Use the same scorer controls to correct this official game.</p></div>
+      ${noticeHtml()}
+      ${videoPlayerHtml()}
+      <div class="rp-video-auto-note"><strong>5-SECOND LEAD-IN IS AUTOMATIC</strong><span>A made basket keeps its replay marker 5 seconds before the score.</span></div>
+      <div class="rp-video-scoreboard"><div><small>WEST</small><strong data-rp-video-score-west>${teamScore('west')}</strong></div><span>—</span><div><small>EAST</small><strong data-rp-video-score-east>${teamScore('east')}</strong></div></div>
+      <div class="rp-video-score-rosters">${rosterHtml('west')}${rosterHtml('east')}</div>
+      <div data-rp-video-selected-panel>${selectedPanelHtml()}</div>
+      <div class="rp-video-draft-banner"><div><strong>OFFICIAL SCORE SHEET</strong><span>${draftEvents.length} EVENTS</span></div><small>Changes stay local until VERIFY &amp; SUBMIT.</small></div>
+      <div class="rp-video-review-actions">
+        <button type="button" class="rp-video-undo" data-rp-video-undo ${draftEvents.length ? '' : 'disabled'}>UNDO LAST EVENT</button>
+        <button type="button" class="rp-video-finish" data-rp-video-finish>REVIEW SCORE SHEET</button>
+      </div>
+    </div>`;
+    mountPlayback();
   }
 
-  function ensureEditor() {
-    if (editor?.isConnected) return editor;
-    editor = document.createElement('section');
-    editor.className = 'rp-replay-correction';
-    editor.setAttribute('aria-hidden', 'true');
-    editor.innerHTML = `<div class="rp-correction-shell"><header class="rp-correction-topbar">
-      <button type="button" data-rp-correction-close aria-label="Back to replay">←</button>
-      <div><small>REAL PLAY ADMIN</small><strong data-rp-correction-title>EDIT OFFICIAL STATS</strong></div><span>✎</span>
-      </header><main data-rp-correction-body></main></div>`;
-    document.body.appendChild(editor);
-    editor.addEventListener('click', handleEditorClick);
-    return editor;
+  function patchScoringUI() {
+    if (!correctionActive || reviewMode) return;
+    const body = adminBody();
+    if (!body) return;
+    const west = body.querySelector('[data-rp-video-score-west]');
+    const east = body.querySelector('[data-rp-video-score-east]');
+    if (west) west.textContent = String(teamScore('west'));
+    if (east) east.textContent = String(teamScore('east'));
+    body.querySelectorAll('[data-rp-video-select-player]').forEach((button) => {
+      button.classList.toggle('active', Number(button.dataset.rpVideoSelectPlayer) === Number(selectedPlayerId));
+    });
+    const panel = body.querySelector('[data-rp-video-selected-panel]');
+    if (panel) panel.innerHTML = selectedPanelHtml();
+    const markers = body.querySelector('[data-rp-video-markers]');
+    if (markers) markers.innerHTML = markerButtons();
+    const undo = body.querySelector('[data-rp-video-undo]');
+    if (undo) undo.disabled = draftEvents.length === 0;
+    const banner = body.querySelector('.rp-video-draft-banner span');
+    if (banner) banner.textContent = `${draftEvents.length} EVENTS`;
   }
 
-  function closeEditor() {
-    if (!editor) return;
-    const input = editor.querySelector('[data-rp-correction-time]');
-    if (input) editor.dataset.timeValue = input.value;
-    editor.classList.remove('open');
-    editor.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('rp-replay-correction-open');
+  function reviewPlayerRow(player) {
+    const stats = summaryForPlayer(player.playerId);
+    const shots = `${stats.onePtMade}/${stats.onePtMade + stats.onePtMiss} 1PT · ${stats.twoPtMade}/${stats.twoPtMade + stats.twoPtMiss} 2PT`;
+    return `<article class="rp-video-sheet-player"><div><strong>${esc(playerLabel(player))}</strong><small>${shots}</small></div><div class="rp-video-sheet-line"><span>${stats.pts}<small>PTS</small></span><span>${stats.ast}<small>AST</small></span><span>${stats.reb}<small>REB</small></span><span>${stats.tov}<small>TO</small></span><span>${stats.stl}<small>STL</small></span><span>${stats.blk}<small>BLK</small></span><span>${stats.foul}<small>FOUL</small></span></div></article>`;
   }
 
-  async function openEditor() {
-    if (!currentSessionId || busy) return;
-    const root = ensureEditor();
-    root.classList.add('open');
-    root.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('rp-replay-correction-open');
-    root.dataset.timeValue = formatTime(replayClockMs());
-    const body = root.querySelector('[data-rp-correction-body]');
-    if (body) body.innerHTML = '<div class="rp-correction-loading">LOADING OFFICIAL SCORE SHEET…</div>';
-    try {
-      const data = await api(currentSessionId);
-      context = data;
-      draftEvents = (Array.isArray(data.events) ? data.events : []).map(normalizeEvent);
-      expandedPlayerId = data.players?.[0]?.playerId ?? null;
-      notice = '';
-      noticeError = false;
-      const title = root.querySelector('[data-rp-correction-title]');
-      if (title) title.textContent = data.session?.title || 'EDIT OFFICIAL STATS';
-      renderEditor();
-    } catch (error) {
-      context = null;
-      if (body) body.innerHTML = `<div class="rp-correction-error"><strong>EDITING UNAVAILABLE</strong><span>${esc(error.message || 'Unable to load this official game.')}</span><button type="button" data-rp-correction-close>CLOSE</button></div>`;
+  function reviewTeam(team) {
+    return `<section class="rp-video-sheet-team"><header><strong>${team.toUpperCase()}</strong><b>${teamScore(team)}</b></header>${playersForTeam(team).map(reviewPlayerRow).join('')}</section>`;
+  }
+
+  function renderReview() {
+    rememberPlayhead();
+    destroyPlayback();
+    reviewMode = true;
+    const body = adminBody();
+    if (!body) return;
+    const made = draftEvents.filter((event) => event.eventType === 'shot' && event.shotResult === 'make').length;
+    body.innerHTML = `<div class="rp-video-screen rp-video-sheet-review" data-rp-replay-correction-mode>
+      <div class="rp-admin-title"><span class="rp-admin-kicker">OFFICIAL SCORE SHEET</span><h1>REVIEW BEFORE SUBMIT</h1><p>Verify the same score sheet before replacing the official game stats.</p></div>
+      ${noticeHtml()}
+      <div class="rp-video-scoreboard"><div><small>WEST</small><strong>${teamScore('west')}</strong></div><span>—</span><div><small>EAST</small><strong>${teamScore('east')}</strong></div></div>
+      <div class="rp-video-sheet-meta"><span>${draftEvents.length}<small>TOTAL EVENTS</small></span><span>${made}<small>SCORING MARKERS</small></span><span>${draftEvents.filter((event) => event.eventType === 'stat').length}<small>STAT EVENTS</small></span></div>
+      <div class="rp-video-sheet-teams">${reviewTeam('west')}${reviewTeam('east')}</div>
+      <div class="rp-video-auto-note"><strong>ONE OFFICIAL WRITE</strong><span>VERIFY &amp; SUBMIT replaces this game's official recorded score sheet in one transaction.</span></div>
+      <div class="rp-video-sheet-actions"><button type="button" data-rp-draft-back ${busy ? 'disabled' : ''}>BACK TO SCORING</button><button type="button" data-rp-draft-submit ${busy ? 'disabled' : ''}>${busy ? 'SUBMITTING…' : 'VERIFY & SUBMIT'}</button></div>
+    </div>`;
+  }
+
+  function ensureYouTubeApi() {
+    if (window.YT?.Player) return Promise.resolve();
+    if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(script);
     }
+    return new Promise((resolve, reject) => {
+      const started = Date.now();
+      const timer = setInterval(() => {
+        if (window.YT?.Player) {
+          clearInterval(timer);
+          resolve();
+        } else if (Date.now() - started > 6000) {
+          clearInterval(timer);
+          reject(new Error('YouTube player could not be loaded.'));
+        }
+      }, 80);
+    });
   }
 
-  function saveTimeValue() {
-    const input = editor?.querySelector('[data-rp-correction-time]');
-    if (input) editor.dataset.timeValue = input.value;
+  function destroyPlayback() {
+    if (clockTimer) clearInterval(clockTimer);
+    clockTimer = null;
+    if (youtubePlayer) {
+      try { youtubePlayer.destroy(); } catch (_) {}
+      youtubePlayer = null;
+    }
+    const video = adminBody()?.querySelector('[data-rp-recorded-video]');
+    try { video?.pause(); } catch (_) {}
   }
 
-  function changeEvent(button, direction) {
-    saveTimeValue();
-    const playerId = Number(button.dataset.playerId || 0);
-    const key = direction === 'plus' ? button.dataset.rpCorrectionPlus : button.dataset.rpCorrectionMinus;
-    const shot = SHOTS.find((item) => item.key === key);
-    const stat = STATS.find((item) => item.key === key);
-    try {
-      if (shot) {
-        if (direction === 'plus') addShot(playerId, shot.value, shot.result);
-        else removeLatest(playerId, (event) => event.eventType === 'shot' && Number(event.shotValue) === shot.value && String(event.shotResult).toLowerCase() === shot.result);
-      } else if (stat) {
-        if (direction === 'plus') addStat(playerId, stat.key);
-        else removeLatest(playerId, (event) => event.eventType === 'stat' && stat.aliases.includes(String(event.statKey || '').toLowerCase()));
+  async function mountPlayback() {
+    const body = adminBody();
+    if (!body || reviewMode || !correctionActive) return;
+    const time = body.querySelector('[data-rp-video-time]');
+    if (youtubeId) {
+      const host = body.querySelector('[data-rp-correction-youtube]');
+      if (!host) return;
+      try {
+        await ensureYouTubeApi();
+        if (!correctionActive || reviewMode || !host.isConnected) return;
+        youtubePlayer = new window.YT.Player(host, {
+          videoId: youtubeId,
+          playerVars: { controls: 1, playsinline: 1, rel: 0, start: Math.floor(playheadMs / 1000) },
+          events: {
+            onReady: (event) => {
+              if (playheadMs > 0) event.target.seekTo(playheadMs / 1000, true);
+            },
+          },
+        });
+        clockTimer = setInterval(() => {
+          if (!youtubePlayer?.getCurrentTime) return;
+          const seconds = Number(youtubePlayer.getCurrentTime());
+          if (!Number.isFinite(seconds)) return;
+          playheadMs = Math.round(seconds * 1000);
+          if (time) time.textContent = formatTime(playheadMs);
+        }, 250);
+      } catch (_) {
+        host.innerHTML = '<div class="rp-video-player-unavailable">YOUTUBE PLAYER IS UNAVAILABLE.</div>';
       }
+      return;
+    }
+
+    const video = body.querySelector('[data-rp-recorded-video]');
+    if (!video) return;
+    const restore = () => {
+      const duration = Number.isFinite(video.duration) ? video.duration : 0;
+      if (duration > 0 && playheadMs > 0) video.currentTime = Math.min(duration, playheadMs / 1000);
+    };
+    video.addEventListener('loadedmetadata', restore, { once: true });
+    if (video.readyState >= 1) restore();
+    video.addEventListener('timeupdate', () => {
+      playheadMs = Math.round(Number(video.currentTime || 0) * 1000);
+      if (time) time.textContent = formatTime(playheadMs);
+    });
+  }
+
+  function seekPlayback(ms) {
+    playheadMs = Math.max(0, Number(ms || 0));
+    if (youtubePlayer?.seekTo) {
+      youtubePlayer.seekTo(playheadMs / 1000, true);
+      return;
+    }
+    const video = adminBody()?.querySelector('[data-rp-recorded-video]');
+    if (video) video.currentTime = playheadMs / 1000;
+  }
+
+  async function prepareMedia() {
+    const recording = context?.recording || {};
+    const match = String(recording.originalName || '').match(/^YOUTUBE_([A-Za-z0-9_-]{11})\.mp4$/i);
+    youtubeId = match?.[1] || '';
+    streamUrl = '';
+    if (youtubeId) return;
+    const data = await api('/api/real-play/admin/recorded-scoring/stream-access', {
+      method: 'POST',
+      json: { session_id: Number(context.session.id) },
+    });
+    streamUrl = data?.stream_url ? `${API_BASE_URL}${data.stream_url}` : '';
+  }
+
+  function waitFor(selector, timeoutMs = 5000) {
+    return new Promise((resolve) => {
+      const started = Date.now();
+      const timer = setInterval(() => {
+        const node = document.querySelector(selector);
+        if (node) {
+          clearInterval(timer);
+          resolve(node);
+        } else if (Date.now() - started >= timeoutMs) {
+          clearInterval(timer);
+          resolve(null);
+        }
+      }, 60);
+    });
+  }
+
+  async function openAdminDashboard() {
+    if (window.__realPlayOpenAdminGameControl) {
+      await window.__realPlayRefreshAdminGameControl?.();
+      if (window.__realPlayOpenAdminGameControl()) return waitFor('.rp-admin-control.open [data-admin-body]');
+    }
+
+    window.dispatchEvent(new CustomEvent('realplay:settings-open'));
+    const row = await waitFor('[data-rp-settings-action="admin"]', 3000);
+    if (!row) throw new Error('Real Play Admin tools are not ready. Open Settings > Admin once and try again.');
+    row.click();
+    const body = await waitFor('.rp-admin-control.open [data-admin-body]', 6000);
+    if (!body) throw new Error('Unable to open Real Play Game Control.');
+    return body;
+  }
+
+  async function openExistingScorer() {
+    if (!currentSessionId || busy || !adminVerified()) return;
+    const sessionId = currentSessionId;
+    playheadMs = replayClockMs();
+    busy = true;
+    try {
+      const body = await openAdminDashboard();
+      const closeReplay = viewer()?.querySelector('[data-rp-career-replay-close]');
+      closeReplay?.click();
+      correctionActive = true;
+      reviewMode = false;
+      body.innerHTML = '<div class="rp-video-screen"><div class="rp-video-loading">LOADING OFFICIAL SCORE SHEET…</div></div>';
+      context = await api(`/api/real-play/admin/replay-corrections/${encodeURIComponent(sessionId)}`);
+      draftEvents = (Array.isArray(context.events) ? context.events : []).map(normalizeEvent);
+      selectedPlayerId = context.players?.[0]?.playerId ?? null;
       notice = '';
       noticeError = false;
+      await prepareMedia();
+      const root = adminRoot();
+      root?.querySelectorAll('.rp-admin-tab').forEach((tab) => tab.classList.remove('active'));
+      root?.querySelector('[data-rp-video-tab]')?.classList.add('active');
+      renderScoring();
     } catch (error) {
-      notice = error.message || 'Unable to change that stat.';
-      noticeError = true;
+      correctionActive = false;
+      window.alert(error.message || 'Unable to open the recorded scoring editor.');
+    } finally {
+      busy = false;
     }
-    renderEditor();
   }
 
   async function saveCorrection() {
     if (busy || !context?.session?.id) return;
-    saveTimeValue();
     const west = teamScore('west');
     const east = teamScore('east');
     if (west === east) {
       notice = 'A finalized Career game cannot be saved as a tie.';
       noticeError = true;
-      renderEditor();
+      renderReview();
       return;
     }
-    if (!window.confirm(`Save this official correction? Final score will be WEST ${west} – ${east} EAST.`)) return;
+    if (!window.confirm(`Verify and submit this corrected score sheet? WEST ${west} – ${east} EAST.`)) return;
     busy = true;
-    notice = '';
-    noticeError = false;
-    renderEditor();
+    renderReview();
     try {
       const ordered = draftEvents.map((event, index) => ({ ...event, submitOrder: index }))
         .sort((a, b) => Number(a.videoTimestampMs || 0) - Number(b.videoTimestampMs || 0) || a.submitOrder - b.submitOrder);
-      const result = await api(context.session.id, {
+      const result = await api(`/api/real-play/admin/replay-corrections/${encodeURIComponent(context.session.id)}`, {
         method: 'POST',
         json: { events: ordered.map((event) => ({
           playerId: Number(event.playerId),
@@ -317,47 +525,129 @@
           videoTimestampMs: Number(event.videoTimestampMs || 0),
         })) },
       });
-      busy = false;
-      notice = `Official correction saved. WEST ${Number(result.westScore || 0)} – ${Number(result.eastScore || 0)} EAST.`;
+      const id = Number(context.session.id);
+      notice = `Official score sheet saved. WEST ${Number(result.westScore || 0)} – ${Number(result.eastScore || 0)} EAST.`;
       noticeError = false;
-      renderEditor();
-      window.setTimeout(() => {
-        const id = Number(context.session.id);
-        closeEditor();
+      busy = false;
+      renderReview();
+      setTimeout(() => {
+        correctionActive = false;
+        reviewMode = false;
+        adminRoot()?.querySelector('[data-admin-exit]')?.click();
         const trigger = document.querySelector(`[data-rp-career-replay-session="${id}"]`);
         if (trigger) trigger.click();
         else window.location.reload();
       }, 650);
     } catch (error) {
       busy = false;
-      notice = error.message || 'Unable to save the official correction.';
+      notice = error.message || 'Unable to save the official score sheet.';
       noticeError = true;
-      renderEditor();
+      renderReview();
     }
   }
 
-  function handleEditorClick(event) {
-    if (event.target.closest('[data-rp-correction-close]')) return closeEditor();
-    const expand = event.target.closest('[data-rp-correction-expand]');
-    if (expand) {
-      saveTimeValue();
-      const id = Number(expand.dataset.rpCorrectionExpand);
-      expandedPlayerId = Number(expandedPlayerId) === id ? null : id;
-      return renderEditor();
-    }
-    const plus = event.target.closest('[data-rp-correction-plus]');
-    if (plus) return changeEvent(plus, 'plus');
-    const minus = event.target.closest('[data-rp-correction-minus]');
-    if (minus) return changeEvent(minus, 'minus');
-    if (event.target.closest('[data-rp-correction-use-time]')) {
-      const input = editor.querySelector('[data-rp-correction-time]');
-      const value = formatTime(replayClockMs());
-      if (input) input.value = value;
-      editor.dataset.timeValue = value;
+  function deactivateCorrection() {
+    if (!correctionActive) return;
+    rememberPlayhead();
+    destroyPlayback();
+    correctionActive = false;
+    reviewMode = false;
+    context = null;
+    draftEvents = [];
+    selectedPlayerId = null;
+    notice = '';
+    noticeError = false;
+  }
+
+  document.addEventListener('click', (event) => {
+    if (!correctionActive) return;
+    const target = event.target;
+
+    if (target.closest('[data-admin-exit], [data-admin-tab], [data-rp-video-tab]')) {
+      deactivateCorrection();
       return;
     }
-    if (event.target.closest('[data-rp-correction-save]')) saveCorrection();
-  }
+
+    const root = adminRoot();
+    if (!root?.contains(target)) return;
+
+    const select = target.closest('[data-rp-video-select-player]');
+    const closePlayer = target.closest('[data-rp-video-close-player]');
+    const shot = target.closest('[data-rp-video-shot]');
+    const stat = target.closest('[data-rp-video-stat]');
+    const minusShot = target.closest('[data-rp-draft-remove-shot]');
+    const minusStat = target.closest('[data-rp-draft-remove-stat]');
+    const undo = target.closest('[data-rp-video-undo]');
+    const finish = target.closest('[data-rp-video-finish]');
+    const back = target.closest('[data-rp-draft-back]');
+    const submit = target.closest('[data-rp-draft-submit]');
+    const marker = target.closest('[data-rp-video-marker]');
+    if (!(select || closePlayer || shot || stat || minusShot || minusStat || undo || finish || back || submit || marker)) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    if (select) {
+      selectedPlayerId = Number(select.dataset.rpVideoSelectPlayer);
+      patchScoringUI();
+      return;
+    }
+    if (closePlayer) {
+      selectedPlayerId = null;
+      patchScoringUI();
+      return;
+    }
+    if (marker) {
+      seekPlayback(Number(marker.dataset.rpVideoMarker || 0));
+      return;
+    }
+    if (finish) {
+      renderReview();
+      return;
+    }
+    if (back) {
+      reviewMode = false;
+      renderScoring();
+      return;
+    }
+    if (submit) {
+      saveCorrection();
+      return;
+    }
+    if (!selectedPlayerId || reviewMode || busy) return;
+
+    if (shot) {
+      addShot(selectedPlayerId, Number(shot.dataset.value), String(shot.dataset.result || ''));
+      patchScoringUI();
+      return;
+    }
+    if (stat) {
+      addStat(selectedPlayerId, String(stat.dataset.rpVideoStat || '').toLowerCase());
+      patchScoringUI();
+      return;
+    }
+    if (minusShot) {
+      removeLatest((item) => Number(item.playerId) === Number(selectedPlayerId)
+        && item.eventType === 'shot'
+        && Number(item.shotValue) === Number(minusShot.dataset.value)
+        && String(item.shotResult || '') === String(minusShot.dataset.result || ''));
+      patchScoringUI();
+      return;
+    }
+    if (minusStat) {
+      const key = String(minusStat.dataset.rpDraftRemoveStat || '').toLowerCase();
+      const aliases = STATS.find((item) => item.key === key)?.aliases || [key];
+      removeLatest((item) => Number(item.playerId) === Number(selectedPlayerId)
+        && item.eventType === 'stat'
+        && aliases.includes(String(item.statKey || '').toLowerCase()));
+      patchScoringUI();
+      return;
+    }
+    if (undo && draftEvents.length) {
+      draftEvents.pop();
+      patchScoringUI();
+    }
+  }, true);
 
   const pencilSvg = () => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4.2L19.6 8.6a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8V20Zm11-13 2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -380,7 +670,7 @@
       button.setAttribute('aria-label', 'Edit official game stats');
       button.innerHTML = pencilSvg();
       topbar.appendChild(button);
-      button.addEventListener('click', openEditor);
+      button.addEventListener('click', openExistingScorer);
     }
   }
 
@@ -388,19 +678,7 @@
   style.textContent = `
     .rp-replay-admin-edit{width:38px;height:38px;display:grid;place-items:center;justify-self:end;border:1px solid rgba(85,197,229,.22);border-radius:11px;background:#061722;color:#a7edf6;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.2)}
     .rp-replay-admin-edit:hover{border-color:rgba(85,224,245,.5);background:#082331;color:#d9fbff}.rp-replay-admin-edit:active{transform:scale(.96)}.rp-replay-admin-edit svg{width:17px;height:17px}
-    .rp-replay-correction{position:fixed;inset:0;z-index:100000;display:none;background:#020a11;color:#eafaff;overflow:auto;-webkit-overflow-scrolling:touch}.rp-replay-correction.open{display:block}.rp-replay-correction-open{overflow:hidden!important}
-    .rp-correction-shell{width:min(760px,100%);min-height:100%;margin:0 auto;background:linear-gradient(180deg,#020b12,#04131d 55%,#020a11)}
-    .rp-correction-topbar{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;min-height:70px;padding:0 16px;border-bottom:1px solid rgba(82,168,197,.16);background:rgba(2,10,17,.94);backdrop-filter:blur(12px)}
-    .rp-correction-topbar>button{width:38px;height:38px;border:1px solid rgba(85,197,229,.2);border-radius:11px;background:#061722;color:#dffaff;font-size:1rem}.rp-correction-topbar>div{text-align:center;min-width:0}.rp-correction-topbar small{display:block;color:#5ea6b8;font-size:.48rem;font-weight:950;letter-spacing:.12em}.rp-correction-topbar strong{display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--rp-display,Arial,sans-serif);font-size:.84rem;font-style:italic}.rp-correction-topbar>span{justify-self:end;color:#59d7e8;font-size:1rem}
-    .rp-correction-shell main{padding:18px 16px 34px}.rp-correction-score{display:flex;align-items:center;justify-content:center;gap:18px;padding:15px;border:1px solid rgba(76,179,207,.16);border-radius:16px;background:#061722}.rp-correction-score div{text-align:center}.rp-correction-score small{display:block;color:#6d98a7;font-size:.48rem;font-weight:900}.rp-correction-score strong{display:block;margin-top:2px;font-size:1.55rem}.rp-correction-score span{color:#446773}
-    .rp-correction-time-card{display:grid;gap:12px;margin-top:14px;padding:14px;border:1px solid rgba(82,191,218,.16);border-radius:15px;background:#05131c}.rp-correction-time-card strong{display:block;font-size:.66rem;letter-spacing:.06em}.rp-correction-time-card small{display:block;margin-top:4px;color:#7ca1ad;font-size:.57rem;line-height:1.45}.rp-correction-time-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.rp-correction-time-actions input{min-width:0;height:42px;padding:0 12px;border:1px solid rgba(95,211,234,.22);border-radius:10px;background:#020b11;color:#fff;font-weight:900}.rp-correction-time-actions button{padding:0 12px;border:1px solid rgba(79,216,235,.24);border-radius:10px;background:#08212d;color:#8deaf5;font-size:.55rem;font-weight:950}
-    .rp-correction-help{display:grid;gap:3px;margin:10px 0 15px;padding:10px 12px;border-radius:11px;background:rgba(54,180,202,.07)}.rp-correction-help strong{color:#65ddeb;font-size:.55rem;letter-spacing:.08em}.rp-correction-help span{color:#779ca8;font-size:.54rem;line-height:1.45}
-    .rp-correction-teams{display:grid;gap:14px}.rp-correction-team{border:1px solid rgba(72,164,192,.15);border-radius:15px;overflow:hidden;background:#04121b}.rp-correction-team>header{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:#071b26}.rp-correction-team>header strong{color:#63dce9;font-size:.64rem;letter-spacing:.08em}.rp-correction-team>header b{font-size:1rem}
-    .rp-correction-player{border-top:1px solid rgba(78,164,189,.11)}.rp-correction-player:first-child{border-top:0}.rp-correction-player-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 13px;border:0;background:transparent;color:inherit;text-align:left}.rp-correction-player-head small{display:block;color:#668f9d;font-size:.47rem;font-weight:900}.rp-correction-player-head strong{display:block;margin-top:2px;font-size:.69rem}.rp-correction-player-summary{display:flex;align-items:center;gap:5px}.rp-correction-player-summary b{font-size:.9rem}.rp-correction-player-summary span{color:#628b99;font-size:.43rem;font-weight:900}.rp-correction-player-summary i{width:24px;height:24px;display:grid;place-items:center;margin-left:4px;border:1px solid rgba(93,203,225,.16);border-radius:7px;color:#6cdde9;font-style:normal}
-    .rp-correction-player-body{padding:0 12px 13px}.rp-correction-mini-line{padding:9px 10px;border-radius:9px;background:#071a24;color:#86aab5;font-size:.5rem;font-weight:800}.rp-correction-section-label{margin:12px 0 6px;color:#5d8795;font-size:.48rem;font-weight:950;letter-spacing:.09em}.rp-correction-control-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.rp-correction-control-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;padding:7px 8px;border:1px solid rgba(72,171,197,.13);border-radius:9px;background:#061821}.rp-correction-control-row>span{font-size:.52rem;font-weight:900}.rp-correction-control-row>div{display:flex;align-items:center;gap:6px}.rp-correction-control-row button{width:27px;height:27px;border:1px solid rgba(84,205,226,.2);border-radius:7px;background:#08232f;color:#8eeaf4;font-size:.85rem;font-weight:900}.rp-correction-control-row button:disabled{opacity:.25}.rp-correction-control-row strong{min-width:16px;text-align:center;font-size:.68rem}
-    .rp-correction-save-wrap{position:sticky;bottom:0;margin:18px -16px -34px;padding:12px 16px 18px;background:linear-gradient(180deg,rgba(2,10,17,0),#020a11 26%)}.rp-correction-save-wrap button{width:100%;min-height:48px;border:1px solid rgba(68,229,240,.36);border-radius:12px;background:linear-gradient(105deg,#0a5665,#0a3948);color:#e8feff;font-size:.65rem;font-weight:950;letter-spacing:.05em}.rp-correction-save-wrap button:disabled{opacity:.55}
-    .rp-correction-notice{margin:12px 0;padding:10px 12px;border:1px solid rgba(79,224,196,.2);border-radius:10px;background:rgba(42,181,153,.08);color:#99f3df;font-size:.58rem;font-weight:800}.rp-correction-notice.error{border-color:rgba(255,100,100,.22);background:rgba(160,44,44,.08);color:#ffb4b4}.rp-correction-loading,.rp-correction-error{min-height:55vh;display:grid;place-items:center;text-align:center;color:#7fa6b2;font-size:.62rem;font-weight:900}.rp-correction-error{align-content:center;gap:8px}.rp-correction-error strong{color:#fff}.rp-correction-error button{margin-top:8px;padding:10px 16px;border:1px solid rgba(80,210,230,.2);border-radius:9px;background:#08202b;color:#dffaff}.rp-correction-empty{padding:14px;color:#668b97;font-size:.55rem;text-align:center}
-    @media(max-width:460px){.rp-correction-shell main{padding:14px 12px 28px}.rp-correction-control-grid{grid-template-columns:1fr}.rp-correction-save-wrap{margin-left:-12px;margin-right:-12px;margin-bottom:-28px;padding-left:12px;padding-right:12px}.rp-correction-time-actions{grid-template-columns:1fr}.rp-correction-time-actions button{min-height:38px}}
+    .rp-correction-youtube-host{width:100%;aspect-ratio:16/9;background:#000;overflow:hidden;border-radius:inherit}.rp-correction-youtube-host iframe{display:block;width:100%!important;height:100%!important;border:0}
   `;
   document.head.appendChild(style);
 
@@ -410,17 +688,24 @@
     const id = Number(trigger.dataset.rpCareerReplaySession || 0);
     if (Number.isSafeInteger(id) && id > 0) {
       currentSessionId = id;
-      window.setTimeout(syncPencil, 120);
+      setTimeout(syncPencil, 120);
     }
   }, true);
 
-  const observer = new MutationObserver(syncPencil);
+  const observer = new MutationObserver(() => {
+    syncPencil();
+    if (correctionActive && !reviewMode) {
+      const body = adminBody();
+      if (body && !body.querySelector('[data-rp-replay-correction-mode]')) renderScoring();
+    }
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
-  window.setInterval(syncPencil, 700);
+  setInterval(syncPencil, 700);
+
   window.addEventListener('storage', (event) => {
     if (event.key !== TOKEN_KEY) return;
     currentSessionId = 0;
-    closeEditor();
+    deactivateCorrection();
     syncPencil();
   });
 })();
