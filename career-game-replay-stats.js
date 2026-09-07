@@ -3,10 +3,14 @@
   window.__realPlayCareerReplayStatsInstalled = true;
 
   const API_BASE_URL = 'https://api.clarapmc.com';
+  const COMMUNITY_URL = `${API_BASE_URL}/api/real-play/community`;
   const TOKEN_KEY = 'real_play_access_token';
+  const ROSTER_CACHE_MS = 30000;
   let requestSequence = 0;
   let currentReplayData = null;
   let lastPlayerTrigger = null;
+  let rosterCache = null;
+  let rosterCacheAt = 0;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -38,6 +42,99 @@
   function playerLabel(player) {
     const number = player?.playerNumber === null || player?.playerNumber === undefined ? '#--' : `#${Number(player.playerNumber)}`;
     return `${number} ${player?.playerName || 'REAL PLAY PLAYER'}`;
+  }
+
+  function ensureProfileLinkStyles() {
+    if (document.querySelector('[data-rp-breakdown-profile-styles]')) return;
+    const style = document.createElement('style');
+    style.dataset.rpBreakdownProfileStyles = '1';
+    style.textContent = `
+      .rp-career-player-detail-head{gap:8px}
+      .rp-career-player-detail-head>div:first-child{flex:1 1 auto;min-width:0}
+      .rp-career-player-detail-profile{flex:0 0 auto!important;width:auto!important;min-width:88px!important;height:36px!important;padding:0 10px!important;border:1px solid rgba(64,215,245,.28)!important;border-radius:10px!important;background:rgba(25,119,151,.12)!important;color:#65e4fa!important;font-family:var(--rp-display,Arial,sans-serif)!important;font-size:.43rem!important;font-style:italic!important;font-weight:950!important;letter-spacing:.08em!important;white-space:nowrap!important;cursor:pointer}
+      .rp-career-player-detail-profile:hover,.rp-career-player-detail-profile:focus-visible{border-color:rgba(90,229,250,.5)!important;background:rgba(30,148,184,.18)!important;outline:none}
+      .rp-career-player-detail-profile:disabled{opacity:.58;cursor:wait}
+      body.rp-career-replay-open .rp-profile.open{z-index:780!important}
+      @media(max-width:390px){.rp-career-player-detail-profile{min-width:78px!important;padding-inline:8px!important;font-size:.39rem!important}.rp-career-player-detail-head{gap:6px}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  async function loadCommunityPlayers() {
+    if (rosterCache && Date.now() - rosterCacheAt < ROSTER_CACHE_MS) return rosterCache;
+    const auth = localStorage.getItem(TOKEN_KEY) || '';
+    if (!auth) throw new Error('Please log in to view player profiles.');
+
+    const response = await fetch(COMMUNITY_URL, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${auth}`,
+      },
+      body: JSON.stringify({ action: 'players' }),
+      cache: 'no-store',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.message || data?.error || 'Could not find this player profile.');
+
+    rosterCache = {
+      players: Array.isArray(data?.players) ? data.players : [],
+      meUserId: Number(data?.meUserId || 0) || null,
+    };
+    rosterCacheAt = Date.now();
+    return rosterCache;
+  }
+
+  function findDirectoryPlayer(players, player) {
+    const targetName = normalizeName(player?.playerName ?? player?.player_name);
+    const targetNumberRaw = player?.playerNumber ?? player?.player_number;
+    const targetNumber = targetNumberRaw === null || targetNumberRaw === undefined || targetNumberRaw === ''
+      ? null
+      : Number(targetNumberRaw);
+    if (!targetName) return null;
+
+    const exactName = players.filter((candidate) => normalizeName(candidate?.playerName ?? candidate?.player_name) === targetName);
+    if (targetNumber !== null && Number.isFinite(targetNumber)) {
+      const exactIdentity = exactName.find((candidate) => Number(candidate?.playerNumber ?? candidate?.player_number) === targetNumber);
+      if (exactIdentity) return exactIdentity;
+    }
+    return exactName[0] || null;
+  }
+
+  async function openPlayerProfile(player, button) {
+    if (!player || !button || button.disabled) return;
+    const originalText = 'VIEW PROFILE';
+    button.disabled = true;
+    button.textContent = 'OPENING…';
+
+    try {
+      const directory = await loadCommunityPlayers();
+      const match = findDirectoryPlayer(directory.players, player);
+      const userId = Number(match?.userId ?? match?.user_id ?? 0);
+      if (!match || !Number.isSafeInteger(userId) || userId < 1) {
+        throw new Error('No Real Play profile is attached to this player yet.');
+      }
+
+      if (directory.meUserId && userId === directory.meUserId && window.RealPlayProfile?.open) {
+        window.RealPlayProfile.open();
+      } else if (window.RealPlayPlayers?.openProfile) {
+        await window.RealPlayPlayers.openProfile(userId);
+      } else {
+        throw new Error('Player profiles are still loading.');
+      }
+
+      button.disabled = false;
+      button.textContent = originalText;
+    } catch (error) {
+      button.textContent = 'NO PROFILE';
+      window.setTimeout(() => {
+        if (!button.isConnected) return;
+        button.disabled = false;
+        button.textContent = originalText;
+      }, 1800);
+      console.warn('[Real Play] Could not open player profile from game breakdown.', error);
+    }
   }
 
   function statRow(player, index) {
@@ -145,6 +242,7 @@
     const detail = document.createElement('div');
     detail.className = 'rp-career-player-detail';
     detail.dataset.rpCareerPlayerDetail = '1';
+    detail._rpPlayer = player;
     detail.setAttribute('role', 'dialog');
     detail.setAttribute('aria-modal', 'true');
     detail.setAttribute('aria-label', `${playerLabel(player)} game breakdown`);
@@ -153,6 +251,7 @@
       <section class="rp-career-player-detail-sheet">
         <header class="rp-career-player-detail-head">
           <div><small>${esc(team)} · GAME BREAKDOWN</small><strong>${esc(playerLabel(player))}</strong></div>
+          <button type="button" class="rp-career-player-detail-profile" data-rp-career-player-profile aria-label="View ${esc(player?.playerName || 'player')} profile">VIEW PROFILE</button>
           <button type="button" data-rp-career-player-detail-close aria-label="Close player breakdown">×</button>
         </header>
 
@@ -249,7 +348,18 @@
     } catch (_) {}
   }
 
+  ensureProfileLinkStyles();
+
   document.addEventListener('click', (event) => {
+    const profileButton = event.target.closest('[data-rp-career-player-profile]');
+    if (profileButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      const detail = profileButton.closest('[data-rp-career-player-detail]');
+      if (detail?._rpPlayer) openPlayerProfile(detail._rpPlayer, profileButton);
+      return;
+    }
+
     const close = event.target.closest('[data-rp-career-player-detail-close]');
     if (close) {
       closeBreakdown(true);
@@ -294,4 +404,10 @@
     event.stopPropagation();
     closeBreakdown(true);
   }, true);
+
+  window.addEventListener('storage', (event) => {
+    if (event.key !== TOKEN_KEY) return;
+    rosterCache = null;
+    rosterCacheAt = 0;
+  });
 })();
