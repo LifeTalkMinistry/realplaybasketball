@@ -16,6 +16,7 @@
   let storageKey = '';
   let recoveryAnnounced = false;
   let detectTimer = null;
+  let activeScreen = null;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -282,27 +283,31 @@
 
   function shotCell(playerId, value, result, label) {
     const count = shotCount(playerId, value, result);
-    return `<div class="rp-video-draft-shot">
+    return `<div class="rp-video-draft-shot" data-rp-draft-shot-cell="${value}:${result}">
       <button type="button" class="rp-video-draft-minus" data-rp-draft-remove-shot data-value="${value}" data-result="${result}" ${count ? '' : 'disabled'}>−</button>
-      <button type="button" class="${result === 'make' ? 'make' : ''}" data-rp-video-shot data-value="${value}" data-result="${result}"><span>${label}</span><b>${count}</b></button>
+      <button type="button" class="${result === 'make' ? 'make' : ''}" data-rp-video-shot data-value="${value}" data-result="${result}"><span>${label}</span><b data-rp-draft-shot-count>${count}</b></button>
     </div>`;
   }
 
   function statCell(playerId, stat, label) {
     const count = statCount(playerId, stat);
-    return `<div class="rp-video-draft-stat">
+    return `<div class="rp-video-draft-stat" data-rp-draft-stat-cell="${stat}">
       <span>${label}</span>
-      <div><button type="button" data-rp-draft-remove-stat="${stat}" ${count ? '' : 'disabled'}>−</button><strong>${count}</strong><button type="button" data-rp-video-stat="${stat}">+</button></div>
+      <div><button type="button" data-rp-draft-remove-stat="${stat}" ${count ? '' : 'disabled'}>−</button><strong data-rp-draft-stat-count>${count}</strong><button type="button" data-rp-video-stat="${stat}">+</button></div>
     </div>`;
+  }
+
+  function playerSummaryLine(stats) {
+    return `${stats.pts} PTS · ${stats.ast} AST · ${stats.reb} REB · ${stats.stl} STL · ${stats.blk} BLK · ${stats.tov} TO · ${stats.foul} FOUL`;
   }
 
   function selectedPanelHtml(playerId) {
     const player = playerById(playerId);
     if (!player) return '<div class="rp-video-select-prompt">SELECT A PLAYER TO SCORE AN EVENT</div>';
     const stats = summaryForPlayer(playerId);
-    return `<section class="rp-video-player-panel rp-video-draft-panel">
+    return `<section class="rp-video-player-panel rp-video-draft-panel" data-rp-draft-player-id="${Number(playerId)}">
       <div class="rp-video-player-panel-head"><div><small>${esc(String(player.team || '').toUpperCase())} · LOCAL SCORE SHEET</small><strong>${esc(playerLabel(player))}</strong></div><button type="button" data-rp-video-close-player>×</button></div>
-      <div class="rp-video-player-line">${stats.pts} PTS · ${stats.ast} AST · ${stats.reb} REB · ${stats.stl} STL · ${stats.blk} BLK · ${stats.tov} TO · ${stats.foul} FOUL</div>
+      <div class="rp-video-player-line">${playerSummaryLine(stats)}</div>
       <div class="rp-video-shot-grid rp-video-draft-shot-grid">
         ${shotCell(playerId, 1, 'miss', '1PT MISS')}
         ${shotCell(playerId, 1, 'make', '1PT MAKE')}
@@ -318,6 +323,54 @@
         ${statCell(playerId, 'foul', 'FOUL')}
       </div>
     </section>`;
+  }
+
+  function patchSelectedPanel(panel, playerId) {
+    if (!panel) return;
+
+    if (!playerId) {
+      if (!panel.querySelector('.rp-video-select-prompt')) {
+        panel.innerHTML = '<div class="rp-video-select-prompt">SELECT A PLAYER TO SCORE AN EVENT</div>';
+      }
+      return;
+    }
+
+    const current = panel.querySelector('.rp-video-draft-panel[data-rp-draft-player-id]');
+    if (!current || Number(current.dataset.rpDraftPlayerId) !== Number(playerId)) {
+      panel.innerHTML = selectedPanelHtml(playerId);
+      return;
+    }
+
+    const player = playerById(playerId);
+    const stats = summaryForPlayer(playerId);
+    const line = current.querySelector('.rp-video-player-line');
+    if (line) line.textContent = playerSummaryLine(stats);
+
+    const headSmall = current.querySelector('.rp-video-player-panel-head small');
+    const headName = current.querySelector('.rp-video-player-panel-head strong');
+    if (headSmall && player) headSmall.textContent = `${String(player.team || '').toUpperCase()} · LOCAL SCORE SHEET`;
+    if (headName && player) headName.textContent = playerLabel(player);
+
+    current.querySelectorAll('[data-rp-video-shot]').forEach((button) => {
+      const value = Number(button.dataset.value || 0);
+      const result = String(button.dataset.result || '');
+      const count = shotCount(playerId, value, result);
+      const cell = button.closest('.rp-video-draft-shot');
+      const countNode = button.querySelector('[data-rp-draft-shot-count]') || button.querySelector('b');
+      const minus = cell?.querySelector('[data-rp-draft-remove-shot]');
+      if (countNode) countNode.textContent = String(count);
+      if (minus) minus.disabled = count === 0;
+    });
+
+    current.querySelectorAll('[data-rp-video-stat]').forEach((button) => {
+      const stat = String(button.dataset.rpVideoStat || '').toLowerCase();
+      const count = statCount(playerId, stat);
+      const cell = button.closest('.rp-video-draft-stat');
+      const countNode = cell?.querySelector('[data-rp-draft-stat-count]') || cell?.querySelector('strong');
+      const minus = cell?.querySelector('[data-rp-draft-remove-stat]');
+      if (countNode) countNode.textContent = String(count);
+      if (minus) minus.disabled = count === 0;
+    });
   }
 
   function ensureDraftBanner() {
@@ -346,15 +399,18 @@
     if (east) east.textContent = String(teamScore('east'));
 
     const markers = screen.querySelector('[data-rp-video-markers]');
-    if (markers) markers.innerHTML = markerHtml();
+    if (markers) {
+      const nextMarkers = markerHtml();
+      if (markers.innerHTML !== nextMarkers) markers.innerHTML = nextMarkers;
+    }
 
     const selected = activePlayerId();
-    const panel = screen.querySelector('[data-rp-video-selected-panel]');
-    if (panel) panel.innerHTML = selected ? selectedPanelHtml(selected) : '<div class="rp-video-select-prompt">SELECT A PLAYER TO SCORE AN EVENT</div>';
+    patchSelectedPanel(screen.querySelector('[data-rp-video-selected-panel]'), selected);
 
     const banner = ensureDraftBanner();
     if (banner) {
-      banner.innerHTML = `<div><strong>DRAFT SCORE SHEET</strong><span>${draftEvents.length} EVENTS · SAVED ON THIS DEVICE</span></div><small>Nothing is official until VERIFY &amp; SUBMIT.</small>`;
+      const nextBanner = `<div><strong>DRAFT SCORE SHEET</strong><span>${draftEvents.length} EVENTS · SAVED ON THIS DEVICE</span></div><small>Nothing is official until VERIFY &amp; SUBMIT.</small>`;
+      if (banner.innerHTML !== nextBanner) banner.innerHTML = nextBanner;
     }
 
     const finish = screen.querySelector('[data-rp-video-finish]');
@@ -423,6 +479,7 @@
       });
       clearDraft();
       active = false;
+      activeScreen = null;
       reviewMode = false;
       window.__realPlayRecordedScoringDraftActive = false;
       submitting = false;
@@ -438,12 +495,16 @@
 
   function restoreScoring() {
     reviewMode = false;
+    activeScreen = null;
     const tab = root()?.querySelector('[data-rp-video-tab]');
     if (tab) tab.click();
   }
 
   async function activateForCurrentScreen() {
-    if (loading || reviewMode || !scoringScreen()) return;
+    const screenAtStart = scoringScreen();
+    if (loading || reviewMode || !screenAtStart) return;
+    if (active && activeScreen === screenAtStart) return;
+
     loading = true;
     try {
       const controlData = await api('/api/real-play/admin/career/control');
@@ -451,12 +512,14 @@
       const sessionId = Number(nextControl?.session?.id || 0);
       if (!sessionId || nextControl?.session?.scoringAuthority !== 'video') {
         active = false;
+        activeScreen = null;
         window.__realPlayRecordedScoringDraftActive = false;
         return;
       }
       const state = await api(`/api/real-play/admin/recorded-scoring?session_id=${encodeURIComponent(sessionId)}`);
       if (!state?.recording?.reviewStartedAt || state?.recording?.reviewCompletedAt) {
         active = false;
+        activeScreen = null;
         window.__realPlayRecordedScoringDraftActive = false;
         return;
       }
@@ -485,7 +548,16 @@
         }
       }
 
+      const currentScreen = scoringScreen();
+      if (!currentScreen) {
+        active = false;
+        activeScreen = null;
+        window.__realPlayRecordedScoringDraftActive = false;
+        return;
+      }
+
       active = true;
+      activeScreen = currentScreen;
       window.__realPlayRecordedScoringDraftActive = true;
       patchScoringUI();
     } catch (error) {
@@ -499,9 +571,19 @@
     if (detectTimer) clearTimeout(detectTimer);
     detectTimer = setTimeout(() => {
       if (reviewMode) return;
-      if (scoringScreen()) activateForCurrentScreen();
-      else if (!root()?.classList.contains('open')) {
+
+      const screen = scoringScreen();
+      if (screen) {
+        // DOM mutations inside an already-active scorer must never trigger
+        // another backend activation or rebuild. Only a genuinely new scoring
+        // screen (for example after changing tabs and coming back) reactivates.
+        if (!active || screen !== activeScreen) activateForCurrentScreen();
+        return;
+      }
+
+      if (active) {
         active = false;
+        activeScreen = null;
         window.__realPlayRecordedScoringDraftActive = false;
       }
     }, 40);
