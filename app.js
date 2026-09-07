@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-replay-marker-cleanup-v1';
+  const version = '20260907-replay-score-popup-compact-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
