@@ -5,6 +5,7 @@
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
   const UPDATES_URL = `${API_BASE_URL}/api/real-play/updates`;
+  const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
 
   let panel = null;
   let updates = [];
@@ -22,6 +23,10 @@
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
+  }
+
+  function visitor() {
+    return Boolean(window.RealPlayVisitor?.isActive?.());
   }
 
   function timeAgo(value) {
@@ -48,6 +53,20 @@
 
   async function api(action, payload = {}) {
     const accessToken = token();
+    if (!accessToken && visitor() && action === 'feed') {
+      const response = await fetch(PUBLIC_UPDATES_URL, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(data?.message || data?.error || 'Real Play Updates could not complete that request.');
+        error.status = response.status;
+        throw error;
+      }
+      return data;
+    }
     if (!accessToken) {
       const error = new Error('Please log in to Real Play first.');
       error.status = 401;
@@ -193,7 +212,7 @@
         ${update.category === 'schedule' ? scheduleMeta(update) : ''}
         ${update.body ? `<p>${esc(update.body)}</p>` : ''}
         ${update.category !== 'schedule' && update.location_name ? `<div class="rp-update-location">${esc(update.location_name)}</div>` : ''}
-        <footer><span>REAL PLAY OFFICIAL</span>${admin && !update.source_key ? `<button type="button" data-update-delete="${esc(update.id)}">DELETE</button>` : ''}</footer>
+        <footer><span>${visitor() ? 'VISITOR · ' : ''}REAL PLAY OFFICIAL</span>${admin && !update.source_key ? `<button type="button" data-update-delete="${esc(update.id)}">DELETE</button>` : ''}</footer>
       </article>`).join('');
   }
 
@@ -215,7 +234,7 @@
       if (!quiet) setStatus('');
     } catch (error) {
       if (!quiet) setStatus(error.message || 'Could not load official updates.', 'error');
-      if (error.status === 401) {
+      if (error.status === 401 && !visitor()) {
         closeUpdates();
         document.querySelector('[data-auth-open]')?.click();
       }
@@ -225,7 +244,7 @@
   }
 
   async function detectAdmin() {
-    if (new URLSearchParams(location.search).get('admin') !== '1') {
+    if (!token() || visitor() || new URLSearchParams(location.search).get('admin') !== '1') {
       admin = false;
       renderAdmin();
       return;
