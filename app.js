@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-visitor-replay-admin-edit-v1';
+  const version = '20260907-visitor-replay-bridge-v2';
   const html = document.documentElement;
   html.classList.add('js');
 
