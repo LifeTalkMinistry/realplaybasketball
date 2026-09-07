@@ -78,9 +78,14 @@
   display:none!important;
 }
 
-/* Recent history cleanup: rename the main heading while keeping the existing
-   RECENT HISTORY eyebrow and FINALIZED GAMES label untouched. */
+/* Recent games cleanup: show only the main RECENT GAMES title. */
+.rp-profile-history .rp-profile-section-head small,
+.rp-profile-history .rp-profile-section-head > span{
+  display:none!important;
+}
+
 .rp-profile-history .rp-profile-section-head h2{
+  margin:0!important;
   font-size:0!important;
 }
 
