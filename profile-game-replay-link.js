@@ -4,7 +4,9 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
+  const VISITOR_KEY = 'real_play_visitor_mode';
   const COMMUNITY_URL = `${API_BASE_URL}/api/real-play/community`;
+  const PUBLIC_COMMUNITY_URL = `${API_BASE_URL}/api/real-play/public/community`;
 
   let currentPublicPlayerId = null;
   let ownGamesCache = null;
@@ -14,6 +16,10 @@
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
+  }
+
+  function visitorActive() {
+    return !token() && localStorage.getItem(VISITOR_KEY) === '1';
   }
 
   function recentGamesFrom(value) {
@@ -55,13 +61,15 @@
     if (cached && Date.now() - cached.at < 5000) return cached.games;
 
     const auth = token();
-    if (!auth) throw new Error('Sign in to Real Play to watch this game.');
-    const response = await fetch(COMMUNITY_URL, {
+    const visitor = visitorActive();
+    if (!auth && !visitor) throw new Error('Sign in to Real Play to watch this game.');
+
+    const response = await fetch(visitor ? PUBLIC_COMMUNITY_URL : COMMUNITY_URL, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${auth}`,
+        ...(auth ? { Authorization: `Bearer ${auth}` } : {}),
       },
       body: JSON.stringify({ action: 'player_profile', playerId: id }),
       cache: 'no-store',
@@ -77,9 +85,7 @@
     const id = Number(sessionId);
     if (!Number.isSafeInteger(id) || id < 1) return false;
 
-    // Reuse the one canonical replay route. The proxy is intentionally hidden so
-    // career-game-replay.js receives the same session trigger without rewriting
-    // the visible profile card while it loads.
+    // Reuse the canonical replay viewer through a hidden session trigger.
     const proxy = document.createElement('button');
     proxy.type = 'button';
     proxy.hidden = true;
@@ -162,7 +168,7 @@
   }, true);
 
   window.addEventListener('storage', (event) => {
-    if (event.key !== TOKEN_KEY) return;
+    if (event.key !== TOKEN_KEY && event.key !== VISITOR_KEY) return;
     ownGamesCache = null;
     ownGamesCacheAt = 0;
     publicGamesCache.clear();
