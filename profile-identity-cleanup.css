@@ -1,0 +1,12 @@
+/* Profile identity cleanup: keep the actual jersey number and player name,
+   remove redundant helper copy around them. */
+.rp-profile-number > small,
+.rp-profile-name > small,
+.rp-profile-name > p{
+  display:none!important;
+}
+
+.rp-profile-number > strong,
+.rp-profile-name > h1{
+  margin-top:0!important;
+}
