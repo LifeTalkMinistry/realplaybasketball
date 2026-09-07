@@ -370,3 +370,189 @@
 .rp-career-replay-stat-grid{
   border-top:0!important;
 }
+
+
+/* Clickable game-recognition badges beside each player name. */
+.rp-career-replay-recognition-badges{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  margin-left:2px;
+}
+.rp-career-replay-recognition-badge{
+  display:inline-grid;
+  place-items:center;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  cursor:pointer;
+  user-select:none;
+  font-size:12px;
+  line-height:1;
+  filter:drop-shadow(0 1px 3px rgba(0,0,0,.35));
+  transition:transform .14s ease,filter .14s ease;
+}
+.rp-career-replay-recognition-badge:hover{
+  transform:scale(1.12);
+  filter:drop-shadow(0 0 6px rgba(98,229,250,.4));
+}
+.rp-recognition-overall_mvp{
+  background:radial-gradient(circle at 35% 30%,#fff4ad,#d9a21b 58%,#6f4b00 100%);
+  box-shadow:0 0 0 1px rgba(255,224,104,.4),0 0 12px rgba(255,200,50,.18);
+}
+.rp-recognition-team_mvp{
+  background:radial-gradient(circle at 35% 30%,#ecfbff,#65dff6 58%,#13506a 100%);
+  box-shadow:0 0 0 1px rgba(101,223,246,.35);
+}
+.rp-recognition-lethal_shooter{background:rgba(92,44,20,.82)}
+.rp-recognition-bucket_getter{background:rgba(90,25,17,.82)}
+.rp-recognition-floor_general{background:rgba(28,57,83,.84)}
+.rp-recognition-glass_cleaner{background:rgba(43,68,71,.84)}
+.rp-recognition-pickpocket{background:rgba(42,42,53,.88)}
+.rp-recognition-rim_protector{background:rgba(25,54,66,.88)}
+
+.rp-career-recognition-modal{
+  position:fixed;
+  z-index:790;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:18px;
+  box-sizing:border-box;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .18s ease;
+}
+.rp-career-recognition-modal.open{
+  opacity:1;
+  pointer-events:auto;
+}
+.rp-career-recognition-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.74);
+  backdrop-filter:blur(7px);
+  -webkit-backdrop-filter:blur(7px);
+}
+.rp-career-recognition-card{
+  position:relative;
+  z-index:1;
+  width:min(100%,480px);
+  max-height:min(86vh,720px);
+  overflow-y:auto;
+  box-sizing:border-box;
+  padding:24px 20px 20px;
+  border:1px solid rgba(95,184,213,.24);
+  border-radius:20px;
+  background:
+    radial-gradient(circle at 50% -10%,rgba(85,211,235,.11),transparent 34%),
+    linear-gradient(180deg,#081923 0%,#041018 100%);
+  box-shadow:0 24px 70px rgba(0,0,0,.55);
+  text-align:center;
+}
+.rp-career-recognition-close{
+  position:absolute;
+  top:12px;
+  right:12px;
+  width:34px;
+  height:34px;
+  border:1px solid rgba(95,184,213,.2);
+  border-radius:10px;
+  background:#0b2230;
+  color:#dff8ff;
+  font-size:1.1rem;
+  cursor:pointer;
+}
+.rp-career-recognition-icon{
+  display:grid;
+  place-items:center;
+  width:68px;
+  height:68px;
+  margin:2px auto 10px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.14),rgba(82,192,216,.08) 60%,rgba(0,0,0,.12));
+  font-size:2rem;
+}
+.rp-career-recognition-card>small{
+  display:block;
+  color:#63dff5;
+  font-size:.48rem;
+  font-weight:950;
+  letter-spacing:.16em;
+}
+.rp-career-recognition-card h2{
+  margin:5px 0 0;
+  color:#f5fdff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:1.45rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.06em;
+}
+.rp-career-recognition-card h3{
+  margin:5px 0 0;
+  color:#a8c9d4;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.78rem;
+  font-style:italic;
+  font-weight:900;
+}
+.rp-career-recognition-headline{
+  margin:16px 0 0;
+  color:#effcff;
+  font-size:.84rem;
+  font-weight:850;
+  line-height:1.45;
+}
+.rp-career-recognition-copy{
+  margin:7px 0 0;
+  color:#9ebbc6;
+  font-size:.7rem;
+  line-height:1.55;
+}
+.rp-career-recognition-metrics{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+  margin-top:16px;
+}
+.rp-career-recognition-metrics span{
+  display:grid;
+  place-items:center;
+  gap:2px;
+  min-width:0;
+  padding:10px 6px;
+  border:1px solid rgba(84,150,176,.14);
+  border-radius:11px;
+  background:#071722;
+}
+.rp-career-recognition-metrics b{
+  color:#f4fdff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.95rem;
+  font-weight:950;
+}
+.rp-career-recognition-metrics small{
+  color:#5d8393;
+  font-size:.42rem;
+  font-weight:900;
+  letter-spacing:.07em;
+}
+.rp-career-recognition-note{
+  margin:14px 0 0;
+  padding-top:12px;
+  border-top:1px solid rgba(255,255,255,.055);
+  color:#6d929f;
+  font-size:.58rem;
+  font-weight:800;
+  line-height:1.5;
+}
+@media(max-width:420px){
+  .rp-career-replay-recognition-badge{width:17px;height:17px;font-size:11px}
+  .rp-career-recognition-card{padding:22px 16px 18px}
+  .rp-career-recognition-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){
+  .rp-career-recognition-modal,.rp-career-replay-recognition-badge{transition:none}
+}
