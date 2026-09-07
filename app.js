@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-beta-career-metrics-cleanup-v4';
+  const version = '20260908-recent-games-heading-v5';
   const html = document.documentElement;
   html.classList.add('js');
 
