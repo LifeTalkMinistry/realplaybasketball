@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-visitor-replay-bridge-v2';
+  const version = '20260907-remove-legacy-bottom-nav-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -97,6 +97,7 @@
       return;
     }
 
+    await loadScript('legacy-bottom-nav-removal.js');
     window.clearTimeout(shellWatchdog);
 
     const enhancements = [
