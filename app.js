@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-player-id-badge-v8';
+  const version = '20260908-profile-load-fix-v9';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -130,6 +130,7 @@
       'real-play-updates-game-detail.js',
       'real-play-world.js',
       'real-play-world-chat-cleanup.js',
+      'profile-load-guard.js',
       'real-play-profile.js',
       'real-play-profile-intro.js',
       'real-play-profile-metrics.js',
