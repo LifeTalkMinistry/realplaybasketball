@@ -179,7 +179,7 @@
     const player = playerRecordByName(name);
     const rawNumber = player?.playerNumber ?? player?.player_number;
     const number = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '#--' : `#${Number(rawNumber)}`;
-    return `${number} - ${String(name || 'REAL PLAY PLAYER').trim()}`;
+    return `${number} ${String(name || 'REAL PLAY PLAYER').trim()}`;
   }
 
   function scoreFingerprint(pop) {
