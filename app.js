@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260907-visitor-cta-v2';
+  const version = '20260907-replay-session-v1';
   const html = document.documentElement;
   html.classList.add('js');
 
