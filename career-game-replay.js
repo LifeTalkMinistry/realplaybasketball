@@ -42,6 +42,33 @@
       : `${minutes}:${String(seconds).padStart(2, '0')}`;
   }
 
+  function normalizePlayerName(value) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function replayPlayerForMarker(marker) {
+    const players = Array.isArray(replay?.playerStats) ? replay.playerStats : [];
+    const markerId = marker?.playerId ?? marker?.player_id ?? marker?.userId ?? marker?.user_id;
+    if (markerId !== null && markerId !== undefined && markerId !== '') {
+      const target = String(markerId);
+      const byId = players.find((player) => {
+        const id = player?.playerId ?? player?.player_id ?? player?.userId ?? player?.user_id ?? player?.id;
+        return id !== null && id !== undefined && String(id) === target;
+      });
+      if (byId) return byId;
+    }
+    const targetName = normalizePlayerName(marker?.playerName ?? marker?.player_name);
+    return players.find((player) => normalizePlayerName(player?.playerName ?? player?.player_name) === targetName) || null;
+  }
+
+  function recognitionIdentity(marker) {
+    const player = replayPlayerForMarker(marker);
+    const rawNumber = player?.playerNumber ?? player?.player_number ?? marker?.playerNumber ?? marker?.player_number;
+    const number = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '#--' : `#${Number(rawNumber)}`;
+    const name = String(marker?.playerName ?? marker?.player_name ?? player?.playerName ?? player?.player_name ?? 'REAL PLAY PLAYER').trim();
+    return `${number} - ${name} -`;
+  }
+
   async function api(path) {
     const auth = token();
     if (!auth) throw new Error('Sign in to Real Play to watch this game.');
@@ -452,7 +479,7 @@
       const name = pop.querySelector('[data-rp-career-score-name]');
       const detail = pop.querySelector('[data-rp-career-score-detail]');
       const value = pop.querySelector('[data-rp-career-score-value]');
-      if (name) name.textContent = hit.playerName || 'REAL PLAY PLAYER';
+      if (name) name.textContent = recognitionIdentity(hit);
       if (detail) detail.textContent = 'SCORE';
       if (value) value.textContent = `+${Number(hit.shotValue || 0)}`;
       pop.dataset.rpCareerScoreTeam = String(hit.team || '').toUpperCase();
