@@ -393,7 +393,7 @@
       return;
     }
     if (control.session.gameStatus === 'final') adminBody.innerHTML = finalVideoHtml();
-    else if (control.session.gameStatus === 'live' && recordingState.recording?.reviewStartedAt) adminBody.innerHTML = scoringHtml();
+    else if (recordingState.recording?.reviewStartedAt) adminBody.innerHTML = scoringHtml();
     else adminBody.innerHTML = renderSetup();
     bindVideoPlayback();
   }
@@ -578,8 +578,6 @@
       noticeType = 'success';
       busy = false;
 
-      // Roster changes should not remount the YouTube/video workspace.
-      // Patch only the roster/search/readiness nodes in place.
       if (!patchRosterSetupDOM()) render();
 
       const nextInput = body()?.querySelector('[data-rp-video-search]');
@@ -593,7 +591,6 @@
       notice = error.message || 'Roster update failed.';
       noticeType = 'error';
       busy = false;
-      // Keep the page stable even on roster errors unless the setup section vanished.
       if (!patchRosterSetupDOM()) render();
     }
   }
@@ -887,8 +884,6 @@
     ensureTab();
     if (!videoMode) return;
     syncTabActive();
-    // Base Game Control may repaint after its own server poll. Restore the
-    // recorded-scoring workspace while preserving the current video playhead.
     window.requestAnimationFrame(() => {
       if (!videoMode) return;
       render();
