@@ -338,6 +338,7 @@
           <div class="rp-career-replay-brand-session" data-rp-career-replay-brand-session>${esc(game.title || 'OPEN RANK')}</div>
           <button type="button" class="rp-career-replay-brand-play" data-rp-career-replay-brand-play aria-label="Play or pause replay">▶</button>
         </div>
+        <button type="button" class="rp-career-replay-expand-fixed" data-rp-career-replay-expand-fixed aria-label="Open replay fullscreen">⛶</button>
         <div class="rp-career-replay-assist-pop rp-career-replay-stat-pop" data-rp-career-score-pop aria-live="polite">
           <span data-rp-career-score-label>SCORE BY</span>
           <strong data-rp-career-score-name>PLAYER</strong>
@@ -700,6 +701,30 @@
     ticker = setInterval(updatePlaybackUi, 100);
   }
 
+  async function enterReplayFullscreen(stage) {
+    if (!stage) return;
+
+    try {
+      if (stage.requestFullscreen) {
+        await stage.requestFullscreen();
+      } else if (stage.webkitRequestFullscreen) {
+        stage.webkitRequestFullscreen();
+      }
+    } catch (_) {}
+
+    try {
+      if (screen.orientation?.lock) {
+        await screen.orientation.lock('landscape');
+      }
+    } catch (_) {}
+  }
+
+  async function exitReplayFullscreenOrientation() {
+    try {
+      if (screen.orientation?.unlock) screen.orientation.unlock();
+    } catch (_) {}
+  }
+
   function bindControls() {
     const root = ensureViewer();
     const stage = root.querySelector('[data-rp-career-replay-stage]');
@@ -770,8 +795,13 @@
     });
     root.querySelector('[data-rp-career-replay-fullscreen]')?.addEventListener('click', (event) => {
       event.stopPropagation();
-      stage?.requestFullscreen?.().catch?.(() => {});
+      enterReplayFullscreen(stage);
       showUnifiedOverlay();
+    });
+
+    root.querySelector('[data-rp-career-replay-expand-fixed]')?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      enterReplayFullscreen(stage);
     });
     root.querySelectorAll('[data-rp-career-replay-marker]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -796,6 +826,14 @@
       closeViewer();
     }
   }, true);
+
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) exitReplayFullscreenOrientation();
+  });
+
+  document.addEventListener('webkitfullscreenchange', () => {
+    if (!document.webkitFullscreenElement) exitReplayFullscreenOrientation();
+  });
 
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && viewer?.classList.contains('open')) closeViewer();
