@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260908-recorded-rules-state-v4';
+  const ADMIN_ASSET_VERSION = '20260908-replay-review-render-v5';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -32,30 +32,15 @@
     'admin-player-ownership.js',
     'admin-courtside-live.js',
     'admin-game-rules.js',
-    // Guard first so a scorer tap can never fall through to a retired
-    // per-event backend write while the local draft is still booting.
     'admin-recorded-scoring-draft-guard.js',
-    // Capture MAKE -> AST interaction authority before the draft scorer. When
-    // the scorer records a legitimate AST immediately after the basket, this
-    // layer gives AST that basket's exact video timestamp.
     'admin-recorded-scoring-assist-link.js',
-    // Confirmation listens before the draft consumes scorer taps, then shows
-    // a short in-video acknowledgement only for MADE baskets.
     'admin-recorded-scoring-score-confirmation.js',
-    // Draft owns shot/stat/undo/finish taps before the legacy recorded scorer
-    // registers its capture listener.
     'admin-recorded-scoring-draft.js',
     'admin-recorded-scoring-cancel.js',
     'admin-recorded-scoring.js',
-    // YouTube is a hosting/player adapter layered over the same recorded
-    // scoring workflow. The official event/timestamp model remains unchanged.
     'admin-recorded-scoring-youtube.js',
-    // Desktop layout only rearranges the scoring workspace. Mobile stays on
-    // the existing stacked workflow and all score/timestamp logic is shared.
     'admin-recorded-scoring-desktop.js',
     'admin-recorded-scoring-lock.js',
-    // Game entry mode is loaded after both LIVE and VIDEO controls exist so it
-    // can expose exactly one scoring workflow for the current game.
     'admin-game-entry-mode.js',
     'admin-session-picker.js',
     'admin-score-dom-sync.js',
