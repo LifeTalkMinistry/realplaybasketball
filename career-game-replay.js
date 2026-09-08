@@ -6,6 +6,8 @@
   const COMMUNITY_URL = `${API_BASE_URL}/api/real-play/community`;
   const TOKEN_KEY = 'real_play_access_token';
   const SCORE_POP_MS = 1800;
+  const VIDEO_CONTROLS_FADE_MS = 2600;
+  const BRAND_COVER_FADE_MS = 7000;
   const ROSTER_CACHE_MS = 30000;
 
   let viewer = null;
@@ -713,7 +715,7 @@
       if (brandCoverTimer) clearTimeout(brandCoverTimer);
       brandCoverTimer = setTimeout(() => {
         brandCover?.classList.remove('show');
-      }, 7000);
+      }, BRAND_COVER_FADE_MS);
     };
 
     const showControls = () => {
@@ -724,7 +726,7 @@
       if (hasPlaybackStarted) {
         controlsTimer = setTimeout(() => {
           overlay?.classList.remove('show');
-        }, 2600);
+        }, VIDEO_CONTROLS_FADE_MS);
       }
     };
 
@@ -735,12 +737,12 @@
       if (controlsTimer) clearTimeout(controlsTimer);
       controlsTimer = setTimeout(() => {
         overlay?.classList.remove('show');
-      }, 2600);
+      }, VIDEO_CONTROLS_FADE_MS);
 
       if (brandCoverTimer) clearTimeout(brandCoverTimer);
       brandCoverTimer = setTimeout(() => {
         brandCover?.classList.remove('show');
-      }, 7000);
+      }, BRAND_COVER_FADE_MS);
     };
 
     root.addEventListener('realplay:replay-first-play', beginPostStartFade);
