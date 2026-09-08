@@ -1,0 +1,11 @@
+/* Open Rank cleanup — remove redundant helper labels/details while preserving core actions and titles. */
+.rp-ranking-next .rp-ranking-section-head small,
+.rp-ranking-rules .rp-ranking-section-head small,
+.rp-ranking-session > p{
+  display:none!important;
+}
+
+/* Tighten spacing after the removed session details line. */
+.rp-ranking-session button{
+  margin-top:12px;
+}
