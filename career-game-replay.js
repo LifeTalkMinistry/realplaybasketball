@@ -699,19 +699,36 @@
       }, 2600);
     };
 
+    const revealCoverFromStage = (event) => {
+      if (event.target.closest('[data-rp-career-replay-video-controls]')) return;
+      showBrandCoverOnly();
+    };
+
+    // Mobile browsers can surface YouTube chrome on touch before a synthetic
+    // click fires. Reveal our cover immediately on pointer/touch interaction.
+    stage?.addEventListener('pointerdown', revealCoverFromStage, { passive: true });
+    stage?.addEventListener('touchstart', revealCoverFromStage, { passive: true });
     stage?.addEventListener('click', (event) => {
       if (event.target.closest('button')) return;
-      showControls();
+      showBrandCoverOnly();
     });
 
-    const toggleReplayFromButton = (event) => {
+    const toggleMainReplayPlay = (event) => {
       event.stopPropagation();
       togglePlay();
       showControls();
     };
 
-    root.querySelector('[data-rp-career-replay-play]')?.addEventListener('click', toggleReplayFromButton);
-    root.querySelector('[data-rp-career-replay-brand-play]')?.addEventListener('click', toggleReplayFromButton);
+    const toggleBrandReplayPlay = (event) => {
+      event.stopPropagation();
+      togglePlay();
+      // Center video tap/play should reveal only the 7-second Real Play cover,
+      // not the pause/mute/fullscreen control bar.
+      showBrandCoverOnly();
+    };
+
+    root.querySelector('[data-rp-career-replay-play]')?.addEventListener('click', toggleMainReplayPlay);
+    root.querySelector('[data-rp-career-replay-brand-play]')?.addEventListener('click', toggleBrandReplayPlay);
     root.querySelector('[data-rp-career-replay-mute]')?.addEventListener('click', (event) => {
       event.stopPropagation();
       toggleMute();
