@@ -475,7 +475,13 @@
           },
           onStateChange: (event) => {
             lastPlaying = event.data === window.YT.PlayerState.PLAYING;
-            if (event.data === window.YT.PlayerState.PLAYING) hasPlaybackStarted = true;
+            if (event.data === window.YT.PlayerState.PLAYING) {
+              const firstStart = !hasPlaybackStarted;
+              hasPlaybackStarted = true;
+              if (firstStart) {
+                viewer?.dispatchEvent(new CustomEvent('realplay:replay-first-play'));
+              }
+            }
             if (event.data === window.YT.PlayerState.ENDED) lastPlaying = false;
             updatePlaybackUi();
           },
@@ -504,7 +510,13 @@
       startTicker();
       updatePlaybackUi();
     });
-    video.addEventListener('play', () => { lastPlaying = true; hasPlaybackStarted = true; updatePlaybackUi(); });
+    video.addEventListener('play', () => {
+      lastPlaying = true;
+      const firstStart = !hasPlaybackStarted;
+      hasPlaybackStarted = true;
+      if (firstStart) viewer?.dispatchEvent(new CustomEvent('realplay:replay-first-play'));
+      updatePlaybackUi();
+    });
     video.addEventListener('pause', () => { lastPlaying = false; updatePlaybackUi(); });
     video.addEventListener('ended', () => { lastPlaying = false; updatePlaybackUi(); });
     video.addEventListener('error', () => renderReplayError('The verified game video could not be loaded.'));
@@ -715,6 +727,23 @@
         }, 2600);
       }
     };
+
+    const beginPostStartFade = () => {
+      // Before first play these controls intentionally stay visible forever.
+      // As soon as playback actually starts, begin the normal timers even if
+      // the user never taps the screen again.
+      if (controlsTimer) clearTimeout(controlsTimer);
+      controlsTimer = setTimeout(() => {
+        overlay?.classList.remove('show');
+      }, 2600);
+
+      if (brandCoverTimer) clearTimeout(brandCoverTimer);
+      brandCoverTimer = setTimeout(() => {
+        brandCover?.classList.remove('show');
+      }, 7000);
+    };
+
+    root.addEventListener('realplay:replay-first-play', beginPostStartFade);
 
     const revealControlsFromStage = (event) => {
       if (event.target.closest('[data-rp-career-replay-video-controls]')) return;
