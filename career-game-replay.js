@@ -686,7 +686,7 @@
       if (brandCoverTimer) clearTimeout(brandCoverTimer);
       brandCoverTimer = setTimeout(() => {
         brandCover?.classList.remove('show');
-      }, 7000);
+      }, 6000);
     };
 
     const showControls = () => {
