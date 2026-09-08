@@ -120,6 +120,298 @@
   display:none!important;
 }
 
+/* WORLD × PROFILE BRAND PARITY
+ * World keeps its own community UX, but now uses Profile's visual grammar:
+ * condensed display type, premium dark panels, rounded geometry, cyan/red edge
+ * accents and compact status pills.
+ */
+.rp-world-topbar{
+  min-height:66px;
+  border-bottom:1px solid rgba(255,255,255,.065);
+  background:rgba(2,4,9,.94);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+.rp-world-title{
+  display:flex;
+  align-items:center;
+  min-width:0;
+}
+
+.rp-world-title strong{
+  color:#f7fbff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:1.05rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.10em;
+}
+
+.rp-world-back{
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:12px;
+  color:#fff;
+  background:#080d15;
+}
+
+.rp-world-online{
+  padding:6px 8px;
+  border:1px solid rgba(40,195,255,.18);
+  border-radius:999px;
+  color:#4fdcff;
+  background:rgba(18,109,255,.08);
+  font-size:.48rem;
+  font-weight:950;
+  letter-spacing:.10em;
+}
+
+.rp-world-primary-tabs{
+  gap:20px;
+  padding-top:14px;
+  padding-bottom:13px;
+  border-bottom:1px solid rgba(255,255,255,.055);
+  background:rgba(2,4,9,.92);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+.rp-world-primary-tabs button{
+  color:#68778b;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.82rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.10em;
+}
+
+.rp-world-primary-tabs button.active{
+  color:#fff;
+}
+
+.rp-world-primary-tabs button.active::after{
+  width:28px;
+  height:2px;
+  margin-top:7px;
+  background:#42d4ff;
+  box-shadow:0 0 14px rgba(66,212,255,.38);
+}
+
+.rp-world-primary-tabs>span{
+  color:#28313d;
+}
+
+.rp-world-body{
+  padding-top:18px;
+}
+
+/* Profile-style premium panels. */
+.rp-world-composer,
+.rp-world-post,
+.rp-chat-thread-wrap,
+.rp-world-empty{
+  border:1px solid transparent;
+  background:
+    linear-gradient(145deg,rgba(5,10,18,.96),rgba(3,7,13,.975)) padding-box,
+    linear-gradient(112deg,
+      rgba(22,163,255,.62) 0%,
+      rgba(64,150,220,.24) 28%,
+      rgba(255,255,255,.07) 52%,
+      rgba(184,61,82,.24) 73%,
+      rgba(255,45,62,.50) 100%) border-box;
+  box-shadow:0 18px 48px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.018);
+}
+
+.rp-world-composer{
+  padding:16px;
+  border-radius:20px;
+}
+
+.rp-world-post{
+  padding:16px 15px 14px;
+  border-radius:20px;
+}
+
+.rp-world-feed{
+  gap:12px;
+  margin-top:11px;
+}
+
+.rp-world-composer-avatar,
+.rp-world-avatar,
+.rp-world-comment-avatar,
+.rp-chat-message-avatar{
+  border:1px solid rgba(72,215,255,.22);
+  color:#fff;
+  background:linear-gradient(145deg,#0879ff,#0643b8);
+  box-shadow:0 0 18px rgba(8,108,255,.12),inset 0 1px 0 rgba(255,255,255,.12);
+}
+
+.rp-world-composer textarea{
+  color:#f7fbff;
+  font-size:.84rem;
+}
+
+.rp-world-composer textarea::placeholder{
+  color:#6e7e92;
+}
+
+.rp-world-composer-foot{
+  border-top:1px solid rgba(255,255,255,.055);
+}
+
+.rp-world-composer-foot small{
+  color:#5f7186;
+  font-size:.44rem;
+  font-weight:950;
+  letter-spacing:.10em;
+}
+
+.rp-world-composer-foot button,
+.rp-world-comment-form button,
+.rp-chat-form button{
+  color:#00131b;
+  background:linear-gradient(110deg,#2987ff,#25d5ef);
+  box-shadow:0 0 18px rgba(37,213,239,.10);
+}
+
+.rp-world-post-author strong{
+  color:#f7fbff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.82rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.015em;
+}
+
+.rp-world-post-author span{
+  color:#617084;
+  font-size:.46rem;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+
+.rp-world-post-copy{
+  color:#dce5ef;
+  font-size:.82rem;
+  line-height:1.52;
+}
+
+.rp-world-post-actions{
+  border-top:1px solid rgba(255,255,255,.05);
+}
+
+.rp-world-post-actions button{
+  min-height:34px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:999px;
+  color:#8291a4;
+  background:#080e17;
+  font-size:.50rem;
+  font-weight:950;
+  letter-spacing:.06em;
+}
+
+.rp-world-post-actions button.active{
+  color:#ff7888;
+  border-color:rgba(255,60,82,.17);
+  background:rgba(255,60,82,.08);
+}
+
+.rp-world-comment>div:last-child{
+  border:1px solid rgba(255,255,255,.055);
+  border-radius:13px;
+  background:#070c14;
+}
+
+.rp-world-comment p strong{
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-style:italic;
+  font-weight:950;
+}
+
+.rp-world-comment-form input{
+  border:1px solid rgba(255,255,255,.075);
+  color:#eef5fb;
+  background:#070c14;
+}
+
+.rp-world-comment-form input:focus{
+  border-color:rgba(72,215,255,.30);
+}
+
+/* Chats follow the same card system as Profile sections. */
+.rp-chat-channel,
+.rp-chat-team-waiting{
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:14px;
+  background:#070c14;
+}
+
+.rp-chat-channel strong,
+.rp-chat-team-waiting strong,
+.rp-chat-thread-head strong{
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-style:italic;
+  font-weight:950;
+}
+
+.rp-chat-channel.active{
+  border-color:rgba(72,215,255,.24);
+  background:linear-gradient(135deg,rgba(18,103,158,.16),#070c14 72%);
+  box-shadow:inset 0 -2px 0 rgba(72,215,255,.70);
+}
+
+.rp-chat-thread-wrap{
+  border-radius:20px;
+  overflow:hidden;
+}
+
+.rp-chat-thread-head{
+  border-bottom:1px solid rgba(255,255,255,.055);
+  background:rgba(7,12,20,.96);
+}
+
+.rp-chat-thread{
+  background:rgba(3,7,13,.62);
+}
+
+.rp-chat-bubble{
+  border:1px solid rgba(255,255,255,.045);
+  background:#0a111c;
+}
+
+.rp-chat-message.mine .rp-chat-bubble{
+  border-color:rgba(72,215,255,.16);
+  background:linear-gradient(145deg,#0d65d9,#0d4a99);
+}
+
+.rp-chat-form{
+  border-top:1px solid rgba(255,255,255,.055);
+  background:rgba(7,12,20,.96);
+}
+
+.rp-chat-form textarea{
+  border:1px solid rgba(255,255,255,.075);
+  color:#eef5fb;
+  background:#050a11;
+}
+
+.rp-chat-form textarea:focus{
+  border-color:rgba(72,215,255,.28);
+}
+
+.rp-world-empty{
+  border-radius:20px;
+}
+
+.rp-world-empty strong,
+.rp-chat-empty strong{
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-style:italic;
+  font-weight:950;
+}
+
 /* Mobile height tuning: the ball follows the selector rather than the viewport crop. */
 @media(max-height:760px){
   .rp-main-menu::after,
