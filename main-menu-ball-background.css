@@ -115,6 +115,11 @@
   z-index:2;
 }
 
+/* Keep the World header clean: WORLD is enough branding here. */
+.rp-world-title span{
+  display:none!important;
+}
+
 /* Mobile height tuning: the ball follows the selector rather than the viewport crop. */
 @media(max-height:760px){
   .rp-main-menu::after,
