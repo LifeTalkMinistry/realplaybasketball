@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-replay-authority-v15';
+  const version = '20260908-replay-session-identity-v16';
   const html = document.documentElement;
   html.classList.add('js');
 
