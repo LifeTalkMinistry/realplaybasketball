@@ -1319,3 +1319,14 @@ body.rp-career-replay-open{overflow:hidden}
     min-width:38px!important;
   }
 }
+
+
+/* Nudge the left replay controls slightly right to better cover YouTube chrome. */
+.rp-career-replay-video-controls{
+  padding-left:10px!important;
+}
+@media(max-width:620px){
+  .rp-career-replay-video-controls{
+    padding-left:10px!important;
+  }
+}
