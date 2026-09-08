@@ -5,7 +5,10 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
   let busy = false;
-  let syncScheduled = false;
+  let currentMode = null;
+  let currentSessionId = 0;
+  let currentGameStatus = null;
+  let lastError = '';
 
   function root() {
     return document.querySelector('.rp-admin-control');
@@ -15,36 +18,17 @@
     return localStorage.getItem(TOKEN_KEY) || '';
   }
 
-  function modeFromBadge() {
-    const badge = root()?.querySelector('[data-rp-entry-mode-badge]');
-    if (!badge) return null;
-    if (badge.classList.contains('replay')) return 'replay';
-    return String(badge.textContent || '').toUpperCase().includes('REPLAY') ? 'replay' : 'live';
+  function normalizeMode(value) {
+    const mode = String(value || '').trim().toLowerCase();
+    return mode === 'replay' ? 'replay' : mode === 'live' ? 'live' : null;
   }
 
-  function enforceScoringTabs(mode) {
-    const adminRoot = root();
-    if (!adminRoot || !mode) return;
-    const liveTab = adminRoot.querySelector('[data-admin-tab="live"]');
-    const videoTab = adminRoot.querySelector('[data-rp-video-tab]');
-    const replay = mode === 'replay';
-
-    if (liveTab) {
-      liveTab.hidden = replay;
-      liveTab.setAttribute('aria-hidden', replay ? 'true' : 'false');
-      liveTab.tabIndex = replay ? -1 : 0;
-    }
-    if (videoTab) {
-      videoTab.hidden = !replay;
-      videoTab.setAttribute('aria-hidden', replay ? 'false' : 'true');
-      videoTab.tabIndex = replay ? 0 : -1;
-    }
-
-    if (replay && liveTab?.classList.contains('active')) {
-      window.setTimeout(() => videoTab?.click(), 0);
-    } else if (!replay && videoTab?.classList.contains('active')) {
-      window.setTimeout(() => adminRoot.querySelector('[data-admin-tab="session"]')?.click(), 0);
-    }
+  function rememberControl(control) {
+    const session = control?.session || null;
+    currentSessionId = Number(session?.id || 0);
+    currentMode = session ? normalizeMode(session.gameEntryMode || session.game_entry_mode) : null;
+    currentGameStatus = session?.gameStatus || null;
+    syncPanel();
   }
 
   function ensureStyles() {
@@ -68,15 +52,15 @@
     ensureStyles();
     const adminRoot = root();
     if (!adminRoot) return;
+
     const card = adminRoot.querySelector('.rp-admin-session-summary');
-    const badge = card?.querySelector('[data-rp-entry-mode-badge]');
-    if (!card || !badge) return;
+    let panel = card?.querySelector('[data-rp-game-type-switch]');
 
-    const mode = modeFromBadge();
-    if (!mode) return;
-    enforceScoringTabs(mode);
+    if (!card || !currentSessionId || !currentMode || currentGameStatus !== 'setup') {
+      panel?.remove();
+      return;
+    }
 
-    let panel = card.querySelector('[data-rp-game-type-switch]');
     if (!panel) {
       panel = document.createElement('div');
       panel.className = 'rp-game-type-switch';
@@ -91,44 +75,35 @@
     }
 
     const current = panel.querySelector('[data-rp-game-type-current]');
-    const currentLabel = mode === 'replay' ? 'REPLAY RECORDED · VIDEO' : 'FUTURE LIVE';
-    if (current && current.textContent !== currentLabel) current.textContent = currentLabel;
+    const currentText = currentMode === 'replay' ? 'REPLAY RECORDED · VIDEO' : 'FUTURE LIVE';
+    if (current && current.textContent !== currentText) current.textContent = currentText;
 
     const button = panel.querySelector('[data-rp-game-type-change]');
     if (button) {
-      const buttonLabel = busy ? 'CHANGING…' : (mode === 'replay' ? 'MAKE FUTURE LIVE' : 'MAKE REPLAY');
-      if (button.disabled !== busy) button.disabled = busy;
-      if (button.textContent !== buttonLabel) button.textContent = buttonLabel;
+      button.disabled = busy;
+      const text = busy ? 'CHANGING…' : (currentMode === 'replay' ? 'MAKE FUTURE LIVE' : 'MAKE REPLAY');
+      if (button.textContent !== text) button.textContent = text;
     }
-  }
 
-  function scheduleSync() {
-    if (syncScheduled) return;
-    syncScheduled = true;
-    window.requestAnimationFrame(() => {
-      syncScheduled = false;
-      syncPanel();
-    });
+    const status = panel.querySelector('[data-rp-game-type-status]');
+    if (status && status.textContent !== lastError) status.textContent = lastError;
   }
 
   async function changeType() {
-    if (busy) return;
-    const current = modeFromBadge();
-    if (!current) return;
-    const next = current === 'replay' ? 'live' : 'replay';
+    if (busy || !currentSessionId || !currentMode || currentGameStatus !== 'setup') return;
+    const next = currentMode === 'replay' ? 'live' : 'replay';
     const label = next === 'replay' ? 'REPLAY RECORDED' : 'FUTURE LIVE';
     if (!window.confirm(`Change this setup game to ${label}?`)) return;
 
     const auth = token();
-    const panel = root()?.querySelector('[data-rp-game-type-switch]');
-    const status = panel?.querySelector('[data-rp-game-type-status]');
     if (!auth) {
-      if (status) status.textContent = 'Admin session is not available. Log in again.';
+      lastError = 'Admin session is not available. Log in again.';
+      syncPanel();
       return;
     }
 
     busy = true;
-    if (status && status.textContent) status.textContent = '';
+    lastError = '';
     syncPanel();
 
     try {
@@ -145,21 +120,22 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data?.message || data?.error || `Request failed (${response.status}).`);
 
-      const savedMode = String(data?.control?.session?.gameEntryMode || next).toLowerCase() === 'replay' ? 'replay' : 'live';
-      const badge = root()?.querySelector('[data-rp-entry-mode-badge]');
-      if (badge) {
-        badge.classList.toggle('replay', savedMode === 'replay');
-        const badgeLabel = savedMode === 'replay' ? 'REPLAY · VIDEO' : 'FUTURE · LIVE';
-        if (badge.textContent !== badgeLabel) badge.textContent = badgeLabel;
+      const control = data?.control || null;
+      if (control) {
+        rememberControl(control);
+        window.__realPlayGameEntryModeApplyControl?.(control);
       }
-      enforceScoringTabs(savedMode);
-      window.dispatchEvent(new CustomEvent('realplay:admin-render'));
 
-      if (savedMode === 'replay') {
-        window.setTimeout(() => root()?.querySelector('[data-rp-video-tab]')?.click(), 80);
+      // Synchronize the base admin's own control object, then let its normal
+      // render path rebuild the card. This keeps one backend state authority.
+      await window.__realPlayRefreshAdminGameControl?.();
+      root()?.querySelector('[data-admin-tab="session"]')?.click();
+
+      if (next === 'replay') {
+        window.setTimeout(() => root()?.querySelector('[data-rp-video-tab]')?.click(), 120);
       }
     } catch (error) {
-      if (status) status.textContent = error.message || 'Unable to change the game type.';
+      lastError = error.message || 'Unable to change the game type.';
     } finally {
       busy = false;
       syncPanel();
@@ -167,15 +143,21 @@
   }
 
   document.addEventListener('click', (event) => {
-    if (!event.target.closest('[data-rp-game-type-change]')) return;
+    if (!event.target.closest?.('[data-rp-game-type-change]')) return;
     event.preventDefault();
+    event.stopPropagation();
     changeType();
   }, true);
 
-  window.addEventListener('realplay:admin-render', scheduleSync);
-  window.addEventListener('focus', scheduleSync);
+  window.addEventListener('realplay:entry-mode-state', (event) => {
+    if (event.detail?.control) rememberControl(event.detail.control);
+  });
 
-  const observer = new MutationObserver(scheduleSync);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  window.addEventListener('realplay:admin-render', () => {
+    const mode = window.__realPlayGameEntryModeCurrentMode?.();
+    if (mode && !currentMode) currentMode = mode;
+    window.requestAnimationFrame(syncPanel);
+  });
+
   syncPanel();
 })();
