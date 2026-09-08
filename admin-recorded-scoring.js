@@ -287,7 +287,7 @@
     const rosterReady = expected > 0 && west === expected && east === expected;
     const uploaded = Boolean(recordingState.recording);
     const canStart = uploaded && rosterReady && !busy;
-    return `<section class="rp-video-step ${rosterReady ? 'complete' : ''}">
+    return `<section class="rp-video-step ${rosterReady ? 'complete' : ''}" data-rp-video-roster-setup>
       ${stepHeader('2', 'CHOOSE PLAYERS', 'Search or create the exact people visible in this game.', rosterReady)}
       <div class="rp-video-search-wrap">
         <input type="search" data-rp-video-search value="${esc(searchQuery)}" placeholder="Search player name or email" autocomplete="off">
@@ -531,20 +531,70 @@
     if (wrap) wrap.innerHTML = searchResultsHtml();
   }
 
+  function patchRosterSetupDOM() {
+    const adminBody = body();
+    const section = adminBody?.querySelector('[data-rp-video-roster-setup]');
+    if (!section) return false;
+
+    const rules = control.session?.rules || null;
+    const expected = Number(rules?.playersPerSide || 0);
+    const west = rosterPlayers('west').length;
+    const east = rosterPlayers('east').length;
+    const rosterReady = expected > 0 && west === expected && east === expected;
+    const canStart = Boolean(recordingState.recording) && rosterReady && !busy;
+
+    const rosters = section.querySelector('.rp-video-rosters');
+    if (rosters) rosters.innerHTML = `${rosterCard('west')}${rosterCard('east')}`;
+
+    const check = section.querySelector('.rp-video-roster-check');
+    if (check) {
+      check.classList.toggle('ready', rosterReady);
+      check.textContent = rules
+        ? `${control.session?.rulesLabel || ''} needs exactly ${expected} West + ${expected} East. Current: ${west} + ${east}.`
+        : 'Set the game rules to validate the roster size.';
+    }
+
+    const start = section.querySelector('[data-rp-video-start]');
+    if (start) start.disabled = !canStart;
+
+    section.classList.toggle('complete', rosterReady);
+    updateSearchResults();
+    return true;
+  }
+
   async function mutateRoster(payload, successText = '') {
     if (busy) return;
     busy = true;
     notice = '';
+
+    const searchInput = body()?.querySelector('[data-rp-video-search]');
+    const hadFocus = document.activeElement === searchInput;
+    const caretStart = searchInput?.selectionStart ?? null;
+    const caretEnd = searchInput?.selectionEnd ?? null;
+
     try {
       await controlAction(payload);
       notice = successText;
       noticeType = 'success';
+      busy = false;
+
+      // Roster changes should not remount the YouTube/video workspace.
+      // Patch only the roster/search/readiness nodes in place.
+      if (!patchRosterSetupDOM()) render();
+
+      const nextInput = body()?.querySelector('[data-rp-video-search]');
+      if (hadFocus && nextInput) {
+        nextInput.focus({ preventScroll: true });
+        if (caretStart !== null && caretEnd !== null && typeof nextInput.setSelectionRange === 'function') {
+          try { nextInput.setSelectionRange(caretStart, caretEnd); } catch (_) {}
+        }
+      }
     } catch (error) {
       notice = error.message || 'Roster update failed.';
       noticeType = 'error';
-    } finally {
       busy = false;
-      render();
+      // Keep the page stable even on roster errors unless the setup section vanished.
+      if (!patchRosterSetupDOM()) render();
     }
   }
 
