@@ -914,3 +914,94 @@ body.rp-career-replay-open{overflow:hidden}
     border-radius:12px!important;
   }
 }
+
+
+/* Real Play cover layer over unavoidable YouTube iframe branding/chrome.
+   Left = session identity, center = Real Play play/pause, right = score at timestamp. */
+.rp-career-replay-brand-cover{
+  position:absolute;
+  z-index:3;
+  inset:0;
+  pointer-events:none;
+}
+.rp-career-replay-brand-left,
+.rp-career-replay-brand-score{
+  position:absolute;
+  bottom:10px;
+  display:flex;
+  align-items:center;
+  min-height:34px;
+  box-sizing:border-box;
+  padding:0 12px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:999px;
+  background:rgba(2,7,13,.93);
+  box-shadow:0 8px 22px rgba(0,0,0,.34);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.52rem;
+  font-style:italic;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.rp-career-replay-brand-left{
+  left:10px;
+  max-width:42%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:#54c8ff;
+  border-color:rgba(19,152,255,.34);
+}
+.rp-career-replay-brand-score{
+  right:10px;
+  color:#f5f8fb;
+  border-color:rgba(255,53,66,.30);
+}
+.rp-career-replay-brand-play{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:58px;
+  height:58px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid rgba(87,196,255,.38);
+  border-radius:50%;
+  background:rgba(3,10,17,.91);
+  color:#fff;
+  box-shadow:0 10px 34px rgba(0,0,0,.45),0 0 0 5px rgba(19,152,255,.08);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  transform:translate(-50%,-50%);
+  pointer-events:auto;
+  cursor:pointer;
+  font-size:1.35rem;
+  font-weight:950;
+  line-height:1;
+  transition:opacity .15s ease,transform .15s ease;
+}
+.rp-career-replay-brand-play.playing{
+  opacity:0;
+  transform:translate(-50%,-50%) scale(.88);
+  pointer-events:none;
+}
+@media(max-width:620px){
+  .rp-career-replay-brand-left,
+  .rp-career-replay-brand-score{
+    bottom:8px;
+    min-height:30px;
+    padding:0 9px;
+    font-size:.45rem;
+  }
+  .rp-career-replay-brand-left{left:8px;max-width:39%}
+  .rp-career-replay-brand-score{right:8px}
+  .rp-career-replay-brand-play{width:52px;height:52px;font-size:1.18rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .rp-career-replay-brand-play{transition:none}
+}
