@@ -666,15 +666,21 @@
     const stage = root.querySelector('[data-rp-career-replay-stage]');
     const overlay = root.querySelector('[data-rp-career-replay-video-controls]');
     let controlsTimer = null;
+    let brandCoverTimer = null;
 
     const brandCover = root.querySelector('[data-rp-career-replay-brand-cover]');
 
     const showControls = () => {
       if (overlay) overlay.classList.add('show');
       if (brandCover) brandCover.classList.add('show');
+
       if (controlsTimer) clearTimeout(controlsTimer);
       controlsTimer = setTimeout(() => {
         overlay?.classList.remove('show');
+      }, 2600);
+
+      if (brandCoverTimer) clearTimeout(brandCoverTimer);
+      brandCoverTimer = setTimeout(() => {
         brandCover?.classList.remove('show');
       }, 7000);
     };
