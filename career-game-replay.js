@@ -6,8 +6,8 @@
   const COMMUNITY_URL = `${API_BASE_URL}/api/real-play/community`;
   const TOKEN_KEY = 'real_play_access_token';
   const SCORE_POP_MS = 1800;
-  const VIDEO_CONTROLS_FADE_MS = 2600;
   const BRAND_COVER_FADE_MS = 7000;
+  const VIDEO_CONTROLS_FADE_MS = BRAND_COVER_FADE_MS;
   const ROSTER_CACHE_MS = 30000;
 
   let viewer = null;
