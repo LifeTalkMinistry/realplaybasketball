@@ -11,6 +11,10 @@
   let selectedMode = 'live';
   let currentMode = null;
   let currentSessionId = 0;
+  let currentReplayCompleted = false;
+  let currentWestScore = 0;
+  let currentEastScore = 0;
+  let finalizeBusy = false;
   let loadTimer = null;
 
   function normalizeMode(value) {
@@ -38,9 +42,13 @@
     const session = data?.control?.session || null;
     currentSessionId = Number(session?.id || 0);
     currentMode = session ? normalizeMode(session.gameEntryMode || session.game_entry_mode || 'live') : null;
+    currentReplayCompleted = Boolean(session?.recordedScoring?.reviewCompleted);
+    currentWestScore = Number(session?.westScore || 0);
+    currentEastScore = Number(session?.eastScore || 0);
     window.requestAnimationFrame(() => {
       syncTabs();
       syncSessionBadge();
+      syncReplayFinalize();
     });
   }
 
@@ -52,6 +60,9 @@
       } else if (path === SESSION_PATH && data?.session?.id) {
         currentSessionId = Number(data.session.id);
         currentMode = normalizeMode(data.session.gameEntryMode || data.session.game_entry_mode || selectedMode);
+        currentReplayCompleted = false;
+        currentWestScore = 0;
+        currentEastScore = 0;
         selectedMode = 'live';
         window.requestAnimationFrame(apply);
       }
@@ -172,6 +183,21 @@
     badge.textContent = currentMode === 'replay' ? 'REPLAY · VIDEO' : 'FUTURE · LIVE';
   }
 
+  function syncReplayFinalize() {
+    if (currentMode !== 'replay') return;
+    const button = root()?.querySelector('[data-control-action="finalize"]');
+    if (!button) return;
+    const tie = currentWestScore === currentEastScore;
+    button.disabled = finalizeBusy || !currentReplayCompleted || tie;
+    if (!currentReplayCompleted) {
+      button.title = 'Verify and submit the recorded score sheet first.';
+    } else if (tie) {
+      button.title = 'A Real Play game cannot be finalized as a tie.';
+    } else {
+      button.removeAttribute('title');
+    }
+  }
+
   function syncTabs() {
     const adminRoot = root();
     if (!adminRoot) return;
@@ -218,6 +244,45 @@
     } catch (_) {}
   }
 
+  async function finalizeReplay() {
+    if (finalizeBusy || currentMode !== 'replay' || !currentReplayCompleted) return;
+    if (currentWestScore === currentEastScore) return;
+    if (!window.confirm('Confirm the FINAL RESULT for this recorded replay game? This will lock the verified score and stats.')) return;
+
+    const token = localStorage.getItem(TOKEN_KEY) || '';
+    if (!token) {
+      window.alert('Admin session is not available. Log in again.');
+      return;
+    }
+
+    finalizeBusy = true;
+    syncReplayFinalize();
+    try {
+      const response = await window.fetch(`${API_BASE_URL}${CONTROL_PATH}`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'finalize' }),
+        cache: 'no-store',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.message || data?.error || `Request failed (${response.status}).`);
+      rememberControl(data);
+      await window.__realPlayRefreshAdminGameControl?.();
+    } catch (error) {
+      window.alert(error.message || 'Unable to finalize the replay game.');
+    } finally {
+      finalizeBusy = false;
+      window.requestAnimationFrame(() => {
+        syncReplayFinalize();
+        syncTabs();
+      });
+    }
+  }
+
   function scheduleLoad() {
     if (loadTimer) return;
     loadTimer = window.setTimeout(() => {
@@ -231,6 +296,7 @@
     mountSelector();
     syncTabs();
     syncSessionBadge();
+    syncReplayFinalize();
     if (currentMode === null) scheduleLoad();
   }
 
@@ -245,6 +311,13 @@
     if (video && currentMode === 'live') {
       event.preventDefault();
       event.stopImmediatePropagation();
+      return;
+    }
+    const finalize = event.target.closest('[data-control-action="finalize"]');
+    if (finalize && currentMode === 'replay') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      finalizeReplay();
     }
   }, true);
 
@@ -258,6 +331,7 @@
       mountSelector();
       syncTabs();
       syncSessionBadge();
+      syncReplayFinalize();
     });
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
