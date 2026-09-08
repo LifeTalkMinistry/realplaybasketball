@@ -1221,3 +1221,22 @@ body.rp-career-replay-open{overflow:hidden}
     font-size:.62rem!important;
   }
 }
+
+
+/* Before the viewer starts playback, YouTube shows a wider bottom-right
+   "Watch on YouTube" treatment. Expand only for that initial state, then
+   return to the compact cover once playback has begun. */
+.rp-career-replay-brand-cover.preplay .rp-career-replay-brand-session{
+  width:58%!important;
+  min-width:190px!important;
+  max-width:62%!important;
+  min-height:44px!important;
+}
+@media(max-width:620px){
+  .rp-career-replay-brand-cover.preplay .rp-career-replay-brand-session{
+    width:60%!important;
+    min-width:185px!important;
+    max-width:64%!important;
+    min-height:43px!important;
+  }
+}
