@@ -670,19 +670,22 @@
 
     const brandCover = root.querySelector('[data-rp-career-replay-brand-cover]');
 
+    const showBrandCoverOnly = () => {
+      if (brandCover) brandCover.classList.add('show');
+      if (brandCoverTimer) clearTimeout(brandCoverTimer);
+      brandCoverTimer = setTimeout(() => {
+        brandCover?.classList.remove('show');
+      }, 7000);
+    };
+
     const showControls = () => {
       if (overlay) overlay.classList.add('show');
-      if (brandCover) brandCover.classList.add('show');
+      showBrandCoverOnly();
 
       if (controlsTimer) clearTimeout(controlsTimer);
       controlsTimer = setTimeout(() => {
         overlay?.classList.remove('show');
       }, 2600);
-
-      if (brandCoverTimer) clearTimeout(brandCoverTimer);
-      brandCoverTimer = setTimeout(() => {
-        brandCover?.classList.remove('show');
-      }, 7000);
     };
 
     stage?.addEventListener('click', (event) => {
@@ -713,7 +716,12 @@
       showControls();
     });
     root.querySelectorAll('[data-rp-career-replay-marker]').forEach((button) => {
-      button.addEventListener('click', () => seekToMs(Number(button.dataset.rpCareerReplayMarker || 0), true));
+      button.addEventListener('click', () => {
+        seekToMs(Number(button.dataset.rpCareerReplayMarker || 0), true);
+        // Seeking a timestamp can make YouTube show its native chrome.
+        // Cover that chrome, but do NOT show Real Play's play/mute/fullscreen controls.
+        showBrandCoverOnly();
+      });
     });
     showControls();
   }
