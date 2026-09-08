@@ -1405,3 +1405,18 @@ body.rp-career-replay-open{overflow:hidden}
     font-size:.95rem;
   }
 }
+
+
+/* Top-right fullscreen control has its own short visibility cycle. */
+.rp-career-replay-expand-fixed{
+  opacity:0!important;
+  pointer-events:none!important;
+  transition:opacity .18s ease!important;
+}
+.rp-career-replay-expand-fixed.show{
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+@media(prefers-reduced-motion:reduce){
+  .rp-career-replay-expand-fixed{transition:none!important}
+}
