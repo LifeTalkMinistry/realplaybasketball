@@ -314,6 +314,22 @@
     }
   });
 
+  const heroTitle = view.querySelector('[data-rp-ranking-title]');
+  function cleanHeroTitle() {
+    if (!heroTitle) return;
+    if (String(heroTitle.textContent || '').trim() === 'GET RANKED.') {
+      heroTitle.textContent = 'GET RANKED';
+    }
+  }
+  if (heroTitle) {
+    new MutationObserver(cleanHeroTitle).observe(heroTitle, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+    cleanHeroTitle();
+  }
+
   new MutationObserver(() => {
     if (!view.classList.contains('open')) closeInfo();
   }).observe(view, { attributes: true, attributeFilter: ['class'] });
