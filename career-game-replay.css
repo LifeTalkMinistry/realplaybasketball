@@ -1185,3 +1185,11 @@ body.rp-career-replay-open{overflow:hidden}
 @media(prefers-reduced-motion:reduce){
   .rp-career-replay-brand-cover{transition:none!important}
 }
+
+
+/* Public replay: YouTube is only a passive video surface.
+   Real Play controls remain the only interactive layer. */
+.rp-career-replay-stage iframe,
+.rp-career-replay-yt-host{
+  pointer-events:none!important;
+}
