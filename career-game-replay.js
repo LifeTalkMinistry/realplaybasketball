@@ -784,6 +784,7 @@
     root.querySelector('[data-rp-career-replay-seek]')?.addEventListener('input', (event) => {
       if (!lastDurationMs) return;
       seekToMs(lastDurationMs * (Number(event.target.value || 0) / 1000), false);
+      showControls();
     });
     root.querySelector('[data-rp-career-replay-fullscreen]')?.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -793,9 +794,9 @@
     root.querySelectorAll('[data-rp-career-replay-marker]').forEach((button) => {
       button.addEventListener('click', () => {
         seekToMs(Number(button.dataset.rpCareerReplayMarker || 0), true);
-        // Seeking a timestamp can make YouTube show its native chrome.
-        // Cover that chrome, but do NOT show Real Play's play/mute/fullscreen controls.
-        showBrandCoverOnly();
+        // Any interaction that exposes the YouTube overlay must expose the
+        // matching Real Play controls as well.
+        showControls();
       });
     });
     showControls();
