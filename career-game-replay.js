@@ -676,7 +676,7 @@
       controlsTimer = setTimeout(() => {
         overlay?.classList.remove('show');
         brandCover?.classList.remove('show');
-      }, 1600);
+      }, 4200);
     };
 
     stage?.addEventListener('click', (event) => {
