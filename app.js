@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-main-menu-desktop-input-v12';
+  const version = '20260908-single-game-type-v13';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -160,6 +160,7 @@
       'admin-recorded-stat-controls-fix.js',
       'admin-recorded-scoring-winner.js',
       'admin-access-bootstrap.js',
+      'admin-session-picker-v5-loader.js',
       'open-rank-auto-id.js',
       'career-game-replay-admin-edit.js',
       'admin-game-rotation.js',
