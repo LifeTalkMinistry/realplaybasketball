@@ -242,7 +242,7 @@
       .map((event) => {
         const stamp = Number(event.videoTimestampMs || 0);
         const left = Math.max(0, Math.min(100, stamp / duration * 100));
-        const replayStart = Math.max(0, stamp - 5000);
+        const replayStart = Math.max(0, stamp - 7000);
         return `<button type="button" class="rp-video-marker" style="left:${left}%" data-rp-video-marker="${replayStart}" title="${Number(event.shotValue)}PT make at ${formatTime(stamp)}">🏀</button>`;
       }).join('');
   }
@@ -257,7 +257,7 @@
       ${media}
       <div class="rp-video-timebar"><span>VIDEO TIME</span><strong data-rp-video-time>${formatTime(playheadMs)}</strong></div>
       <div class="rp-video-marker-rail"><i></i><div data-rp-video-markers>${markerButtons()}</div></div>
-      <div class="rp-video-marker-key"><span>🏀 MADE BASKET</span><small>Tap a ball to replay from 5 seconds before the make.</small></div>
+      <div class="rp-video-marker-key"><span>🏀 MADE BASKET</span><small>Tap a ball to replay from 7 seconds before the make.</small></div>
     </div>`;
   }
 
@@ -274,7 +274,7 @@
       <div class="rp-admin-title"><span class="rp-admin-kicker">RECORDED SCORING</span><h1>WATCH &amp; SCORE</h1><p>Use the same scorer controls to correct this official game.</p></div>
       ${noticeHtml()}
       ${videoPlayerHtml()}
-      <div class="rp-video-auto-note"><strong>5-SECOND LEAD-IN IS AUTOMATIC</strong><span>A made basket keeps its replay marker 5 seconds before the score.</span></div>
+      <div class="rp-video-auto-note"><strong>7-SECOND LEAD-IN IS AUTOMATIC</strong><span>A made basket keeps its replay marker 7 seconds before the score.</span></div>
       <div class="rp-video-scoreboard"><div><small>WEST</small><strong data-rp-video-score-west>${teamScore('west')}</strong></div><span>—</span><div><small>EAST</small><strong data-rp-video-score-east>${teamScore('east')}</strong></div></div>
       <div class="rp-video-score-rosters">${rosterHtml('west')}${rosterHtml('east')}</div>
       <div data-rp-video-selected-panel>${selectedPanelHtml()}</div>
