@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-profile-ui-stability-v10';
+  const version = '20260908-profile-metrics-stability-v11';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -61,6 +61,7 @@
     'profile-identity-cleanup.css',
     'real-play-profile-intro.css',
     'real-play-profile-metrics.css',
+    'profile-metrics-stability.css',
     'membership.css',
     'real-play-brand-system.css',
     'main-menu-brand-overrides.css',
@@ -133,6 +134,7 @@
       'profile-load-guard.js',
       'real-play-profile.js',
       'real-play-profile-intro.js',
+      'profile-metrics-stability.js',
       'real-play-profile-metrics.js',
       'real-play-world-players.js',
       'visitor-world-players.js',
