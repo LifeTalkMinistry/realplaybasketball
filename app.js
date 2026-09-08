@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-single-game-type-v13';
+  const version = '20260908-session-number-root-v14';
   const html = document.documentElement;
   html.classList.add('js');
 
