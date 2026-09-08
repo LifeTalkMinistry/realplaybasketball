@@ -40,6 +40,7 @@
     'mobile-lobby-cleanup.css',
     'main-menu.css',
     'ranking-games.css',
+    'ranking-games-cleanup.css',
     'three-v-three-beta.css',
     'three-v-three-secure-spot.css',
     'three-v-three-refinement.css',
