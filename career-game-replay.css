@@ -1062,3 +1062,45 @@ body.rp-career-replay-open{overflow:hidden}
     border-radius:15px!important;
   }
 }
+
+
+/* Final YouTube chrome coverage pass: extend masks slightly farther so no
+   native share/watch-later or Watch-on-YouTube edges peek through. */
+.rp-career-replay-brand-left{
+  left:4px!important;
+  width:34%!important;
+}
+.rp-career-replay-brand-score{
+  right:4px!important;
+  width:53%!important;
+}
+.rp-career-replay-brand-left,
+.rp-career-replay-brand-score{
+  bottom:4px!important;
+  min-height:44px!important;
+}
+.rp-career-replay-brand-play{
+  width:82px!important;
+  height:58px!important;
+  border-radius:17px!important;
+}
+
+@media(max-width:620px){
+  .rp-career-replay-brand-left{
+    left:4px!important;
+    width:35%!important;
+  }
+  .rp-career-replay-brand-score{
+    right:4px!important;
+    width:54%!important;
+  }
+  .rp-career-replay-brand-left,
+  .rp-career-replay-brand-score{
+    bottom:4px!important;
+    min-height:43px!important;
+  }
+  .rp-career-replay-brand-play{
+    width:80px!important;
+    height:56px!important;
+  }
+}
