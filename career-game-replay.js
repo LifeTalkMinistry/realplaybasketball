@@ -309,7 +309,8 @@
     if (!markers.length) return '';
     return markers.map((marker) => {
       const stamp = Math.max(0, Number(marker.videoTimestampMs || 0));
-      return `<button type="button" class="rp-career-replay-timeline-marker" data-rp-career-replay-marker="${Number(marker.replayStartMs ?? Math.max(0, Number(marker.videoTimestampMs || 0) - 7000))}" data-rp-career-marker-stamp="${stamp}" aria-label="Jump to made basket at ${formatTime(stamp)}" title="${formatTime(stamp)}">🏀</button>`;
+      const replayStart = Math.max(0, stamp - 7000);
+      return `<button type="button" class="rp-career-replay-timeline-marker" data-rp-career-replay-marker="${replayStart}" data-rp-career-marker-stamp="${stamp}" aria-label="Jump to made basket at ${formatTime(stamp)}" title="${formatTime(stamp)}">🏀</button>`;
     }).join('');
   }
 
