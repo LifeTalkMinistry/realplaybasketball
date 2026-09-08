@@ -329,6 +329,11 @@
       </div>
       <div class="rp-career-replay-stage" data-rp-career-replay-stage>
         <div data-rp-career-replay-media></div>
+        <div class="rp-career-replay-brand-cover" data-rp-career-replay-brand-cover aria-hidden="true">
+          <div class="rp-career-replay-brand-left" data-rp-career-replay-brand-session>${esc(game.title || 'OPEN RANK')}</div>
+          <button type="button" class="rp-career-replay-brand-play" data-rp-career-replay-brand-play aria-label="Play or pause replay">▶</button>
+          <div class="rp-career-replay-brand-score" data-rp-career-replay-brand-score>WEST 0 — 0 EAST</div>
+        </div>
         <div class="rp-career-replay-assist-pop rp-career-replay-stat-pop" data-rp-career-score-pop aria-live="polite">
           <span data-rp-career-score-label>SCORE BY</span>
           <strong data-rp-career-score-name>PLAYER</strong>
@@ -589,6 +594,27 @@
     pop.classList.add('show');
   }
 
+  function scoreAtReplayTime(currentMs) {
+    let west = 0;
+    let east = 0;
+    const markers = Array.isArray(replay?.markers) ? replay.markers : [];
+
+    for (const marker of markers) {
+      const stamp = Number(marker?.videoTimestampMs || 0);
+      if (!Number.isFinite(stamp) || stamp > currentMs) continue;
+
+      const team = String(marker?.team || marker?.side || '').trim().toLowerCase();
+      const rawValue = marker?.shotValue ?? marker?.shot_value ?? marker?.points ?? marker?.value ?? 0;
+      const value = Number(rawValue);
+      if (!Number.isFinite(value) || value <= 0) continue;
+
+      if (team === 'west') west += value;
+      else if (team === 'east') east += value;
+    }
+
+    return { west, east };
+  }
+
   function updatePlaybackUi() {
     if (!viewer?.classList.contains('open')) return;
     lastCurrentMs = currentTimeMs();
@@ -605,6 +631,20 @@
     if (clock) clock.textContent = `${formatTime(lastCurrentMs)} / ${formatTime(lastDurationMs)}`;
     const play = viewer.querySelector('[data-rp-career-replay-play]');
     if (play) play.textContent = lastPlaying ? '❚❚' : '▶';
+
+    const brandPlay = viewer.querySelector('[data-rp-career-replay-brand-play]');
+    if (brandPlay) {
+      brandPlay.textContent = lastPlaying ? '❚❚' : '▶';
+      brandPlay.classList.toggle('playing', lastPlaying);
+      brandPlay.setAttribute('aria-label', lastPlaying ? 'Pause replay' : 'Play replay');
+    }
+
+    const brandScore = viewer.querySelector('[data-rp-career-replay-brand-score]');
+    if (brandScore) {
+      const score = scoreAtReplayTime(lastCurrentMs);
+      brandScore.textContent = `WEST ${score.west} — ${score.east} EAST`;
+    }
+
     const mute = viewer.querySelector('[data-rp-career-replay-mute]');
     if (mute) mute.textContent = lastMuted ? '🔇' : '🔊';
 
@@ -646,11 +686,14 @@
       showControls();
     });
 
-    root.querySelector('[data-rp-career-replay-play]')?.addEventListener('click', (event) => {
+    const toggleReplayFromButton = (event) => {
       event.stopPropagation();
       togglePlay();
       showControls();
-    });
+    };
+
+    root.querySelector('[data-rp-career-replay-play]')?.addEventListener('click', toggleReplayFromButton);
+    root.querySelector('[data-rp-career-replay-brand-play]')?.addEventListener('click', toggleReplayFromButton);
     root.querySelector('[data-rp-career-replay-mute]')?.addEventListener('click', (event) => {
       event.stopPropagation();
       toggleMute();
