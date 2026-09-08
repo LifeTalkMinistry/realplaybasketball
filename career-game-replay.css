@@ -1104,3 +1104,29 @@ body.rp-career-replay-open{overflow:hidden}
     height:56px!important;
   }
 }
+
+
+/* Make the branded YouTube-cover labels readable at mobile replay size. */
+.rp-career-replay-brand-left,
+.rp-career-replay-brand-score{
+  font-size:.72rem!important;
+  letter-spacing:.045em!important;
+  line-height:1!important;
+  font-weight:950!important;
+}
+.rp-career-replay-brand-left{
+  justify-content:center!important;
+  text-align:center!important;
+}
+.rp-career-replay-brand-score{
+  justify-content:center!important;
+  text-align:center!important;
+}
+
+@media(max-width:620px){
+  .rp-career-replay-brand-left,
+  .rp-career-replay-brand-score{
+    font-size:.66rem!important;
+    letter-spacing:.035em!important;
+  }
+}
