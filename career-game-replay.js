@@ -730,11 +730,22 @@
     const stage = root.querySelector('[data-rp-career-replay-stage]');
     const overlay = root.querySelector('[data-rp-career-replay-video-controls]');
     const brandCover = root.querySelector('[data-rp-career-replay-brand-cover]');
+    const fixedExpand = root.querySelector('[data-rp-career-replay-expand-fixed]');
     let sharedOverlayTimer = null;
+    let expandTimer = null;
+
+    const showExpandBriefly = () => {
+      fixedExpand?.classList.add('show');
+      if (expandTimer) clearTimeout(expandTimer);
+      expandTimer = setTimeout(() => {
+        fixedExpand?.classList.remove('show');
+      }, 3000);
+    };
 
     const showUnifiedOverlay = () => {
       overlay?.classList.add('show');
       brandCover?.classList.add('show');
+      showExpandBriefly();
 
       if (!hasPlaybackStarted) return;
 
@@ -801,6 +812,7 @@
 
     root.querySelector('[data-rp-career-replay-expand-fixed]')?.addEventListener('click', (event) => {
       event.stopPropagation();
+      showExpandBriefly();
       enterReplayFullscreen(stage);
     });
     root.querySelectorAll('[data-rp-career-replay-marker]').forEach((button) => {
@@ -811,6 +823,7 @@
     });
 
     showUnifiedOverlay();
+    showExpandBriefly();
   }
 
   document.addEventListener('click', (event) => {
