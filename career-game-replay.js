@@ -704,74 +704,56 @@
     const root = ensureViewer();
     const stage = root.querySelector('[data-rp-career-replay-stage]');
     const overlay = root.querySelector('[data-rp-career-replay-video-controls]');
-    let controlsTimer = null;
-    let brandCoverTimer = null;
-
     const brandCover = root.querySelector('[data-rp-career-replay-brand-cover]');
+    let sharedOverlayTimer = null;
 
-    const showBrandCoverOnly = () => {
-      if (brandCover) brandCover.classList.add('show');
+    const showUnifiedOverlay = () => {
+      overlay?.classList.add('show');
+      brandCover?.classList.add('show');
+
       if (!hasPlaybackStarted) return;
-      if (brandCoverTimer) clearTimeout(brandCoverTimer);
-      brandCoverTimer = setTimeout(() => {
+
+      if (sharedOverlayTimer) clearTimeout(sharedOverlayTimer);
+      sharedOverlayTimer = setTimeout(() => {
+        overlay?.classList.remove('show');
         brandCover?.classList.remove('show');
       }, BRAND_COVER_FADE_MS);
     };
 
-    const showControls = () => {
-      if (overlay) overlay.classList.add('show');
-      showBrandCoverOnly();
-
-      if (controlsTimer) clearTimeout(controlsTimer);
-      if (hasPlaybackStarted) {
-        controlsTimer = setTimeout(() => {
-          overlay?.classList.remove('show');
-        }, VIDEO_CONTROLS_FADE_MS);
-      }
-    };
-
     const beginPostStartFade = () => {
-      // Before first play these controls intentionally stay visible forever.
-      // As soon as playback actually starts, begin the normal timers even if
-      // the user never taps the screen again.
-      if (controlsTimer) clearTimeout(controlsTimer);
-      controlsTimer = setTimeout(() => {
+      if (sharedOverlayTimer) clearTimeout(sharedOverlayTimer);
+      sharedOverlayTimer = setTimeout(() => {
         overlay?.classList.remove('show');
-      }, VIDEO_CONTROLS_FADE_MS);
-
-      if (brandCoverTimer) clearTimeout(brandCoverTimer);
-      brandCoverTimer = setTimeout(() => {
         brandCover?.classList.remove('show');
       }, BRAND_COVER_FADE_MS);
     };
 
     root.addEventListener('realplay:replay-first-play', beginPostStartFade);
 
-    const revealControlsFromStage = (event) => {
+    const revealUnifiedOverlayFromStage = (event) => {
       if (event.target.closest('[data-rp-career-replay-video-controls]')) return;
-      showControls();
+      showUnifiedOverlay();
     };
 
-    // Any touch/click on the video surface should reveal the Real Play
-    // play/pause, volume, and fullscreen controls, while the Open Rank cover
-    // keeps its own longer timer.
-    stage?.addEventListener('pointerdown', revealControlsFromStage, { passive: true });
-    stage?.addEventListener('touchstart', revealControlsFromStage, { passive: true });
+    // Any interaction that can expose YouTube chrome must expose the complete
+    // Real Play cover set at the same time: Play/Pause + Volume + Open Rank.
+    stage?.addEventListener('pointerdown', revealUnifiedOverlayFromStage, { passive: true });
+    stage?.addEventListener('touchstart', revealUnifiedOverlayFromStage, { passive: true });
     stage?.addEventListener('click', (event) => {
       if (event.target.closest('[data-rp-career-replay-video-controls]')) return;
-      showControls();
+      showUnifiedOverlay();
     });
 
     const toggleMainReplayPlay = (event) => {
       event.stopPropagation();
       togglePlay();
-      showControls();
+      showUnifiedOverlay();
     };
 
     const toggleBrandReplayPlay = (event) => {
       event.stopPropagation();
       togglePlay();
-      showControls();
+      showUnifiedOverlay();
     };
 
     root.querySelector('[data-rp-career-replay-play]')?.addEventListener('click', toggleMainReplayPlay);
@@ -779,27 +761,26 @@
     root.querySelector('[data-rp-career-replay-mute]')?.addEventListener('click', (event) => {
       event.stopPropagation();
       toggleMute();
-      showControls();
+      showUnifiedOverlay();
     });
     root.querySelector('[data-rp-career-replay-seek]')?.addEventListener('input', (event) => {
       if (!lastDurationMs) return;
       seekToMs(lastDurationMs * (Number(event.target.value || 0) / 1000), false);
-      showControls();
+      showUnifiedOverlay();
     });
     root.querySelector('[data-rp-career-replay-fullscreen]')?.addEventListener('click', (event) => {
       event.stopPropagation();
       stage?.requestFullscreen?.().catch?.(() => {});
-      showControls();
+      showUnifiedOverlay();
     });
     root.querySelectorAll('[data-rp-career-replay-marker]').forEach((button) => {
       button.addEventListener('click', () => {
         seekToMs(Number(button.dataset.rpCareerReplayMarker || 0), true);
-        // Any interaction that exposes the YouTube overlay must expose the
-        // matching Real Play controls as well.
-        showControls();
+        showUnifiedOverlay();
       });
     });
-    showControls();
+
+    showUnifiedOverlay();
   }
 
   document.addEventListener('click', (event) => {
