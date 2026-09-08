@@ -1330,3 +1330,14 @@ body.rp-career-replay-open{overflow:hidden}
     padding-left:10px!important;
   }
 }
+
+
+/* Final small right nudge for bottom-left replay controls. */
+.rp-career-replay-video-controls{
+  padding-left:14px!important;
+}
+@media(max-width:620px){
+  .rp-career-replay-video-controls{
+    padding-left:14px!important;
+  }
+}
