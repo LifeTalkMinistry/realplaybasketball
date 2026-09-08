@@ -62,6 +62,10 @@
     return root()?.classList.contains('open');
   }
 
+  function isReplay() {
+    return String(session?.gameEntryMode || session?.game_entry_mode || '').trim().toLowerCase() === 'replay';
+  }
+
   function restoreBlockedControl(node) {
     if (!node?.dataset?.sessionBlocked) return;
     const wasDisabled = node.dataset.sessionWasDisabled === '1';
@@ -83,7 +87,10 @@
     if (!body) return;
 
     body.querySelectorAll('[data-rp-session-start-panel]').forEach((node) => node.remove());
-    if (!session || session.gameStatus !== 'setup') return;
+
+    // REPLAY RECORDED is not a physical LIVE/check-in lifecycle. Its workflow
+    // begins in VIDEO, so never show START SESSION / SESSION ACTIVE here.
+    if (!session || session.gameStatus !== 'setup' || isReplay()) return;
 
     const formCard = body.querySelector('[data-new-session-form]')?.closest('.rp-admin-card');
     const sessionCard = [...body.querySelectorAll('.rp-admin-card')]
@@ -114,6 +121,15 @@
     if (!body || !session || session.gameStatus !== 'setup') return;
 
     let gate = body.querySelector('[data-rp-session-gate]');
+
+    // Replay roster selection is handled by the recorded VIDEO workflow and
+    // must never be blocked by a physical START SESSION requirement.
+    if (isReplay()) {
+      gate?.remove();
+      body.querySelectorAll('[data-session-blocked]').forEach(restoreBlockedControl);
+      return;
+    }
+
     if (!session.sessionStarted) {
       if (!gate) {
         gate = document.createElement('div');
@@ -162,7 +178,7 @@
   }
 
   async function startSession() {
-    if (actionBusy) return;
+    if (actionBusy || isReplay()) return;
     if (!window.confirm('Start this scheduled Real Play session? This opens check-in, but does NOT start the game.')) return;
     actionBusy = true;
     lastError = '';
