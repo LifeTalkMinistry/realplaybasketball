@@ -101,7 +101,7 @@
       shotResult: eventType === 'shot' ? String(event.shotResult || '').toLowerCase() : null,
       videoTimestampMs: Number(event.videoTimestampMs || 0),
       replayStartMs: eventType === 'shot' && String(event.shotResult) === 'make'
-        ? Number(event.replayStartMs ?? Math.max(0, Number(event.videoTimestampMs || 0) - 5000))
+        ? Number(event.replayStartMs ?? Math.max(0, Number(event.videoTimestampMs || 0) - 7000))
         : null,
     };
   }
@@ -248,7 +248,7 @@
       shotValue: Number(shotValue),
       shotResult,
       videoTimestampMs: timestamp,
-      replayStartMs: shotResult === 'make' ? Math.max(0, timestamp - 5000) : null,
+      replayStartMs: shotResult === 'make' ? Math.max(0, timestamp - 7000) : null,
     });
     saveDraft();
     patchScoringUI();
@@ -276,7 +276,7 @@
       .filter((event) => event.eventType === 'shot' && event.shotResult === 'make')
       .map((event) => {
         const left = Math.max(0, Math.min(100, Number(event.videoTimestampMs || 0) / duration * 100));
-        const replay = Number(event.replayStartMs ?? Math.max(0, Number(event.videoTimestampMs || 0) - 5000));
+        const replay = Number(event.replayStartMs ?? Math.max(0, Number(event.videoTimestampMs || 0) - 7000));
         return `<button type="button" class="rp-video-marker" style="left:${left}%" data-rp-video-marker="${replay}" title="${Number(event.shotValue)}PT make at ${formatTime(event.videoTimestampMs)}">🏀</button>`;
       }).join('');
   }
