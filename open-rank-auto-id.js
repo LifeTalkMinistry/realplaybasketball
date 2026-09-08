@@ -2,19 +2,87 @@
   if (window.__realPlayOpenRankAutoIdInstalled) return;
   window.__realPlayOpenRankAutoIdInstalled = true;
 
+  const API_BASE_URL = 'https://api.clarapmc.com';
+  const TOKEN_KEY = 'real_play_access_token';
+
+  let officialSessionNumber = null;
+  let officialSessionId = null;
+  let identityRequestInFlight = false;
+  let lastIdentityFetchAt = 0;
+
   function permanentSessionLabel(value) {
     const match = String(value || '').trim().match(/^(?:CAREER|OPEN\s+RANK(?:ING\s+SESSION)?)\s*#\s*(\d+)$/i);
     if (!match) return null;
     return `OPEN RANKING SESSION #${String(Number(match[1])).padStart(3, '0')}`;
   }
 
+  function canonicalSessionLabel() {
+    if (!Number.isSafeInteger(officialSessionNumber) || officialSessionNumber < 1) return null;
+    return `OPEN RANKING SESSION #${String(officialSessionNumber).padStart(3, '0')}`;
+  }
+
+  function applyCanonicalSessionLabel() {
+    const control = document.querySelector('.rp-admin-control');
+    if (!control) return;
+
+    const canonical = canonicalSessionLabel();
+    control.querySelectorAll('.rp-admin-card-head strong, .rp-admin-session-manage-head span').forEach((node) => {
+      const legacy = permanentSessionLabel(node.textContent);
+      if (canonical && (legacy || node.closest('.rp-admin-session-summary'))) {
+        if (node.textContent !== canonical) node.textContent = canonical;
+        return;
+      }
+      if (legacy && node.textContent !== legacy) node.textContent = legacy;
+    });
+  }
+
+  async function refreshOfficialSessionIdentity({ force = false } = {}) {
+    const control = document.querySelector('.rp-admin-control');
+    const token = window.localStorage.getItem(TOKEN_KEY) || '';
+    if (!control || !token || identityRequestInFlight) return;
+
+    const now = Date.now();
+    if (!force && now - lastIdentityFetchAt < 1500) {
+      applyCanonicalSessionLabel();
+      return;
+    }
+
+    identityRequestInFlight = true;
+    lastIdentityFetchAt = now;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/real-play/admin/career/control`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        cache: 'no-store',
+      });
+      if (!response.ok) return;
+      const data = await response.json().catch(() => ({}));
+      const session = data?.control?.session || null;
+      if (!session) {
+        officialSessionNumber = null;
+        officialSessionId = null;
+        return;
+      }
+
+      const number = Number(session.openRankNumber ?? session.open_rank_number ?? 0);
+      officialSessionNumber = Number.isSafeInteger(number) && number > 0 ? number : null;
+      officialSessionId = Number(session.id || 0) || null;
+      applyCanonicalSessionLabel();
+    } catch (_error) {
+      // The base admin UI owns network/error messaging. This layer only refines
+      // the identity when the canonical control response is available.
+    } finally {
+      identityRequestInFlight = false;
+    }
+  }
+
   function cleanLegacySessionIdentityUi() {
     const control = document.querySelector('.rp-admin-control');
     if (control) {
-      control.querySelectorAll('.rp-admin-card-head strong, .rp-admin-session-manage-head span').forEach((node) => {
-        const label = permanentSessionLabel(node.textContent);
-        if (label && node.textContent !== label) node.textContent = label;
-      });
+      applyCanonicalSessionLabel();
 
       control.querySelectorAll('.rp-admin-empty strong').forEach((node) => {
         if (node.textContent.trim() === 'NO CAREER SESSION OPEN') node.textContent = 'NO OPEN RANKING SESSION';
@@ -28,7 +96,7 @@
       });
     }
 
-    // Session numbers are now permanent historical identities. Remove the old
+    // Session numbers are permanent historical identities. Remove the old
     // manual renumber control so an admin cannot accidentally rewrite history.
     document.querySelectorAll('[data-rp-set-open-rank-number]').forEach((button) => button.remove());
   }
@@ -85,11 +153,18 @@
     cleanLegacySessionIdentityUi();
   }
 
-  window.addEventListener('realplay:admin-render', refineSessionForm);
-  document.addEventListener('DOMContentLoaded', refineSessionForm, { once: true });
+  window.addEventListener('realplay:admin-render', () => {
+    refineSessionForm();
+    refreshOfficialSessionIdentity({ force: true });
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    refineSessionForm();
+    refreshOfficialSessionIdentity({ force: true });
+  }, { once: true });
 
   const observer = new MutationObserver(() => refineSessionForm());
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   refineSessionForm();
+  refreshOfficialSessionIdentity({ force: true });
 })();
