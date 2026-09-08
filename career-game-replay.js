@@ -643,6 +643,12 @@
     const play = viewer.querySelector('[data-rp-career-replay-play]');
     if (play) play.textContent = lastPlaying ? '❚❚' : '▶';
 
+    const brandCover = viewer.querySelector('[data-rp-career-replay-brand-cover]');
+    if (brandCover) {
+      const prePlay = !lastPlaying && lastCurrentMs <= 250;
+      brandCover.classList.toggle('preplay', prePlay);
+    }
+
     const brandPlay = viewer.querySelector('[data-rp-career-replay-brand-play]');
     if (brandPlay) {
       brandPlay.textContent = lastPlaying ? '❚❚' : '▶';
