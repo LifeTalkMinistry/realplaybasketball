@@ -1005,3 +1005,60 @@ body.rp-career-replay-open{overflow:hidden}
 @media(prefers-reduced-motion:reduce){
   .rp-career-replay-brand-play{transition:none}
 }
+
+
+/* Make the Real Play covers actually cover the native YouTube chrome.
+   Wider opaque masks for the bottom-left/bottom-right controls, and a
+   rectangular center play cover large enough to fully hide YouTube's red play button. */
+.rp-career-replay-brand-left,
+.rp-career-replay-brand-score{
+  bottom:6px!important;
+  min-height:42px!important;
+  padding:0 14px!important;
+  background:#03070d!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.48)!important;
+}
+.rp-career-replay-brand-left{
+  left:6px!important;
+  width:31%!important;
+  max-width:none!important;
+  justify-content:flex-start!important;
+}
+.rp-career-replay-brand-score{
+  right:6px!important;
+  width:47%!important;
+  justify-content:flex-end!important;
+}
+.rp-career-replay-brand-play{
+  width:78px!important;
+  height:56px!important;
+  border-radius:16px!important;
+  background:#050910!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.52)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+
+@media(max-width:620px){
+  .rp-career-replay-brand-left,
+  .rp-career-replay-brand-score{
+    bottom:5px!important;
+    min-height:40px!important;
+    padding:0 10px!important;
+  }
+  .rp-career-replay-brand-left{
+    left:5px!important;
+    width:32%!important;
+  }
+  .rp-career-replay-brand-score{
+    right:5px!important;
+    width:49%!important;
+  }
+  .rp-career-replay-brand-play{
+    width:76px!important;
+    height:54px!important;
+    border-radius:15px!important;
+  }
+}
