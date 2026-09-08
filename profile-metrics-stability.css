@@ -1,0 +1,33 @@
+.rp-profile-metrics-unavailable{
+  min-height:94px;
+  margin-top:14px;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  border:1px solid rgba(255,255,255,.065);
+  border-radius:14px;
+  background:#070c14;
+  text-align:center;
+}
+.rp-profile-metrics-unavailable strong{
+  color:#dce8f2;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.65rem;
+  font-weight:950;
+  letter-spacing:.055em;
+}
+.rp-profile-metrics-unavailable span{
+  color:#78889a;
+  font-size:.46rem;
+  font-weight:850;
+  letter-spacing:.055em;
+}
+.rp-profile-metrics-unavailable small{
+  color:#526579;
+  font-size:.4rem;
+  font-weight:850;
+  letter-spacing:.06em;
+}
