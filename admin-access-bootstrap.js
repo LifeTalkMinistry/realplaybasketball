@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260907-recorded-assist-score-link-v1';
+  const ADMIN_ASSET_VERSION = '20260908-game-entry-mode-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -54,6 +54,9 @@
     // the existing stacked workflow and all score/timestamp logic is shared.
     'admin-recorded-scoring-desktop.js',
     'admin-recorded-scoring-lock.js',
+    // Game entry mode is loaded after both LIVE and VIDEO controls exist so it
+    // can expose exactly one scoring workflow for the current game.
+    'admin-game-entry-mode.js',
     'admin-session-picker.js',
     'admin-score-dom-sync.js',
     'admin-season-control.js',
