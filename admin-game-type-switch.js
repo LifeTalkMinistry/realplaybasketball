@@ -5,6 +5,7 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
   let busy = false;
+  let syncScheduled = false;
 
   function root() {
     return document.querySelector('.rp-admin-control');
@@ -90,12 +91,24 @@
     }
 
     const current = panel.querySelector('[data-rp-game-type-current]');
-    if (current) current.textContent = mode === 'replay' ? 'REPLAY RECORDED · VIDEO' : 'FUTURE LIVE';
+    const currentLabel = mode === 'replay' ? 'REPLAY RECORDED · VIDEO' : 'FUTURE LIVE';
+    if (current && current.textContent !== currentLabel) current.textContent = currentLabel;
+
     const button = panel.querySelector('[data-rp-game-type-change]');
     if (button) {
-      button.disabled = busy;
-      button.textContent = busy ? 'CHANGING…' : (mode === 'replay' ? 'MAKE FUTURE LIVE' : 'MAKE REPLAY');
+      const buttonLabel = busy ? 'CHANGING…' : (mode === 'replay' ? 'MAKE FUTURE LIVE' : 'MAKE REPLAY');
+      if (button.disabled !== busy) button.disabled = busy;
+      if (button.textContent !== buttonLabel) button.textContent = buttonLabel;
     }
+  }
+
+  function scheduleSync() {
+    if (syncScheduled) return;
+    syncScheduled = true;
+    window.requestAnimationFrame(() => {
+      syncScheduled = false;
+      syncPanel();
+    });
   }
 
   async function changeType() {
@@ -115,7 +128,7 @@
     }
 
     busy = true;
-    if (status) status.textContent = '';
+    if (status && status.textContent) status.textContent = '';
     syncPanel();
 
     try {
@@ -136,7 +149,8 @@
       const badge = root()?.querySelector('[data-rp-entry-mode-badge]');
       if (badge) {
         badge.classList.toggle('replay', savedMode === 'replay');
-        badge.textContent = savedMode === 'replay' ? 'REPLAY · VIDEO' : 'FUTURE · LIVE';
+        const badgeLabel = savedMode === 'replay' ? 'REPLAY · VIDEO' : 'FUTURE · LIVE';
+        if (badge.textContent !== badgeLabel) badge.textContent = badgeLabel;
       }
       enforceScoringTabs(savedMode);
       window.dispatchEvent(new CustomEvent('realplay:admin-render'));
@@ -158,13 +172,10 @@
     changeType();
   }, true);
 
-  window.addEventListener('realplay:admin-render', () => window.requestAnimationFrame(syncPanel));
-  window.addEventListener('focus', () => window.requestAnimationFrame(syncPanel));
+  window.addEventListener('realplay:admin-render', scheduleSync);
+  window.addEventListener('focus', scheduleSync);
 
-  const observer = new MutationObserver(() => {
-    if (!root()) return;
-    window.requestAnimationFrame(syncPanel);
-  });
+  const observer = new MutationObserver(scheduleSync);
   observer.observe(document.documentElement, { childList: true, subtree: true });
   syncPanel();
 })();
