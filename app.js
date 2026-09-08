@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-profile-metrics-stability-v11';
+  const version = '20260908-main-menu-desktop-input-v12';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -147,6 +147,7 @@
       'main-menu.js',
       'main-menu-fast-snap-restore.js',
       'main-menu-touch-lite.js',
+      'main-menu-desktop-input-fix.js',
       'player-number-recovery.js',
       'ranking-games.js',
       'ranking-games-info-toggle.js',
