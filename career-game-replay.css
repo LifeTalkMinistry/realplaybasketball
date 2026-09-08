@@ -1284,3 +1284,38 @@ body.rp-career-replay-open{overflow:hidden}
     min-width:40px!important;
   }
 }
+
+
+/* Fine alignment against YouTube mobile chrome:
+   Share center is ~12% of stage width; Watch Later center ~25%. */
+.rp-career-replay-video-controls{
+  padding:0 0 4px 5px!important;
+}
+.rp-career-replay-video-controls > [data-rp-career-replay-play]{
+  margin-left:0!important;
+}
+.rp-career-replay-video-controls-right{
+  margin-left:9px!important;
+}
+.rp-career-replay-video-controls [data-rp-career-replay-play],
+.rp-career-replay-video-controls [data-rp-career-replay-mute]{
+  width:38px!important;
+  height:38px!important;
+  min-width:38px!important;
+  border-radius:50%!important;
+}
+@media(max-width:620px){
+  .rp-career-replay-video-controls{
+    padding-left:5px!important;
+    padding-bottom:4px!important;
+  }
+  .rp-career-replay-video-controls-right{
+    margin-left:9px!important;
+  }
+  .rp-career-replay-video-controls [data-rp-career-replay-play],
+  .rp-career-replay-video-controls [data-rp-career-replay-mute]{
+    width:38px!important;
+    height:38px!important;
+    min-width:38px!important;
+  }
+}
