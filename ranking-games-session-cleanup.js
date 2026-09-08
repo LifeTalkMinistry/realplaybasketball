@@ -5,6 +5,43 @@
   const view = document.querySelector('[data-rp-ranking-games]');
   if (!view) return;
 
+  const style = document.createElement('style');
+  style.dataset.rpRankingSectionCenter = 'true';
+  style.textContent = `
+    .rp-ranking-next .rp-ranking-section-head,
+    .rp-ranking-rules .rp-ranking-section-head{
+      position:relative;
+      justify-content:center;
+    }
+
+    .rp-ranking-next .rp-ranking-section-head>div,
+    .rp-ranking-rules .rp-ranking-section-head>div{
+      width:100%;
+      text-align:center;
+    }
+
+    .rp-ranking-next .rp-ranking-section-head h2,
+    .rp-ranking-rules .rp-ranking-section-head h2{
+      margin-left:auto!important;
+      margin-right:auto!important;
+      text-align:center!important;
+    }
+
+    /* Keep the optional reservation cancel action independent from the centered title. */
+    .rp-ranking-next [data-rp-ranking-cancel]:not([hidden]){
+      position:absolute;
+      right:0;
+      top:50%;
+      transform:translateY(-50%);
+    }
+
+    /* Preserve the earlier cleanup request even if older cached markup is still mounted. */
+    .rp-ranking-rules .rp-ranking-rule-row{
+      display:none!important;
+    }
+  `;
+  document.head.appendChild(style);
+
   const status = view.querySelector('[data-rp-ranking-session-status]');
   const title = view.querySelector('[data-rp-ranking-session-title]');
   if (!status || !title) return;
