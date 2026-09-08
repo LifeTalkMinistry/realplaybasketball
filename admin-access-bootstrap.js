@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260908-replay-review-render-v5';
+  const ADMIN_ASSET_VERSION = '20260908-recorded-start-submit-v6';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -32,6 +32,7 @@
     'admin-player-ownership.js',
     'admin-courtside-live.js',
     'admin-game-rules.js',
+    'admin-recorded-start-submit-fix.js',
     'admin-recorded-scoring-draft-guard.js',
     'admin-recorded-scoring-assist-link.js',
     'admin-recorded-scoring-score-confirmation.js',
