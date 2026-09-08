@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-game-type-loop-fix-v17';
+  const version = '20260908-explicit-replay-authority-v18';
   const html = document.documentElement;
   html.classList.add('js');
 
