@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-replay-session-identity-v16';
+  const version = '20260908-game-type-loop-fix-v17';
   const html = document.documentElement;
   html.classList.add('js');
 
