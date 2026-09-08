@@ -1240,3 +1240,47 @@ body.rp-career-replay-open{overflow:hidden}
     min-height:43px!important;
   }
 }
+
+
+/* Replay controls: place Real Play play/pause directly over YouTube Share,
+   with volume immediately beside it over the Watch Later area. */
+.rp-career-replay-video-controls{
+  justify-content:flex-start!important;
+  align-items:flex-end!important;
+  padding:0 0 5px 7px!important;
+  pointer-events:none;
+}
+.rp-career-replay-video-controls > [data-rp-career-replay-play],
+.rp-career-replay-video-controls-right{
+  pointer-events:auto;
+}
+.rp-career-replay-video-controls-right{
+  display:flex!important;
+  gap:5px!important;
+  margin-left:5px!important;
+}
+.rp-career-replay-video-controls [data-rp-career-replay-play],
+.rp-career-replay-video-controls [data-rp-career-replay-mute]{
+  width:43px!important;
+  height:43px!important;
+  min-width:43px!important;
+  border-radius:50%!important;
+}
+.rp-career-replay-video-controls [data-rp-career-replay-fullscreen]{
+  display:none!important;
+}
+@media(max-width:620px){
+  .rp-career-replay-video-controls{
+    padding:0 0 4px 6px!important;
+  }
+  .rp-career-replay-video-controls-right{
+    gap:4px!important;
+    margin-left:4px!important;
+  }
+  .rp-career-replay-video-controls [data-rp-career-replay-play],
+  .rp-career-replay-video-controls [data-rp-career-replay-mute]{
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+  }
+}
