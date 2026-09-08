@@ -700,18 +700,19 @@
       }, 2600);
     };
 
-    const revealCoverFromStage = (event) => {
+    const revealControlsFromStage = (event) => {
       if (event.target.closest('[data-rp-career-replay-video-controls]')) return;
-      showBrandCoverOnly();
+      showControls();
     };
 
-    // Mobile browsers can surface YouTube chrome on touch before a synthetic
-    // click fires. Reveal our cover immediately on pointer/touch interaction.
-    stage?.addEventListener('pointerdown', revealCoverFromStage, { passive: true });
-    stage?.addEventListener('touchstart', revealCoverFromStage, { passive: true });
+    // Any touch/click on the video surface should reveal the Real Play
+    // play/pause, volume, and fullscreen controls, while the Open Rank cover
+    // keeps its own longer timer.
+    stage?.addEventListener('pointerdown', revealControlsFromStage, { passive: true });
+    stage?.addEventListener('touchstart', revealControlsFromStage, { passive: true });
     stage?.addEventListener('click', (event) => {
-      if (event.target.closest('button')) return;
-      showBrandCoverOnly();
+      if (event.target.closest('[data-rp-career-replay-video-controls]')) return;
+      showControls();
     });
 
     const toggleMainReplayPlay = (event) => {
@@ -723,9 +724,7 @@
     const toggleBrandReplayPlay = (event) => {
       event.stopPropagation();
       togglePlay();
-      // Center video tap/play should reveal only the 7-second Real Play cover,
-      // not the pause/mute/fullscreen control bar.
-      showBrandCoverOnly();
+      showControls();
     };
 
     root.querySelector('[data-rp-career-replay-play]')?.addEventListener('click', toggleMainReplayPlay);
