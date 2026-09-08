@@ -17,6 +17,7 @@
   let lastCurrentMs = 0;
   let lastDurationMs = 0;
   let lastPlaying = false;
+  let hasPlaybackStarted = false;
   let lastMuted = false;
   let activeMarkerId = null;
   let decorateTimer = null;
@@ -241,6 +242,7 @@
     lastCurrentMs = 0;
     lastDurationMs = 0;
     lastPlaying = false;
+    hasPlaybackStarted = false;
     lastMuted = false;
     activeMarkerId = null;
   }
@@ -473,6 +475,7 @@
           },
           onStateChange: (event) => {
             lastPlaying = event.data === window.YT.PlayerState.PLAYING;
+            if (event.data === window.YT.PlayerState.PLAYING) hasPlaybackStarted = true;
             if (event.data === window.YT.PlayerState.ENDED) lastPlaying = false;
             updatePlaybackUi();
           },
@@ -501,7 +504,7 @@
       startTicker();
       updatePlaybackUi();
     });
-    video.addEventListener('play', () => { lastPlaying = true; updatePlaybackUi(); });
+    video.addEventListener('play', () => { lastPlaying = true; hasPlaybackStarted = true; updatePlaybackUi(); });
     video.addEventListener('pause', () => { lastPlaying = false; updatePlaybackUi(); });
     video.addEventListener('ended', () => { lastPlaying = false; updatePlaybackUi(); });
     video.addEventListener('error', () => renderReplayError('The verified game video could not be loaded.'));
@@ -645,8 +648,9 @@
 
     const brandCover = viewer.querySelector('[data-rp-career-replay-brand-cover]');
     if (brandCover) {
-      const prePlay = !lastPlaying && lastCurrentMs <= 250;
+      const prePlay = !hasPlaybackStarted;
       brandCover.classList.toggle('preplay', prePlay);
+      brandCover.classList.toggle('show', prePlay || brandCover.classList.contains('show'));
     }
 
     const brandPlay = viewer.querySelector('[data-rp-career-replay-brand-play]');
@@ -658,6 +662,9 @@
 
     const mute = viewer.querySelector('[data-rp-career-replay-mute]');
     if (mute) mute.textContent = lastMuted ? '🔇' : '🔊';
+
+    const videoControls = viewer.querySelector('[data-rp-career-replay-video-controls]');
+    if (videoControls && !hasPlaybackStarted) videoControls.classList.add('show');
 
     const markerLayer = viewer.querySelector('[data-rp-career-replay-timeline-markers]');
     if (markerLayer && lastDurationMs > 0) {
@@ -690,6 +697,7 @@
 
     const showBrandCoverOnly = () => {
       if (brandCover) brandCover.classList.add('show');
+      if (!hasPlaybackStarted) return;
       if (brandCoverTimer) clearTimeout(brandCoverTimer);
       brandCoverTimer = setTimeout(() => {
         brandCover?.classList.remove('show');
@@ -701,9 +709,11 @@
       showBrandCoverOnly();
 
       if (controlsTimer) clearTimeout(controlsTimer);
-      controlsTimer = setTimeout(() => {
-        overlay?.classList.remove('show');
-      }, 2600);
+      if (hasPlaybackStarted) {
+        controlsTimer = setTimeout(() => {
+          overlay?.classList.remove('show');
+        }, 2600);
+      }
     };
 
     const revealControlsFromStage = (event) => {
