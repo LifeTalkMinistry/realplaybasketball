@@ -1,10 +1,9 @@
 (() => {
-  if (window.__realPlayAdminSessionPickerInstalledV4) return;
-  window.__realPlayAdminSessionPickerInstalledV4 = true;
+  if (window.__realPlayAdminSessionPickerInstalledV5) return;
+  window.__realPlayAdminSessionPickerInstalledV5 = true;
 
   let savedDate = '';
   let savedTime = '';
-  let sessionPurpose = 'future';
 
   function manilaToday() {
     const parts = new Intl.DateTimeFormat('en-CA', {
@@ -69,92 +68,50 @@
     updateDisplay(form);
   }
 
-  function syncPurpose(form) {
+  function entryMode(form) {
+    const active = form?.querySelector('[data-rp-entry-mode].active');
+    return active?.dataset.rpEntryMode === 'replay' ? 'replay' : 'live';
+  }
+
+  function syncModeConstraints(form) {
     if (!form) return;
-    const purposeInput = form.querySelector('input[name="sessionPurpose"]');
     const dateInput = form.querySelector('[data-session-date]');
-    const help = form.querySelector('[data-session-purpose-help]');
-    const submit = form.querySelector('button[type="submit"]');
+    if (!dateInput) return;
+
+    const mode = entryMode(form);
     const today = manilaToday();
 
-    if (purposeInput) purposeInput.value = sessionPurpose;
-
-    form.querySelectorAll('[data-session-purpose]').forEach((button) => {
-      const active = button.dataset.sessionPurpose === sessionPurpose;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
-
-    if (dateInput) {
-      if (sessionPurpose === 'replay') {
-        dateInput.removeAttribute('min');
-        dateInput.max = today;
-        dateInput.setAttribute('aria-label', 'Replay game date');
-        if (dateInput.value && dateInput.value > today) dateInput.value = '';
-      } else {
-        dateInput.min = today;
-        dateInput.removeAttribute('max');
-        dateInput.setAttribute('aria-label', 'Future battle date');
-        if (dateInput.value && dateInput.value < today) dateInput.value = '';
-      }
-    }
-
-    if (help) {
-      help.textContent = sessionPurpose === 'replay'
-        ? 'Set up a game that already happened. Past dates are available for recorded scoring.'
-        : 'Set up an upcoming Real Play battle. Today and future dates are available.';
-    }
-
-    if (submit) {
-      submit.textContent = sessionPurpose === 'replay' ? 'CREATE REPLAY SESSION' : 'OPEN SESSION';
+    if (mode === 'replay') {
+      dateInput.removeAttribute('min');
+      dateInput.max = today;
+      dateInput.setAttribute('aria-label', 'Replay game date');
+      if (dateInput.value && dateInput.value > today) dateInput.value = '';
+    } else {
+      dateInput.min = today;
+      dateInput.removeAttribute('max');
+      dateInput.setAttribute('aria-label', 'Future live game date');
+      if (dateInput.value && dateInput.value < today) dateInput.value = '';
     }
 
     syncHidden(form);
   }
 
-  function mountPurpose(form, anchor) {
-    if (!form || form.querySelector('[data-session-purpose-wrap]')) return;
-
-    const wrap = document.createElement('div');
-    wrap.className = 'rp-admin-session-purpose-wrap';
-    wrap.dataset.sessionPurposeWrap = '1';
-    wrap.innerHTML = `
-      <span class="rp-admin-session-purpose-label">SESSION PURPOSE</span>
-      <div class="rp-admin-session-purpose-options" role="group" aria-label="Session purpose">
-        <button type="button" class="rp-admin-session-purpose-option" data-session-purpose="future" aria-pressed="true">FUTURE BATTLE</button>
-        <button type="button" class="rp-admin-session-purpose-option" data-session-purpose="replay" aria-pressed="false">REPLAY GAME</button>
-      </div>
-      <p class="rp-admin-session-purpose-help" data-session-purpose-help></p>
-      <input type="hidden" name="sessionPurpose" value="future">
-    `;
-
-    if (anchor) anchor.before(wrap);
-    else form.prepend(wrap);
-
-    wrap.querySelectorAll('[data-session-purpose]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const next = button.dataset.sessionPurpose;
-        if (next !== 'future' && next !== 'replay') return;
-        sessionPurpose = next;
-        syncPurpose(form);
-      });
-    });
-  }
-
   function enhanceForm(form) {
-    if (!form || form.dataset.dateTimePickerReadyV4 === 'true') return;
+    if (!form || form.dataset.dateTimePickerReadyV5 === 'true') return;
 
-    let oldInput = form.querySelector('input[type="datetime-local"][name="startsAt"]');
-    let oldLabel = oldInput?.closest('label') || null;
+    // Older builds inserted a second FUTURE/REPLAY choice here. GAME TYPE is
+    // now the single source of truth, so remove any stale duplicate if one is
+    // still present during a hot reload.
+    form.querySelector('[data-session-purpose-wrap]')?.remove();
+    form.querySelector('input[name="sessionPurpose"]')?.remove();
+
+    const oldInput = form.querySelector('input[type="datetime-local"][name="startsAt"]');
+    const oldLabel = oldInput?.closest('label') || null;
 
     const existingHidden = !oldInput ? form.querySelector('input[type="hidden"][name="startsAt"]') : null;
     const existingGrid = existingHidden?.closest('form')?.querySelector('.rp-admin-datetime-grid-v2') || null;
 
     if (!oldInput && !existingGrid) return;
-
-    const locationInput = form.querySelector('input[name="locationName"]');
-    const locationLabel = locationInput?.closest('label') || oldLabel || existingGrid;
-    mountPurpose(form, locationLabel);
 
     if (oldInput && oldLabel) {
       const group = document.createElement('div');
@@ -182,7 +139,7 @@
       oldLabel.replaceWith(group);
     }
 
-    form.dataset.dateTimePickerReadyV4 = 'true';
+    form.dataset.dateTimePickerReadyV5 = 'true';
 
     const dateInput = form.querySelector('[data-session-date]');
     const timeInput = form.querySelector('[data-session-time]');
@@ -199,12 +156,12 @@
     form.querySelector('[data-open-session-picker="time"]')?.addEventListener('click', () => openNativePicker(timeInput));
 
     form.addEventListener('reset', () => {
-      sessionPurpose = 'future';
       savedDate = '';
       savedTime = '';
+      window.requestAnimationFrame(() => syncModeConstraints(form));
     });
 
-    syncPurpose(form);
+    syncModeConstraints(form);
   }
 
   function enhance() {
@@ -213,13 +170,6 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    .rp-admin-session-purpose-wrap{display:grid;gap:8px;margin-bottom:2px}
-    .rp-admin-session-purpose-label{display:block;color:#7189a5;font-size:.56rem;font-weight:900;letter-spacing:.09em}
-    .rp-admin-session-purpose-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .rp-admin-session-purpose-option{min-height:48px;padding:0 10px;border:1px solid rgba(126,173,232,.18);border-radius:12px;background:#020812;color:#8da8bd;font:900 .67rem var(--rp-body,Arial,sans-serif);letter-spacing:.045em;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-    .rp-admin-session-purpose-option:hover{border-color:rgba(67,232,255,.34);color:#dffbff}
-    .rp-admin-session-purpose-option.active{border-color:rgba(67,232,255,.62);background:rgba(5,33,45,.92);color:#43e8ff;box-shadow:inset 0 0 0 1px rgba(67,232,255,.08)}
-    .rp-admin-session-purpose-help{margin:0;color:#7899ad;font:600 .62rem/1.45 var(--rp-body,Arial,sans-serif)}
     .rp-admin-datetime-grid-v2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .rp-admin-picker-field-v2{position:relative;min-width:0}
     .rp-admin-picker-label-v2{display:block;margin-bottom:6px;color:#7189a5;font-size:.56rem;font-weight:900;letter-spacing:.09em}
@@ -230,9 +180,17 @@
     .rp-admin-picker-value-v2{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:900 .78rem var(--rp-body,Arial,sans-serif);letter-spacing:.01em}
     .rp-admin-picker-mark-v2{flex:0 0 auto;color:#43e8ff;font-size:.8rem;line-height:1}
     .rp-admin-native-picker-v2{position:absolute!important;left:0!important;bottom:0!important;width:1px!important;height:1px!important;min-height:1px!important;padding:0!important;border:0!important;opacity:0!important;pointer-events:none!important}
-    @media(max-width:340px){.rp-admin-session-purpose-options,.rp-admin-datetime-grid-v2{grid-template-columns:1fr}.rp-admin-picker-button-v2{min-height:56px}}
+    @media(max-width:340px){.rp-admin-datetime-grid-v2{grid-template-columns:1fr}.rp-admin-picker-button-v2{min-height:56px}}
   `;
   document.head.appendChild(style);
+
+  document.addEventListener('click', (event) => {
+    const modeButton = event.target.closest?.('[data-rp-entry-mode]');
+    if (!modeButton) return;
+    const form = modeButton.closest('[data-new-session-form]');
+    if (!form) return;
+    window.requestAnimationFrame(() => syncModeConstraints(form));
+  });
 
   window.addEventListener('realplay:admin-render', () => {
     window.requestAnimationFrame(enhance);
