@@ -330,9 +330,8 @@
       <div class="rp-career-replay-stage" data-rp-career-replay-stage>
         <div data-rp-career-replay-media></div>
         <div class="rp-career-replay-brand-cover" data-rp-career-replay-brand-cover aria-hidden="true">
-          <div class="rp-career-replay-brand-left" data-rp-career-replay-brand-session>${esc(game.title || 'OPEN RANK')}</div>
+          <div class="rp-career-replay-brand-session" data-rp-career-replay-brand-session>${esc(game.title || 'OPEN RANK')}</div>
           <button type="button" class="rp-career-replay-brand-play" data-rp-career-replay-brand-play aria-label="Play or pause replay">▶</button>
-          <div class="rp-career-replay-brand-score" data-rp-career-replay-brand-score>WEST VS EAST</div>
         </div>
         <div class="rp-career-replay-assist-pop rp-career-replay-stat-pop" data-rp-career-score-pop aria-live="polite">
           <span data-rp-career-score-label>SCORE BY</span>
@@ -639,11 +638,6 @@
       brandPlay.setAttribute('aria-label', lastPlaying ? 'Pause replay' : 'Play replay');
     }
 
-    const brandScore = viewer.querySelector('[data-rp-career-replay-brand-score]');
-    if (brandScore) {
-      brandScore.textContent = 'WEST VS EAST';
-    }
-
     const mute = viewer.querySelector('[data-rp-career-replay-mute]');
     if (mute) mute.textContent = lastMuted ? '🔇' : '🔊';
 
@@ -673,11 +667,16 @@
     const overlay = root.querySelector('[data-rp-career-replay-video-controls]');
     let controlsTimer = null;
 
+    const brandCover = root.querySelector('[data-rp-career-replay-brand-cover]');
+
     const showControls = () => {
-      if (!overlay) return;
-      overlay.classList.add('show');
+      if (overlay) overlay.classList.add('show');
+      if (brandCover) brandCover.classList.add('show');
       if (controlsTimer) clearTimeout(controlsTimer);
-      controlsTimer = setTimeout(() => overlay.classList.remove('show'), 2600);
+      controlsTimer = setTimeout(() => {
+        overlay?.classList.remove('show');
+        brandCover?.classList.remove('show');
+      }, 2600);
     };
 
     stage?.addEventListener('click', (event) => {
