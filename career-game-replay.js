@@ -332,7 +332,7 @@
         <div class="rp-career-replay-brand-cover" data-rp-career-replay-brand-cover aria-hidden="true">
           <div class="rp-career-replay-brand-left" data-rp-career-replay-brand-session>${esc(game.title || 'OPEN RANK')}</div>
           <button type="button" class="rp-career-replay-brand-play" data-rp-career-replay-brand-play aria-label="Play or pause replay">▶</button>
-          <div class="rp-career-replay-brand-score" data-rp-career-replay-brand-score>WEST 0 — 0 EAST</div>
+          <div class="rp-career-replay-brand-score" data-rp-career-replay-brand-score>WEST VS EAST</div>
         </div>
         <div class="rp-career-replay-assist-pop rp-career-replay-stat-pop" data-rp-career-score-pop aria-live="polite">
           <span data-rp-career-score-label>SCORE BY</span>
@@ -641,8 +641,7 @@
 
     const brandScore = viewer.querySelector('[data-rp-career-replay-brand-score]');
     if (brandScore) {
-      const score = scoreAtReplayTime(lastCurrentMs);
-      brandScore.textContent = `WEST ${score.west} — ${score.east} EAST`;
+      brandScore.textContent = 'WEST VS EAST';
     }
 
     const mute = viewer.querySelector('[data-rp-career-replay-mute]');
