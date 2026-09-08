@@ -1193,3 +1193,31 @@ body.rp-career-replay-open{overflow:hidden}
 .rp-career-replay-yt-host{
   pointer-events:none!important;
 }
+
+
+/* Compact YouTube cover: only mask the bottom-right "Watch on YouTube" area.
+   Leave the bottom-left share/watch-later area visible and keep more of the game unobstructed. */
+.rp-career-replay-brand-session{
+  left:auto!important;
+  right:5px!important;
+  bottom:4px!important;
+  width:auto!important;
+  min-width:155px!important;
+  max-width:48%!important;
+  min-height:42px!important;
+  padding:0 14px!important;
+  transform:none!important;
+  justify-content:center!important;
+  text-align:center!important;
+}
+@media(max-width:620px){
+  .rp-career-replay-brand-session{
+    right:4px!important;
+    bottom:4px!important;
+    min-width:145px!important;
+    max-width:50%!important;
+    min-height:40px!important;
+    padding:0 11px!important;
+    font-size:.62rem!important;
+  }
+}
