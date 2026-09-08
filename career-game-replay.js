@@ -438,6 +438,9 @@
       const host = media.querySelector('[data-rp-career-replay-yt]');
       const hostId = `rp-career-replay-yt-${Date.now()}-${Math.random().toString(16).slice(2)}`;
       host.id = hostId;
+      host.setAttribute('tabindex', '-1');
+      host.setAttribute('aria-hidden', 'true');
+      host.style.pointerEvents = 'none';
       youtubePlayer = new window.YT.Player(hostId, {
         videoId: String(videoId),
         width: '100%',
@@ -454,6 +457,14 @@
         },
         events: {
           onReady: (event) => {
+            try {
+              const iframe = event.target.getIframe?.();
+              if (iframe) {
+                iframe.setAttribute('tabindex', '-1');
+                iframe.setAttribute('aria-hidden', 'true');
+                iframe.style.pointerEvents = 'none';
+              }
+            } catch (_) {}
             const duration = Number(event.target.getDuration?.());
             if (Number.isFinite(duration) && duration > 0) lastDurationMs = Math.round(duration * 1000);
             startTicker();
