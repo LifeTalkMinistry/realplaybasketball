@@ -136,9 +136,256 @@ body.rp-ranking-open{overflow:hidden}
 .rp-main-menu-item[data-rp-main-action="ranking"] strong{font-size:clamp(1.35rem,6vw,1.9rem)}
 .rp-main-menu-item[data-rp-main-action="ranking"].slot-active strong{font-size:clamp(2.5rem,11.5vw,3.9rem);line-height:.88}
 
+/* OPEN RANK / RANKING GAMES — SHARED REAL PLAY BRAND SYSTEM
+ * Keep the Ranking Games UX intact, but make the page belong to the same
+ * visual family as Main Menu, World and Profile.
+ */
+.rp-ranking-view{
+  background:
+    radial-gradient(72% 56% at -10% 48%,rgba(0,111,255,.20),transparent 66%),
+    radial-gradient(72% 58% at 110% 58%,rgba(255,31,42,.13),transparent 68%),
+    linear-gradient(180deg,#02050a 0%,#020307 50%,#030304 100%);
+  isolation:isolate;
+}
+
+.rp-ranking-view::before{
+  content:'';
+  position:fixed;
+  z-index:0;
+  inset:0;
+  background:
+    radial-gradient(44% 32% at 3% 57%,rgba(0,111,255,.13),transparent 76%),
+    radial-gradient(44% 32% at 97% 61%,rgba(255,31,42,.09),transparent 77%);
+  pointer-events:none;
+}
+
+.rp-ranking-view::after{
+  content:'';
+  position:fixed;
+  z-index:0;
+  left:50%;
+  top:50%;
+  width:min(150vw,720px);
+  aspect-ratio:2 / 3;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(2,3,7,.84) 0%,
+      rgba(2,3,7,.48) 20%,
+      rgba(2,3,7,.12) 42%,
+      rgba(2,3,7,.08) 68%,
+      rgba(2,3,7,.70) 100%
+    ),
+    url('assets/main-menu/main-menu-basketball-bg.png') center / cover no-repeat;
+  opacity:.84;
+  filter:brightness(.80) contrast(1.20) saturate(1.22);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  -webkit-mask-image:radial-gradient(ellipse 78% 68% at 50% 58%,#000 0 57%,rgba(0,0,0,.94) 69%,rgba(0,0,0,.46) 82%,transparent 96%);
+  mask-image:radial-gradient(ellipse 78% 68% at 50% 58%,#000 0 57%,rgba(0,0,0,.94) 69%,rgba(0,0,0,.46) 82%,transparent 96%);
+}
+
+.rp-ranking-shell{
+  position:relative;
+  z-index:2;
+}
+
+/* Profile-style header: one clean title, same back control and compact status pill. */
+.rp-ranking-topbar{
+  min-height:66px;
+  margin:0 -20px;
+  padding:max(10px,env(safe-area-inset-top)) 20px 10px;
+  grid-template-columns:42px 1fr auto;
+  border-bottom:1px solid rgba(255,255,255,.065);
+  background:rgba(2,4,9,.94);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+.rp-ranking-back{
+  width:40px;
+  height:40px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:12px;
+  background:#080d15;
+  color:#fff;
+  font-size:1.05rem;
+  font-weight:900;
+}
+
+.rp-ranking-brand strong{
+  color:#f7fbff;
+  font-size:1.05rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.10em;
+}
+
+.rp-ranking-brand span{
+  display:none!important;
+}
+
+.rp-ranking-mark{
+  width:auto;
+  height:auto;
+  min-width:42px;
+  padding:6px 8px;
+  border:1px solid rgba(40,195,255,.18);
+  border-radius:999px;
+  color:#4fdcff;
+  background:rgba(18,109,255,.08);
+  font-size:.48rem;
+  font-weight:950;
+  letter-spacing:.10em;
+}
+
+/* The hero remains unique to Ranking Games, but uses Profile typography balance. */
+.rp-ranking-kicker{
+  color:#42d4ff;
+  font-weight:950;
+}
+
+.rp-ranking-hero h1{
+  color:#f7fbff;
+  font-weight:950;
+}
+
+.rp-ranking-hero>p{
+  color:#8392a5;
+}
+
+/* Main section cards use the same cyan-left / red-right premium edge as Profile. */
+.rp-ranking-status-card,
+.rp-ranking-matchup,
+.rp-ranking-rules,
+.rp-ranking-next{
+  border:1px solid transparent;
+  background:
+    linear-gradient(145deg,rgba(5,10,18,.965),rgba(3,7,13,.98)) padding-box,
+    linear-gradient(112deg,
+      rgba(22,163,255,.60) 0%,
+      rgba(64,150,220,.22) 28%,
+      rgba(255,255,255,.07) 52%,
+      rgba(184,61,82,.22) 73%,
+      rgba(255,45,62,.48) 100%) border-box;
+  box-shadow:0 18px 48px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.018);
+}
+
+.rp-ranking-status-card{
+  border-radius:20px;
+}
+
+.rp-ranking-matchup,
+.rp-ranking-rules,
+.rp-ranking-next{
+  border-radius:20px;
+}
+
+.rp-ranking-section-head small{
+  color:#65758a;
+  font-size:.46rem;
+  font-weight:950;
+  letter-spacing:.12em;
+}
+
+.rp-ranking-section-head h2{
+  color:#fff;
+  font-size:1rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.01em;
+}
+
+.rp-ranking-section-head>b{
+  border:1px solid rgba(72,215,255,.18);
+  border-radius:999px;
+  color:#49d7ff;
+  background:rgba(18,103,158,.10);
+}
+
+.rp-ranking-stat-grid article{
+  padding:13px 8px;
+  border:1px solid rgba(255,255,255,.065);
+  border-radius:14px;
+  background:#070c14;
+}
+
+.rp-ranking-stat-grid strong{
+  color:#f7fbff;
+  font-size:1.25rem;
+  font-weight:950;
+}
+
+.rp-ranking-stat-grid span{
+  color:#66758a;
+  font-weight:900;
+  letter-spacing:.10em;
+}
+
+.rp-ranking-session{
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:15px;
+  background:rgba(4,9,16,.84);
+}
+
+.rp-ranking-session.posted{
+  border-color:rgba(72,215,255,.20);
+}
+
+.rp-ranking-session.joined{
+  border-color:rgba(74,237,191,.22);
+  background:linear-gradient(145deg,rgba(4,25,29,.90),rgba(4,10,17,.96));
+}
+
+.rp-ranking-rule-row{
+  border-top-color:rgba(255,255,255,.055);
+}
+
+.rp-ranking-rule-row span{
+  color:#5f7085;
+}
+
+.rp-ranking-rule-row strong{
+  color:#dce8f3;
+}
+
+.rp-ranking-progress i{
+  background:#101925;
+}
+
+.rp-ranking-progress i.complete{
+  background:linear-gradient(90deg,#176cff,#42d4ff);
+}
+
+@media(max-height:760px){
+  .rp-ranking-view::after{
+    top:48%;
+    width:min(142vw,650px);
+    opacity:.80;
+  }
+}
+
 @media(max-height:720px){
   .rp-ranking-hero{padding-top:18px}
   .rp-ranking-hero h1{font-size:2.75rem}
+}
+
+@media(max-height:650px){
+  .rp-ranking-view::after{
+    top:47%;
+    width:min(132vw,590px);
+    opacity:.76;
+  }
+}
+
+@media(min-width:700px){
+  .rp-ranking-view::after{
+    width:min(100vw,760px);
+  }
+}
+
+@media(prefers-reduced-transparency:reduce){
+  .rp-ranking-view::after{opacity:.66}
 }
 
 @media(prefers-reduced-motion:reduce){
