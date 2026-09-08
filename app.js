@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-session-number-root-v14';
+  const version = '20260908-replay-authority-v15';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -160,6 +160,7 @@
       'admin-recorded-stat-controls-fix.js',
       'admin-recorded-scoring-winner.js',
       'admin-access-bootstrap.js',
+      'admin-game-type-switch.js',
       'admin-session-picker-v5-loader.js',
       'open-rank-auto-id.js',
       'career-game-replay-admin-edit.js',
