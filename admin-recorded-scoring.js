@@ -314,7 +314,7 @@
       .filter((event) => event.eventType === 'shot' && event.shotResult === 'make' && Number.isFinite(Number(event.videoTimestampMs)))
       .map((event) => {
         const left = Math.max(0, Math.min(100, Number(event.videoTimestampMs) / duration * 100));
-        return `<button type="button" class="rp-video-marker" style="left:${left}%" data-rp-video-marker="${Number(event.replayStartMs ?? Math.max(0, Number(event.videoTimestampMs) - 5000))}" title="${event.shotValue}PT make at ${formatTime(event.videoTimestampMs)}">🏀</button>`;
+        return `<button type="button" class="rp-video-marker" style="left:${left}%" data-rp-video-marker="${Number(event.replayStartMs ?? Math.max(0, Number(event.videoTimestampMs) - 7000))}" title="${event.shotValue}PT make at ${formatTime(event.videoTimestampMs)}">🏀</button>`;
       }).join('');
   }
 
