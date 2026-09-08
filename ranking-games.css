@@ -109,7 +109,7 @@ body.rp-ranking-open{overflow:hidden}
 .rp-ranking-stat-grid strong{font-size:1rem;font-style:italic;font-weight:900}
 .rp-ranking-stat-grid span{margin-top:3px;color:#697c94;font-size:.42rem;font-weight:800;letter-spacing:.08em}
 
-.rp-ranking-rule-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:9px;padding:12px 2px 2px;border-top:1px solid rgba(117,154,194,.09)}
+.rp-ranking-rule-row{display:none!important;align-items:center;justify-content:space-between;gap:14px;margin-top:9px;padding:12px 2px 2px;border-top:1px solid rgba(117,154,194,.09)}
 .rp-ranking-rule-row span,.rp-ranking-rule-row strong{font-family:var(--rp-display);font-size:.49rem;font-weight:900;letter-spacing:.08em}
 .rp-ranking-rule-row span{color:#657991}
 .rp-ranking-rule-row strong{color:#eaf5ff;text-align:right}
@@ -337,7 +337,7 @@ body.rp-ranking-open{overflow:hidden}
 }
 
 .rp-ranking-rule-row{
-  border-top-color:rgba(255,255,255,.055);
+  display:none!important;
 }
 
 .rp-ranking-rule-row span{
