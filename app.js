@@ -128,6 +128,7 @@
       'three-v-three-participants.js',
       'three-v-three-club-art.js',
       'real-play-updates.js',
+      'real-play-updates-info-toggle.js',
       'updates-session-title-admin.js',
       'real-play-updates-game-detail.js',
       'real-play-world.js',
