@@ -215,9 +215,9 @@
 }
 
 /* Give finalized result cards a little breathing room under the score.
- * When an official MVP exists, use that space as a compact game receipt. */
+ * Official MVP gets a clear recognition strip without taking over the card. */
 .rp-update-result .rp-update-score{
-  margin-bottom:14px;
+  margin-bottom:12px;
 }
 
 .rp-update-mvp{
@@ -225,20 +225,45 @@
   align-items:center;
   justify-content:space-between;
   gap:14px;
-  min-height:34px;
+  min-height:48px;
   margin:0 1px 13px;
-  padding:8px 10px;
-  border-top:1px solid rgba(255,255,255,.055);
-  border-bottom:1px solid rgba(255,255,255,.055);
+  padding:9px 12px;
+  border:1px solid rgba(44,208,255,.72);
+  border-radius:11px;
+  background:linear-gradient(90deg,rgba(18,137,194,.13),rgba(5,13,22,.60) 48%,rgba(5,10,17,.82));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 0 18px rgba(28,178,255,.055);
 }
 
 .rp-update-mvp span{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  flex:0 0 auto;
   color:#55d9ff;
   font-family:var(--rp-display,Arial,sans-serif);
-  font-size:.46rem;
+  font-size:.64rem;
+  font-style:italic;
   font-weight:950;
-  letter-spacing:.11em;
+  letter-spacing:.105em;
   white-space:nowrap;
+}
+
+.rp-update-mvp span::before{
+  content:'';
+  width:17px;
+  height:17px;
+  flex:0 0 17px;
+  background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M18 2H6v3H3v3c0 3.15 2.05 5.72 5 6.59V17H6v2h12v-2h-2v-2.41c2.95-.87 5-3.44 5-6.59V5h-3V2Zm-10 9.36C6.25 10.62 5 9.07 5 7V7h1v1c0 1.18.32 2.3.88 3.26.36.04.74.08 1.12.1ZM19 7v0c0 2.07-1.25 3.62-3 4.36.38-.02.76-.06 1.12-.1A6.47 6.47 0 0 0 18 8V7h1Zm-5 10h-4v-2h4v2Zm2-7c0 2.21-1.79 4-4 4s-4-1.79-4-4V4h8v6Z'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M18 2H6v3H3v3c0 3.15 2.05 5.72 5 6.59V17H6v2h12v-2h-2v-2.41c2.95-.87 5-3.44 5-6.59V5h-3V2Zm-10 9.36C6.25 10.62 5 9.07 5 7V7h1v1c0 1.18.32 2.3.88 3.26.36.04.74.08 1.12.1ZM19 7v0c0 2.07-1.25 3.62-3 4.36.38-.02.76-.06 1.12-.1A6.47 6.47 0 0 0 18 8V7h1Zm-5 10h-4v-2h4v2Zm2-7c0 2.21-1.79 4-4 4s-4-1.79-4-4V4h8v6Z'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+
+.rp-update-mvp span::after{
+  content:'';
+  width:1px;
+  height:24px;
+  margin-left:2px;
+  background:rgba(85,217,255,.30);
 }
 
 .rp-update-mvp strong{
@@ -246,13 +271,35 @@
   overflow:hidden;
   color:#f7fbff;
   font-family:var(--rp-display,Arial,sans-serif);
-  font-size:.66rem;
+  font-size:.78rem;
   font-style:italic;
   font-weight:950;
-  letter-spacing:.035em;
+  letter-spacing:.025em;
   text-align:right;
   text-overflow:ellipsis;
   white-space:nowrap;
+}
+
+@media(max-width:390px){
+  .rp-update-mvp{
+    gap:9px;
+    padding-inline:10px;
+  }
+
+  .rp-update-mvp span{
+    gap:7px;
+    font-size:.58rem;
+  }
+
+  .rp-update-mvp span::before{
+    width:15px;
+    height:15px;
+    flex-basis:15px;
+  }
+
+  .rp-update-mvp strong{
+    font-size:.70rem;
+  }
 }
 
 @media(max-height:760px){
