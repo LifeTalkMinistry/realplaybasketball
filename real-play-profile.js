@@ -306,6 +306,43 @@
     const turnovers = number(pick(stats.to, stats.tov, stats.turnovers));
     const supportTier = String(state?.supportTier || '').trim();
     const recentGames = Array.isArray(state?.recentGames) ? state.recentGames.slice(0, 4) : [];
+    const rankingState = state?.ranking || {};
+    const rankingRequired = Math.max(1, number(pick(
+      rankingState.requiredGames,
+      rankingState.required_games,
+      state?.officialRankingGamesRequired,
+      state?.official_ranking_games_required,
+      state?.rankingGamesRequired,
+      state?.ranking_games_required,
+      5
+    ), 5));
+    const rankingCompleted = Math.min(rankingRequired, Math.max(0, number(pick(
+      rankingState.completedGames,
+      rankingState.completed_games,
+      state?.rankingGamesCompleted,
+      state?.ranking_games_completed,
+      games
+    ), games)));
+    const eligibilityValue = pick(
+      rankingState.officialRankingEligible,
+      rankingState.official_ranking_eligible,
+      rankingState.rankingEligible,
+      rankingState.ranking_eligible,
+      rankingState.ranked,
+      state?.officialRankingEligible,
+      state?.official_ranking_eligible
+    );
+    const rankingEligible = eligibilityValue === undefined
+      ? Boolean(rating !== null && rankingCompleted >= rankingRequired)
+      : Boolean(eligibilityValue);
+    const ovrCaption = rating === null
+      ? 'NO OVR YET'
+      : rankingEligible
+        ? 'OFFICIAL RANKING'
+        : `EARLY OVR · ${rankingCompleted}/${rankingRequired}`;
+    const rankCaption = rankingEligible
+      ? 'OFFICIAL RANK'
+      : `${rankingCompleted}/${rankingRequired} VERIFIED`;
 
     root.innerHTML = `
       <section class="rp-profile-hero">
@@ -319,8 +356,8 @@
           <div class="rp-profile-name"><small>MY REAL PLAY PROFILE</small><h1>${esc(name)}</h1><p>${club ? `${esc(club)} · ` : ''}LESS SCREEN. REAL POINTS.</p></div>
         </div>
         <div class="rp-profile-rating-row">
-          <div class="rp-profile-ovr"><span>OVR</span><strong>${rating === null ? '—' : rating}</strong><small>${rating === null ? 'UNRANKED' : 'BETA RATING'}</small></div>
-          <div class="rp-profile-rank"><span>RANK</span><strong>${playerRank === null ? '—' : `#${playerRank}`}</strong><small>REAL PLAY</small></div>
+          <div class="rp-profile-ovr"><span>OVR</span><strong>${rating === null ? '—' : rating}</strong><small>${esc(ovrCaption)}</small></div>
+          <div class="rp-profile-rank"><span>RANK</span><strong>${rankingEligible && playerRank !== null ? `#${playerRank}` : '—'}</strong><small>${esc(rankCaption)}</small></div>
           <div class="rp-profile-record"><span>RECORD</span><strong>${wins}-${losses}</strong><small>${games} GAME${games === 1 ? '' : 'S'}</small></div>
         </div>
       </section>
