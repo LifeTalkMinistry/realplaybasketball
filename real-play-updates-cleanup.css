@@ -214,6 +214,47 @@
   display:none;
 }
 
+/* Give finalized result cards a little breathing room under the score.
+ * When an official MVP exists, use that space as a compact game receipt. */
+.rp-update-result .rp-update-score{
+  margin-bottom:14px;
+}
+
+.rp-update-mvp{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  min-height:34px;
+  margin:0 1px 13px;
+  padding:8px 10px;
+  border-top:1px solid rgba(255,255,255,.055);
+  border-bottom:1px solid rgba(255,255,255,.055);
+}
+
+.rp-update-mvp span{
+  color:#55d9ff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.46rem;
+  font-weight:950;
+  letter-spacing:.11em;
+  white-space:nowrap;
+}
+
+.rp-update-mvp strong{
+  min-width:0;
+  overflow:hidden;
+  color:#f7fbff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.66rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.035em;
+  text-align:right;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
 @media(max-height:760px){
   .rp-updates::after{
     top:48%;
