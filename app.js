@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260909-updates-stability-v19';
+  const version = '20260909-recorded-scoring-stability-v20';
   const html = document.documentElement;
   html.classList.add('js');
 
