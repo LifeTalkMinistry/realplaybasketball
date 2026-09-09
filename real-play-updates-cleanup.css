@@ -11,3 +11,214 @@
 .rp-updates-head {
   padding-bottom: 2px;
 }
+
+/* REAL PLAY UPDATES — SHARED APP BRAND SYSTEM
+ * Updates now belongs to the same visual family as Main Menu, World,
+ * Profile and Open Rank while keeping all feed/filter/admin behavior intact.
+ */
+.rp-updates{
+  background:
+    radial-gradient(72% 56% at -10% 48%,rgba(0,111,255,.20),transparent 66%),
+    radial-gradient(72% 58% at 110% 58%,rgba(255,31,42,.13),transparent 68%),
+    linear-gradient(180deg,#02050a 0%,#020307 50%,#030304 100%);
+  isolation:isolate;
+}
+
+.rp-updates::before{
+  content:'';
+  position:fixed;
+  z-index:0;
+  inset:0;
+  background:
+    radial-gradient(44% 32% at 3% 57%,rgba(0,111,255,.13),transparent 76%),
+    radial-gradient(44% 32% at 97% 61%,rgba(255,31,42,.09),transparent 77%);
+  pointer-events:none;
+}
+
+.rp-updates::after{
+  content:'';
+  position:fixed;
+  z-index:0;
+  left:50%;
+  top:50%;
+  width:min(150vw,720px);
+  aspect-ratio:2 / 3;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(2,3,7,.84) 0%,
+      rgba(2,3,7,.48) 20%,
+      rgba(2,3,7,.12) 42%,
+      rgba(2,3,7,.08) 68%,
+      rgba(2,3,7,.70) 100%
+    ),
+    url('assets/main-menu/main-menu-basketball-bg.png') center / cover no-repeat;
+  opacity:.84;
+  filter:brightness(.80) contrast(1.20) saturate(1.22);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  -webkit-mask-image:radial-gradient(ellipse 78% 68% at 50% 58%,#000 0 57%,rgba(0,0,0,.94) 69%,rgba(0,0,0,.46) 82%,transparent 96%);
+  mask-image:radial-gradient(ellipse 78% 68% at 50% 58%,#000 0 57%,rgba(0,0,0,.94) 69%,rgba(0,0,0,.46) 82%,transparent 96%);
+}
+
+.rp-updates-shell{
+  position:relative;
+  z-index:2;
+}
+
+/* Profile-style top bar. */
+.rp-updates-topbar{
+  min-height:66px;
+  border-bottom:1px solid rgba(255,255,255,.065);
+  background:rgba(2,4,9,.94);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+.rp-updates-back{
+  border-color:rgba(255,255,255,.10);
+  background:#080d15;
+}
+
+.rp-updates-title strong{
+  color:#f7fbff;
+  font-size:1.05rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.10em;
+}
+
+.rp-updates-official{
+  border:1px solid rgba(40,195,255,.20);
+  color:#4fdcff;
+  background:rgba(18,109,255,.08);
+  font-weight:950;
+}
+
+/* Keep the Updates identity, but make its intro typography match the app. */
+.rp-updates-head small{
+  color:#43d4ff;
+  font-weight:950;
+}
+
+.rp-updates-head h1{
+  color:#f7fbff;
+  font-weight:950;
+  letter-spacing:-.02em;
+}
+
+.rp-updates-filters button{
+  border:1px solid rgba(255,255,255,.07);
+  color:#69788c;
+  background:#070c14;
+}
+
+.rp-updates-filters button.active{
+  border-color:rgba(72,215,255,.24);
+  color:#fff;
+  background:rgba(18,103,158,.14);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+/* Feed cards now use the same premium cyan-left / red-right edge language as Profile. */
+.rp-update-card{
+  border:1px solid transparent;
+  border-radius:20px;
+  background:
+    linear-gradient(145deg,rgba(5,10,18,.965),rgba(3,7,13,.98)) padding-box,
+    linear-gradient(112deg,
+      rgba(22,163,255,.56) 0%,
+      rgba(64,150,220,.20) 28%,
+      rgba(255,255,255,.065) 52%,
+      rgba(184,61,82,.20) 73%,
+      rgba(255,45,62,.46) 100%) border-box;
+  box-shadow:0 18px 48px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.018);
+}
+
+.rp-update-card.pinned{
+  border-color:transparent;
+  background:
+    linear-gradient(145deg,rgba(6,13,22,.975),rgba(3,7,13,.985)) padding-box,
+    linear-gradient(112deg,
+      rgba(22,163,255,.72) 0%,
+      rgba(64,150,220,.24) 30%,
+      rgba(255,255,255,.07) 52%,
+      rgba(184,61,82,.22) 73%,
+      rgba(255,45,62,.50) 100%) border-box;
+}
+
+/* Preserve category identity as a subtle inner rail instead of a competing card border. */
+.rp-update-card::before{
+  width:2px;
+  opacity:.42;
+}
+
+.rp-update-kind>span{
+  border:1px solid rgba(72,215,255,.10);
+  border-radius:10px;
+}
+
+.rp-update-card h2{
+  color:#f7fbff;
+  font-weight:950;
+}
+
+.rp-update-card>p{
+  color:#a6b4c3;
+}
+
+.rp-update-score,
+.rp-update-event-meta{
+  border-color:rgba(255,255,255,.065);
+  background:#070c14;
+}
+
+.rp-update-score div strong{
+  color:#f7fbff;
+  font-weight:950;
+}
+
+.rp-update-pin{
+  border-color:rgba(72,215,255,.20);
+  color:#53dcff;
+  background:rgba(18,103,158,.10);
+}
+
+.rp-updates-admin,
+.rp-updates-empty{
+  border-color:rgba(255,255,255,.07);
+  background:rgba(4,9,16,.90);
+}
+
+.rp-updates-admin{
+  border:1px solid transparent;
+  background:
+    linear-gradient(145deg,rgba(5,10,18,.97),rgba(3,7,13,.98)) padding-box,
+    linear-gradient(112deg,rgba(22,163,255,.42),rgba(255,255,255,.055) 52%,rgba(255,45,62,.32)) border-box;
+}
+
+@media(max-height:760px){
+  .rp-updates::after{
+    top:48%;
+    width:min(142vw,650px);
+    opacity:.80;
+  }
+}
+
+@media(max-height:650px){
+  .rp-updates::after{
+    top:47%;
+    width:min(132vw,590px);
+    opacity:.76;
+  }
+}
+
+@media(min-width:700px){
+  .rp-updates::after{
+    width:min(100vw,760px);
+  }
+}
+
+@media(prefers-reduced-transparency:reduce){
+  .rp-updates::after{opacity:.66}
+}
