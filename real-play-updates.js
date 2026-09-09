@@ -180,11 +180,47 @@
     return '!';
   }
 
+  function resultMvpName(update) {
+    const metadata = update?.metadata || {};
+    const nested = [metadata.mvp, metadata.gameMvp, metadata.game_mvp, update?.mvp, update?.gameMvp, update?.game_mvp];
+    const candidates = [
+      metadata.mvpName,
+      metadata.mvp_name,
+      metadata.gameMvpName,
+      metadata.game_mvp_name,
+      metadata.mvpPlayerName,
+      metadata.mvp_player_name,
+      update?.mvpName,
+      update?.mvp_name,
+      ...nested.flatMap((value) => {
+        if (typeof value === 'string') return [value];
+        if (!value || typeof value !== 'object') return [];
+        const player = value.player && typeof value.player === 'object' ? value.player : {};
+        return [
+          value.playerName,
+          value.player_name,
+          value.displayName,
+          value.display_name,
+          value.name,
+          player.displayName,
+          player.display_name,
+          player.name,
+        ];
+      }),
+    ];
+    const match = candidates.find((value) => typeof value === 'string' && value.trim());
+    return match ? match.trim() : '';
+  }
+
   function resultBlock(update) {
     const west = Number(update?.metadata?.westScore);
     const east = Number(update?.metadata?.eastScore);
     if (!Number.isFinite(west) || !Number.isFinite(east)) return '';
-    return `<div class="rp-update-score"><div><span>WEST</span><strong>${west}</strong></div><b>FINAL</b><div><span>EAST</span><strong>${east}</strong></div></div>`;
+    const mvpName = resultMvpName(update);
+    const mvp = mvpName
+      ? `<div class="rp-update-mvp"><span>GAME MVP</span><strong>${esc(mvpName)}</strong></div>`
+      : '';
+    return `<div class="rp-update-score"><div><span>WEST</span><strong>${west}</strong></div><b>FINAL</b><div><span>EAST</span><strong>${east}</strong></div></div>${mvp}`;
   }
 
   function scheduleMeta(update) {
