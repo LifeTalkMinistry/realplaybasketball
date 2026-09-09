@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260909-recorded-scoring-stability-v20';
+  const version = '20260909-live-session-expiry-v21';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -162,6 +162,7 @@
       'admin-recorded-stat-controls-fix.js',
       'admin-recorded-scoring-winner.js',
       'admin-access-bootstrap.js',
+      'admin-live-session-expiry.js',
       'admin-game-type-switch.js',
       'admin-session-picker-v5-loader.js',
       'open-rank-auto-id.js',
