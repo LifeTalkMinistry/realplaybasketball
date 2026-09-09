@@ -58,18 +58,18 @@
 
       <section class="rp-ranking-hero">
         <small class="rp-ranking-kicker" data-rp-ranking-kicker>BUILD YOUR OVR</small>
-        <h1 data-rp-ranking-title>GET RANKED.</h1>
-        <p data-rp-ranking-copy>Complete 5 official Ranking Games to establish your first Real Play OVR.</p>
+        <h1 data-rp-ranking-title>START YOUR OVR.</h1>
+        <p data-rp-ranking-copy>Your OVR appears after your first verified Ranking Game. Complete 5 verified games to enter official Real Play rankings.</p>
 
         <div class="rp-ranking-status-card">
           <div>
-            <span data-rp-ranking-status-label>UNRANKED</span>
+            <span data-rp-ranking-status-label>OVR NOT STARTED</span>
             <strong data-rp-ranking-status-value>0 / 5</strong>
           </div>
-          <em data-rp-ranking-status-note>OFFICIAL GAMES</em>
+          <em data-rp-ranking-status-note>RANKING PROGRESS</em>
         </div>
 
-        <div class="rp-ranking-progress" data-rp-ranking-progress aria-label="Ranking Game progress">
+        <div class="rp-ranking-progress" data-rp-ranking-progress aria-label="Official ranking eligibility progress">
           ${Array.from({ length: REQUIRED_GAMES }, (_, index) => `<i data-rp-ranking-step="${index + 1}"></i>`).join('')}
         </div>
       </section>
@@ -113,12 +113,12 @@
           <article><strong data-rp-ranking-stat-ovr>—</strong><span>OVR</span></article>
         </div>
         <div class="rp-ranking-rule-row">
-          <span>UNRANKED PLAYER</span>
-          <strong>5 VERIFIED GAMES → FIRST OVR</strong>
+          <span>OVR DISPLAY</span>
+          <strong>1 VERIFIED GAME → OVR APPEARS</strong>
         </div>
         <div class="rp-ranking-rule-row">
-          <span>ALREADY RANKED</span>
-          <strong>KEEP PLAYING → OVR CAN MOVE</strong>
+          <span>OFFICIAL RANKING</span>
+          <strong>5 VERIFIED GAMES → RANK ELIGIBLE</strong>
         </div>
         <div class="rp-ranking-rule-row muted">
           <span>MEDIA</span>
@@ -296,7 +296,7 @@
       profile.ovr,
       profile.rating
     );
-    const ranked = ovr !== undefined && ovr !== null && ovr !== '';
+    const hasOvr = ovr !== undefined && ovr !== null && ovr !== '';
 
     const points = num(pick(stats.pts, stats.points), 0);
     const assists = num(pick(stats.ast, stats.assists), 0);
@@ -310,11 +310,13 @@
     setText('[data-rp-ranking-stat-reb]', rebounds);
     setText('[data-rp-ranking-stat-to]', turnovers);
     setText('[data-rp-ranking-stat-record]', `${wins}-${losses}`);
-    setText('[data-rp-ranking-stat-ovr]', ranked ? ovr : '—');
+    setText('[data-rp-ranking-stat-ovr]', hasOvr ? ovr : '—');
 
     const required = Math.max(1, num(pick(
       ranking.requiredGames,
       ranking.required_games,
+      state.officialRankingGamesRequired,
+      state.official_ranking_games_required,
       state.rankingGamesRequired,
       state.ranking_games_required,
       state.placementGamesRequired,
@@ -340,24 +342,49 @@
       0
     ), 0), 0, required);
 
-    view.classList.toggle('ranked', ranked);
+    const eligibilityValue = pick(
+      ranking.officialRankingEligible,
+      ranking.official_ranking_eligible,
+      ranking.rankingEligible,
+      ranking.ranking_eligible,
+      ranking.ranked,
+      state.officialRankingEligible,
+      state.official_ranking_eligible
+    );
+    const rankingEligible = eligibilityValue === undefined
+      ? Boolean(hasOvr && completed >= required)
+      : Boolean(eligibilityValue);
 
-    if (ranked) {
-      setText('[data-rp-ranking-kicker]', 'RANKED COMPETITIVE PLAY');
+    view.classList.toggle('ranked', rankingEligible);
+
+    if (rankingEligible) {
+      setText('[data-rp-ranking-kicker]', 'OFFICIAL RANKING ELIGIBLE');
       setText('[data-rp-ranking-title]', 'DEFEND YOUR OVR.');
-      setText('[data-rp-ranking-copy]', 'You already have a Real Play ranking. Keep playing official Ranking Games and your OVR can rise or fall from verified performance.');
+      setText('[data-rp-ranking-copy]', 'You have completed the official ranking requirement. Keep playing verified Ranking Games and your OVR can rise or fall with your performance.');
       setText('[data-rp-ranking-status-label]', 'CURRENT OVR');
       setText('[data-rp-ranking-status-value]', ovr);
-      setText('[data-rp-ranking-status-note]', 'RANKED PLAYER');
+      setText('[data-rp-ranking-status-note]', 'OFFICIAL RANKING ELIGIBLE');
       q('[data-rp-ranking-progress]')?.setAttribute('aria-hidden', 'true');
       steps.forEach((step) => step.classList.add('complete'));
+    } else if (hasOvr) {
+      const remaining = Math.max(0, required - completed);
+      setText('[data-rp-ranking-kicker]', 'OVR IS LIVE');
+      setText('[data-rp-ranking-title]', 'BUILD YOUR RANK.');
+      setText('[data-rp-ranking-copy]', remaining > 0
+        ? `Your current OVR is ${ovr}. Complete ${remaining} more verified Ranking Game${remaining === 1 ? '' : 's'} to enter official Real Play rankings.`
+        : 'Your OVR is live. Official ranking eligibility will unlock once the verified-game requirement is confirmed.');
+      setText('[data-rp-ranking-status-label]', 'CURRENT OVR');
+      setText('[data-rp-ranking-status-value]', ovr);
+      setText('[data-rp-ranking-status-note]', `${completed} / ${required} VERIFIED · NOT YET RANKED`);
+      q('[data-rp-ranking-progress]')?.setAttribute('aria-hidden', 'false');
+      steps.forEach((step, index) => step.classList.toggle('complete', index < completed));
     } else {
       setText('[data-rp-ranking-kicker]', 'BUILD YOUR OVR');
-      setText('[data-rp-ranking-title]', 'GET RANKED.');
-      setText('[data-rp-ranking-copy]', `Complete ${required} official Ranking Games to establish your first Real Play OVR.`);
-      setText('[data-rp-ranking-status-label]', 'UNRANKED');
+      setText('[data-rp-ranking-title]', 'PLAY YOUR FIRST GAME.');
+      setText('[data-rp-ranking-copy]', `Your OVR appears after your first verified Ranking Game. Complete ${required} verified games to enter official Real Play rankings.`);
+      setText('[data-rp-ranking-status-label]', 'OVR NOT STARTED');
       setText('[data-rp-ranking-status-value]', `${completed} / ${required}`);
-      setText('[data-rp-ranking-status-note]', 'OFFICIAL GAMES');
+      setText('[data-rp-ranking-status-note]', 'OFFICIAL RANKING PROGRESS');
       q('[data-rp-ranking-progress]')?.setAttribute('aria-hidden', 'false');
       steps.forEach((step, index) => step.classList.toggle('complete', index < completed));
     }
