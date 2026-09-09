@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260908-explicit-replay-authority-v18';
+  const version = '20260909-updates-stability-v19';
   const html = document.documentElement;
   html.classList.add('js');
 
