@@ -153,7 +153,8 @@
   function setSourceStatus(message, error = false) {
     const node = adminBody()?.querySelector('[data-rp-youtube-source-status]');
     if (!node) return;
-    node.textContent = message || '';
+    const text = message || '';
+    if (node.textContent !== text) node.textContent = text;
     node.classList.toggle('error', Boolean(error));
   }
 
@@ -252,13 +253,11 @@
     const step = uploaded?.closest('.rp-video-step');
     const headStrong = step?.querySelector('.rp-video-step-head strong');
     const headSmall = step?.querySelector('.rp-video-step-head small');
-    if (headStrong) headStrong.textContent = 'GAME VIDEO SOURCE';
-    if (headSmall) headSmall.textContent = 'YouTube-hosted continuous full-game recording.';
+    if (headStrong && headStrong.textContent !== 'GAME VIDEO SOURCE') headStrong.textContent = 'GAME VIDEO SOURCE';
+    if (headSmall && headSmall.textContent !== 'YouTube-hosted continuous full-game recording.') headSmall.textContent = 'YouTube-hosted continuous full-game recording.';
 
     const replace = step?.querySelector('.rp-video-replace');
-    if (replace) {
-      replace.style.display = 'none';
-    }
+    if (replace) replace.style.display = 'none';
 
     if (step && !step.querySelector('[data-rp-youtube-preview]')) {
       const preview = document.createElement('div');
@@ -281,7 +280,7 @@
       preview.classList.toggle('ready', ready);
       preview.classList.toggle('error', !ready && Boolean(message));
       const label = preview.querySelector('.rp-youtube-preview-label small');
-      if (label && message) label.textContent = message;
+      if (label && message && label.textContent !== message) label.textContent = message;
     }
   }
 
@@ -371,17 +370,22 @@
 
     const seek = playerShell.querySelector('[data-rp-youtube-seek]');
     if (seek && lastDurationMs > 0 && document.activeElement !== seek) {
-      seek.value = String(Math.max(0, Math.min(1000, Math.round(lastCurrentMs / lastDurationMs * 1000))));
+      const nextSeek = String(Math.max(0, Math.min(1000, Math.round(lastCurrentMs / lastDurationMs * 1000))));
+      if (seek.value !== nextSeek) seek.value = nextSeek;
     }
     const clock = playerShell.querySelector('[data-rp-youtube-clock]');
-    if (clock) clock.textContent = `${formatTime(lastCurrentMs)} / ${formatTime(lastDurationMs)}`;
+    const clockText = `${formatTime(lastCurrentMs)} / ${formatTime(lastDurationMs)}`;
+    if (clock && clock.textContent !== clockText) clock.textContent = clockText;
     const play = playerShell.querySelector('[data-rp-youtube-play]');
-    if (play) play.textContent = lastPlaying ? '❚❚' : '▶';
+    const playText = lastPlaying ? '❚❚' : '▶';
+    if (play && play.textContent !== playText) play.textContent = playText;
     const mute = playerShell.querySelector('[data-rp-youtube-mute]');
-    if (mute) mute.textContent = lastMuted ? '🔇' : '🔊';
+    const muteText = lastMuted ? '🔇' : '🔊';
+    if (mute && mute.textContent !== muteText) mute.textContent = muteText;
 
     const externalTime = adminBody()?.querySelector('[data-rp-video-time]');
-    if (externalTime) externalTime.textContent = formatTime(lastCurrentMs);
+    const timeText = formatTime(lastCurrentMs);
+    if (externalTime && externalTime.textContent !== timeText) externalTime.textContent = timeText;
     patchDraftMarkers();
   }
 
@@ -488,7 +492,7 @@
             if (context === 'setup') setSetupReady(false, message);
             const note = shell.querySelector('.rp-youtube-host-note');
             if (note) {
-              note.textContent = message;
+              if (note.textContent !== message) note.textContent = message;
               note.classList.add('error');
             }
           },
@@ -499,7 +503,8 @@
       if (context === 'setup') setSetupReady(false, error.message || 'YouTube playback could not initialize.');
       const note = shell.querySelector('.rp-youtube-host-note');
       if (note) {
-        note.textContent = error.message || 'YouTube playback could not initialize.';
+        const message = error.message || 'YouTube playback could not initialize.';
+        if (note.textContent !== message) note.textContent = message;
         note.classList.add('error');
       }
     }
@@ -536,11 +541,11 @@
     if (!markers || !adminBody()?.querySelector('.rp-video-scoring-screen')) return;
     const events = latestDraftEvents();
     if (!events.length && window.__realPlayRecordedScoringDraftActive) {
-      markers.innerHTML = '';
+      if (markers.childElementCount || markers.textContent) markers.replaceChildren();
       return;
     }
     if (!events.length) return;
-    markers.innerHTML = events
+    const nextHtml = events
       .filter((item) => item?.eventType === 'shot' && item?.shotResult === 'make')
       .map((item) => {
         const timestamp = Number(item.videoTimestampMs || 0);
@@ -548,6 +553,7 @@
         const replay = Number(item.replayStartMs ?? Math.max(0, timestamp - 5000));
         return `<button type="button" class="rp-video-marker" style="left:${left}%" data-rp-video-marker="${replay}" title="${Number(item.shotValue || 0)}PT make at ${formatTime(timestamp)}">🏀</button>`;
       }).join('');
+    if (markers.innerHTML !== nextHtml) markers.innerHTML = nextHtml;
   }
 
   async function removeYouTubeSource() {
@@ -608,12 +614,8 @@
 
     if (!videoId) return;
 
-    if (body.querySelector('.rp-video-uploaded')) {
-      decorateYouTubeSetup(videoId);
-    }
-    if (scoringLike) {
-      mountScoringPlayer(videoId);
-    }
+    if (body.querySelector('.rp-video-uploaded')) decorateYouTubeSetup(videoId);
+    if (scoringLike) mountScoringPlayer(videoId);
   }
 
   function scheduleEnhance() {
@@ -657,7 +659,26 @@
     }
   }, true);
 
-  const observer = new MutationObserver(scheduleEnhance);
+  function mutationTouchesScoringStructure(mutation) {
+    const nodes = [...mutation.addedNodes, ...mutation.removedNodes];
+    return nodes.some((node) => {
+      if (node.nodeType !== 1) return false;
+      const element = node;
+      if (element.matches?.('.rp-video-scoring-screen,.rp-video-player-wrap,[data-rp-youtube-player-shell]')) return true;
+      return Boolean(element.querySelector?.('.rp-video-scoring-screen,.rp-video-player-wrap,[data-rp-youtube-player-shell]'));
+    });
+  }
+
+  const observer = new MutationObserver((mutations) => {
+    const stableScoringPlayer = Boolean(
+      playerShell?.isConnected
+      && playerSignature.endsWith(':scoring')
+      && adminBody()?.querySelector('.rp-video-scoring-screen')
+    );
+
+    if (stableScoringPlayer && !mutations.some(mutationTouchesScoringStructure)) return;
+    scheduleEnhance();
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener('realplay:admin-render', scheduleEnhance);
   window.addEventListener('beforeunload', destroyPlayer);
