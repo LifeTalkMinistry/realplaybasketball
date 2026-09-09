@@ -197,6 +197,23 @@
     linear-gradient(112deg,rgba(22,163,255,.42),rgba(255,255,255,.055) 52%,rgba(255,45,62,.32)) border-box;
 }
 
+/* Remove redundant labels from the player-facing Updates feed. */
+.rp-updates-head > small,
+.rp-update-card .rp-update-pin,
+.rp-update-result > p,
+.rp-update-card footer > span{
+  display:none!important;
+}
+
+/* Once the footer authority label is removed, keep admin delete controls aligned cleanly. */
+.rp-update-card footer{
+  justify-content:flex-end;
+}
+
+.rp-update-card footer:empty{
+  display:none;
+}
+
 @media(max-height:760px){
   .rp-updates::after{
     top:48%;
