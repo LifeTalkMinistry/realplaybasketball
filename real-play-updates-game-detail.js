@@ -161,7 +161,8 @@
       const games = Number(mvpRaceLeader.games || 0);
       const label = mvpRaceLeader.eligible ? 'CURRENT MVP LEADER' : 'MVP RACE LEADER';
       const gameCopy = games > 0 ? ` · ${games} ${games === 1 ? 'GAME' : 'GAMES'}` : '';
-      node.innerHTML = `<span>${label}</span><strong>${escapeHtml(mvpRaceLeader.playerName)}${gameCopy}</strong>`;
+      const html = `<span>${label}</span><strong>${escapeHtml(mvpRaceLeader.playerName)}${gameCopy}</strong>`;
+      if (node.innerHTML !== html) node.innerHTML = html;
     });
   }
 
@@ -224,13 +225,19 @@
     openReplay(sessionId);
   });
 
-  const observer = new MutationObserver(() => {
-    const panel = document.querySelector('[data-rp-updates]');
-    if (!panel?.classList.contains('open')) return;
+  /*
+   * Do not observe the entire DOM here. The old whole-document MutationObserver
+   * was triggered by the MVP node that it created itself, causing a render loop
+   * and freezing the Updates screen. A lightweight timer is enough to restore
+   * the receipt after the feed's normal polling re-renders its cards.
+   */
+  const mvpTimer = window.setInterval(() => {
+    if (!document.querySelector('[data-rp-updates].open')) return;
     renderMvpRaceLeader();
     refreshMvpRaceLeader();
-  });
-  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  }, 2000);
+
+  window.addEventListener('pagehide', () => window.clearInterval(mvpTimer), { once: true });
 
   window.addEventListener('focus', () => {
     if (document.querySelector('[data-rp-updates].open')) refreshMvpRaceLeader({ force: true });
