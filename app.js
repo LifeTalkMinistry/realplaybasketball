@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-no-legacy-boot-v31';
+  const version = '20260910-home-command-center-v32';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
