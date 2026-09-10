@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-home-command-center-v32';
+  const version = '20260910-home-mode-links-v33';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -268,6 +268,7 @@
       'admin-live-refresh-fix.js',
       'simple-navigation.js',
       'simple-navigation-state-authority.js',
+      'home-mode-links.js',
     ];
 
     for (const href of enhancements) {
