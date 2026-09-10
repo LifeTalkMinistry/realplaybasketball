@@ -1,17 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="rp-shell-booting">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#020306" />
   <meta name="description" content="Real Play Basketball — a real-world basketball movement and player platform. Less Screen. Real Points." />
   <title>Real Play Basketball — Less Screen. Real Points.</title>
+  <style id="rp-shell-static-boot-gate">
+    html.rp-shell-booting body{margin:0!important;min-height:100dvh!important;overflow:hidden!important;background:#020306!important}
+    html.rp-shell-booting body>*{visibility:hidden!important}
+    html.rp-shell-booting body::before,html.rp-shell-booting body::after{position:fixed;left:50%;z-index:2147483647;visibility:visible!important;pointer-events:none;transform:translateX(-50%);text-align:center;white-space:nowrap}
+    html.rp-shell-booting body::before{content:'REAL PLAY';top:45%;color:#f6f9ff;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:clamp(2rem,9vw,3.25rem);font-style:italic;font-weight:950;letter-spacing:.025em}
+    html.rp-shell-booting body::after{content:'BASKETBALL  ·  LOADING';top:calc(45% + 58px);color:#42d8ff;font-family:Arial,sans-serif;font-size:.56rem;font-weight:900;letter-spacing:.22em;animation:rpStaticBootPulse 1.1s ease-in-out infinite alternate}
+    @keyframes rpStaticBootPulse{from{opacity:.38}to{opacity:1}}
+    @media(prefers-reduced-motion:reduce){html.rp-shell-booting body::after{animation:none;opacity:.78}}
+  </style>
+  <script>window.__rpStaticBootFallback=setTimeout(function(){document.documentElement.classList.remove('rp-shell-booting')},8000);</script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="site.webmanifest?v=20260906-main-menu-physics-v8" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="mission.css" />
   <link rel="stylesheet" href="auth.css" />
-  <script src="app.js?v=20260910-shell-boot-gate-v26" defer></script>
+  <script src="app.js?v=20260910-static-boot-gate-v27" defer></script>
   <script src="auth.js?v=20260903-mobile-brand-space-v3" defer></script>
 </head>
 <body>
