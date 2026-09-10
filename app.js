@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-me-settings-v38';
+  const version = '20260910-profile-freeze-guard-v39';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
