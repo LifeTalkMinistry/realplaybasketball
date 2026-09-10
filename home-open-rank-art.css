@@ -1,0 +1,52 @@
+/* Real Play Open Rank premium image tile.
+   OPEN RANK is baked into the artwork, so the old schedule copy is intentionally
+   removed from the visible card while the card keeps its existing click action. */
+body.rp-simple-navigation-active [data-rp-home-open-rank]{
+  position:relative!important;
+  min-height:126px!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+  padding:0!important;
+  background:#02060c!important;
+  cursor:pointer!important;
+}
+
+body.rp-simple-navigation-active [data-rp-home-open-rank]::before{
+  content:''!important;
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:1!important;
+  border-radius:inherit!important;
+  pointer-events:none!important;
+  background:
+    linear-gradient(180deg,rgba(2,6,12,.02),rgba(2,6,12,.12)),
+    url('assets/home/home-open-rank.svg') center center / cover no-repeat!important;
+  opacity:1!important;
+  filter:brightness(1.03) contrast(1.04) saturate(1.05)!important;
+  transform:scale(1.01)!important;
+}
+
+/* The artwork already contains the OPEN RANK title. */
+body.rp-simple-navigation-active [data-rp-home-open-rank]>small,
+body.rp-simple-navigation-active [data-rp-home-open-rank]>strong,
+body.rp-simple-navigation-active [data-rp-home-open-rank]>p{
+  display:none!important;
+}
+
+/* Remove the legacy schedule arrow from this image-first tile only. */
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-command-grid [data-rp-home-open-rank]::after{
+  content:none!important;
+  display:none!important;
+}
+
+body.rp-simple-navigation-active [data-rp-home-open-rank]:focus-visible{
+  outline:2px solid rgba(57,220,255,.72)!important;
+  outline-offset:2px!important;
+}
+
+@media(max-width:420px){
+  body.rp-simple-navigation-active [data-rp-home-open-rank]{
+    min-height:116px!important;
+  }
+}
