@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-3v3-header-cleanup-v34';
+  const version = '20260910-home-ball-visible-v35';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
