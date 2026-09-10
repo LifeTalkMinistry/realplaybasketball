@@ -21,9 +21,29 @@
       .rp-world-player-sort button.active b{color:#49d8ff}
       .rp-world-player-sort button:focus-visible{outline:2px solid rgba(72,215,255,.65);outline-offset:2px}
       .rp-world-player-sort b{margin-left:3px;color:#52667b;font-size:.55rem}
+      .rp-world-player-directory-head [data-world-player-count]{display:none!important}
       @media(max-width:360px){.rp-world-player-sort{gap:5px}.rp-world-player-sort button{padding-inline:5px;font-size:.46rem;letter-spacing:.055em}}
     `;
     document.head.appendChild(style);
+  }
+
+  function syncPlayerHeaderCount() {
+    const playersView = panel?.querySelector('[data-world-view="players"]');
+    const head = playersView?.querySelector('.rp-world-player-directory-head');
+    const title = head?.querySelector('strong');
+    const countNode = head?.querySelector('[data-world-player-count]');
+    if (!title) return;
+
+    const countText = String(countNode?.textContent || '');
+    const countMatch = countText.match(/\d+/);
+    const rowCount = list?.querySelectorAll('.rp-world-player-row').length || 0;
+    const count = countMatch ? Number(countMatch[0]) : rowCount;
+
+    title.textContent = `PLAYERS ${Number.isFinite(count) ? count : rowCount}`;
+    if (countNode) {
+      countNode.hidden = true;
+      countNode.setAttribute('aria-hidden', 'true');
+    }
   }
 
   function rowMeta(row) {
@@ -73,6 +93,7 @@
 
   function applySort() {
     scheduled = false;
+    syncPlayerHeaderCount();
     if (!list) return;
     const next = sortedRows();
     if (!next.length) return;
@@ -85,6 +106,7 @@
   }
 
   function scheduleSort() {
+    syncPlayerHeaderCount();
     if (scheduled) return;
     scheduled = true;
     requestAnimationFrame(applySort);
@@ -145,6 +167,7 @@
     }
 
     renderControls();
+    syncPlayerHeaderCount();
     if (listObserver) listObserver.disconnect();
     listObserver = new MutationObserver(() => scheduleSort());
     listObserver.observe(list, { childList: true });
