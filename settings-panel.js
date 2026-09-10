@@ -161,6 +161,19 @@
     interceptSettingsSelection(event);
   }, true);
 
+  // The profile now has a permanent SETTINGS button beside Manage Player
+  // Number. It must open this exact same settings system instead of creating
+  // a second settings implementation. Admin visibility remains controlled by
+  // admin-access-bootstrap through the realplay:settings-open verification.
+  document.addEventListener('click', (event) => {
+    const target = event.target.closest?.('.rp-profile-settings-placeholder, [data-rp-profile-settings]');
+    if (!target) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    window.RealPlayProfile?.close?.();
+    window.setTimeout(showMainSettings, 30);
+  }, true);
+
   menuList?.addEventListener('keydown', (event) => {
     if ((event.key === 'Enter' || event.key === ' ') && settingsChoice.classList.contains('slot-active')) interceptSettingsSelection(event);
   }, true);
