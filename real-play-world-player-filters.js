@@ -38,11 +38,13 @@
     const countMatch = countText.match(/\d+/);
     const rowCount = list?.querySelectorAll('.rp-world-player-row').length || 0;
     const count = countMatch ? Number(countMatch[0]) : rowCount;
+    const resolvedCount = Number.isFinite(count) ? count : rowCount;
 
-    title.textContent = `PLAYERS ${Number.isFinite(count) ? count : rowCount}`;
+    title.textContent = `${resolvedCount} PLAYER${resolvedCount === 1 ? '' : 'S'}`;
     if (countNode) {
       countNode.hidden = true;
       countNode.setAttribute('aria-hidden', 'true');
+      countNode.style.setProperty('display', 'none', 'important');
     }
   }
 
