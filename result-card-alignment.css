@@ -116,7 +116,7 @@
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span::before{
   position:absolute!important;
   left:7.0%!important;
-  top:53.5%!important;
+  top:55%!important;
   width:8.5%!important;
   height:62%!important;
   transform:translate(-50%,-50%)!important;
@@ -163,7 +163,7 @@
 
   .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span::before{
     left:7.0%!important;
-    top:53.5%!important;
+    top:55%!important;
     width:8.5%!important;
     height:62%!important;
   }
