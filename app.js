@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-world-results-v24';
+  const version = '20260910-world-results-v25';
   const html = document.documentElement;
   html.classList.add('js');
 
