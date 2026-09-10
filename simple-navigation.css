@@ -26,6 +26,13 @@ body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu>.rp-main-menu-list
   display:none!important;
 }
 
+/* Primary navigation is now enough context on its own. Remove redundant top chrome. */
+body.rp-simple-navigation-active .rp-simple-home-head,
+body.rp-simple-navigation-active .rp-world-topbar,
+body.rp-simple-navigation-active [data-rp-profile] .rp-profile-topbar{
+  display:none!important;
+}
+
 /* Keep the basketball as atmosphere, never as foreground content. */
 body.rp-simple-navigation-active .rp-main-menu::after,
 body.rp-simple-navigation-active .rp-world::after{
@@ -227,17 +234,10 @@ body.rp-simple-navigation-active .rp-world-shell{
   padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom) + 18px)!important;
 }
 body.rp-simple-navigation-active .rp-world-body{
-  padding-top:16px!important;
+  padding-top:14px!important;
   padding-bottom:18px!important;
 }
 body.rp-simple-navigation-active .rp-world-back{display:none!important}
-body.rp-simple-navigation-active .rp-world-topbar{
-  position:sticky;
-  top:0;
-  z-index:8;
-  grid-template-columns:minmax(0,1fr) auto!important;
-  padding-left:16px!important;
-}
 body.rp-simple-navigation-active .rp-world-title{padding-left:1px}
 
 /* ME is also a true top-level view. Public player profiles keep their own back button. */
@@ -245,11 +245,8 @@ body.rp-simple-navigation-active [data-rp-profile]{
   padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom));
 }
 body.rp-simple-navigation-active [data-rp-profile] .rp-profile-back{display:none!important}
-body.rp-simple-navigation-active [data-rp-profile] .rp-profile-topbar{
-  grid-template-columns:minmax(0,1fr) auto!important;
-  padding-left:16px!important;
-}
 body.rp-simple-navigation-active [data-rp-profile] .rp-profile-body{
+  padding-top:14px!important;
   padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom) + 18px)!important;
 }
 
@@ -264,8 +261,8 @@ body.rp-simple-navigation-active .rp-updates-shell{
 /* Chat should always finish above the permanent navigation. */
 body.rp-simple-navigation-active [data-world-view="chats"]{padding-bottom:8px}
 body.rp-simple-navigation-active .rp-chat-thread{
-  height:clamp(300px,calc(100dvh - 330px),470px)!important;
-  min-height:300px!important;
+  height:clamp(340px,calc(100dvh - 264px),540px)!important;
+  min-height:340px!important;
 }
 body.rp-simple-navigation-active .rp-chat-thread-wrap{margin-bottom:8px}
 
@@ -303,7 +300,7 @@ body.rp-simple-navigation-active .rp-profile-actions [data-rp-simple-settings]{
   .rp-simple-nav-item{min-height:47px}
   .rp-simple-nav-item small{font-size:.39rem}
   body.rp-simple-navigation-active .rp-chat-thread{
-    height:clamp(280px,calc(100dvh - 318px),430px)!important;
-    min-height:280px!important;
+    height:clamp(320px,calc(100dvh - 252px),500px)!important;
+    min-height:320px!important;
   }
 }
