@@ -1,1 +1,96 @@
 body.rp-lobby-active > .mobile-tabbar{display:none!important}
+
+/* Real Play shell edge-balance authority.
+   Keep the left and right visual gutters mathematically identical even when a
+   desktop browser/emulator shows a persistent vertical scrollbar. */
+body.rp-simple-navigation-active{
+  --rp-edge-gutter:14px;
+  --rp-edge-gutter-double:28px;
+  --rp-edge-gutter-neg:-14px;
+  scrollbar-gutter:stable both-edges;
+}
+
+html:has(body.rp-simple-navigation-active){
+  background:#02050a;
+  overflow-x:hidden;
+  scrollbar-gutter:stable both-edges;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(112,132,154,.62) #02050a;
+}
+
+html:has(body.rp-simple-navigation-active)::-webkit-scrollbar{
+  width:6px;
+}
+html:has(body.rp-simple-navigation-active)::-webkit-scrollbar-track{
+  background:#02050a;
+}
+html:has(body.rp-simple-navigation-active)::-webkit-scrollbar-thumb{
+  border:1px solid #02050a;
+  border-radius:999px;
+  background:rgba(112,132,154,.62);
+}
+
+body.rp-simple-navigation-active .rp-app{
+  width:100%!important;
+  max-width:100%!important;
+  margin-inline:auto!important;
+  box-sizing:border-box!important;
+}
+
+body.rp-simple-navigation-active .rp-app-inner{
+  width:100%!important;
+  max-width:620px!important;
+  margin-inline:auto!important;
+  box-sizing:border-box!important;
+}
+
+body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu{
+  width:100%!important;
+  max-width:620px!important;
+  margin-inline:auto!important;
+  padding-left:var(--rp-edge-gutter)!important;
+  padding-right:var(--rp-edge-gutter)!important;
+  box-sizing:border-box!important;
+}
+
+body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-simple-home{
+  width:100%!important;
+  max-width:100%!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  box-sizing:border-box!important;
+}
+
+/* The hero used 100vw, which includes the desktop scrollbar and can make the
+   right side appear tighter. Size it from the content box instead, then bleed
+   outward by the exact same gutter on both sides. */
+body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-simple-home.rp-home-command-center .rp-home-brand-lockup{
+  width:calc(100% + var(--rp-edge-gutter-double))!important;
+  max-width:620px!important;
+  margin-left:var(--rp-edge-gutter-neg)!important;
+  margin-right:var(--rp-edge-gutter-neg)!important;
+  transform:none!important;
+  box-sizing:border-box!important;
+}
+
+body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-home-main-announcement,
+body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-home-command-grid,
+body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-home-command-grid article{
+  width:100%!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+
+body.rp-simple-navigation-active .rp-simple-nav{
+  width:min(100%,620px)!important;
+  max-width:620px!important;
+  box-sizing:border-box!important;
+}
+
+@media(max-width:420px){
+  body.rp-simple-navigation-active{
+    --rp-edge-gutter:12px;
+    --rp-edge-gutter-double:24px;
+    --rp-edge-gutter-neg:-12px;
+  }
+}
