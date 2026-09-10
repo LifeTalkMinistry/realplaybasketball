@@ -378,8 +378,9 @@
           <div class="rp-profile-no-games"><strong>NO OFFICIAL GAMES YET.</strong><p>Your verified game history will build here automatically.</p></div>`}
       </section>
 
-      <section class="rp-profile-actions">
+      <section class="rp-profile-actions" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;">
         <button type="button" data-rp-profile-manage-number>MANAGE PLAYER NUMBER</button>
+        <button type="button" class="rp-profile-settings-placeholder" aria-label="Settings">SETTINGS</button>
       </section>`;
 
     root.querySelector('[data-rp-profile-manage-number]')?.addEventListener('click', () => {
