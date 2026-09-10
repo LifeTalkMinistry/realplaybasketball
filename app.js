@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-home-mode-links-v33';
+  const version = '20260910-3v3-header-cleanup-v34';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -146,6 +146,7 @@
     'three-v-three-premium.css',
     'three-v-three-logo-scale.css',
     'three-v-three-club-themes.css',
+    'three-v-three-header-cleanup.css',
     'career-beta.css',
     'career-beta-play.css',
     'career-game-replay.css',
