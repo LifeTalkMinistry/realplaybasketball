@@ -1,13 +1,14 @@
-/* Real Play Main Announcement artwork. The source now uses the real PNG uploaded to the repo. */
+/* Real Play Main Announcement image-first tile.
+   The uploaded PNG now owns the idle-state wording, so the legacy HTML copy is
+   intentionally hidden to prevent duplicate/overlapping text. */
 body.rp-simple-navigation-active .rp-home-main-announcement{
   position:relative!important;
   overflow:hidden!important;
   isolation:isolate!important;
+  padding:0!important;
+  background:#02060c!important;
 }
 
-/* Keep protection behind the copy, but let the premium court art breathe.
-   Left stays dark for readability; center/right reveal the hoop, reflections,
-   ball texture, cyan light and red light from the uploaded artwork. */
 body.rp-simple-navigation-active .rp-home-main-announcement::before{
   content:"";
   position:absolute;
@@ -15,23 +16,14 @@ body.rp-simple-navigation-active .rp-home-main-announcement::before{
   z-index:0;
   border-radius:inherit;
   pointer-events:none;
-  background:
-    linear-gradient(90deg,
-      rgba(2,6,12,.82) 0%,
-      rgba(2,6,12,.70) 28%,
-      rgba(2,6,12,.42) 48%,
-      rgba(2,6,12,.16) 68%,
-      rgba(2,6,12,.04) 100%),
-    linear-gradient(180deg,rgba(2,6,12,.02),rgba(2,6,12,.10)),
-    url('assets/home/home-main-announcement.png?v=20260910-main-announcement-png-v1') center 53% / cover no-repeat;
+  background:url('assets/home/home-main-announcement.png?v=20260910-main-announcement-image-only-v2') center center / cover no-repeat!important;
   opacity:1!important;
-  filter:brightness(1.24) saturate(1.14) contrast(1.06);
+  filter:none!important;
 }
 
+/* The idle artwork already includes its own announcement wording. */
 body.rp-simple-navigation-active .rp-home-main-announcement>small,
 body.rp-simple-navigation-active .rp-home-main-announcement>h2,
 body.rp-simple-navigation-active .rp-home-main-announcement>p{
-  position:relative!important;
-  z-index:2!important;
-  text-shadow:0 2px 10px rgba(0,0,0,.92),0 0 16px rgba(0,0,0,.54);
+  display:none!important;
 }
