@@ -36,14 +36,18 @@
   function ensureProfileSettingsAction() {
     const profile = document.querySelector('[data-rp-profile]');
     const actions = profile?.querySelector('.rp-profile-actions');
-    if (!actions || actions.querySelector('[data-rp-simple-settings]')) return;
+    if (!actions) return false;
 
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.dataset.rpSimpleSettings = 'true';
-    button.textContent = 'SETTINGS';
-    button.addEventListener('click', openSettingsFromProfile);
-    actions.appendChild(button);
+    let button = actions.querySelector('[data-rp-simple-settings]');
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.rpSimpleSettings = 'true';
+      button.textContent = 'SETTINGS';
+      button.addEventListener('click', openSettingsFromProfile);
+      actions.appendChild(button);
+    }
+    return true;
   }
 
   function closePublicProfileForBottomNav() {
@@ -71,32 +75,20 @@
   document.addEventListener('click', (event) => {
     if (!event.target.closest('[data-rp-simple-nav-item]')) return;
     closePublicProfileForBottomNav();
+    window.setTimeout(ensureProfileSettingsAction, 0);
+    window.setTimeout(ensureProfileSettingsAction, 80);
+    window.setTimeout(ensureProfileSettingsAction, 250);
   }, true);
 
-  const observer = new MutationObserver((mutations) => {
-    let shouldEnsureSettings = false;
-
-    for (const mutation of mutations) {
-      for (const node of mutation.addedNodes) {
-        if (node.nodeType !== 1) continue;
-
-        if (node.matches?.('.rp-bottom-nav,[data-rp-bottom-nav]')) {
-          node.remove();
-        } else {
-          removeLegacyBottomNav(node);
-        }
-
-        if (
-          node.matches?.('.rp-profile-actions,[data-rp-profile]') ||
-          node.querySelector?.('.rp-profile-actions')
-        ) {
-          shouldEnsureSettings = true;
-        }
-      }
-    }
-
-    if (shouldEnsureSettings) ensureProfileSettingsAction();
+  const observer = new MutationObserver(() => {
+    removeLegacyBottomNav();
+    ensureProfileSettingsAction();
   });
 
   observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  window.addEventListener('focus', ensureProfileSettingsAction);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) ensureProfileSettingsAction();
+  });
 })();
