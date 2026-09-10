@@ -26,14 +26,12 @@ body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu>.rp-main-menu-list
   display:none!important;
 }
 
-/* Primary navigation is now enough context on its own. Remove redundant top chrome. */
 body.rp-simple-navigation-active .rp-simple-home-head,
 body.rp-simple-navigation-active .rp-world-topbar,
 body.rp-simple-navigation-active [data-rp-profile] .rp-profile-topbar{
   display:none!important;
 }
 
-/* Players heading: centered title with live registered-player count underneath. */
 body.rp-simple-navigation-active [data-world-view="players"] .rp-world-player-directory-head small{
   display:none!important;
 }
@@ -67,7 +65,6 @@ body.rp-simple-navigation-active [data-world-view="players"] [data-world-player-
   text-transform:uppercase!important;
 }
 
-/* Basketball stays behind content, but Home should visibly carry the Real Play identity. */
 body.rp-simple-navigation-active .rp-main-menu::after,
 body.rp-simple-navigation-active .rp-world::after{
   -webkit-mask-image:radial-gradient(ellipse 74% 68% at 50% 52%,#000 0 52%,rgba(0,0,0,.66) 72%,transparent 96%)!important;
@@ -230,7 +227,6 @@ body.rp-simple-navigation-active .rp-world::after{
 }
 .rp-simple-home-updates b{color:#45d8ff;font-size:1.1rem}
 
-/* Permanent app navigation */
 .rp-simple-nav{
   position:fixed;
   left:50%;
@@ -267,7 +263,6 @@ body.rp-simple-navigation-active .rp-world::after{
 .rp-simple-nav-item small{font-size:.41rem;font-weight:950;letter-spacing:.08em}
 .rp-simple-nav-item.active{color:#45d8ff;background:rgba(69,216,255,.075)}
 
-/* WORLD / PLAYERS / CHATS are true top-level views now, not modal subpages. */
 body.rp-simple-navigation-active .rp-world{
   padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom));
 }
@@ -282,7 +277,6 @@ body.rp-simple-navigation-active .rp-world-body{
 body.rp-simple-navigation-active .rp-world-back{display:none!important}
 body.rp-simple-navigation-active .rp-world-title{padding-left:1px}
 
-/* ME is also a true top-level view. Public player profiles keep their own back button. */
 body.rp-simple-navigation-active [data-rp-profile]{
   padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom));
 }
@@ -292,7 +286,6 @@ body.rp-simple-navigation-active [data-rp-profile] .rp-profile-body{
   padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom) + 18px)!important;
 }
 
-/* Updates and public player drill-downs remain secondary pages, so their back controls stay. */
 body.rp-simple-navigation-active .rp-updates{
   padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom));
 }
@@ -300,7 +293,6 @@ body.rp-simple-navigation-active .rp-updates-shell{
   padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom) + 18px)!important;
 }
 
-/* Chat should always finish above the permanent navigation. */
 body.rp-simple-navigation-active [data-world-view="chats"]{padding-bottom:8px}
 body.rp-simple-navigation-active .rp-chat-thread{
   height:clamp(340px,calc(100dvh - 264px),540px)!important;
@@ -331,6 +323,29 @@ body.rp-simple-navigation-active .rp-profile-actions [data-rp-simple-settings]{
   font-style:italic;
   font-weight:950;
   letter-spacing:.06em;
+}
+
+body.rp-simple-navigation-active .rp-profile-history-toggle{
+  width:100%;
+  min-height:46px;
+  margin-top:2px;
+  border:1px solid rgba(69,216,255,.16);
+  border-radius:14px;
+  color:#52d9ff;
+  background:linear-gradient(180deg,rgba(7,16,27,.92),rgba(4,9,16,.96));
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.58rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.10em;
+  text-align:center;
+}
+body.rp-simple-navigation-active .rp-profile-history-toggle:active{
+  transform:scale(.992);
+}
+body.rp-simple-navigation-active .rp-profile-history-toggle:focus-visible{
+  outline:2px solid rgba(69,216,255,.58);
+  outline-offset:2px;
 }
 
 @media(max-width:420px){
