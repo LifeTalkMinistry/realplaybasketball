@@ -1,10 +1,93 @@
 (() => {
-  const version = '20260910-world-results-v25';
+  const version = '20260910-shell-boot-gate-v26';
   const html = document.documentElement;
-  html.classList.add('js');
+  html.classList.add('js', 'rp-shell-booting');
+
+  // The legacy lobby/main-menu must never paint while the new public-first shell
+  // is still assembling. This boot gate is installed before mobile-lobby.js runs,
+  // so users see one intentional loading state instead of multiple UI systems.
+  const bootStyle = document.createElement('style');
+  bootStyle.id = 'rp-shell-boot-style';
+  bootStyle.textContent = `
+    html.rp-shell-booting body{
+      margin:0!important;
+      min-height:100dvh!important;
+      overflow:hidden!important;
+      background:#020306!important;
+    }
+    html.rp-shell-booting body>*{
+      visibility:hidden!important;
+    }
+    html.rp-shell-booting body::before,
+    html.rp-shell-booting body::after{
+      position:fixed;
+      left:50%;
+      z-index:2147483647;
+      visibility:visible!important;
+      pointer-events:none;
+      transform:translateX(-50%);
+      text-align:center;
+    }
+    html.rp-shell-booting body::before{
+      content:'REAL PLAY';
+      top:45%;
+      color:#f6f9ff;
+      font-family:Impact,'Arial Narrow',Arial,sans-serif;
+      font-size:clamp(2rem,9vw,3.25rem);
+      font-style:italic;
+      font-weight:950;
+      letter-spacing:.025em;
+      white-space:nowrap;
+    }
+    html.rp-shell-booting body::after{
+      content:'BASKETBALL  ·  LOADING';
+      top:calc(45% + 58px);
+      color:#42d8ff;
+      font-family:Arial,sans-serif;
+      font-size:.56rem;
+      font-weight:900;
+      letter-spacing:.22em;
+      white-space:nowrap;
+      animation:rpShellBootPulse 1.1s ease-in-out infinite alternate;
+    }
+    @keyframes rpShellBootPulse{
+      from{opacity:.38}
+      to{opacity:1}
+    }
+    @media(prefers-reduced-motion:reduce){
+      html.rp-shell-booting body::after{animation:none;opacity:.78}
+    }
+  `;
+  document.head.appendChild(bootStyle);
+
+  let shellReady = false;
+  let shellReadyObserver = null;
+
+  function revealNewShell() {
+    if (shellReady) return true;
+    const nav = document.querySelector('[data-rp-simple-nav]');
+    const home = document.querySelector('[data-rp-simple-home]');
+    if (!nav || !home) return false;
+    shellReady = true;
+    html.classList.remove('rp-shell-booting');
+    html.classList.add('rp-shell-ready');
+    shellReadyObserver?.disconnect();
+    shellReadyObserver = null;
+    return true;
+  }
+
+  shellReadyObserver = new MutationObserver(revealNewShell);
+  shellReadyObserver.observe(document.documentElement, { childList: true, subtree: true });
+
+  function releaseBootGateForFallback() {
+    shellReadyObserver?.disconnect();
+    shellReadyObserver = null;
+    html.classList.remove('rp-shell-booting');
+  }
 
   function restoreBaseSite() {
     document.body?.classList.remove('rp-lobby-active', 'rp-guest-active', 'rp-visitor-active', 'rp-3v3-open', 'rp-ranking-open');
+    releaseBootGateForFallback();
     html.classList.remove('js');
   }
 
@@ -180,9 +263,21 @@
       const loaded = await loadScript(href);
       if (!loaded) console.warn(`[Real Play] Optional layer failed to load: ${href}`);
     }
+
+    // simple-navigation installs synchronously once its required DOM exists. Give
+    // one animation frame for its MutationObserver fallback, then reveal legacy
+    // UI only if the new shell truly failed. Never leave users trapped on loader.
+    requestAnimationFrame(() => {
+      if (revealNewShell()) return;
+      window.setTimeout(() => {
+        if (revealNewShell()) return;
+        releaseBootGateForFallback();
+        console.error('[Real Play] New shell did not initialize; released boot gate to fallback UI.');
+      }, 500);
+    });
   })().catch((error) => {
     window.clearTimeout(shellWatchdog);
-    if (!document.querySelector('[data-rp-app]')) restoreBaseSite();
+    restoreBaseSite();
     console.error('[Real Play] Startup recovered from an unexpected error.', error);
   });
 })();
