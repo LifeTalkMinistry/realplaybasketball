@@ -18,6 +18,34 @@
     document.head.appendChild(style);
   }
 
+  function openSettingsFromProfile() {
+    const settingsChoice = document.querySelector('[data-rp-main-action="settings"]');
+    if (!settingsChoice) {
+      document.querySelector('[data-auth-open]')?.click();
+      return;
+    }
+
+    const alreadyActive = settingsChoice.classList.contains('slot-active');
+    settingsChoice.classList.add('slot-active');
+    settingsChoice.click();
+    if (!alreadyActive) {
+      window.setTimeout(() => settingsChoice.classList.remove('slot-active'), 0);
+    }
+  }
+
+  function ensureProfileSettingsAction() {
+    const profile = document.querySelector('[data-rp-profile]');
+    const actions = profile?.querySelector('.rp-profile-actions');
+    if (!actions || actions.querySelector('[data-rp-simple-settings]')) return;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.rpSimpleSettings = 'true';
+    button.textContent = 'SETTINGS';
+    button.addEventListener('click', openSettingsFromProfile);
+    actions.appendChild(button);
+  }
+
   function closePublicProfileForBottomNav() {
     const profile = document.querySelector('[data-rp-public-profile].open');
     if (!profile) return;
@@ -37,6 +65,7 @@
 
   removeLegacyBottomNav();
   installProfileNavStyle();
+  ensureProfileSettingsAction();
   document.documentElement.classList.add('rp-legacy-bottom-nav-removed');
 
   document.addEventListener('click', (event) => {
@@ -44,18 +73,30 @@
     closePublicProfileForBottomNav();
   }, true);
 
-  const app = document.querySelector('[data-rp-app]');
-  if (!app) return;
-
   const observer = new MutationObserver((mutations) => {
+    let shouldEnsureSettings = false;
+
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
         if (node.nodeType !== 1) continue;
-        if (node.matches?.('.rp-bottom-nav,[data-rp-bottom-nav]')) node.remove();
-        else removeLegacyBottomNav(node);
+
+        if (node.matches?.('.rp-bottom-nav,[data-rp-bottom-nav]')) {
+          node.remove();
+        } else {
+          removeLegacyBottomNav(node);
+        }
+
+        if (
+          node.matches?.('.rp-profile-actions,[data-rp-profile]') ||
+          node.querySelector?.('.rp-profile-actions')
+        ) {
+          shouldEnsureSettings = true;
+        }
       }
     }
+
+    if (shouldEnsureSettings) ensureProfileSettingsAction();
   });
 
-  observer.observe(app, { childList: true, subtree: true });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
