@@ -1,6 +1,6 @@
 /* Real Play Open Rank premium image tile.
-   The card uses a self-contained SVG asset so it cannot fall back to a broken
-   embedded raster. OPEN RANK is part of the artwork and the full tile remains clickable. */
+   OPEN RANK is baked into the uploaded PNG artwork. The old schedule copy stays
+   hidden while the full card keeps its existing click action. */
 body.rp-simple-navigation-active [data-rp-home-open-rank]{
   position:relative!important;
   min-height:126px!important;
@@ -19,20 +19,20 @@ body.rp-simple-navigation-active [data-rp-home-open-rank]::before{
   z-index:1!important;
   border-radius:inherit!important;
   pointer-events:none!important;
-  background:
-    linear-gradient(180deg,rgba(2,6,12,.01),rgba(2,6,12,.09)),
-    url('assets/home/home-open-rank.svg?v=20260910-open-rank-repair-v2') center center / cover no-repeat!important;
+  background:url('assets/home/home-open-rank.png?v=20260910-open-rank-png-v1') center center / cover no-repeat!important;
   opacity:1!important;
-  filter:brightness(1.04) contrast(1.04) saturate(1.06)!important;
-  transform:scale(1.006)!important;
+  filter:none!important;
+  transform:none!important;
 }
 
+/* The uploaded artwork already contains the OPEN RANK title. */
 body.rp-simple-navigation-active [data-rp-home-open-rank]>small,
 body.rp-simple-navigation-active [data-rp-home-open-rank]>strong,
 body.rp-simple-navigation-active [data-rp-home-open-rank]>p{
   display:none!important;
 }
 
+/* No legacy schedule arrow on the image-first tile. */
 body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-command-grid [data-rp-home-open-rank]::after{
   content:none!important;
   display:none!important;
