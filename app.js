@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260909-live-session-expiry-v21';
+  const version = '20260910-public-shell-v22';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -81,6 +81,7 @@
     'admin-shot-breakdown.css',
     'admin-recorded-scoring-winner.css',
     'visitor-mode.css',
+    'simple-navigation.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
@@ -169,6 +170,7 @@
       'career-game-replay-admin-edit.js',
       'admin-game-rotation.js',
       'admin-live-refresh-fix.js',
+      'simple-navigation.js',
     ];
 
     for (const href of enhancements) {
