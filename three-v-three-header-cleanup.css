@@ -1,0 +1,8 @@
+/* 3V3 is now entered directly from Home, so the duplicate internal top header is removed. */
+body.rp-simple-navigation-active .rp-3v3-topbar{
+  display:none!important;
+}
+
+body.rp-simple-navigation-active .rp-3v3-select-head{
+  padding-top:calc(20px + env(safe-area-inset-top))!important;
+}
