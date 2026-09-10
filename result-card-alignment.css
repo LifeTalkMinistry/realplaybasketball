@@ -112,13 +112,13 @@
   margin:0!important;
 }
 
-/* Trophy: center precisely inside the template's circular MVP icon well. */
+/* Trophy: preserve the original visual size, but center it precisely in the artwork circle. */
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span::before{
   position:absolute!important;
   left:7.4%!important;
   top:50%!important;
-  width:4.2%!important;
-  height:54%!important;
+  width:8.5%!important;
+  height:62%!important;
   transform:translate(-50%,-50%)!important;
   margin:0!important;
   background:#f6c65a!important;
@@ -163,7 +163,7 @@
 
   .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span::before{
     left:7.4%!important;
-    width:4.2%!important;
-    height:54%!important;
+    width:8.5%!important;
+    height:62%!important;
   }
 }
