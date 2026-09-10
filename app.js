@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-home-ball-visible-v35';
+  const version = '20260910-profile-history-v36';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -76,8 +76,6 @@
     }
   }
 
-  // Neutralize any older inline HTML fallback as soon as app.js starts. This
-  // prevents cached index.html from uncovering the legacy carousel after 8s.
   clearStaticBootFallback();
 
   function revealNewShell() {
