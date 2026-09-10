@@ -412,3 +412,72 @@ body.rp-simple-navigation-active .rp-profile-actions [data-rp-simple-settings]{
     min-height:320px!important;
   }
 }
+
+/* HOME HERO V2 — move the entire former lower visual, not only the text.
+   The premium basketball and the brand lockup are now one top hero block. */
+body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu::after{
+  opacity:0!important;
+  visibility:hidden!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center{
+  padding-top:0!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup{
+  order:-1!important;
+  position:relative!important;
+  z-index:5!important;
+  top:auto!important;
+  left:auto!important;
+  right:auto!important;
+  width:min(100vw,620px)!important;
+  min-height:230px!important;
+  margin:-16px 0 4px 50%!important;
+  padding:34px 18px 22px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+  transform:translateX(-50%)!important;
+  text-align:center!important;
+  pointer-events:none!important;
+  background:
+    linear-gradient(180deg,rgba(2,5,10,.10) 0%,rgba(2,5,10,.02) 34%,rgba(2,5,10,.10) 67%,#02050a 100%) center/cover no-repeat,
+    radial-gradient(50% 76% at 7% 48%,rgba(0,131,255,.20),transparent 76%) center/cover no-repeat,
+    radial-gradient(50% 76% at 93% 50%,rgba(255,30,44,.18),transparent 76%) center/cover no-repeat,
+    url('assets/main-menu/main-menu-basketball-bg.png') center 52%/145% auto no-repeat!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before,
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
+  display:none!important;
+  content:none!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup strong{
+  font-size:clamp(1.9rem,8.2vw,2.7rem)!important;
+  text-shadow:0 4px 22px rgba(0,0,0,.98),0 0 20px rgba(65,207,255,.16)!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup span{
+  margin-top:8px!important;
+  font-size:clamp(.60rem,2.8vw,.84rem)!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup small{
+  margin-top:14px!important;
+  color:#b4c5d8!important;
+  font-size:clamp(.43rem,2vw,.58rem)!important;
+  letter-spacing:.22em!important;
+}
+
+@media(max-width:420px){
+  body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center{padding-top:0!important}
+  body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup{
+    min-height:205px!important;
+    margin-top:-16px!important;
+    padding:28px 16px 20px!important;
+    background:
+      linear-gradient(180deg,rgba(2,5,10,.10) 0%,rgba(2,5,10,.02) 36%,rgba(2,5,10,.12) 70%,#02050a 100%) center/cover no-repeat,
+      radial-gradient(52% 74% at 7% 48%,rgba(0,131,255,.20),transparent 76%) center/cover no-repeat,
+      radial-gradient(52% 74% at 93% 52%,rgba(255,30,44,.18),transparent 76%) center/cover no-repeat,
+      url('assets/main-menu/main-menu-basketball-bg.png') center 51%/154% auto no-repeat!important;
+  }
+  body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup strong{font-size:1.75rem!important}
+}
