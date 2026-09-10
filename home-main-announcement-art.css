@@ -5,6 +5,9 @@ body.rp-simple-navigation-active .rp-home-main-announcement{
   isolation:isolate!important;
 }
 
+/* Keep protection behind the copy, but let the premium court art breathe.
+   Left stays dark for readability; center/right now reveal substantially more
+   of the hoop, reflections, ball texture, cyan light and red light. */
 body.rp-simple-navigation-active .rp-home-main-announcement::before{
   content:"";
   position:absolute;
@@ -13,11 +16,16 @@ body.rp-simple-navigation-active .rp-home-main-announcement::before{
   border-radius:inherit;
   pointer-events:none;
   background:
-    linear-gradient(90deg,rgba(2,6,12,.94) 0%,rgba(2,6,12,.82) 34%,rgba(2,6,12,.52) 62%,rgba(2,6,12,.30) 100%),
-    linear-gradient(180deg,rgba(2,6,12,.10),rgba(2,6,12,.28)),
+    linear-gradient(90deg,
+      rgba(2,6,12,.82) 0%,
+      rgba(2,6,12,.70) 28%,
+      rgba(2,6,12,.42) 48%,
+      rgba(2,6,12,.16) 68%,
+      rgba(2,6,12,.04) 100%),
+    linear-gradient(180deg,rgba(2,6,12,.02),rgba(2,6,12,.10)),
     url('assets/home/home-main-announcement.svg') center 53% / cover no-repeat;
-  opacity:.84!important;
-  filter:saturate(.96) contrast(1.04);
+  opacity:1!important;
+  filter:brightness(1.24) saturate(1.14) contrast(1.06);
 }
 
 body.rp-simple-navigation-active .rp-home-main-announcement>small,
@@ -25,4 +33,5 @@ body.rp-simple-navigation-active .rp-home-main-announcement>h2,
 body.rp-simple-navigation-active .rp-home-main-announcement>p{
   position:relative!important;
   z-index:2!important;
+  text-shadow:0 2px 10px rgba(0,0,0,.92),0 0 16px rgba(0,0,0,.54);
 }
