@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-home-command-center-v32';
+  const version = '20260910-home-card-art-v33';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -181,6 +181,8 @@
     'admin-recorded-scoring-winner.css',
     'visitor-mode.css',
     'simple-navigation.css',
+    'home-main-announcement-art.css',
+    'home-open-rank-art.css',
     'world-results.css',
   ].forEach(addStylesheet);
 
