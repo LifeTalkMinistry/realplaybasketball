@@ -1,0 +1,125 @@
+/* Real Play World — Head Admin chat moderation */
+.rp-chat-message.rp-chat-admin-target{
+  -webkit-user-select:none;
+  user-select:none;
+  cursor:default;
+}
+
+.rp-chat-admin-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:2147483300;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding:18px 14px calc(18px + env(safe-area-inset-bottom));
+  background:rgba(0,0,0,.66);
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:opacity .16s ease,visibility .16s ease;
+  box-sizing:border-box;
+}
+.rp-chat-admin-backdrop.open{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
+
+.rp-chat-admin-sheet{
+  width:min(100%,420px);
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.11);
+  border-radius:20px;
+  background:#080d15;
+  box-shadow:0 24px 70px rgba(0,0,0,.58);
+  transform:translateY(18px);
+  transition:transform .16s ease;
+}
+.rp-chat-admin-backdrop.open .rp-chat-admin-sheet{transform:translateY(0)}
+
+.rp-chat-admin-sheet-head{
+  padding:16px 17px 13px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+.rp-chat-admin-sheet-head small{
+  display:block;
+  color:#34d2ff;
+  font-size:.55rem;
+  font-weight:950;
+  letter-spacing:.16em;
+}
+.rp-chat-admin-sheet-head strong{
+  display:block;
+  margin-top:5px;
+  color:#f5f8fc;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.9rem;
+  font-weight:950;
+  letter-spacing:.035em;
+}
+.rp-chat-admin-sheet-head span{
+  display:block;
+  margin-top:4px;
+  overflow:hidden;
+  color:#78879a;
+  font-size:.62rem;
+  font-weight:700;
+  line-height:1.35;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.rp-chat-admin-action{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:15px 17px;
+  border:0;
+  border-bottom:1px solid rgba(255,255,255,.065);
+  background:transparent;
+  color:#eef4fb;
+  text-align:left;
+  cursor:pointer;
+}
+.rp-chat-admin-action>span{min-width:0}
+.rp-chat-admin-action strong{
+  display:block;
+  font-size:.72rem;
+  font-weight:950;
+  letter-spacing:.06em;
+}
+.rp-chat-admin-action small{
+  display:block;
+  margin-top:3px;
+  color:#738297;
+  font-size:.56rem;
+  font-weight:700;
+  line-height:1.25;
+}
+.rp-chat-admin-action>b{
+  flex:0 0 auto;
+  color:#38d3ff;
+  font-size:.85rem;
+}
+.rp-chat-admin-action.danger strong,
+.rp-chat-admin-action.danger>b{color:#ff5c67}
+.rp-chat-admin-action.cancel{
+  justify-content:center;
+  border-bottom:0;
+  color:#8d9bad;
+  text-align:center;
+}
+.rp-chat-admin-action:disabled{opacity:.45;cursor:wait}
+.rp-chat-admin-action:active{background:rgba(255,255,255,.045)}
+.rp-chat-admin-action:focus-visible{outline:2px solid #32d2ff;outline-offset:-2px}
+
+@media(min-width:700px){
+  .rp-chat-admin-backdrop{align-items:center}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .rp-chat-admin-backdrop,.rp-chat-admin-sheet{transition:none}
+}
