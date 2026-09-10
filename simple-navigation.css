@@ -67,8 +67,20 @@ body.rp-simple-navigation-active [data-world-view="players"] [data-world-player-
   text-transform:uppercase!important;
 }
 
-/* Keep the basketball as atmosphere, never as foreground content. */
-body.rp-simple-navigation-active .rp-main-menu::after,
+/* Home keeps the uploaded premium basketball as a real visual centerpiece.
+   The simplified shell previously crushed it to 10% opacity and a 430px cap,
+   which made the lower half look empty. Restore its scale and texture while
+   keeping every card and navigation control above it. */
+body.rp-simple-navigation-active .rp-main-menu::after{
+  width:min(150vw,720px)!important;
+  top:70%!important;
+  opacity:.68!important;
+  filter:brightness(.90) contrast(1.18) saturate(1.20)!important;
+  -webkit-mask-image:radial-gradient(ellipse 82% 72% at 50% 54%,#000 0 58%,rgba(0,0,0,.88) 70%,rgba(0,0,0,.42) 84%,transparent 97%)!important;
+  mask-image:radial-gradient(ellipse 82% 72% at 50% 54%,#000 0 58%,rgba(0,0,0,.88) 70%,rgba(0,0,0,.42) 84%,transparent 97%)!important;
+}
+
+/* World remains deliberately quieter so its feed content stays dominant. */
 body.rp-simple-navigation-active .rp-world::after{
   width:min(105vw,430px)!important;
   top:78%!important;
