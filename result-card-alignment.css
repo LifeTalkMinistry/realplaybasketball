@@ -43,22 +43,26 @@
   text-shadow:0 1px 5px rgba(0,0,0,.95),0 0 7px rgba(255,72,92,.18)!important;
 }
 
-/* The venue text was sitting on top of the artwork's left icon well. */
+/* Venue rail */
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location{
   top:71.45%!important;
-  left:14.0%!important;
-  right:8.0%!important;
+  left:6.5%!important;
+  right:6.5%!important;
   height:7.4%!important;
-  padding-left:0!important;
+  padding:0 10%!important;
+  display:flex!important;
   align-items:center!important;
+  justify-content:center!important;
+  color:#b9cad9!important;
   font-size:clamp(.38rem,1.78vw,.70rem)!important;
+  text-align:center!important;
 }
 
-/* Put a location marker inside the template's circular icon well. */
+/* Keep the location marker in the artwork's circular icon well while the venue text stays centered. */
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location::before{
   content:'';
   position:absolute;
-  left:-11.2%;
+  left:3.2%;
   top:50%;
   width:12px;
   height:12px;
@@ -70,21 +74,53 @@
   filter:drop-shadow(0 1px 4px rgba(0,0,0,.8));
 }
 
-/* Small optical corrections so live text sits in the visual center of the artwork. */
+/* Center the session title inside the entire long title rail. */
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] > h2,
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-name-row > h2{
+  left:6.5%!important;
+  right:6.5%!important;
+  padding:0 4%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+}
+
+/* Small optical correction for the score block. */
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-score{
   top:34.7%!important;
   height:17.7%!important;
 }
 
+/* Center the GAME MVP + player name group inside the MVP rail.
+   Trophy remains in the dedicated icon circle on the left. */
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp{
   top:56.15%!important;
+  left:6.5%!important;
+  right:6.5%!important;
   height:11.9%!important;
-  padding-right:4.2%!important;
+  padding:0 10.5%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4%!important;
+  text-align:center!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span,
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp strong{
+  margin:0!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span::before{
+  left:3.2%!important;
 }
 
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]::after{
   bottom:5.0%!important;
   height:13.0%!important;
+  justify-content:center!important;
+  text-align:center!important;
 }
 
 @media(max-width:390px){
@@ -97,12 +133,22 @@
     font-size:.31rem!important;
   }
 
-  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location{
-    left:14.5%!important;
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp{
+    padding-left:9.5%!important;
+    padding-right:9.5%!important;
+    gap:3.5%!important;
   }
 
-  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location::before{
-    left:-11.8%;
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location{
+    left:6.5%!important;
+    right:6.5%!important;
+    padding-left:10%!important;
+    padding-right:10%!important;
+  }
+
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location::before,
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span::before{
+    left:3.0%!important;
     width:10px;
     height:10px;
   }
