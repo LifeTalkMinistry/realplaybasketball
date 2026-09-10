@@ -1,4 +1,22 @@
 /* Real Play account -> player identity ownership flow. */
+
+/* The account -> player choice step should be intentionally minimal.
+   Keep only the two actual choices and the close control on this first screen. */
+.auth-panel:has([data-auth-view="complete"]:not([hidden])) > .auth-kicker,
+.auth-panel:has([data-auth-view="complete"]:not([hidden])) > .auth-title,
+.auth-panel:has([data-auth-view="complete"]:not([hidden])) > .auth-subtitle,
+.auth-panel:has([data-auth-view="complete"]:not([hidden])) > .auth-status.success,
+.auth-panel:has([data-auth-view="complete"]:not([hidden])) [data-profile-choice] > .auth-subtitle,
+.auth-panel:has([data-auth-view="complete"]:not([hidden])) [data-profile-choice] > .auth-choice-note{
+  display:none!important;
+}
+.auth-panel:has([data-auth-view="complete"]:not([hidden])){
+  padding-top:64px!important;
+}
+.auth-panel:has([data-auth-view="complete"]:not([hidden])) [data-profile-choice]{
+  margin-top:0!important;
+}
+
 .auth-profile-choice{
   display:grid;
   gap:12px;
