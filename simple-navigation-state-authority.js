@@ -74,6 +74,54 @@
     });
   }
 
+  function injectMeActionStyles() {
+    if (document.getElementById('rp-me-profile-actions-style')) return;
+    const style = document.createElement('style');
+    style.id = 'rp-me-profile-actions-style';
+    style.textContent = `
+      body.rp-simple-navigation-active [data-rp-profile] .rp-profile-actions.rp-me-actions{
+        display:grid!important;
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        gap:10px!important;
+      }
+      body.rp-simple-navigation-active [data-rp-profile] .rp-profile-actions.rp-me-actions>button{
+        width:100%!important;
+        min-width:0!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function openMeSettings() {
+    const settingsChoice = document.querySelector('[data-rp-main-action="settings"]');
+    if (!settingsChoice) return;
+
+    const wasActive = settingsChoice.classList.contains('slot-active');
+    settingsChoice.classList.add('slot-active');
+    settingsChoice.click();
+    if (!wasActive) queueMicrotask(() => settingsChoice.classList.remove('slot-active'));
+  }
+
+  function enforceMeActions() {
+    if (activeRoute() !== 'me') return;
+    const profile = document.querySelector('[data-rp-profile].open');
+    const actions = profile?.querySelector('.rp-profile-actions');
+    if (!actions) return;
+
+    injectMeActionStyles();
+    actions.classList.add('rp-me-actions');
+
+    let settingsButton = actions.querySelector('[data-rp-profile-settings]');
+    if (!settingsButton) {
+      settingsButton = document.createElement('button');
+      settingsButton.type = 'button';
+      settingsButton.dataset.rpProfileSettings = 'true';
+      settingsButton.textContent = 'SETTINGS';
+      settingsButton.addEventListener('click', openMeSettings);
+      actions.appendChild(settingsButton);
+    }
+  }
+
   function formatEvent(value) {
     const date = new Date(value || 0);
     if (!value || Number.isNaN(date.getTime())) return '';
@@ -307,6 +355,7 @@
       installHomeCommandCenter();
       enforcePlayersView();
       enforceChatsView();
+      enforceMeActions();
     } finally {
       enforcing = false;
     }
