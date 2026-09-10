@@ -131,17 +131,18 @@
         position:relative;
         min-height:108px;
         cursor:pointer;
-        transition:border-color .16s ease,transform .16s ease,background .16s ease;
+        transition:border-color .16s ease,transform .16s ease,background .16s ease,box-shadow .16s ease;
       }
       body.rp-simple-navigation-active .rp-home-command-grid article::after{
         content:'→';
         position:absolute;
         top:14px;
         right:15px;
-        color:#45d8ff;
+        color:#ff5365;
         font-size:.8rem;
         font-weight:950;
-        opacity:.68;
+        opacity:.82;
+        text-shadow:0 0 10px rgba(255,83,101,.28);
       }
       body.rp-simple-navigation-active .rp-home-command-grid article:active,
       body.rp-simple-navigation-active .rp-home-main-announcement:active{
@@ -150,6 +151,45 @@
       body.rp-simple-navigation-active .rp-home-main-announcement h2,
       body.rp-simple-navigation-active .rp-home-command-grid article strong{
         padding-right:26px;
+      }
+
+      /* Carry the exact Real Play cyan-left / red-right identity from the hero
+         through the information stack without making the cards loud. */
+      body.rp-simple-navigation-active .rp-home-main-announcement,
+      body.rp-simple-navigation-active .rp-home-command-grid article{
+        border:1px solid transparent!important;
+        background:
+          linear-gradient(145deg,rgba(5,13,22,.985),rgba(2,6,12,.99)) padding-box,
+          linear-gradient(110deg,rgba(57,220,255,.54) 0%,rgba(57,220,255,.16) 26%,rgba(255,255,255,.07) 52%,rgba(255,59,79,.14) 76%,rgba(255,59,79,.48) 100%) border-box!important;
+        box-shadow:
+          -12px 0 28px rgba(57,220,255,.045),
+          12px 0 28px rgba(255,59,79,.045),
+          inset 0 1px 0 rgba(255,255,255,.018)!important;
+      }
+      body.rp-simple-navigation-active .rp-home-main-announcement>small,
+      body.rp-simple-navigation-active .rp-home-command-grid article>small{
+        color:#39dcff!important;
+        text-shadow:0 0 10px rgba(57,220,255,.16);
+      }
+      body.rp-simple-navigation-active .rp-home-main-announcement h2,
+      body.rp-simple-navigation-active .rp-home-command-grid article strong{
+        color:#f7fbff!important;
+      }
+      body.rp-simple-navigation-active .rp-home-main-announcement p,
+      body.rp-simple-navigation-active .rp-home-command-grid article p{
+        color:#8fa6bf!important;
+      }
+
+      /* Let the bottom navigation close the same blue-to-red visual story. */
+      body.rp-simple-navigation-active .rp-simple-nav{
+        border-top:1px solid transparent!important;
+        background:
+          linear-gradient(rgba(2,5,10,.975),rgba(2,5,10,.975)) padding-box,
+          linear-gradient(90deg,rgba(57,220,255,.54),rgba(255,255,255,.08) 50%,rgba(255,59,79,.48)) border-box!important;
+        box-shadow:
+          -14px -6px 28px rgba(57,220,255,.025),
+          14px -6px 28px rgba(255,59,79,.025),
+          0 -10px 30px rgba(0,0,0,.36)!important;
       }
 
       /* Premium hero accent rails. Match the full Home selector specificity so
@@ -196,8 +236,11 @@
       @media(hover:hover){
         body.rp-simple-navigation-active .rp-home-command-grid article:hover,
         body.rp-simple-navigation-active .rp-home-main-announcement:hover{
-          border-color:rgba(69,216,255,.28);
-          background:linear-gradient(145deg,rgba(6,15,25,.98),rgba(2,6,12,.985));
+          border-color:transparent!important;
+          box-shadow:
+            -12px 0 30px rgba(57,220,255,.07),
+            12px 0 30px rgba(255,59,79,.07),
+            inset 0 1px 0 rgba(255,255,255,.028)!important;
         }
       }
     `;
