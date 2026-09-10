@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-public-shell-v22';
+  const version = '20260910-public-shell-v23';
   const html = document.documentElement;
   html.classList.add('js');
 
