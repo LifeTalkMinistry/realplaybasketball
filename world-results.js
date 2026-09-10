@@ -50,6 +50,23 @@
     return match ? match.trim() : '';
   }
 
+  function sessionId(update) {
+    const match = String(update?.id || '').match(/^career-(\d+)-result$/);
+    const value = Number(match?.[1] || 0);
+    return Number.isSafeInteger(value) && value > 0 ? value : 0;
+  }
+
+  function openReplay(id) {
+    if (!id) return;
+    const bridge = document.createElement('button');
+    bridge.type = 'button';
+    bridge.hidden = true;
+    bridge.dataset.rpCareerReplaySession = String(id);
+    document.body.appendChild(bridge);
+    bridge.click();
+    setTimeout(() => bridge.remove(), 0);
+  }
+
   function scoreBlock(update) {
     const west = Number(update?.metadata?.westScore);
     const east = Number(update?.metadata?.eastScore);
@@ -59,7 +76,7 @@
     return `
       <div class="rp-world-result-score">
         <div class="${westWinner ? 'winner' : ''}"><span>WEST</span><strong>${west}</strong></div>
-        <b>FINAL</b>
+        <i aria-hidden="true">—</i>
         <div class="${eastWinner ? 'winner' : ''}"><span>EAST</span><strong>${east}</strong></div>
       </div>`;
   }
@@ -69,18 +86,23 @@
     const location = String(update?.location_name || update?.locationName || '').trim();
     const publishedAt = update?.published_at || update?.publishedAt;
     const detail = [timeAgo(publishedAt), location ? location.toUpperCase() : ''].filter(Boolean).join(' · ');
-    const replayReady = /^career-\d+-result$/.test(String(update?.id || ''));
+    const replaySessionId = sessionId(update);
+    const replayAttrs = replaySessionId
+      ? ` role="button" tabindex="0" data-world-result-session="${replaySessionId}"`
+      : '';
     return `
-      <article class="rp-update-card rp-update-result rp-world-result-card" data-update-id="${esc(update?.id || '')}">
+      <article class="rp-world-result-card${replaySessionId ? ' replay-ready' : ''}"${replayAttrs}>
         <header class="rp-world-result-head">
-          <div><small>OFFICIAL RESULT</small><span>${esc(detail || 'REAL PLAY BASKETBALL')}</span></div>
-          <b>FINAL</b>
+          <small>OFFICIAL RESULT</small>
+          <span>${esc(detail || 'REAL PLAY BASKETBALL')}</span>
         </header>
         <h2>${esc(update?.title || 'REAL PLAY GAME')}</h2>
         ${scoreBlock(update)}
         ${mvpName ? `<div class="rp-world-result-mvp"><span>GAME MVP</span><strong>${esc(mvpName)}</strong></div>` : ''}
-        ${update?.body ? `<p class="rp-world-result-copy">${esc(update.body)}</p>` : ''}
-        <footer class="rp-world-result-footer"><span>REAL PLAY OFFICIAL</span><strong>${replayReady ? 'WATCH GAME →' : 'GAME RESULT'}</strong></footer>
+        <footer class="rp-world-result-footer">
+          <span>FINALIZED GAME</span>
+          <strong>${replaySessionId ? 'WATCH GAME →' : 'FINAL RESULT'}</strong>
+        </footer>
       </article>`;
   }
 
@@ -152,6 +174,20 @@
     if (!ensurePanel()) return false;
     refresh();
     startTimer();
+
+    panel.addEventListener('click', (event) => {
+      const card = event.target.closest('[data-world-result-session]');
+      if (!card || !panel.contains(card)) return;
+      openReplay(Number(card.dataset.worldResultSession || 0));
+    });
+
+    panel.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const card = event.target.closest('[data-world-result-session]');
+      if (!card || !panel.contains(card)) return;
+      event.preventDefault();
+      openReplay(Number(card.dataset.worldResultSession || 0));
+    });
 
     const observer = new MutationObserver(() => {
       if (!ensurePanel()) return;
