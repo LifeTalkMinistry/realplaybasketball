@@ -89,6 +89,42 @@
     button.addEventListener('click', enter);
   }
 
+  function openPublicPlayersFromPrimaryNav() {
+    const panel = document.querySelector('[data-rp-world]');
+    if (!panel) {
+      window.RealPlayWorld?.open?.();
+    } else if (!panel.classList.contains('open')) {
+      window.RealPlayWorld?.open?.();
+    }
+
+    document.querySelectorAll('[data-rp-simple-nav-item]').forEach((button) => {
+      const selected = button.dataset.rpSimpleNavItem === 'players';
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-current', selected ? 'page' : 'false');
+    });
+
+    window.setTimeout(() => {
+      const playersTab = document.querySelector('[data-rp-world] [data-world-tab="players"]');
+      if (playersTab) playersTab.click();
+    }, 40);
+  }
+
+  // PLAYERS is a public directory. The simple bottom-nav historically called
+  // the authenticated player loader directly, which opened the login modal on
+  // a 401 even though visitor-mode already has a public players/profile API.
+  // Intercept only this public route and hand it to the visitor players view.
+  document.addEventListener('click', (event) => {
+    if (!isActive()) return;
+    const playersNav = event.target.closest('[data-rp-simple-nav-item="players"]');
+    if (!playersNav) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    closeGate();
+    openPublicPlayersFromPrimaryNav();
+  }, true);
+
   document.addEventListener('click', (event) => {
     if (!isActive()) return;
     const mainAction = event.target.closest('[data-rp-main-action]');
