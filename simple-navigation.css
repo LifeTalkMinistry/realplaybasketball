@@ -33,6 +33,18 @@ body.rp-simple-navigation-active [data-rp-profile] .rp-profile-topbar{
   display:none!important;
 }
 
+/* Keep the Players heading minimal: title only, no redundant community/count labels. */
+body.rp-simple-navigation-active [data-world-view="players"] .rp-world-player-directory-head small,
+body.rp-simple-navigation-active [data-world-view="players"] [data-world-player-count]{
+  display:none!important;
+}
+body.rp-simple-navigation-active [data-world-view="players"] .rp-world-player-directory-head{
+  justify-content:flex-start!important;
+}
+body.rp-simple-navigation-active [data-world-view="players"] .rp-world-player-directory-head strong{
+  margin-top:0!important;
+}
+
 /* Keep the basketball as atmosphere, never as foreground content. */
 body.rp-simple-navigation-active .rp-main-menu::after,
 body.rp-simple-navigation-active .rp-world::after{
