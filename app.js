@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-player-state-authority-v27';
+  const version = '20260910-headerless-shell-v28';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
