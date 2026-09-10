@@ -90,6 +90,7 @@
 
   (async () => {
     await loadScript('auth-session-guard.js');
+    await loadScript('public-first-entry.js');
 
     const lobbyLoaded = await loadScript('mobile-lobby.js');
     const lobbyMounted = Boolean(document.querySelector('[data-rp-app]'));
