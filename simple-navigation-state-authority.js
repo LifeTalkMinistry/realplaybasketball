@@ -2,6 +2,7 @@
   if (window.__realPlaySimpleNavigationStateAuthorityInstalled) return;
   window.__realPlaySimpleNavigationStateAuthorityInstalled = true;
 
+  const TOKEN_KEY = 'real_play_access_token';
   let enforcing = false;
 
   function activeRoute() {
@@ -36,11 +37,39 @@
     });
   }
 
+  function enforceChatsView() {
+    if (activeRoute() !== 'chats') return;
+
+    const panel = document.querySelector('[data-rp-world]');
+    const chatsView = panel?.querySelector('[data-world-view="chats"]');
+    if (!panel || !chatsView) return;
+
+    const title = panel.querySelector('.rp-world-title strong');
+    if (title && title.textContent !== 'CHATS') title.textContent = 'CHATS';
+
+    const badge = panel.querySelector('.rp-world-online');
+    const expectedBadge = localStorage.getItem(TOKEN_KEY) ? 'COMMUNITY' : 'READ ONLY';
+    if (badge && badge.textContent !== expectedBadge) badge.textContent = expectedBadge;
+
+    panel.querySelectorAll('[data-world-tab]').forEach((button) => {
+      const shouldBeActive = button.dataset.worldTab === 'chats';
+      if (button.classList.contains('active') !== shouldBeActive) {
+        button.classList.toggle('active', shouldBeActive);
+      }
+    });
+
+    panel.querySelectorAll('[data-world-view]').forEach((view) => {
+      const shouldBeHidden = view.dataset.worldView !== 'chats';
+      if (view.hidden !== shouldBeHidden) view.hidden = shouldBeHidden;
+    });
+  }
+
   function enforce() {
     if (enforcing) return;
     enforcing = true;
     try {
       enforcePlayersView();
+      enforceChatsView();
     } finally {
       enforcing = false;
     }
