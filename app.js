@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-public-shell-v23';
+  const version = '20260910-world-results-v24';
   const html = document.documentElement;
   html.classList.add('js');
 
@@ -82,6 +82,7 @@
     'admin-recorded-scoring-winner.css',
     'visitor-mode.css',
     'simple-navigation.css',
+    'world-results.css',
   ].forEach(addStylesheet);
 
   const shellWatchdog = window.setTimeout(() => {
@@ -142,6 +143,7 @@
       'real-play-profile-metrics.js',
       'real-play-world-players.js',
       'visitor-world-players.js',
+      'world-results.js',
       'player-id-badge.js',
       'real-play-world-score-order-fix.js',
       'profile-game-replay-link.js',
