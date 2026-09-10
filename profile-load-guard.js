@@ -3,6 +3,8 @@
   window.__rpProfileLoadGuard = true;
 
   const originalFetch = window.fetch.bind(window);
+  const MAIN_PROFILE_TIMEOUT_MS = 7000;
+  const TEAM_PROFILE_TIMEOUT_MS = 900;
 
   function urlOf(input) {
     if (typeof input === 'string') return input;
@@ -64,17 +66,10 @@
     event.stopImmediatePropagation();
   }, true);
 
-  window.fetch = function guardedRealPlayFetch(input, init = {}) {
-    const url = urlOf(input);
-    const isOptionalProfileTeamState = profileIsOpen()
-      && /\/api\/real-play\/3v3\/me(?:\?|$)/.test(url);
-
-    if (!isOptionalProfileTeamState) {
-      return originalFetch(input, init);
-    }
-
+  function guardedFetch(input, init, timeoutMs, timeoutMessage) {
     const controller = new AbortController();
     let callerAbortHandler = null;
+    let timedOut = false;
 
     if (init?.signal) {
       if (init.signal.aborted) controller.abort();
@@ -84,14 +79,56 @@
       }
     }
 
-    // Team/club state is cosmetic on the current Profile. Never let a slow
-    // optional endpoint hold the visible profile loader for several seconds.
-    const timer = window.setTimeout(() => controller.abort(), 900);
-    return originalFetch(input, { ...init, signal: controller.signal }).finally(() => {
-      window.clearTimeout(timer);
-      if (init?.signal && callerAbortHandler) {
-        init.signal.removeEventListener('abort', callerAbortHandler);
-      }
-    });
+    const timer = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs);
+
+    return originalFetch(input, { ...init, signal: controller.signal })
+      .catch((error) => {
+        if (timedOut) {
+          const timeoutError = new Error(timeoutMessage);
+          timeoutError.name = 'RealPlayProfileTimeoutError';
+          timeoutError.status = 408;
+          throw timeoutError;
+        }
+        throw error;
+      })
+      .finally(() => {
+        window.clearTimeout(timer);
+        if (init?.signal && callerAbortHandler) {
+          init.signal.removeEventListener('abort', callerAbortHandler);
+        }
+      });
+  }
+
+  window.fetch = function guardedRealPlayFetch(input, init = {}) {
+    const url = urlOf(input);
+    if (!profileIsOpen()) return originalFetch(input, init);
+
+    const isMainProfile = /\/api\/real-play\/me(?:\?|$)/.test(url);
+    const isOptionalProfileTeamState = /\/api\/real-play\/3v3\/me(?:\?|$)/.test(url);
+
+    if (isMainProfile) {
+      return guardedFetch(
+        input,
+        init,
+        MAIN_PROFILE_TIMEOUT_MS,
+        'Your player profile took too long to load. Tap Me again to retry.'
+      );
+    }
+
+    if (isOptionalProfileTeamState) {
+      // Team/club state is cosmetic on the current Profile. Never let a slow
+      // optional endpoint hold the visible profile loader for several seconds.
+      return guardedFetch(
+        input,
+        init,
+        TEAM_PROFILE_TIMEOUT_MS,
+        'Team profile state timed out.'
+      );
+    }
+
+    return originalFetch(input, init);
   };
 })();
