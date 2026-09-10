@@ -12,7 +12,8 @@
 .rp-beta-mode-tabs .rp-mode-tab{min-width:48px;padding-inline:2px}
 
 body.rp-3v3-open{overflow:hidden}
-body.rp-3v3-open .rp-bottom-nav{display:none!important}
+body.rp-3v3-open .rp-bottom-nav,
+body.rp-3v3-open .rp-simple-nav{display:none!important}
 .rp-3v3-view{position:fixed;z-index:260;inset:0;display:none;overflow-y:auto;overscroll-behavior:contain;color:var(--rp-text);font-family:var(--rp-body);background:radial-gradient(circle at 48% -8%,rgba(23,108,255,.18),transparent 31%),radial-gradient(circle at 95% 58%,rgba(146,18,31,.1),transparent 34%),linear-gradient(180deg,#040914 0%,#02050b 62%,#010308 100%)}
 .rp-3v3-view.open{display:block}
 .rp-3v3-shell{width:min(100%,560px);min-height:100%;margin:0 auto;padding:0 18px 32px;position:relative;overflow:hidden}
