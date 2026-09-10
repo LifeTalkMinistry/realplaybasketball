@@ -1,3 +1,411 @@
-.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]{cursor:pointer;transition:border-color .16s ease,background .16s ease}
-.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]::after{content:'WATCH GAME + STATS  →';display:block;margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.05);color:#55dcff;font-family:var(--rp-display,Arial,sans-serif);font-size:.49rem;font-style:italic;font-weight:950;letter-spacing:.1em}
-@media(hover:hover) and (pointer:fine){.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:hover{border-color:rgba(66,215,255,.28);background:linear-gradient(135deg,rgba(12,48,77,.24),rgba(5,9,15,.98) 58%)}}
+/* Official recorded Result cards use the uploaded image as a visual shell.
+   All scores, titles, MVPs, locations and admin controls remain live HTML. */
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]{
+  position:relative!important;
+  width:100%;
+  aspect-ratio:1344 / 1120;
+  min-height:0!important;
+  overflow:hidden!important;
+  isolation:isolate;
+  padding:0!important;
+  border:0!important;
+  border-radius:18px!important;
+  color:#f7fbff;
+  background:
+    url('assets/world/result-card-template.png?v=20260910-result-card-template-v1')
+    center / 100% 100% no-repeat!important;
+  box-shadow:0 18px 46px rgba(0,0,0,.34)!important;
+  cursor:pointer;
+  transition:filter .16s ease,transform .16s ease;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]::before{
+  display:none!important;
+  content:none!important;
+}
+
+/* RESULT / TIME — top-left status area */
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] > .rp-update-card-head{
+  position:absolute!important;
+  z-index:4;
+  top:5.4%;
+  left:5.1%;
+  width:36%;
+  height:11.8%;
+  margin:0!important;
+  padding:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:0!important;
+  background:transparent!important;
+  border:0!important;
+  pointer-events:none;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-kind{
+  width:100%;
+  height:100%;
+  display:grid!important;
+  grid-template-columns:24% minmax(0,1fr);
+  align-items:center!important;
+  gap:8%!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-kind > span{
+  width:100%!important;
+  aspect-ratio:1;
+  height:auto!important;
+  display:grid!important;
+  place-items:center!important;
+  border:0!important;
+  border-radius:0!important;
+  color:#63f0ac!important;
+  background:transparent!important;
+  font-family:Arial,sans-serif!important;
+  font-size:clamp(.92rem,4.6vw,1.8rem)!important;
+  font-style:normal!important;
+  font-weight:900!important;
+  line-height:1!important;
+  text-shadow:0 0 12px rgba(63,244,170,.42),0 2px 6px rgba(0,0,0,.7)!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-kind strong{
+  display:block!important;
+  color:#f8fbff!important;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif)!important;
+  font-size:clamp(.48rem,2.35vw,.92rem)!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.035em!important;
+  line-height:1!important;
+  text-transform:uppercase;
+  text-shadow:0 2px 8px rgba(0,0,0,.9)!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-kind small{
+  display:block!important;
+  margin-top:8%!important;
+  color:#93a7bc!important;
+  font-size:clamp(.32rem,1.55vw,.60rem)!important;
+  font-weight:900!important;
+  letter-spacing:.06em!important;
+  line-height:1!important;
+  text-transform:uppercase;
+}
+
+/* Session title occupies the first long blank rail. */
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] > h2,
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-name-row > h2{
+  position:absolute!important;
+  z-index:4;
+  top:18.6%;
+  left:7.2%;
+  right:7.2%;
+  height:13.2%;
+  min-width:0!important;
+  margin:0!important;
+  padding:0 2%!important;
+  display:flex!important;
+  align-items:center!important;
+  overflow:hidden;
+  color:#f8fbff!important;
+  background:transparent!important;
+  border:0!important;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif)!important;
+  font-size:clamp(.68rem,3.15vw,1.34rem)!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.018em!important;
+  line-height:1!important;
+  text-transform:uppercase;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-shadow:0 3px 11px rgba(0,0,0,.95),0 0 14px rgba(92,206,255,.08)!important;
+}
+
+/* Admin session controls live in the two small top-right template areas.
+   Existing behavior is preserved; controls are simply compacted into the art. */
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-name-row{
+  position:static!important;
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-actions{
+  position:absolute!important;
+  z-index:8;
+  top:9.5%;
+  right:5.1%;
+  width:18.7%;
+  height:6.6%;
+  margin:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:3px!important;
+  flex-wrap:nowrap!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-action{
+  min-width:0!important;
+  height:100%!important;
+  margin:0!important;
+  padding:0 5px!important;
+  display:grid!important;
+  place-items:center!important;
+  border:0!important;
+  border-radius:999px!important;
+  color:#7ae7ff!important;
+  background:rgba(2,8,14,.25)!important;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif)!important;
+  font-size:clamp(.27rem,1.05vw,.43rem)!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.035em!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  box-shadow:none!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-action[data-rp-delete-session]{
+  color:#ff7b89!important;
+}
+
+/* Scoreboard — live WEST / EAST values placed into the middle artwork. */
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-score{
+  position:absolute!important;
+  z-index:4;
+  top:35.0%;
+  left:6.6%;
+  right:6.6%;
+  height:17.2%;
+  margin:0!important;
+  padding:0 1.8%!important;
+  display:grid!important;
+  grid-template-columns:35% 30% 35%!important;
+  align-items:center!important;
+  gap:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  text-align:center!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-score > div{
+  min-width:0;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8%!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-score div span{
+  display:block!important;
+  color:#dce9f5!important;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif)!important;
+  font-size:clamp(.43rem,2.1vw,.82rem)!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.08em!important;
+  line-height:1!important;
+  text-transform:uppercase;
+  text-shadow:0 2px 8px rgba(0,0,0,.9)!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-score div strong{
+  display:block!important;
+  margin:0!important;
+  color:#f8fbff!important;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif)!important;
+  font-size:clamp(1.24rem,7.2vw,3rem)!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  line-height:.82!important;
+  text-shadow:0 0 14px rgba(90,205,255,.16),0 3px 12px rgba(0,0,0,.95)!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-score > div:last-child strong{
+  text-shadow:0 0 14px rgba(255,69,86,.14),0 3px 12px rgba(0,0,0,.95)!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-score > b{
+  display:grid!important;
+  place-items:center!important;
+  align-self:center!important;
+  justify-self:center!important;
+  width:62%;
+  min-height:30%;
+  padding:2% 4%;
+  border:0!important;
+  border-radius:8px;
+  color:#ff8190!important;
+  background:transparent!important;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif)!important;
+  font-size:clamp(.38rem,1.8vw,.70rem)!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.11em!important;
+  line-height:1!important;
+  text-transform:uppercase;
+  text-shadow:0 0 10px rgba(255,69,86,.18),0 2px 7px rgba(0,0,0,.9)!important;
+}
+
+/* MVP recognition strip — still driven by the official result metadata. */
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp{
+  position:absolute!important;
+  z-index:4;
+  top:56.5%;
+  left:6.5%;
+  right:6.5%;
+  height:11.6%;
+  min-height:0!important;
+  margin:0!important;
+  padding:0 4.5% 0 16%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:4%!important;
+  overflow:hidden;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span{
+  flex:0 0 auto!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:0!important;
+  color:#54dcff!important;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif)!important;
+  font-size:clamp(.42rem,2.1vw,.84rem)!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.07em!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  text-shadow:0 2px 8px rgba(0,0,0,.9)!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span::before{
+  position:absolute!important;
+  left:3.0%!important;
+  top:50%!important;
+  width:8.5%!important;
+  height:62%!important;
+  transform:translateY(-50%)!important;
+  margin:0!important;
+  background:#f6c65a!important;
+  filter:drop-shadow(0 0 8px rgba(246,198,90,.22));
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span::after{
+  display:none!important;
+  content:none!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp strong{
+  min-width:0!important;
+  overflow:hidden!important;
+  color:#f8fbff!important;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif)!important;
+  font-size:clamp(.52rem,2.65vw,1.08rem)!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.018em!important;
+  line-height:1!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  text-shadow:0 2px 10px rgba(0,0,0,.95)!important;
+}
+
+/* Venue rail */
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location{
+  position:absolute!important;
+  z-index:4;
+  top:72.0%;
+  left:8.7%;
+  right:8.0%;
+  height:6.7%;
+  margin:0!important;
+  padding:0!important;
+  display:flex!important;
+  align-items:center!important;
+  overflow:hidden!important;
+  color:#b9cad9!important;
+  font-size:clamp(.37rem,1.75vw,.68rem)!important;
+  font-weight:850!important;
+  letter-spacing:.025em!important;
+  line-height:1!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  text-shadow:0 2px 8px rgba(0,0,0,.9)!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] > p,
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] > footer{
+  display:none!important;
+}
+
+/* The full card already opens the official replay. This label sits in the final template rail. */
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]::after{
+  content:'WATCH GAME + STATS  →';
+  position:absolute!important;
+  z-index:5;
+  left:5.0%;
+  right:5.0%;
+  bottom:5.3%;
+  height:12.6%;
+  margin:0!important;
+  padding:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:0!important;
+  color:#dff8ff!important;
+  background:transparent!important;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif)!important;
+  font-size:clamp(.50rem,2.65vw,1.05rem)!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.045em!important;
+  line-height:1!important;
+  text-align:center;
+  text-shadow:0 0 10px rgba(72,220,255,.18),0 2px 9px rgba(0,0,0,.95)!important;
+  pointer-events:none;
+}
+
+@media(hover:hover) and (pointer:fine){
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:hover{
+    filter:brightness(1.045) saturate(1.035);
+  }
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:focus-visible{
+  outline:2px solid rgba(72,216,255,.62)!important;
+  outline-offset:2px!important;
+}
+
+@media(max-width:390px){
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]{
+    border-radius:15px!important;
+  }
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-actions{
+    gap:1px!important;
+  }
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-action{
+    padding-inline:2px!important;
+    letter-spacing:0!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]{
+    transition:none!important;
+  }
+}
