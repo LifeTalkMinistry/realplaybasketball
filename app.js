@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-profile-freeze-guard-v39';
+  const version = '20260910-profile-loader-v40';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -228,7 +228,6 @@
       'real-play-updates-game-detail.js',
       'real-play-world.js',
       'real-play-world-chat-cleanup.js',
-      'profile-load-guard.js',
       'real-play-profile.js',
       'real-play-game-history.js',
       'real-play-profile-intro.js',
