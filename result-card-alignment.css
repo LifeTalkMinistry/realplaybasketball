@@ -1,0 +1,109 @@
+/* Result Card Template — alignment pass
+   Keeps the uploaded artwork untouched and only aligns live HTML with its slots. */
+
+/* Top-right admin controls: NAME + SET # share the blue slot; DELETE owns red. */
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-actions{
+  top:9.0%!important;
+  right:4.8%!important;
+  width:19.7%!important;
+  height:7.0%!important;
+  display:grid!important;
+  grid-template-columns:1fr .82fr 1.16fr!important;
+  align-items:center!important;
+  justify-content:stretch!important;
+  column-gap:2%!important;
+  overflow:visible!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-action{
+  width:100%!important;
+  min-width:0!important;
+  height:100%!important;
+  padding:0 1px!important;
+  overflow:visible!important;
+  color:#7be9ff!important;
+  background:transparent!important;
+  font-size:clamp(.31rem,1.34vw,.52rem)!important;
+  letter-spacing:.015em!important;
+  text-align:center!important;
+  text-shadow:0 1px 5px rgba(0,0,0,.95),0 0 7px rgba(71,221,255,.18)!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-action[data-rp-edit-session-name]{
+  justify-self:end!important;
+  border-right:1px solid rgba(102,226,255,.18)!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-action[data-rp-set-open-rank-number]{
+  justify-self:start!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-action[data-rp-delete-session]{
+  color:#ff8795!important;
+  text-shadow:0 1px 5px rgba(0,0,0,.95),0 0 7px rgba(255,72,92,.18)!important;
+}
+
+/* The venue text was sitting on top of the artwork's left icon well. */
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location{
+  top:71.45%!important;
+  left:14.0%!important;
+  right:8.0%!important;
+  height:7.4%!important;
+  padding-left:0!important;
+  align-items:center!important;
+  font-size:clamp(.38rem,1.78vw,.70rem)!important;
+}
+
+/* Put a location marker inside the template's circular icon well. */
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location::before{
+  content:'';
+  position:absolute;
+  left:-11.2%;
+  top:50%;
+  width:12px;
+  height:12px;
+  transform:translate(-50%,-50%);
+  background:#93acc1;
+  opacity:.92;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z'/%3E%3C/svg%3E") center/contain no-repeat;
+  filter:drop-shadow(0 1px 4px rgba(0,0,0,.8));
+}
+
+/* Small optical corrections so live text sits in the visual center of the artwork. */
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-score{
+  top:34.7%!important;
+  height:17.7%!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp{
+  top:56.15%!important;
+  height:11.9%!important;
+  padding-right:4.2%!important;
+}
+
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]::after{
+  bottom:5.0%!important;
+  height:13.0%!important;
+}
+
+@media(max-width:390px){
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-actions{
+    right:4.5%!important;
+    width:20.2%!important;
+  }
+
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-session-action{
+    font-size:.31rem!important;
+  }
+
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location{
+    left:14.5%!important;
+  }
+
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location::before{
+    left:-11.8%;
+    width:10px;
+    height:10px;
+  }
+}
