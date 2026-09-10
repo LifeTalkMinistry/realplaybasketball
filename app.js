@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-home-card-art-v34';
+  const version = '20260910-boot-rescue-v35';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -113,13 +113,31 @@
     document.head.appendChild(css);
   }
 
-  function loadScript(href) {
+  // Every script request must settle. Previously one stalled optional request
+  // could hold the sequential loader forever, meaning main-menu.js and
+  // simple-navigation.js were never reached and the loading screen never left.
+  function loadScript(href, timeoutMs = 6000) {
     return new Promise((resolve) => {
       const script = document.createElement('script');
+      let settled = false;
+      let timer = 0;
+
+      const finish = (loaded) => {
+        if (settled) return;
+        settled = true;
+        if (timer) window.clearTimeout(timer);
+        resolve(Boolean(loaded));
+      };
+
       script.src = `${href}?v=${version}`;
       script.async = false;
-      script.addEventListener('load', () => resolve(true), { once: true });
-      script.addEventListener('error', () => resolve(false), { once: true });
+      script.addEventListener('load', () => finish(true), { once: true });
+      script.addEventListener('error', () => finish(false), { once: true });
+      timer = window.setTimeout(() => {
+        console.warn(`[Real Play] Script load timed out: ${href}`);
+        try { script.remove(); } catch (_error) {}
+        finish(false);
+      }, Math.max(1500, Number(timeoutMs) || 6000));
       document.head.appendChild(script);
     });
   }
@@ -187,10 +205,12 @@
   ].forEach(addStylesheet);
 
   (async () => {
-    await loadScript('auth-session-guard.js');
-    await loadScript('public-first-entry.js');
+    const guardLoaded = await loadScript('auth-session-guard.js', 5000);
+    const entryLoaded = await loadScript('public-first-entry.js', 5000);
+    if (!guardLoaded) console.warn('[Real Play] Auth session guard did not load during startup.');
+    if (!entryLoaded) console.warn('[Real Play] Public-first entry did not load during startup.');
 
-    const lobbyLoaded = await loadScript('mobile-lobby.js');
+    const lobbyLoaded = await loadScript('mobile-lobby.js', 6500);
     const lobbyMounted = Boolean(document.querySelector('[data-rp-app]'));
 
     if (!lobbyLoaded || !lobbyMounted) {
@@ -198,8 +218,33 @@
       return;
     }
 
-    await loadScript('legacy-bottom-nav-removal.js');
+    await loadScript('legacy-bottom-nav-removal.js', 3500);
 
+    // Build the visible shell BEFORE optional product layers. These four files
+    // are the actual dependency chain for [data-rp-main-menu], Home and bottom nav.
+    await loadScript('main-menu-fast-snap-bootstrap.js', 3500);
+    const mainMenuLoaded = await loadScript('main-menu.js', 6500);
+    const simpleNavLoaded = await loadScript('simple-navigation.js', 6500);
+    const navAuthorityLoaded = await loadScript('simple-navigation-state-authority.js', 6500);
+
+    if (!mainMenuLoaded || !simpleNavLoaded) {
+      showBootFailure('Critical Real Play navigation failed to initialize.');
+      return;
+    }
+    if (!navAuthorityLoaded) {
+      console.warn('[Real Play] Navigation authority layer did not load; base navigation remains available.');
+    }
+
+    if (!revealNewShell()) {
+      await new Promise((resolve) => window.setTimeout(resolve, 120));
+      if (!revealNewShell()) {
+        showBootFailure('New shell did not initialize.');
+        return;
+      }
+    }
+
+    // Everything below enhances an already-visible, already-usable shell.
+    // A slow or failed optional file can no longer trap the user on LOADING.
     const enhancements = [
       'public-landing.js',
       'visitor-mode.js',
@@ -243,8 +288,6 @@
       'profile-game-replay-link.js',
       'real-play-world-player-filters.js',
       'real-play-world-player-admin.js',
-      'main-menu-fast-snap-bootstrap.js',
-      'main-menu.js',
       'main-menu-fast-snap-restore.js',
       'main-menu-touch-lite.js',
       'main-menu-desktop-input-fix.js',
@@ -268,22 +311,12 @@
       'career-game-replay-admin-edit.js',
       'admin-game-rotation.js',
       'admin-live-refresh-fix.js',
-      'simple-navigation.js',
-      'simple-navigation-state-authority.js',
     ];
 
     for (const href of enhancements) {
-      const loaded = await loadScript(href);
+      const loaded = await loadScript(href, 4500);
       if (!loaded) console.warn(`[Real Play] Optional layer failed to load: ${href}`);
     }
-
-    requestAnimationFrame(() => {
-      if (revealNewShell()) return;
-      window.setTimeout(() => {
-        if (revealNewShell()) return;
-        showBootFailure('New shell did not initialize.');
-      }, 1000);
-    });
   })().catch((error) => {
     showBootFailure('Startup stopped on an unexpected error.', error);
   });
