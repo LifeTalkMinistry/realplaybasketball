@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-profile-history-v36';
+  const version = '20260910-game-history-page-v37';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -157,6 +157,7 @@
     'real-play-world-chat-cleanup.css',
     'real-play-world-chat-moderation.css',
     'real-play-profile.css',
+    'real-play-game-history.css',
     'profile-identity-cleanup.css',
     'real-play-profile-intro.css',
     'real-play-profile-metrics.css',
@@ -229,6 +230,7 @@
       'real-play-world-chat-cleanup.js',
       'profile-load-guard.js',
       'real-play-profile.js',
+      'real-play-game-history.js',
       'real-play-profile-intro.js',
       'profile-metrics-stability.js',
       'real-play-profile-metrics.js',
