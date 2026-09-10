@@ -1,4 +1,4 @@
-/* Real Play Main Announcement artwork. The generated image now lives as a real repo asset. */
+/* Real Play Main Announcement artwork. The source now uses the real PNG uploaded to the repo. */
 body.rp-simple-navigation-active .rp-home-main-announcement{
   position:relative!important;
   overflow:hidden!important;
@@ -6,8 +6,8 @@ body.rp-simple-navigation-active .rp-home-main-announcement{
 }
 
 /* Keep protection behind the copy, but let the premium court art breathe.
-   Left stays dark for readability; center/right now reveal substantially more
-   of the hoop, reflections, ball texture, cyan light and red light. */
+   Left stays dark for readability; center/right reveal the hoop, reflections,
+   ball texture, cyan light and red light from the uploaded artwork. */
 body.rp-simple-navigation-active .rp-home-main-announcement::before{
   content:"";
   position:absolute;
@@ -23,7 +23,7 @@ body.rp-simple-navigation-active .rp-home-main-announcement::before{
       rgba(2,6,12,.16) 68%,
       rgba(2,6,12,.04) 100%),
     linear-gradient(180deg,rgba(2,6,12,.02),rgba(2,6,12,.10)),
-    url('assets/home/home-main-announcement.svg') center 53% / cover no-repeat;
+    url('assets/home/home-main-announcement.png?v=20260910-main-announcement-png-v1') center 53% / cover no-repeat;
   opacity:1!important;
   filter:brightness(1.24) saturate(1.14) contrast(1.06);
 }
