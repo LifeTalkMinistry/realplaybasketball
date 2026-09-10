@@ -84,9 +84,51 @@ body.rp-simple-navigation-active [data-rp-home-3v3]:focus-visible{
   outline-offset:2px!important;
 }
 
+/* 5V5 LEAGUE */
+body.rp-simple-navigation-active [data-rp-home-5v5]{
+  position:relative!important;
+  min-height:126px!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+  padding:0!important;
+  background:#02060c!important;
+  cursor:pointer!important;
+}
+
+body.rp-simple-navigation-active [data-rp-home-5v5]::before{
+  content:''!important;
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:1!important;
+  border-radius:inherit!important;
+  pointer-events:none!important;
+  background:url('assets/home/home-5v5.png?v=20260910-home-5v5-png-v1') center center / cover no-repeat!important;
+  opacity:1!important;
+  filter:none!important;
+  transform:none!important;
+}
+
+body.rp-simple-navigation-active [data-rp-home-5v5]>small,
+body.rp-simple-navigation-active [data-rp-home-5v5]>strong,
+body.rp-simple-navigation-active [data-rp-home-5v5]>p{
+  display:none!important;
+}
+
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-command-grid [data-rp-home-5v5]::after{
+  content:none!important;
+  display:none!important;
+}
+
+body.rp-simple-navigation-active [data-rp-home-5v5]:focus-visible{
+  outline:2px solid rgba(57,220,255,.72)!important;
+  outline-offset:2px!important;
+}
+
 @media(max-width:420px){
   body.rp-simple-navigation-active [data-rp-home-open-rank],
-  body.rp-simple-navigation-active [data-rp-home-3v3]{
+  body.rp-simple-navigation-active [data-rp-home-3v3],
+  body.rp-simple-navigation-active [data-rp-home-5v5]{
     min-height:116px!important;
   }
 }
