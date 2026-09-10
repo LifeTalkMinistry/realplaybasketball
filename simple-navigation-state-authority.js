@@ -152,43 +152,45 @@
         padding-right:26px;
       }
 
-      /* Premium hero accent rails framing the brand over the basketball. */
-      body.rp-simple-navigation-active .rp-home-brand-lockup::before,
-      body.rp-simple-navigation-active .rp-home-brand-lockup::after{
+      /* Premium hero accent rails. Match the full Home selector specificity so
+         these override the old masthead rule that intentionally hid them. */
+      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before,
+      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
         content:''!important;
         display:block!important;
+        visibility:visible!important;
         position:absolute!important;
         z-index:2!important;
         top:50%!important;
-        width:24%!important;
+        width:27%!important;
         height:2px!important;
-        opacity:.95!important;
+        opacity:1!important;
         pointer-events:none!important;
         transform:translateY(-50%)!important;
       }
-      body.rp-simple-navigation-active .rp-home-brand-lockup::before{
-        left:4%!important;
-        background:linear-gradient(90deg,transparent 0%,rgba(24,181,255,.25) 28%,#35d7ff 100%)!important;
-        box-shadow:0 0 10px rgba(53,215,255,.75),0 0 24px rgba(53,215,255,.28)!important;
+      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before{
+        left:2.5%!important;
+        background:linear-gradient(90deg,transparent 0%,rgba(21,181,255,.34) 20%,#39dcff 72%,#63e7ff 100%)!important;
+        box-shadow:0 0 8px rgba(57,220,255,.95),0 0 20px rgba(57,220,255,.58),0 0 36px rgba(57,220,255,.26)!important;
       }
-      body.rp-simple-navigation-active .rp-home-brand-lockup::after{
-        right:4%!important;
-        background:linear-gradient(90deg,#ff3548 0%,rgba(255,53,72,.28) 72%,transparent 100%)!important;
-        box-shadow:0 0 10px rgba(255,53,72,.72),0 0 24px rgba(255,53,72,.26)!important;
+      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
+        right:2.5%!important;
+        background:linear-gradient(90deg,#ff3b4f 0%,#ff5365 28%,rgba(255,59,79,.34) 80%,transparent 100%)!important;
+        box-shadow:0 0 8px rgba(255,59,79,.95),0 0 20px rgba(255,59,79,.58),0 0 36px rgba(255,59,79,.26)!important;
       }
-      body.rp-simple-navigation-active .rp-home-brand-lockup strong,
-      body.rp-simple-navigation-active .rp-home-brand-lockup span,
-      body.rp-simple-navigation-active .rp-home-brand-lockup small{
+      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup strong,
+      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup span,
+      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup small{
         position:relative!important;
         z-index:3!important;
       }
       @media(max-width:420px){
-        body.rp-simple-navigation-active .rp-home-brand-lockup::before,
-        body.rp-simple-navigation-active .rp-home-brand-lockup::after{
-          width:19%!important;
+        body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before,
+        body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
+          width:24%!important;
         }
-        body.rp-simple-navigation-active .rp-home-brand-lockup::before{left:3%!important}
-        body.rp-simple-navigation-active .rp-home-brand-lockup::after{right:3%!important}
+        body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before{left:2%!important}
+        body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{right:2%!important}
       }
 
       @media(hover:hover){
