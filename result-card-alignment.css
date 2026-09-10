@@ -112,8 +112,17 @@
   margin:0!important;
 }
 
+/* Trophy: center precisely inside the template's circular MVP icon well. */
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span::before{
-  left:3.2%!important;
+  position:absolute!important;
+  left:7.4%!important;
+  top:50%!important;
+  width:4.2%!important;
+  height:54%!important;
+  transform:translate(-50%,-50%)!important;
+  margin:0!important;
+  background:#f6c65a!important;
+  filter:drop-shadow(0 1px 4px rgba(0,0,0,.8)) drop-shadow(0 0 8px rgba(246,198,90,.22))!important;
 }
 
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]::after{
@@ -146,10 +155,15 @@
     padding-right:10%!important;
   }
 
-  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location::before,
-  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span::before{
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-location::before{
     left:3.0%!important;
     width:10px;
     height:10px;
+  }
+
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span::before{
+    left:7.4%!important;
+    width:4.2%!important;
+    height:54%!important;
   }
 }
