@@ -64,11 +64,28 @@
     });
   }
 
+  function releaseLayerFocus(selector) {
+    const layer = document.querySelector(selector);
+    const focused = document.activeElement;
+    if (!layer || !focused || !layer.contains(focused)) return;
+    try { focused.blur?.(); } catch (_error) {}
+    try { nav()?.querySelector(`[data-rp-simple-nav-item="${active}"]`)?.focus({ preventScroll: true }); } catch (_error) {}
+  }
+
   function closeLayer(layer) {
     try {
-      if (layer === 'world') window.RealPlayWorld?.close?.();
-      if (layer === 'profile') window.RealPlayProfile?.close?.();
-      if (layer === 'updates') window.RealPlayUpdates?.close?.();
+      if (layer === 'world') {
+        releaseLayerFocus('[data-rp-world]');
+        window.RealPlayWorld?.close?.();
+      }
+      if (layer === 'profile') {
+        releaseLayerFocus('[data-rp-profile]');
+        window.RealPlayProfile?.close?.();
+      }
+      if (layer === 'updates') {
+        releaseLayerFocus('[data-rp-updates]');
+        window.RealPlayUpdates?.close?.();
+      }
     } catch (_error) {
       // Navigation should stay usable even if an optional layer is unavailable.
     }
@@ -84,18 +101,45 @@
     const strong = document.querySelector('[data-rp-world] .rp-world-title strong');
     const badge = document.querySelector('[data-rp-world] .rp-world-online');
     if (strong) strong.textContent = tab === 'players' ? 'PLAYERS' : tab === 'chats' ? 'CHATS' : 'WORLD';
-    if (badge) badge.textContent = tab === 'chats' ? (hasAccount() ? 'COMMUNITY' : 'READ ONLY') : 'COMMUNITY';
+    if (badge) badge.textContent = tab === 'chats' && !hasAccount() ? 'READ ONLY' : 'COMMUNITY';
+  }
+
+  function forcePlayersView(panel) {
+    const playerView = panel?.querySelector('[data-world-view="players"]');
+    if (!playerView) return false;
+
+    panel.querySelectorAll('[data-world-tab]').forEach((button) => {
+      button.classList.toggle('active', button.dataset.worldTab === 'players');
+    });
+    panel.querySelectorAll('[data-world-view]').forEach((view) => {
+      view.hidden = view.dataset.worldView !== 'players';
+    });
+    window.RealPlayPlayers?.refresh?.();
+    updateWorldTitle('players');
+    return true;
   }
 
   function activateWorldTab(tab, attempt = 0) {
-    const selector = `[data-rp-world] [data-world-tab="${tab}"]`;
-    const trigger = document.querySelector(selector);
+    const panel = document.querySelector('[data-rp-world]');
+    if (!panel) {
+      if (attempt < 14) window.setTimeout(() => activateWorldTab(tab, attempt + 1), 60);
+      return;
+    }
+
+    if (tab === 'players') {
+      if (!forcePlayersView(panel) && attempt < 14) {
+        window.setTimeout(() => activateWorldTab(tab, attempt + 1), 60);
+      }
+      return;
+    }
+
+    const trigger = panel.querySelector(`[data-world-tab="${tab}"]`);
     if (trigger) {
       trigger.click();
       updateWorldTitle(tab);
       return;
     }
-    if (attempt < 12) window.setTimeout(() => activateWorldTab(tab, attempt + 1), 60);
+    if (attempt < 14) window.setTimeout(() => activateWorldTab(tab, attempt + 1), 60);
   }
 
   function openWorldTab(tab) {
@@ -103,7 +147,7 @@
     if (window.RealPlayWorld?.open) window.RealPlayWorld.open();
     else document.querySelector('[data-rp-main-action="world"]')?.click();
     setActive(tab === 'players' ? 'players' : tab === 'chats' ? 'chats' : 'world');
-    window.setTimeout(() => activateWorldTab(tab), 20);
+    window.setTimeout(() => activateWorldTab(tab), 30);
   }
 
   function openHome() {
@@ -128,12 +172,21 @@
     return false;
   }
 
+  function syncMeHeader() {
+    const profile = document.querySelector('[data-rp-profile]');
+    const title = profile?.querySelector('.rp-profile-topbar strong');
+    if (title) title.textContent = 'ME';
+  }
+
   function openMe() {
     if (!requireAccount('Create your player to unlock your own OVR, stats, game history, membership and settings.')) return;
     closePrimaryLayers('profile');
     setActive('me');
     window.RealPlayProfile?.open?.();
-    window.setTimeout(ensureProfileSettingsButton, 50);
+    window.setTimeout(() => {
+      syncMeHeader();
+      ensureProfileSettingsButton();
+    }, 50);
   }
 
   function openSettingsFromMe() {
@@ -311,7 +364,10 @@
       if (!document.hidden && active === 'home') refreshHome();
     }, 60_000);
 
-    const profileObserver = new MutationObserver(ensureProfileSettingsButton);
+    const profileObserver = new MutationObserver(() => {
+      ensureProfileSettingsButton();
+      if (active === 'me') syncMeHeader();
+    });
     profileObserver.observe(document.body, { childList: true, subtree: true });
     ensureProfileSettingsButton();
 
@@ -319,6 +375,7 @@
     window.addEventListener('focus', () => {
       ensurePublicEntry();
       if (active === 'home') refreshHome();
+      if (active === 'me') syncMeHeader();
       ensureProfileSettingsButton();
     });
     window.addEventListener('storage', () => {
