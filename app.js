@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-game-history-page-v37';
+  const version = '20260910-me-settings-v38';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
