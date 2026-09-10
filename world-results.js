@@ -2,7 +2,7 @@
   if (window.__realPlayWorldResultsInstalled) return;
   window.__realPlayWorldResultsInstalled = true;
 
-  // WORLD must not own or render a second result system. The authoritative
+  // WORLD must never own or render a second result system. The authoritative
   // result experience already lives inside RealPlayUpdates, including its
   // score/MVP presentation, admin controls, game detail and replay behavior.
   // This file is intentionally only a routing bridge.
@@ -31,7 +31,8 @@
   function openAuthoritativeResults() {
     removeLegacyWorldResults();
 
-    // Do not leave the old World panel underneath the official results layer.
+    // Do not leave the old World/profile panels underneath the official result
+    // layer. WORLD is now just another entry point into RealPlayUpdates.
     try { window.RealPlayWorld?.close?.(); } catch (_error) {}
     try { window.RealPlayProfile?.close?.(); } catch (_error) {}
 
@@ -55,8 +56,17 @@
     }
   }
 
+  function patchSimpleNavigationApi(attempt = 0) {
+    if (window.RealPlaySimpleNavigation) {
+      window.RealPlaySimpleNavigation.world = openAuthoritativeResults;
+      return;
+    }
+    if (attempt < 40) window.setTimeout(() => patchSimpleNavigationApi(attempt + 1), 100);
+  }
+
   // WORLD is now an entry point to the one official Results implementation.
-  // Capture the tap before simple-navigation.js opens the old World view.
+  // Capture the tap before simple-navigation.js can open the retired World
+  // result view.
   document.addEventListener('click', (event) => {
     const worldButton = event.target.closest?.('[data-rp-simple-nav-item="world"]');
     if (!worldButton) return;
@@ -65,8 +75,10 @@
     openAuthoritativeResults();
   }, true);
 
-  // Clean up any duplicate result DOM left behind by an older cached shell.
+  // Clean up any duplicate result DOM left behind by an older cached shell and
+  // also replace the programmatic WORLD route once simple navigation installs.
   removeLegacyWorldResults();
+  patchSimpleNavigationApi();
 
   window.RealPlayWorldResults = {
     open: openAuthoritativeResults,
