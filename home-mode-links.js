@@ -27,6 +27,40 @@
     window.RealPlayUpdates?.open?.();
   }
 
+  function closeThreeVThreeIfOpen() {
+    const view = document.querySelector('.rp-3v3-view.open');
+    if (!view) return false;
+
+    const back = view.querySelector('[data-rp-3v3-back]') || document.querySelector('[data-rp-3v3-back]');
+    if (back) {
+      back.click();
+    } else {
+      view.classList.remove('open');
+      view.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('rp-3v3-open');
+    }
+    return true;
+  }
+
+  function closeOpenRankIfOpen() {
+    const view = document.querySelector('[data-rp-ranking-games].open, .rp-ranking-view.open');
+    if (!view) return false;
+
+    if (window.RealPlayRankingGames?.close) {
+      window.RealPlayRankingGames.close();
+    } else {
+      view.classList.remove('open');
+      view.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('rp-ranking-open');
+    }
+    return true;
+  }
+
+  function closeModeLayersForNavigation() {
+    closeThreeVThreeIfOpen();
+    closeOpenRankIfOpen();
+  }
+
   function activateCard(card) {
     if (!card) return;
     if (card.matches('[data-rp-home-3v3]')) {
@@ -51,6 +85,12 @@
       card.setAttribute('aria-label', label);
     });
   }
+
+  document.addEventListener('click', (event) => {
+    const navItem = event.target.closest('[data-rp-simple-nav-item]');
+    if (!navItem) return;
+    closeModeLayersForNavigation();
+  }, true);
 
   document.addEventListener('click', (event) => {
     const card = event.target.closest('[data-rp-home-3v3], [data-rp-home-open-rank]');
