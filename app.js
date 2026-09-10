@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-no-legacy-boot-v30';
+  const version = '20260910-no-legacy-boot-v31';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -75,6 +75,10 @@
       window.__rpStaticBootFallback = null;
     }
   }
+
+  // Neutralize any older inline HTML fallback as soon as app.js starts. This
+  // prevents cached index.html from uncovering the legacy carousel after 8s.
+  clearStaticBootFallback();
 
   function revealNewShell() {
     if (shellReady) return true;
