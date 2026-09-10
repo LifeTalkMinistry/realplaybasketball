@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-shell-boot-gate-v26';
+  const version = '20260910-player-state-authority-v27';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -257,6 +257,7 @@
       'admin-game-rotation.js',
       'admin-live-refresh-fix.js',
       'simple-navigation.js',
+      'simple-navigation-state-authority.js',
     ];
 
     for (const href of enhancements) {
