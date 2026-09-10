@@ -1,3 +1,5 @@
+@import url('home-main-announcement-art.css?v=20260910-main-announcement-v1');
+
 /* World is the public history of Real Play games, not a social posting feed. */
 body.rp-simple-navigation-active .rp-world-results{
   display:grid;
