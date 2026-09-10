@@ -17,6 +17,7 @@
   let syncQueued = false;
   let syncTimer = 0;
   let adminProbeTimer = 0;
+  let adminProbeAttempts = 0;
 
   function isAdmin() {
     return window.__realPlayAdminVerified === true;
@@ -94,8 +95,10 @@
         const id = Number(serverMessages[index]?.id);
         if (!Number.isSafeInteger(id) || id <= 0) return;
         node.dataset.chatMessageId = String(id);
-        node.classList.add('rp-chat-admin-target');
-        node.setAttribute('aria-label', `${node.getAttribute('aria-label') || 'Chat message'}. Admin: press and hold for moderation options.`);
+        if (!node.classList.contains('rp-chat-admin-target')) {
+          node.classList.add('rp-chat-admin-target');
+          node.setAttribute('aria-label', 'Chat message. Admin: press and hold for moderation options.');
+        }
       });
     } catch (_error) {
       // Chat itself owns visible loading errors. Moderation sync stays silent.
@@ -272,10 +275,17 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   adminProbeTimer = window.setInterval(() => {
-    if (!isAdmin()) return;
-    window.clearInterval(adminProbeTimer);
-    adminProbeTimer = 0;
-    scheduleSync(0);
+    adminProbeAttempts += 1;
+    if (isAdmin()) {
+      window.clearInterval(adminProbeTimer);
+      adminProbeTimer = 0;
+      scheduleSync(0);
+      return;
+    }
+    if (adminProbeAttempts >= 80) {
+      window.clearInterval(adminProbeTimer);
+      adminProbeTimer = 0;
+    }
   }, 350);
 
   window.addEventListener('focus', () => scheduleSync(60));
