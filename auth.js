@@ -17,7 +17,7 @@
   if (!document.querySelector('link[href^="profile-ownership.css"]')) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'profile-ownership.css?v=20260907-ownership-disputes-v1';
+    link.href = 'profile-ownership.css?v=20260910-choice-clean-v1';
     document.head.appendChild(link);
   }
 
