@@ -151,6 +151,83 @@
       body.rp-simple-navigation-active .rp-home-command-grid article strong{
         padding-right:26px;
       }
+
+      /* Home brand lockup: sits directly on the premium basketball, not in a card. */
+      body.rp-simple-navigation-active .rp-home-brand-lockup{
+        position:relative;
+        z-index:4;
+        min-height:158px;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        padding:18px 10px 14px;
+        text-align:center;
+        pointer-events:none;
+      }
+      body.rp-simple-navigation-active .rp-home-brand-lockup::before,
+      body.rp-simple-navigation-active .rp-home-brand-lockup::after{
+        content:'';
+        position:absolute;
+        top:50%;
+        width:18%;
+        height:1px;
+        opacity:.75;
+      }
+      body.rp-simple-navigation-active .rp-home-brand-lockup::before{
+        left:5%;
+        background:linear-gradient(90deg,transparent,rgba(55,211,255,.9));
+        box-shadow:0 0 12px rgba(55,211,255,.38);
+      }
+      body.rp-simple-navigation-active .rp-home-brand-lockup::after{
+        right:5%;
+        background:linear-gradient(90deg,rgba(255,55,70,.9),transparent);
+        box-shadow:0 0 12px rgba(255,55,70,.32);
+      }
+      body.rp-simple-navigation-active .rp-home-brand-lockup strong{
+        display:block;
+        margin:0;
+        color:#f7fbff;
+        font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
+        font-size:clamp(1.72rem,8vw,2.5rem);
+        font-style:italic;
+        font-weight:950;
+        letter-spacing:.035em;
+        line-height:.92;
+        text-shadow:0 3px 18px rgba(0,0,0,.95),0 0 18px rgba(53,194,255,.13);
+      }
+      body.rp-simple-navigation-active .rp-home-brand-lockup span{
+        display:block;
+        margin-top:7px;
+        color:#eef5ff;
+        font-size:clamp(.58rem,2.8vw,.82rem);
+        font-weight:850;
+        letter-spacing:.32em;
+        line-height:1;
+        text-shadow:0 2px 12px rgba(0,0,0,.95);
+      }
+      body.rp-simple-navigation-active .rp-home-brand-lockup small{
+        display:block;
+        margin-top:13px;
+        color:#9fb3c9;
+        font-size:clamp(.42rem,2vw,.56rem);
+        font-style:italic;
+        font-weight:800;
+        letter-spacing:.22em;
+        line-height:1.2;
+        text-shadow:0 2px 10px rgba(0,0,0,.95);
+      }
+
+      @media(max-height:720px){
+        body.rp-simple-navigation-active .rp-home-brand-lockup{
+          min-height:132px;
+          padding-top:10px;
+        }
+        body.rp-simple-navigation-active .rp-home-brand-lockup strong{
+          font-size:clamp(1.45rem,7.2vw,2.15rem);
+        }
+      }
+
       @media(hover:hover){
         body.rp-simple-navigation-active .rp-home-command-grid article:hover,
         body.rp-simple-navigation-active .rp-home-main-announcement:hover{
@@ -204,7 +281,12 @@
           <strong>COMING SOON.</strong>
           <p>The next 5v5 League schedule will appear here.</p>
         </article>
-      </section>`;
+      </section>
+      <div class="rp-home-brand-lockup" aria-label="Real Play Basketball — Less Screen. Real Points.">
+        <strong>REAL PLAY</strong>
+        <span>BASKETBALL</span>
+        <small>LESS SCREEN. REAL POINTS.</small>
+      </div>`;
 
     root.addEventListener('click', (event) => {
       if (!event.target.closest('[data-rp-home-command-card]')) return;
