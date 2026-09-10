@@ -67,10 +67,7 @@ body.rp-simple-navigation-active [data-world-view="players"] [data-world-player-
   text-transform:uppercase!important;
 }
 
-/* Home keeps the uploaded premium basketball as a real visual centerpiece.
-   The simplified shell previously crushed it to 10% opacity and a 430px cap,
-   which made the lower half look empty. Restore its scale and texture while
-   keeping every card and navigation control above it. */
+/* Home keeps the uploaded premium basketball as a real visual centerpiece. */
 body.rp-simple-navigation-active .rp-main-menu::after{
   width:min(150vw,720px)!important;
   top:70%!important;
@@ -97,6 +94,68 @@ body.rp-simple-navigation-active .rp-world::after{
   margin:0 auto;
   display:grid;
   gap:12px;
+}
+
+/* BRAND MASTHEAD
+   The brand lockup is still the same DOM element created by the Home command
+   center, but it is visually lifted to the top. This removes the lettering
+   from the basketball and lets the ball remain pure artwork. */
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center{
+  padding-top:82px!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup{
+  position:absolute!important;
+  z-index:5!important;
+  top:0!important;
+  left:0!important;
+  right:0!important;
+  min-height:70px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:3px 10px 10px!important;
+  text-align:center!important;
+  pointer-events:none!important;
+  background:radial-gradient(ellipse 42% 72% at 50% 36%,rgba(31,157,255,.075),transparent 72%)!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before,
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
+  display:none!important;
+  content:none!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup strong{
+  display:block!important;
+  margin:0!important;
+  color:#f7fbff!important;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif)!important;
+  font-size:clamp(1.42rem,6.8vw,2.02rem)!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.035em!important;
+  line-height:.92!important;
+  text-shadow:0 3px 18px rgba(0,0,0,.88),0 0 18px rgba(53,194,255,.10)!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup span{
+  display:block!important;
+  margin-top:5px!important;
+  color:#edf6ff!important;
+  font-size:clamp(.48rem,2.2vw,.66rem)!important;
+  font-weight:900!important;
+  letter-spacing:.34em!important;
+  line-height:1!important;
+  text-shadow:0 2px 12px rgba(0,0,0,.90)!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup small{
+  display:block!important;
+  margin-top:8px!important;
+  color:#849bb3!important;
+  font-size:clamp(.34rem,1.65vw,.45rem)!important;
+  font-style:italic!important;
+  font-weight:850!important;
+  letter-spacing:.19em!important;
+  line-height:1.1!important;
+  text-shadow:0 2px 10px rgba(0,0,0,.88)!important;
 }
 
 .rp-simple-home-head{
@@ -340,6 +399,9 @@ body.rp-simple-navigation-active .rp-profile-actions [data-rp-simple-settings]{
 @media(max-width:420px){
   body.rp-simple-navigation-active{--rp-simple-nav-height:66px}
   body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu{padding-inline:12px!important}
+  body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center{padding-top:76px!important}
+  body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup{min-height:64px!important}
+  body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup strong{font-size:1.36rem!important}
   .rp-simple-home-grid{grid-template-columns:1fr}
   .rp-simple-home-grid article{min-height:104px}
   .rp-simple-nav{padding-inline:4px}
