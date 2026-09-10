@@ -67,15 +67,23 @@ body.rp-simple-navigation-active [data-world-view="players"] [data-world-player-
   text-transform:uppercase!important;
 }
 
-/* Keep the basketball as atmosphere, never as foreground content. */
+/* Basketball stays behind content, but Home should visibly carry the Real Play identity. */
 body.rp-simple-navigation-active .rp-main-menu::after,
+body.rp-simple-navigation-active .rp-world::after{
+  -webkit-mask-image:radial-gradient(ellipse 74% 68% at 50% 52%,#000 0 52%,rgba(0,0,0,.66) 72%,transparent 96%)!important;
+  mask-image:radial-gradient(ellipse 74% 68% at 50% 52%,#000 0 52%,rgba(0,0,0,.66) 72%,transparent 96%)!important;
+}
+body.rp-simple-navigation-active .rp-main-menu::after{
+  width:min(118vw,470px)!important;
+  top:73%!important;
+  opacity:.34!important;
+  filter:brightness(.98) contrast(1.08) saturate(1.14)!important;
+}
 body.rp-simple-navigation-active .rp-world::after{
   width:min(105vw,430px)!important;
   top:78%!important;
-  opacity:.10!important;
-  filter:brightness(.55) contrast(1.04) saturate(.92)!important;
-  -webkit-mask-image:radial-gradient(ellipse 72% 64% at 50% 52%,#000 0 48%,rgba(0,0,0,.5) 70%,transparent 94%)!important;
-  mask-image:radial-gradient(ellipse 72% 64% at 50% 52%,#000 0 48%,rgba(0,0,0,.5) 70%,transparent 94%)!important;
+  opacity:.12!important;
+  filter:brightness(.66) contrast(1.04) saturate(.96)!important;
 }
 
 .rp-simple-home{
