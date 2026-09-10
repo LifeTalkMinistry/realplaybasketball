@@ -152,80 +152,43 @@
         padding-right:26px;
       }
 
-      /* Home brand lockup: sits directly on the premium basketball, not in a card. */
-      body.rp-simple-navigation-active .rp-home-brand-lockup{
-        position:relative;
-        z-index:4;
-        min-height:158px;
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        justify-content:center;
-        padding:18px 10px 14px;
-        text-align:center;
-        pointer-events:none;
-      }
+      /* Premium hero accent rails framing the brand over the basketball. */
       body.rp-simple-navigation-active .rp-home-brand-lockup::before,
       body.rp-simple-navigation-active .rp-home-brand-lockup::after{
-        content:'';
-        position:absolute;
-        top:50%;
-        width:18%;
-        height:1px;
-        opacity:.75;
+        content:''!important;
+        display:block!important;
+        position:absolute!important;
+        z-index:2!important;
+        top:50%!important;
+        width:24%!important;
+        height:2px!important;
+        opacity:.95!important;
+        pointer-events:none!important;
+        transform:translateY(-50%)!important;
       }
       body.rp-simple-navigation-active .rp-home-brand-lockup::before{
-        left:5%;
-        background:linear-gradient(90deg,transparent,rgba(55,211,255,.9));
-        box-shadow:0 0 12px rgba(55,211,255,.38);
+        left:4%!important;
+        background:linear-gradient(90deg,transparent 0%,rgba(24,181,255,.25) 28%,#35d7ff 100%)!important;
+        box-shadow:0 0 10px rgba(53,215,255,.75),0 0 24px rgba(53,215,255,.28)!important;
       }
       body.rp-simple-navigation-active .rp-home-brand-lockup::after{
-        right:5%;
-        background:linear-gradient(90deg,rgba(255,55,70,.9),transparent);
-        box-shadow:0 0 12px rgba(255,55,70,.32);
+        right:4%!important;
+        background:linear-gradient(90deg,#ff3548 0%,rgba(255,53,72,.28) 72%,transparent 100%)!important;
+        box-shadow:0 0 10px rgba(255,53,72,.72),0 0 24px rgba(255,53,72,.26)!important;
       }
-      body.rp-simple-navigation-active .rp-home-brand-lockup strong{
-        display:block;
-        margin:0;
-        color:#f7fbff;
-        font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
-        font-size:clamp(1.72rem,8vw,2.5rem);
-        font-style:italic;
-        font-weight:950;
-        letter-spacing:.035em;
-        line-height:.92;
-        text-shadow:0 3px 18px rgba(0,0,0,.95),0 0 18px rgba(53,194,255,.13);
-      }
-      body.rp-simple-navigation-active .rp-home-brand-lockup span{
-        display:block;
-        margin-top:7px;
-        color:#eef5ff;
-        font-size:clamp(.58rem,2.8vw,.82rem);
-        font-weight:850;
-        letter-spacing:.32em;
-        line-height:1;
-        text-shadow:0 2px 12px rgba(0,0,0,.95);
-      }
+      body.rp-simple-navigation-active .rp-home-brand-lockup strong,
+      body.rp-simple-navigation-active .rp-home-brand-lockup span,
       body.rp-simple-navigation-active .rp-home-brand-lockup small{
-        display:block;
-        margin-top:13px;
-        color:#9fb3c9;
-        font-size:clamp(.42rem,2vw,.56rem);
-        font-style:italic;
-        font-weight:800;
-        letter-spacing:.22em;
-        line-height:1.2;
-        text-shadow:0 2px 10px rgba(0,0,0,.95);
+        position:relative!important;
+        z-index:3!important;
       }
-
-      @media(max-height:720px){
-        body.rp-simple-navigation-active .rp-home-brand-lockup{
-          min-height:132px;
-          padding-top:10px;
+      @media(max-width:420px){
+        body.rp-simple-navigation-active .rp-home-brand-lockup::before,
+        body.rp-simple-navigation-active .rp-home-brand-lockup::after{
+          width:19%!important;
         }
-        body.rp-simple-navigation-active .rp-home-brand-lockup strong{
-          font-size:clamp(1.45rem,7.2vw,2.15rem);
-        }
+        body.rp-simple-navigation-active .rp-home-brand-lockup::before{left:3%!important}
+        body.rp-simple-navigation-active .rp-home-brand-lockup::after{right:3%!important}
       }
 
       @media(hover:hover){
