@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-headerless-shell-v28';
+  const version = '20260910-chat-moderation-v29';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -141,6 +141,7 @@
     'real-play-updates-game-detail.css',
     'real-play-world.css',
     'real-play-world-chat-cleanup.css',
+    'real-play-world-chat-moderation.css',
     'real-play-profile.css',
     'profile-identity-cleanup.css',
     'real-play-profile-intro.css',
@@ -249,6 +250,7 @@
       'admin-recorded-stat-controls-fix.js',
       'admin-recorded-scoring-winner.js',
       'admin-access-bootstrap.js',
+      'real-play-world-chat-moderation.js',
       'admin-live-session-expiry.js',
       'admin-game-type-switch.js',
       'admin-session-picker-v5-loader.js',
