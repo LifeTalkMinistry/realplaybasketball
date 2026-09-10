@@ -1,11 +1,11 @@
 (() => {
-  const version = '20260910-chat-moderation-v29';
+  const version = '20260910-no-legacy-boot-v30';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
   // The legacy lobby/main-menu must never paint while the new public-first shell
-  // is still assembling. This boot gate is installed before mobile-lobby.js runs,
-  // so users see one intentional loading state instead of multiple UI systems.
+  // is still assembling. Startup now has only two visible states:
+  // loading -> new shell, or loading -> explicit failure. Never legacy fallback.
   const bootStyle = document.createElement('style');
   bootStyle.id = 'rp-shell-boot-style';
   bootStyle.textContent = `
@@ -50,6 +50,12 @@
       white-space:nowrap;
       animation:rpShellBootPulse 1.1s ease-in-out infinite alternate;
     }
+    html.rp-shell-booting.rp-shell-failed body::after{
+      content:'LOAD FAILED  ·  REFRESH';
+      color:#ff7b8c;
+      animation:none;
+      opacity:1;
+    }
     @keyframes rpShellBootPulse{
       from{opacity:.38}
       to{opacity:1}
@@ -63,13 +69,21 @@
   let shellReady = false;
   let shellReadyObserver = null;
 
+  function clearStaticBootFallback() {
+    if (window.__rpStaticBootFallback) {
+      window.clearTimeout(window.__rpStaticBootFallback);
+      window.__rpStaticBootFallback = null;
+    }
+  }
+
   function revealNewShell() {
     if (shellReady) return true;
     const nav = document.querySelector('[data-rp-simple-nav]');
     const home = document.querySelector('[data-rp-simple-home]');
     if (!nav || !home) return false;
     shellReady = true;
-    html.classList.remove('rp-shell-booting');
+    clearStaticBootFallback();
+    html.classList.remove('rp-shell-booting', 'rp-shell-failed');
     html.classList.add('rp-shell-ready');
     shellReadyObserver?.disconnect();
     shellReadyObserver = null;
@@ -79,16 +93,13 @@
   shellReadyObserver = new MutationObserver(revealNewShell);
   shellReadyObserver.observe(document.documentElement, { childList: true, subtree: true });
 
-  function releaseBootGateForFallback() {
+  function showBootFailure(message, error) {
+    clearStaticBootFallback();
     shellReadyObserver?.disconnect();
     shellReadyObserver = null;
-    html.classList.remove('rp-shell-booting');
-  }
-
-  function restoreBaseSite() {
-    document.body?.classList.remove('rp-lobby-active', 'rp-guest-active', 'rp-visitor-active', 'rp-3v3-open', 'rp-ranking-open');
-    releaseBootGateForFallback();
-    html.classList.remove('js');
+    html.classList.add('rp-shell-booting', 'rp-shell-failed');
+    html.classList.remove('rp-shell-ready');
+    console.error(`[Real Play] ${message || 'New shell failed to initialize.'}`, error || '');
   }
 
   function addStylesheet(href) {
@@ -169,10 +180,6 @@
     'world-results.css',
   ].forEach(addStylesheet);
 
-  const shellWatchdog = window.setTimeout(() => {
-    if (!document.querySelector('[data-rp-app]')) restoreBaseSite();
-  }, 3500);
-
   (async () => {
     await loadScript('auth-session-guard.js');
     await loadScript('public-first-entry.js');
@@ -181,14 +188,11 @@
     const lobbyMounted = Boolean(document.querySelector('[data-rp-app]'));
 
     if (!lobbyLoaded || !lobbyMounted) {
-      window.clearTimeout(shellWatchdog);
-      restoreBaseSite();
-      console.error('[Real Play] Mobile lobby failed to mount; restored base site.');
+      showBootFailure('Mobile lobby failed to mount.');
       return;
     }
 
     await loadScript('legacy-bottom-nav-removal.js');
-    window.clearTimeout(shellWatchdog);
 
     const enhancements = [
       'public-landing.js',
@@ -267,20 +271,14 @@
       if (!loaded) console.warn(`[Real Play] Optional layer failed to load: ${href}`);
     }
 
-    // simple-navigation installs synchronously once its required DOM exists. Give
-    // one animation frame for its MutationObserver fallback, then reveal legacy
-    // UI only if the new shell truly failed. Never leave users trapped on loader.
     requestAnimationFrame(() => {
       if (revealNewShell()) return;
       window.setTimeout(() => {
         if (revealNewShell()) return;
-        releaseBootGateForFallback();
-        console.error('[Real Play] New shell did not initialize; released boot gate to fallback UI.');
-      }, 500);
+        showBootFailure('New shell did not initialize.');
+      }, 1000);
     });
   })().catch((error) => {
-    window.clearTimeout(shellWatchdog);
-    restoreBaseSite();
-    console.error('[Real Play] Startup recovered from an unexpected error.', error);
+    showBootFailure('Startup stopped on an unexpected error.', error);
   });
 })();
