@@ -1,6 +1,8 @@
-/* Real Play Open Rank premium image tile.
-   OPEN RANK is baked into the uploaded PNG artwork. The old schedule copy stays
-   hidden while the full card keeps its existing click action. */
+/* Real Play premium image-first Home mode tiles.
+   Titles are baked into the uploaded PNG artwork. Legacy schedule copy remains
+   hidden while each full card keeps its existing click action. */
+
+/* OPEN RANK */
 body.rp-simple-navigation-active [data-rp-home-open-rank]{
   position:relative!important;
   min-height:126px!important;
@@ -19,20 +21,18 @@ body.rp-simple-navigation-active [data-rp-home-open-rank]::before{
   z-index:1!important;
   border-radius:inherit!important;
   pointer-events:none!important;
-  background:url('assets/home/home-open-rank.png?v=20260910-open-rank-png-v1') center center / cover no-repeat!important;
+  background:url('assets/home/home-open-rank.png?v=20260910-open-rank-png-v2') center center / cover no-repeat!important;
   opacity:1!important;
   filter:none!important;
   transform:none!important;
 }
 
-/* The uploaded artwork already contains the OPEN RANK title. */
 body.rp-simple-navigation-active [data-rp-home-open-rank]>small,
 body.rp-simple-navigation-active [data-rp-home-open-rank]>strong,
 body.rp-simple-navigation-active [data-rp-home-open-rank]>p{
   display:none!important;
 }
 
-/* No legacy schedule arrow on the image-first tile. */
 body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-command-grid [data-rp-home-open-rank]::after{
   content:none!important;
   display:none!important;
@@ -43,8 +43,50 @@ body.rp-simple-navigation-active [data-rp-home-open-rank]:focus-visible{
   outline-offset:2px!important;
 }
 
+/* 3V3 LEAGUE */
+body.rp-simple-navigation-active [data-rp-home-3v3]{
+  position:relative!important;
+  min-height:126px!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+  padding:0!important;
+  background:#02060c!important;
+  cursor:pointer!important;
+}
+
+body.rp-simple-navigation-active [data-rp-home-3v3]::before{
+  content:''!important;
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:1!important;
+  border-radius:inherit!important;
+  pointer-events:none!important;
+  background:url('assets/home/home-3v3.png?v=20260910-home-3v3-png-v1') center center / cover no-repeat!important;
+  opacity:1!important;
+  filter:none!important;
+  transform:none!important;
+}
+
+body.rp-simple-navigation-active [data-rp-home-3v3]>small,
+body.rp-simple-navigation-active [data-rp-home-3v3]>strong,
+body.rp-simple-navigation-active [data-rp-home-3v3]>p{
+  display:none!important;
+}
+
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-command-grid [data-rp-home-3v3]::after{
+  content:none!important;
+  display:none!important;
+}
+
+body.rp-simple-navigation-active [data-rp-home-3v3]:focus-visible{
+  outline:2px solid rgba(57,220,255,.72)!important;
+  outline-offset:2px!important;
+}
+
 @media(max-width:420px){
-  body.rp-simple-navigation-active [data-rp-home-open-rank]{
+  body.rp-simple-navigation-active [data-rp-home-open-rank],
+  body.rp-simple-navigation-active [data-rp-home-3v3]{
     min-height:116px!important;
   }
 }
