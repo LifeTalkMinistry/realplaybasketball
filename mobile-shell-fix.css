@@ -94,3 +94,58 @@ body.rp-simple-navigation-active .rp-simple-nav{
     --rp-edge-gutter-neg:-12px;
   }
 }
+
+/* HOME EDGE-FLUSH AUTHORITY
+   The Home information stack should meet the app's left/right edges just like
+   the hero and bottom navigation. The earlier gutter pass balanced both sides
+   but still left visible black rails. These selectors intentionally outrank
+   the later simple-navigation padding rules. */
+html body.rp-simple-navigation-active{
+  --rp-edge-gutter:0px;
+  --rp-edge-gutter-double:0px;
+  --rp-edge-gutter-neg:0px;
+}
+
+html body.rp-simple-navigation-active .rp-app .rp-app-inner .rp-main-menu.rp-simple-menu{
+  width:100%!important;
+  max-width:620px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  padding-left:0!important;
+  padding-right:0!important;
+  box-sizing:border-box!important;
+}
+
+html body.rp-simple-navigation-active .rp-app .rp-app-inner .rp-main-menu.rp-simple-menu .rp-simple-home.rp-home-command-center{
+  width:100%!important;
+  max-width:100%!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  padding-left:0!important;
+  padding-right:0!important;
+  box-sizing:border-box!important;
+}
+
+html body.rp-simple-navigation-active .rp-app .rp-app-inner .rp-main-menu.rp-simple-menu .rp-simple-home.rp-home-command-center .rp-home-brand-lockup{
+  width:100%!important;
+  max-width:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  transform:none!important;
+}
+
+html body.rp-simple-navigation-active .rp-app .rp-app-inner .rp-main-menu.rp-simple-menu .rp-home-main-announcement,
+html body.rp-simple-navigation-active .rp-app .rp-app-inner .rp-main-menu.rp-simple-menu .rp-home-command-grid,
+html body.rp-simple-navigation-active .rp-app .rp-app-inner .rp-main-menu.rp-simple-menu .rp-home-command-grid article{
+  width:100%!important;
+  max-width:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  box-sizing:border-box!important;
+}
+
+/* Keep only the intentional rounded card corners; remove any outer shell inset. */
+html body.rp-simple-navigation-active .rp-app .rp-app-inner{
+  padding-left:0!important;
+  padding-right:0!important;
+}
