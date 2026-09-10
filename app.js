@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-home-card-art-v33';
+  const version = '20260910-home-card-art-v34';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
