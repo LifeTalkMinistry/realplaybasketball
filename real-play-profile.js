@@ -8,6 +8,7 @@
   let state = null;
   let teamState = null;
   let loading = false;
+  let historyExpanded = false;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -63,6 +64,33 @@
     return new Intl.DateTimeFormat('en-PH', {
       month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Manila',
     }).format(date).toUpperCase();
+  }
+
+  function gameTime(game) {
+    const value = pick(
+      game?.finalizedAt,
+      game?.finalized_at,
+      game?.startsAt,
+      game?.starts_at,
+      game?.playedAt,
+      game?.played_at,
+      game?.date
+    );
+    const time = Date.parse(value || '');
+    return Number.isFinite(time) ? time : null;
+  }
+
+  function orderedRecentGames() {
+    const source = Array.isArray(state?.recentGames) ? state.recentGames : [];
+    return source
+      .map((game, index) => ({ game, index, time: gameTime(game) }))
+      .sort((a, b) => {
+        if (a.time !== null && b.time !== null && a.time !== b.time) return b.time - a.time;
+        if (a.time !== null && b.time === null) return -1;
+        if (a.time === null && b.time !== null) return 1;
+        return a.index - b.index;
+      })
+      .map((entry) => entry.game);
   }
 
   function gameLabel(game) {
@@ -305,7 +333,9 @@
     const rebounds = number(pick(stats.reb, stats.rebounds));
     const turnovers = number(pick(stats.to, stats.tov, stats.turnovers));
     const supportTier = String(state?.supportTier || '').trim();
-    const recentGames = Array.isArray(state?.recentGames) ? state.recentGames.slice(0, 4) : [];
+    const allRecentGames = orderedRecentGames();
+    const visibleRecentGames = historyExpanded ? allRecentGames : allRecentGames.slice(0, 3);
+    const hasMoreHistory = allRecentGames.length > 3;
     const rankingState = state?.ranking || {};
     const rankingRequired = Math.max(1, number(pick(
       rankingState.requiredGames,
@@ -374,13 +404,22 @@
 
       <section class="rp-profile-section rp-profile-history">
         <div class="rp-profile-section-head"><div><small>RECENT HISTORY</small><h2>YOUR LAST REAL PLAY.</h2></div><span>FINALIZED GAMES</span></div>
-        ${recentGames.length ? recentGames.map(renderRecentGame).join('') : `
+        ${visibleRecentGames.length ? visibleRecentGames.map(renderRecentGame).join('') : `
           <div class="rp-profile-no-games"><strong>NO OFFICIAL GAMES YET.</strong><p>Your verified game history will build here automatically.</p></div>`}
+        ${hasMoreHistory ? `
+          <button type="button" class="rp-profile-history-toggle" data-rp-profile-history-toggle aria-expanded="${historyExpanded ? 'true' : 'false'}">
+            ${historyExpanded ? 'SHOW LESS' : 'VIEW MORE'}
+          </button>` : ''}
       </section>
 
       <section class="rp-profile-actions">
         <button type="button" data-rp-profile-manage-number>MANAGE PLAYER NUMBER</button>
       </section>`;
+
+    root.querySelector('[data-rp-profile-history-toggle]')?.addEventListener('click', () => {
+      historyExpanded = !historyExpanded;
+      renderProfile();
+    });
 
     root.querySelector('[data-rp-profile-manage-number]')?.addEventListener('click', () => {
       closeProfile();
@@ -423,6 +462,7 @@
 
   function openProfile() {
     createPanel();
+    historyExpanded = false;
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-profile-open');
