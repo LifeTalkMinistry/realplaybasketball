@@ -42,6 +42,34 @@
   text-shadow:0 3px 14px rgba(0,0,0,.55);
 }
 
+/* Home version: restore the founder/project signature inside the calm empty area
+   below What's Coming without competing with the Sunday Open Ranking CTA. */
+body.rp-simple-navigation-active .rp-home-project-credit{
+  width:min(82%,320px);
+  margin:56px auto 0;
+  padding-top:16px;
+  gap:6px;
+  opacity:.82;
+}
+
+body.rp-simple-navigation-active .rp-home-project-credit::before{
+  width:58px;
+  opacity:.48;
+}
+
+body.rp-simple-navigation-active .rp-home-project-credit span{
+  color:#596a7c;
+  font-size:.49rem;
+  letter-spacing:.20em;
+}
+
+body.rp-simple-navigation-active .rp-home-project-credit strong{
+  color:#9ba8b6;
+  font-size:.82rem;
+  letter-spacing:.13em;
+  text-shadow:0 3px 16px rgba(0,0,0,.58);
+}
+
 @media(max-width:520px){
   .rp-public-founder-credit{
     margin-top:31px;
@@ -54,6 +82,19 @@
 
   .rp-public-founder-credit strong{
     font-size:.86rem;
+  }
+
+  body.rp-simple-navigation-active .rp-home-project-credit{
+    margin-top:48px;
+    padding-top:15px;
+  }
+
+  body.rp-simple-navigation-active .rp-home-project-credit span{
+    font-size:.47rem;
+  }
+
+  body.rp-simple-navigation-active .rp-home-project-credit strong{
+    font-size:.78rem;
   }
 }
 
@@ -70,5 +111,10 @@
 
   .rp-public-founder-credit strong{
     font-size:.78rem;
+  }
+
+  body.rp-simple-navigation-active .rp-home-project-credit{
+    margin-top:32px;
+    padding-top:12px;
   }
 }
