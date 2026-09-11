@@ -1,10 +1,10 @@
 (() => {
-  if (window.__realPlayRecordedInputStabilityInstalledV2) return;
-  window.__realPlayRecordedInputStabilityInstalledV2 = true;
+  if (window.__realPlayRecordedInputStabilityInstalledV3) return;
+  window.__realPlayRecordedInputStabilityInstalledV3 = true;
 
-  // WATCH & SCORE is a long-lived workspace. A normal scoring/stat tap should
-  // patch only values that changed. It must never tear down the mounted video,
-  // scorer layout, or player panel just because another admin layer rendered.
+  // VIDEO is a long-lived workspace. Normal roster changes, scoring taps and
+  // background admin polling must not tear it down and let the legacy renderer
+  // briefly replace it with SETUP / PLAYERS / LIVE / FINALIZE markup.
 
   let allowAdminBodyReplaceUntil = 0;
 
@@ -60,13 +60,11 @@
     });
   }
 
-  // Most importantly, protect [data-admin-body]. The older admin controller
-  // still owns a broad innerHTML renderer. While a recorded draft is active,
-  // any attempt to replace an already-mounted WATCH & SCORE screen is ignored.
-  // The only automatic replacement allowed is the scorer's own REVIEW screen.
-  // Initial scorer mount, BACK TO SCORING, submit/finalize, and explicit tab
-  // navigation remain unaffected because there is no mounted active scorer at
-  // those transition points (or the navigation allowance above is active).
+  // Protect [data-admin-body] whenever VIDEO owns the workspace. The recorded
+  // scoring controller is still free to replace VIDEO with another VIDEO state
+  // (loading -> setup -> scoring -> review). What is blocked is a non-VIDEO
+  // legacy admin render landing on top of an already mounted VIDEO workspace.
+  // Explicit base-tab navigation remains allowed so leaving VIDEO still works.
   const innerHtmlDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
   if (innerHtmlDescriptor?.get && innerHtmlDescriptor?.set && innerHtmlDescriptor.configurable) {
     Object.defineProperty(Element.prototype, 'innerHTML', {
@@ -75,19 +73,19 @@
         const isAdminBody = this.matches?.('[data-admin-body]');
         if (isAdminBody) {
           const adminRoot = this.closest?.('.rp-admin-control');
-          const draftActive = Boolean(window.__realPlayRecordedScoringDraftActive);
-          const hasMountedScorer = Boolean(this.querySelector?.('.rp-video-scoring-screen'));
           const explicitNavigation = performance.now() < allowAdminBodyReplaceUntil;
           const next = value == null ? '' : String(value);
+          const hasMountedVideoWorkspace = Boolean(this.querySelector?.('.rp-video-screen'));
+          const nextIsVideoWorkspace = next.includes('rp-video-screen');
           const nextIsReview = next.includes('rp-video-sheet-review');
 
           if (adminRoot?.classList.contains('open')
-            && draftActive
-            && hasMountedScorer
+            && hasMountedVideoWorkspace
             && videoTabActive(adminRoot)
             && !explicitNavigation
+            && !nextIsVideoWorkspace
             && !nextIsReview) {
-            console.debug('[Real Play] Preserved mounted WATCH & SCORE; blocked broad admin repaint.');
+            console.debug('[Real Play] Preserved VIDEO workspace; blocked legacy admin repaint.');
             return;
           }
         }
