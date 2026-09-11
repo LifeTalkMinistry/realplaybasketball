@@ -36,14 +36,11 @@
 
     panel.querySelectorAll('[data-world-tab]').forEach((button) => {
       const shouldBeActive = button.dataset.worldTab === 'players';
-      if (button.classList.contains('active') !== shouldBeActive) {
-        button.classList.toggle('active', shouldBeActive);
-      }
+      button.classList.toggle('active', shouldBeActive);
     });
 
     panel.querySelectorAll('[data-world-view]').forEach((view) => {
-      const shouldBeHidden = view.dataset.worldView !== 'players';
-      if (view.hidden !== shouldBeHidden) view.hidden = shouldBeHidden;
+      view.hidden = view.dataset.worldView !== 'players';
     });
   }
 
@@ -63,14 +60,11 @@
 
     panel.querySelectorAll('[data-world-tab]').forEach((button) => {
       const shouldBeActive = button.dataset.worldTab === 'chats';
-      if (button.classList.contains('active') !== shouldBeActive) {
-        button.classList.toggle('active', shouldBeActive);
-      }
+      button.classList.toggle('active', shouldBeActive);
     });
 
     panel.querySelectorAll('[data-world-view]').forEach((view) => {
-      const shouldBeHidden = view.dataset.worldView !== 'chats';
-      if (view.hidden !== shouldBeHidden) view.hidden = shouldBeHidden;
+      view.hidden = view.dataset.worldView !== 'chats';
     });
   }
 
@@ -104,147 +98,12 @@
       metadata.division,
     ].filter(Boolean).join(' ').toLowerCase();
 
+    /* Competition context wins over player format. A 3v3 Open Ranking game is
+       still Open Ranking on Home. */
+    if (/\bopen[\s-]?rank(?:ing)?\b|\branking session\b|\bcareer session\b|\beast vs west\b/.test(text)) return 'open-rank';
     if (/\b5\s*v\s*5\b|\b5-on-5\b|\bfive v five\b|\bfull court\b/.test(text)) return '5v5';
     if (/\b3\s*v\s*3\b|\b3-on-3\b|\bthree v three\b|\bfounding four\b|\brace to 8\b/.test(text)) return '3v3';
-    if (/\bopen[\s-]?rank(?:ing)?\b|\branking session\b|\bcareer session\b|\beast vs west\b/.test(text)) return 'open-rank';
     return '';
-  }
-
-  function injectHomeStyles() {
-    if (document.getElementById('rp-home-command-center-style')) return;
-    const style = document.createElement('style');
-    style.id = 'rp-home-command-center-style';
-    style.textContent = `
-      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center{
-        gap:12px;
-      }
-      body.rp-simple-navigation-active .rp-home-main-announcement{
-        min-height:142px;
-        cursor:pointer;
-      }
-      body.rp-simple-navigation-active .rp-home-command-grid{
-        display:grid;
-        grid-template-columns:1fr;
-        gap:10px;
-      }
-      body.rp-simple-navigation-active .rp-home-command-grid article{
-        position:relative;
-        min-height:108px;
-        cursor:pointer;
-        transition:border-color .16s ease,transform .16s ease,background .16s ease,box-shadow .16s ease;
-      }
-      body.rp-simple-navigation-active .rp-home-command-grid article::after{
-        content:'→';
-        position:absolute;
-        top:14px;
-        right:15px;
-        color:#ff5365;
-        font-size:.8rem;
-        font-weight:950;
-        opacity:.82;
-        text-shadow:0 0 10px rgba(255,83,101,.28);
-      }
-      body.rp-simple-navigation-active .rp-home-command-grid article:active,
-      body.rp-simple-navigation-active .rp-home-main-announcement:active{
-        transform:scale(.992);
-      }
-      body.rp-simple-navigation-active .rp-home-main-announcement h2,
-      body.rp-simple-navigation-active .rp-home-command-grid article strong{
-        padding-right:26px;
-      }
-
-      /* Carry the exact Real Play cyan-left / red-right identity from the hero
-         through the information stack without making the cards loud. */
-      body.rp-simple-navigation-active .rp-home-main-announcement,
-      body.rp-simple-navigation-active .rp-home-command-grid article{
-        border:1px solid transparent!important;
-        background:
-          linear-gradient(145deg,rgba(5,13,22,.985),rgba(2,6,12,.99)) padding-box,
-          linear-gradient(110deg,rgba(57,220,255,.54) 0%,rgba(57,220,255,.16) 26%,rgba(255,255,255,.07) 52%,rgba(255,59,79,.14) 76%,rgba(255,59,79,.48) 100%) border-box!important;
-        box-shadow:
-          -12px 0 28px rgba(57,220,255,.045),
-          12px 0 28px rgba(255,59,79,.045),
-          inset 0 1px 0 rgba(255,255,255,.018)!important;
-      }
-      body.rp-simple-navigation-active .rp-home-main-announcement>small,
-      body.rp-simple-navigation-active .rp-home-command-grid article>small{
-        color:#39dcff!important;
-        text-shadow:0 0 10px rgba(57,220,255,.16);
-      }
-      body.rp-simple-navigation-active .rp-home-main-announcement h2,
-      body.rp-simple-navigation-active .rp-home-command-grid article strong{
-        color:#f7fbff!important;
-      }
-      body.rp-simple-navigation-active .rp-home-main-announcement p,
-      body.rp-simple-navigation-active .rp-home-command-grid article p{
-        color:#8fa6bf!important;
-      }
-
-      /* Let the bottom navigation close the same blue-to-red visual story. */
-      body.rp-simple-navigation-active .rp-simple-nav{
-        border-top:1px solid transparent!important;
-        background:
-          linear-gradient(rgba(2,5,10,.975),rgba(2,5,10,.975)) padding-box,
-          linear-gradient(90deg,rgba(57,220,255,.54),rgba(255,255,255,.08) 50%,rgba(255,59,79,.48)) border-box!important;
-        box-shadow:
-          -14px -6px 28px rgba(57,220,255,.025),
-          14px -6px 28px rgba(255,59,79,.025),
-          0 -10px 30px rgba(0,0,0,.36)!important;
-      }
-
-      /* Premium hero accent rails. Match the full Home selector specificity so
-         these override the old masthead rule that intentionally hid them. */
-      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before,
-      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
-        content:''!important;
-        display:block!important;
-        visibility:visible!important;
-        position:absolute!important;
-        z-index:2!important;
-        top:50%!important;
-        width:27%!important;
-        height:2px!important;
-        opacity:1!important;
-        pointer-events:none!important;
-        transform:translateY(-50%)!important;
-      }
-      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before{
-        left:2.5%!important;
-        background:linear-gradient(90deg,transparent 0%,rgba(21,181,255,.34) 20%,#39dcff 72%,#63e7ff 100%)!important;
-        box-shadow:0 0 8px rgba(57,220,255,.95),0 0 20px rgba(57,220,255,.58),0 0 36px rgba(57,220,255,.26)!important;
-      }
-      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
-        right:2.5%!important;
-        background:linear-gradient(90deg,#ff3b4f 0%,#ff5365 28%,rgba(255,59,79,.34) 80%,transparent 100%)!important;
-        box-shadow:0 0 8px rgba(255,59,79,.95),0 0 20px rgba(255,59,79,.58),0 0 36px rgba(255,59,79,.26)!important;
-      }
-      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup strong,
-      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup span,
-      body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup small{
-        position:relative!important;
-        z-index:3!important;
-      }
-      @media(max-width:420px){
-        body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before,
-        body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
-          width:24%!important;
-        }
-        body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before{left:2%!important}
-        body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{right:2%!important}
-      }
-
-      @media(hover:hover){
-        body.rp-simple-navigation-active .rp-home-command-grid article:hover,
-        body.rp-simple-navigation-active .rp-home-main-announcement:hover{
-          border-color:transparent!important;
-          box-shadow:
-            -12px 0 30px rgba(57,220,255,.07),
-            12px 0 30px rgba(255,59,79,.07),
-            inset 0 1px 0 rgba(255,255,255,.028)!important;
-        }
-      }
-    `;
-    document.head.appendChild(style);
   }
 
   function homeRoot() {
@@ -255,12 +114,35 @@
     window.RealPlayUpdates?.open?.();
   }
 
+  function openSundayRanking() {
+    if (window.RealPlayRankingGames?.open) {
+      window.RealPlayRankingGames.open();
+      return;
+    }
+
+    if (!localStorage.getItem(TOKEN_KEY)) {
+      document.querySelector('[data-auth-open]')?.click();
+      return;
+    }
+
+    openOfficialFeed();
+  }
+
+  function setComingOpen(open) {
+    const backdrop = homeRoot()?.querySelector('[data-rp-home-coming-backdrop]');
+    if (!backdrop) return;
+    backdrop.hidden = !open;
+    document.body.classList.toggle('rp-home-coming-open', open);
+    if (open) {
+      window.setTimeout(() => backdrop.querySelector('[data-rp-home-coming-close]')?.focus({ preventScroll: true }), 0);
+    }
+  }
+
   function installHomeCommandCenter() {
     const root = homeRoot();
     if (!root) return false;
     if (root.dataset.rpHomeCommandCenter === 'true') return true;
 
-    injectHomeStyles();
     root.dataset.rpHomeCommandCenter = 'true';
     root.classList.add('rp-home-command-center');
     root.innerHTML = `
@@ -268,37 +150,65 @@
         <div><small>REAL PLAY BASKETBALL</small><h1>HOME</h1></div>
         <span data-rp-simple-access>${localStorage.getItem(TOKEN_KEY) ? 'PLAYER' : 'PUBLIC'}</span>
       </header>
-      <section class="rp-simple-next rp-home-main-announcement" data-rp-home-main-announcement data-rp-home-command-card>
+
+      <section class="rp-simple-next rp-home-main-announcement" data-rp-home-main-announcement>
         <small>MAIN ANNOUNCEMENT</small>
         <h2>NO MAIN ANNOUNCEMENT.</h2>
         <p>Important Real Play updates will appear here.</p>
       </section>
-      <section class="rp-simple-home-grid rp-home-command-grid">
-        <article data-rp-home-open-rank data-rp-home-command-card>
-          <small>OPEN RANK SCHEDULE</small>
-          <strong>TO BE ANNOUNCED.</strong>
-          <p>The next Open Rank schedule will appear here.</p>
-        </article>
-        <article data-rp-home-3v3 data-rp-home-command-card>
-          <small>3V3 LEAGUE</small>
-          <strong>TO BE ANNOUNCED.</strong>
-          <p>The next 3v3 League schedule will appear here.</p>
-        </article>
-        <article data-rp-home-5v5 data-rp-home-command-card>
-          <small>5V5 LEAGUE</small>
-          <strong>COMING SOON.</strong>
-          <p>The next 5v5 League schedule will appear here.</p>
-        </article>
+
+      <section data-rp-home-open-rank aria-label="Current Sunday Open Ranking session">
+        <div class="rp-home-session-copy">
+          <small>CURRENT REAL PLAY</small>
+          <strong data-rp-home-open-rank-title>SUNDAY OPEN RANKING</strong>
+          <p data-rp-home-open-rank-meta>EVERY SUNDAY · 8:00 PM – 11:00 PM</p>
+          <span data-rp-home-open-rank-capacity>16 PLAYER CAP</span>
+        </div>
+        <button class="rp-home-save-slot" type="button" data-rp-home-save-slot>SAVE MY SLOT</button>
       </section>
+
+      <button class="rp-home-whats-coming" type="button" data-rp-home-whats-coming>
+        WHAT'S COMING <span aria-hidden="true">→</span>
+      </button>
+
+      <div class="rp-home-coming-backdrop" data-rp-home-coming-backdrop hidden>
+        <section class="rp-home-coming-sheet" role="dialog" aria-modal="true" aria-labelledby="rp-home-coming-title">
+          <header class="rp-home-coming-head">
+            <div><small>REAL PLAY ROADMAP</small><strong id="rp-home-coming-title">WHAT'S COMING</strong></div>
+            <button class="rp-home-coming-close" type="button" data-rp-home-coming-close aria-label="Close What's Coming">×</button>
+          </header>
+          <div class="rp-home-coming-list">
+            <article class="rp-home-coming-card is-3v3">
+              <small>FUTURE COMPETITION</small>
+              <strong>3V3 LEAGUE</strong>
+              <p>Organized team competition will move here when Real Play is ready to activate it.</p>
+            </article>
+            <article class="rp-home-coming-card is-5v5">
+              <small>FUTURE COMPETITION</small>
+              <strong>5V5 LEAGUE</strong>
+              <p>Full-court league play stays visible as part of the roadmap, not as a current promise.</p>
+            </article>
+            <article class="rp-home-coming-card">
+              <small>FUTURE EXPANSION</small>
+              <strong>MORE OPEN RANKING SCHEDULES</strong>
+              <p>New recurring groups appear only after real player demand is strong enough to support them.</p>
+            </article>
+          </div>
+        </section>
+      </div>
+
       <div class="rp-home-brand-lockup" aria-label="Real Play Basketball — Less Screen. Real Points.">
         <strong>REAL PLAY</strong>
         <span>BASKETBALL</span>
         <small>LESS SCREEN. REAL POINTS.</small>
       </div>`;
 
-    root.addEventListener('click', (event) => {
-      if (!event.target.closest('[data-rp-home-command-card]')) return;
-      openOfficialFeed();
+    root.querySelector('[data-rp-home-main-announcement]')?.addEventListener('click', openOfficialFeed);
+    root.querySelector('[data-rp-home-save-slot]')?.addEventListener('click', openSundayRanking);
+    root.querySelector('[data-rp-home-whats-coming]')?.addEventListener('click', () => setComingOpen(true));
+    root.querySelector('[data-rp-home-coming-close]')?.addEventListener('click', () => setComingOpen(false));
+    root.querySelector('[data-rp-home-coming-backdrop]')?.addEventListener('click', (event) => {
+      if (event.target === event.currentTarget) setComingOpen(false);
     });
 
     refreshHomeCommandCenter();
@@ -313,18 +223,29 @@
       : '<small>MAIN ANNOUNCEMENT</small><h2>NO MAIN ANNOUNCEMENT.</h2><p>Important Real Play updates will appear here.</p>';
   }
 
-  function renderSchedule(selector, label, update, fallbackTitle, fallbackCopy) {
-    const node = homeRoot()?.querySelector(selector);
-    if (!node) return;
+  function renderOpenRank(update) {
+    const root = homeRoot();
+    if (!root) return;
+
+    const title = root.querySelector('[data-rp-home-open-rank-title]');
+    const meta = root.querySelector('[data-rp-home-open-rank-meta]');
+    const capacity = root.querySelector('[data-rp-home-open-rank-capacity]');
+
     if (!update) {
-      node.innerHTML = `<small>${label}</small><strong>${fallbackTitle}</strong><p>${fallbackCopy}</p>`;
+      if (title) title.textContent = 'SUNDAY OPEN RANKING';
+      if (meta) meta.textContent = 'EVERY SUNDAY · 8:00 PM – 11:00 PM';
+      if (capacity) capacity.textContent = '16 PLAYER CAP';
       return;
     }
 
     const when = formatEvent(update.event_at || update.eventAt);
     const location = String(update.location_name || update.locationName || '').trim();
-    const meta = [when, location].filter(Boolean).join(' · ');
-    node.innerHTML = `<small>${label}</small><strong>${esc(update.title || label)}</strong><p>${esc(meta || update.body || 'Official schedule published.')}</p>`;
+    const metadata = update?.metadata || {};
+    const cap = Number(metadata.capacity ?? update.capacity);
+
+    if (title) title.textContent = String(update.title || 'SUNDAY OPEN RANKING').toUpperCase();
+    if (meta) meta.textContent = [when, location].filter(Boolean).join(' · ') || 'SUNDAY · 8:00 PM – 11:00 PM';
+    if (capacity) capacity.textContent = Number.isFinite(cap) && cap > 0 ? `${cap} PLAYER CAP` : '16 PLAYER CAP';
   }
 
   async function refreshHomeCommandCenter() {
@@ -340,6 +261,7 @@
         cache: 'no-store',
       });
       if (!response.ok) throw new Error('Could not load Real Play Home.');
+
       const data = await response.json().catch(() => ({}));
       const updates = Array.isArray(data?.updates) ? data.updates : [];
       const announcement = updates.find((item) => item?.category === 'announcement' && item?.pinned)
@@ -358,33 +280,10 @@
         .sort((a, b) => a.time - b.time);
 
       const openRank = schedules.find((entry) => entry.type === 'open-rank')?.item || null;
-      const threeVThree = schedules.find((entry) => entry.type === '3v3')?.item || null;
-      const fiveVFive = schedules.find((entry) => entry.type === '5v5')?.item || null;
-
       renderAnnouncement(announcement);
-      renderSchedule(
-        '[data-rp-home-open-rank]',
-        'OPEN RANK SCHEDULE',
-        openRank,
-        'TO BE ANNOUNCED.',
-        'The next Open Rank schedule will appear here.'
-      );
-      renderSchedule(
-        '[data-rp-home-3v3]',
-        '3V3 LEAGUE',
-        threeVThree,
-        'TO BE ANNOUNCED.',
-        'The next 3v3 League schedule will appear here.'
-      );
-      renderSchedule(
-        '[data-rp-home-5v5]',
-        '5V5 LEAGUE',
-        fiveVFive,
-        'COMING SOON.',
-        'The next 5v5 League schedule will appear here.'
-      );
+      renderOpenRank(openRank);
     } catch (_error) {
-      // Keep the four stable Home blocks visible even if the public feed is temporarily unavailable.
+      renderOpenRank(null);
     } finally {
       homeLoading = false;
     }
@@ -411,6 +310,9 @@
   });
 
   document.addEventListener('click', () => queueMicrotask(enforce), true);
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setComingOpen(false);
+  });
   window.addEventListener('focus', () => {
     enforce();
     refreshHomeCommandCenter();
@@ -423,6 +325,7 @@
   });
   window.addEventListener('storage', refreshHomeCommandCenter);
   window.addEventListener('realplay:visitorchange', refreshHomeCommandCenter);
+  window.addEventListener('realplay:ranking-session-changed', refreshHomeCommandCenter);
 
   homeRefreshTimer = window.setInterval(() => {
     if (!document.hidden && activeRoute() === 'home') refreshHomeCommandCenter();
