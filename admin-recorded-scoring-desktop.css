@@ -1,25 +1,28 @@
+.rp-admin-control.rp-recorded-desktop-mode .rp-admin-topbar,
+.rp-admin-control.rp-recorded-desktop-mode .rp-admin-livebar,
+.rp-admin-control.rp-recorded-desktop-mode .rp-admin-tabs{
+  display:none!important;
+}
+.rp-admin-control.rp-recorded-desktop-mode .rp-admin-body{
+  padding-top:0!important;
+}
+.rp-admin-control.rp-recorded-desktop-mode .rp-video-scoring-screen{
+  padding-top:8px;
+}
+.rp-admin-control.rp-recorded-desktop-mode .rp-video-scoring-screen>.rp-admin-title{
+  display:none!important;
+}
+
 @media (min-width:1100px){
   .rp-admin-control.rp-recorded-desktop-mode .rp-admin-shell{
     width:min(100%,1480px);
     padding-left:24px;
     padding-right:24px;
   }
-  .rp-admin-control.rp-recorded-desktop-mode .rp-admin-topbar,
-  .rp-admin-control.rp-recorded-desktop-mode .rp-admin-tabs{
-    margin-left:-24px;
-    margin-right:-24px;
-    padding-left:24px;
-    padding-right:24px;
-  }
   .rp-admin-control.rp-recorded-desktop-mode .rp-video-scoring-screen{
-    gap:16px;
-    padding-bottom:40px;
-  }
-  .rp-admin-control.rp-recorded-desktop-mode .rp-video-scoring-screen>.rp-admin-title{
-    margin-bottom:4px;
-  }
-  .rp-admin-control.rp-recorded-desktop-mode .rp-video-scoring-screen>.rp-admin-title h1{
-    font-size:2rem;
+    gap:10px;
+    padding-top:8px;
+    padding-bottom:20px;
   }
   .rp-video-desktop-grid{
     display:grid;
@@ -30,11 +33,11 @@
   }
   .rp-video-desktop-left{
     position:sticky;
-    top:136px;
+    top:8px;
     display:grid;
     gap:12px;
     min-width:0;
-    max-height:calc(100vh - 152px);
+    max-height:calc(100vh - 16px);
     overflow-y:auto;
     padding:1px 5px 10px 1px;
     scrollbar-width:thin;
@@ -93,8 +96,7 @@
     padding-top:2px;
   }
   .rp-video-desktop-left .rp-video-auto-note,
-  .rp-video-desktop-left .rp-video-draft-banner,
-  .rp-video-desktop-left .rp-video-cancel-card{
+  .rp-video-desktop-left .rp-video-draft-banner{
     margin:0 1px;
   }
   .rp-video-desktop-right .rp-video-scoreboard{
@@ -156,13 +158,6 @@
     gap:14px;
   }
   .rp-admin-control.rp-recorded-desktop-mode .rp-admin-shell{
-    padding-left:18px;
-    padding-right:18px;
-  }
-  .rp-admin-control.rp-recorded-desktop-mode .rp-admin-topbar,
-  .rp-admin-control.rp-recorded-desktop-mode .rp-admin-tabs{
-    margin-left:-18px;
-    margin-right:-18px;
     padding-left:18px;
     padding-right:18px;
   }
