@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260910-boot-rescue-v35';
+  const version = '20260911-recorded-input-stability-v36';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
