@@ -3,6 +3,11 @@
  * Future league ideas stay behind a quiet "What's Coming" preview.
  */
 
+/* The old announcement artwork is no longer part of the simplified Home. */
+body.rp-simple-navigation-active .rp-home-main-announcement{
+  display:none!important;
+}
+
 /* Keep the Real Play masthead premium, but let the page itself stay calm. */
 body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before,
 body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
