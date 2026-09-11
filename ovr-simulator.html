@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#02060b">
+  <title>OVR Simulator · Real Play Basketball</title>
+  <style>
+    :root{
+      color-scheme:dark;
+      --bg:#02060b;
+      --panel:rgba(5,10,17,.92);
+      --panel-2:rgba(8,15,24,.95);
+      --line:rgba(255,255,255,.09);
+      --line-blue:rgba(67,211,255,.27);
+      --text:#f2f7fb;
+      --muted:#708197;
+      --cyan:#48d8ff;
+      --red:#ff395e;
+      --green:#70e9ad;
+      --display:Impact,"Arial Narrow",Arial,sans-serif;
+      --body:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:var(--body)}
+    body{
+      background:
+        radial-gradient(circle at 92% 12%,rgba(210,20,55,.16),transparent 27rem),
+        radial-gradient(circle at 5% 36%,rgba(0,157,255,.14),transparent 26rem),
+        linear-gradient(180deg,#02050a,#03070d 45%,#02050a);
+    }
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .page{width:min(100%,760px);margin:0 auto;padding:18px 15px 56px}
+    .topbar{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;min-height:52px;margin-bottom:8px}
+    .back{width:40px;height:40px;border:1px solid var(--line);border-radius:12px;background:#070c13;color:#dfeaf4;font-size:1.2rem}
+    .heading{text-align:center;line-height:1}
+    .heading strong{display:block;font-family:var(--display);font-style:italic;font-size:1.15rem;letter-spacing:.045em}
+    .heading span{display:block;margin-top:7px;color:#68798e;font-size:.55rem;font-weight:900;letter-spacing:.12em}
+    .version{justify-self:end;color:var(--cyan);font-size:.55rem;font-weight:950;letter-spacing:.08em}
+    .notice{margin:8px 0 13px;padding:11px 13px;border:1px solid rgba(72,216,255,.15);border-radius:13px;background:rgba(13,53,72,.13);color:#8fa8bb;font-size:.68rem;line-height:1.45}
+    .notice b{color:#d9f7ff}
+    .result-card{position:relative;overflow:hidden;padding:18px;border:1px solid var(--line-blue);border-radius:20px;background:linear-gradient(145deg,rgba(6,13,22,.98),rgba(4,8,14,.96));margin-bottom:12px}
+    .result-card:before{content:"";position:absolute;inset:-90px auto auto -90px;width:180px;height:180px;border-radius:50%;background:rgba(24,175,232,.08);filter:blur(12px)}
+    .result-top{position:relative;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+    .result-kicker{color:#778a9d;font-size:.58rem;font-weight:950;letter-spacing:.12em}
+    .rating{margin-top:2px;font-family:var(--display);font-size:4.15rem;font-style:italic;line-height:.9;color:var(--cyan);letter-spacing:-.02em}
+    .rating small{font-family:var(--body);font-size:.54rem;font-style:normal;color:#668096;letter-spacing:.12em;margin-left:4px}
+    .result-meta{text-align:right}
+    .result-meta strong{display:block;font-family:var(--display);font-style:italic;font-size:1.05rem}
+    .result-meta span{display:block;margin-top:5px;color:var(--muted);font-size:.58rem;font-weight:850;letter-spacing:.06em}
+    .share{position:relative;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .share div{min-width:0}
+    .share b{display:block;color:#eaf7ff;font-size:.95rem}
+    .share span{display:block;margin-top:4px;color:#65788e;font-size:.52rem;font-weight:850;line-height:1.25;letter-spacing:.04em}
+    .ovr-impact{margin-top:13px;padding:12px 13px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.02)}
+    .ovr-impact .line{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+    .ovr-impact strong{font-family:var(--display);font-style:italic;letter-spacing:.025em}
+    .ovr-impact b{color:var(--cyan);font-family:var(--display);font-size:1.15rem}
+    .ovr-impact p{margin:7px 0 0;color:#72849a;font-size:.61rem;line-height:1.45}
+    .section{margin-top:12px;padding:15px;border:1px solid var(--line);border-radius:18px;background:var(--panel)}
+    .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+    .section-head strong,.details-title{font-family:var(--display);font-style:italic;font-size:.91rem;letter-spacing:.05em}
+    .section-head span{color:#5e7187;font-size:.53rem;font-weight:900;letter-spacing:.07em}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+    label{display:grid;gap:6px;min-width:0;color:#718399;font-size:.56rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}
+    input,select{width:100%;min-height:45px;border:1px solid var(--line);border-radius:11px;background:#050b12;color:#edf7ff;padding:0 11px;font-size:1rem;font-weight:800;outline:none}
+    input:focus,select:focus{border-color:rgba(72,216,255,.5);box-shadow:0 0 0 2px rgba(72,216,255,.08)}
+    details.section{padding:0}
+    details.section summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px;cursor:pointer}
+    details.section summary::-webkit-details-marker{display:none}
+    details.section summary span{color:#60738a;font-size:.58rem;font-weight:850}
+    details.section[open] summary{border-bottom:1px solid var(--line)}
+    .details-body{padding:15px}
+    .help{margin:0 0 12px;color:#687b91;font-size:.62rem;line-height:1.45}
+    .components{display:grid;gap:8px}
+    .component{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.018)}
+    .component strong{display:block;font-size:.72rem}
+    .component small{display:block;margin-top:4px;color:#64778d;font-size:.53rem;line-height:1.3}
+    .component aside{text-align:right}
+    .component b{display:block;color:#dff8ff;font-family:var(--display);font-size:.95rem}
+    .component em{display:block;margin-top:3px;color:#61768c;font-size:.5rem;font-style:normal;font-weight:900}
+    .loading{opacity:.6}
+    .error{margin:12px 0 0;padding:11px 12px;border:1px solid rgba(255,66,95,.25);border-radius:12px;background:rgba(140,22,42,.12);color:#ff9bac;font-size:.65rem;line-height:1.4}
+    .foot{margin-top:16px;color:#55677c;font-size:.59rem;line-height:1.5;text-align:center}
+    .foot b{color:#7d91a8}
+    [hidden]{display:none!important}
+    @media(max-width:430px){
+      .page{padding-inline:12px}
+      .rating{font-size:3.65rem}
+      .grid.three{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .share{gap:5px}
+      .share b{font-size:.86rem}
+    }
+    @media(max-width:340px){.grid,.grid.three{grid-template-columns:1fr}.result-top{grid-template-columns:1fr}.result-meta{text-align:left}.share{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <main class="page" id="ovrSimulator">
+    <header class="topbar">
+      <button class="back" type="button" id="backButton" aria-label="Back to Players">←</button>
+      <div class="heading"><strong>OVR SIMULATOR</strong><span>REAL PLAY BASKETBALL</span></div>
+      <div class="version">V4</div>
+    </header>
+
+    <div class="notice"><b>SIMULATION ONLY.</b> Change the numbers below to see how Real Play evaluates a game. Nothing here changes any real player, game, stat, or OVR.</div>
+
+    <section class="result-card" id="resultCard" aria-live="polite">
+      <div class="result-top">
+        <div>
+          <div class="result-kicker">SIMULATED GAME RATING</div>
+          <div class="rating"><span id="gameRating">—</span><small>GR</small></div>
+        </div>
+        <div class="result-meta">
+          <strong id="gameResult">—</strong>
+          <span id="evidenceText">CALCULATING...</span>
+        </div>
+      </div>
+      <div class="share">
+        <div><b id="actualShare">—</b><span>TEAM SCORING FROM PLAYER</span></div>
+        <div><b id="equalShare">—</b><span>EQUAL SHARE FOR FORMAT</span></div>
+        <div><b id="shareMultiple">—</b><span>VS EQUAL SCORING SHARE</span></div>
+      </div>
+      <div class="ovr-impact">
+        <div class="line"><strong>OVR IMPACT</strong><b id="ovrImpact">—</b></div>
+        <p id="ovrMessage">Enter a valid simulation to see OVR impact.</p>
+      </div>
+    </section>
+
+    <form id="simulatorForm">
+      <section class="section">
+        <div class="section-head"><strong>GAME CONTEXT</strong><span>FORMAT CHANGES THE BASELINE</span></div>
+        <div class="grid">
+          <label>Format
+            <select name="playersPerSide">
+              <option value="3" selected>3v3</option>
+              <option value="4">4v4</option>
+              <option value="5">5v5</option>
+            </select>
+          </label>
+          <label>Ruleset
+            <select name="rulesetFamily" id="rulesetFamily">
+              <option value="race_to" selected>Race To</option>
+              <option value="standard">Standard</option>
+            </select>
+          </label>
+          <label id="targetScoreLabel">Race To
+            <select name="targetScore">
+              <option value="8">8</option>
+              <option value="15" selected>15</option>
+              <option value="21">21</option>
+            </select>
+          </label>
+          <label>Your Team Score<input name="teamScore" type="number" min="0" max="99" value="15" inputmode="numeric"></label>
+          <label>Opponent Score<input name="opponentScore" type="number" min="0" max="99" value="12" inputmode="numeric"></label>
+          <label>Team Pre-Game OVR<input name="teamOvr" type="number" min="40" max="99" value="70" inputmode="numeric"></label>
+          <label>Opponent Pre-Game OVR<input name="opponentOvr" type="number" min="40" max="99" value="70" inputmode="numeric"></label>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><strong>PLAYER GAME STATS</strong><span>THE PLAYER YOU ARE TESTING</span></div>
+        <div class="grid three">
+          <label>PTS<input name="points" type="number" min="0" value="7" inputmode="numeric"></label>
+          <label>AST<input name="assists" type="number" min="0" value="3" inputmode="numeric"></label>
+          <label>REB<input name="rebounds" type="number" min="0" value="4" inputmode="numeric"></label>
+          <label>STL<input name="steals" type="number" min="0" value="2" inputmode="numeric"></label>
+          <label>BLK<input name="blocks" type="number" min="0" value="0" inputmode="numeric"></label>
+          <label>TO<input name="turnovers" type="number" min="0" value="1" inputmode="numeric"></label>
+          <label>Made Shots<input name="madeShots" type="number" min="0" value="4" inputmode="numeric"></label>
+          <label>Missed Shots<input name="missedShots" type="number" min="0" value="2" inputmode="numeric"></label>
+        </div>
+      </section>
+
+      <details class="section" open>
+        <summary><strong class="details-title">TEAM CONTEXT</strong><span>REQUIRED FOR FAIR COMPARISON ▾</span></summary>
+        <div class="details-body">
+          <p class="help">These are your <b>whole-team totals</b>, including the player above. Real Play compares a player's contribution with the team and game around them.</p>
+          <div class="grid three">
+            <label>Team AST<input name="teamAssists" type="number" min="0" value="5" inputmode="numeric"></label>
+            <label>Team REB<input name="teamRebounds" type="number" min="0" value="9" inputmode="numeric"></label>
+            <label>Team STL<input name="teamSteals" type="number" min="0" value="3" inputmode="numeric"></label>
+            <label>Team BLK<input name="teamBlocks" type="number" min="0" value="1" inputmode="numeric"></label>
+            <label>Team TO<input name="teamTurnovers" type="number" min="0" value="4" inputmode="numeric"></label>
+            <label>Team Made<input name="teamMadeShots" type="number" min="0" value="8" inputmode="numeric"></label>
+            <label>Team Missed<input name="teamMissedShots" type="number" min="0" value="8" inputmode="numeric"></label>
+            <label>Opp. Made<input name="opponentMadeShots" type="number" min="0" value="7" inputmode="numeric"></label>
+            <label>Opp. Missed<input name="opponentMissedShots" type="number" min="0" value="9" inputmode="numeric"></label>
+          </div>
+        </div>
+      </details>
+
+      <section class="section">
+        <div class="section-head"><strong>OVR SCENARIO</strong><span>OPTIONAL RATING MOVEMENT</span></div>
+        <p class="help">Use 0 games to simulate a player's first game. For an established player, enter at least 5 games plus the current OVR.</p>
+        <div class="grid">
+          <label>Games Already Played<input name="gamesPlayed" type="number" min="0" max="999" value="0" inputmode="numeric"></label>
+          <label>Current OVR<input name="currentOvr" type="number" min="40" max="99" placeholder="e.g. 85" inputmode="numeric"></label>
+        </div>
+      </section>
+    </form>
+
+    <section class="section">
+      <div class="section-head"><strong>HOW THE GAME RATING FORMED</strong><span>1.00× = NEUTRAL</span></div>
+      <div class="components" id="components">
+        <div class="component"><div><strong>Waiting for calculation…</strong><small>The live V4 engine will return the six OVR components.</small></div></div>
+      </div>
+    </section>
+
+    <div class="error" id="errorBox" hidden></div>
+    <p class="foot"><b>Game Rating</b> measures this game. <b>OVR</b> is the system's current estimate of demonstrated player level across verified evidence. Established-player movement is confidence-aware.</p>
+  </main>
+
+  <script>
+    (() => {
+      const API_URL = 'https://api.clarapmc.com/api/real-play/public/ovr/simulate';
+      const root = document.getElementById('ovrSimulator');
+      const form = document.getElementById('simulatorForm');
+      const errorBox = document.getElementById('errorBox');
+      const resultCard = document.getElementById('resultCard');
+      const ruleset = document.getElementById('rulesetFamily');
+      const targetLabel = document.getElementById('targetScoreLabel');
+      let timer = null;
+      let controller = null;
+
+      const labels = {
+        scoring: ['Scoring', '30%', '75% team scoring contribution + 25% shooting efficiency'],
+        playmaking: ['Playmaking', '20%', 'Assists relative to team playmaking activity'],
+        rebounding: ['Rebounding', '15%', 'Rebounds relative to team rebounding activity'],
+        defense: ['Defense', '15%', '67% steal activity + 33% block activity'],
+        ballSecurity: ['Ball Security', '10%', 'Turnovers compared with the team turnover level'],
+        competitive: ['Competitive Result', '10%', 'Win/loss compared with pre-game expected result'],
+      };
+
+      function value(name) {
+        return form.elements[name]?.value ?? '';
+      }
+
+      function num(name, fallback = 0) {
+        const parsed = Number(value(name));
+        return Number.isFinite(parsed) ? parsed : fallback;
+      }
+
+      function payload() {
+        return {
+          playersPerSide: num('playersPerSide', 3),
+          rulesetFamily: value('rulesetFamily'),
+          targetScore: num('targetScore', 15),
+          teamScore: num('teamScore'),
+          opponentScore: num('opponentScore'),
+          teamOvr: num('teamOvr', 70),
+          opponentOvr: num('opponentOvr', 70),
+          gamesPlayed: num('gamesPlayed'),
+          currentOvr: value('currentOvr') === '' ? null : num('currentOvr'),
+          player: {
+            points: num('points'), assists: num('assists'), rebounds: num('rebounds'),
+            steals: num('steals'), blocks: num('blocks'), turnovers: num('turnovers'),
+            madeShots: num('madeShots'), missedShots: num('missedShots'),
+          },
+          teamTotals: {
+            assists: num('teamAssists'), rebounds: num('teamRebounds'),
+            steals: num('teamSteals'), blocks: num('teamBlocks'), turnovers: num('teamTurnovers'),
+            madeShots: num('teamMadeShots'), missedShots: num('teamMissedShots'),
+          },
+          opponent: {
+            madeShots: num('opponentMadeShots'), missedShots: num('opponentMissedShots'),
+          },
+        };
+      }
+
+      function setText(id, text) {
+        const node = document.getElementById(id);
+        if (node) node.textContent = text;
+      }
+
+      function indexTone(index) {
+        if (index >= 1.12) return 'ABOVE';
+        if (index <= .88) return 'BELOW';
+        return 'NEUTRAL';
+      }
+
+      function renderComponents(data) {
+        const rootNode = document.getElementById('components');
+        rootNode.innerHTML = Object.entries(labels).map(([key, meta]) => {
+          const component = data.components?.[key];
+          const index = Number(component?.index ?? 1);
+          return `<div class="component">
+            <div><strong>${meta[0]} · ${meta[1]}</strong><small>${meta[2]}</small></div>
+            <aside><b>${index.toFixed(2)}×</b><em>${indexTone(index)}</em></aside>
+          </div>`;
+        }).join('');
+      }
+
+      function renderOvr(preview) {
+        if (!preview) {
+          setText('ovrImpact', '—');
+          setText('ovrMessage', 'No OVR preview available.');
+          return;
+        }
+        if (preview.type === 'first_game') {
+          setText('ovrImpact', `${preview.after} EARLY OVR`);
+        } else if (preview.type === 'established') {
+          const movement = Number(preview.movement || 0);
+          const sign = movement > 0 ? '+' : '';
+          setText('ovrImpact', `${preview.before} → ${preview.after} (${sign}${movement})`);
+        } else if (preview.type === 'placement') {
+          setText('ovrImpact', `PLACEMENT · ${preview.gamesAfter}/5`);
+        } else {
+          setText('ovrImpact', 'CURRENT OVR NEEDED');
+        }
+        setText('ovrMessage', preview.message || '');
+      }
+
+      function render(data) {
+        setText('gameRating', data.gameRating ?? '—');
+        setText('gameResult', data.result || '—');
+        setText('evidenceText', `EVIDENCE ${Math.round(Number(data.evidenceWeight || 0) * 100)}% · EXPECTED WIN ${data.expectedWinPercent}%`);
+        setText('actualShare', `${data.scoringShare?.actualPercent ?? 0}%`);
+        setText('equalShare', `${data.scoringShare?.equalSharePercent ?? 0}%`);
+        setText('shareMultiple', `${data.scoringShare?.multipleOfEqualShare ?? 0}×`);
+        renderOvr(data.ovrPreview);
+        renderComponents(data);
+        errorBox.hidden = true;
+      }
+
+      async function calculate() {
+        if (controller) controller.abort();
+        controller = new AbortController();
+        resultCard.classList.add('loading');
+        try {
+          const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload()),
+            cache: 'no-store',
+            signal: controller.signal,
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.message || 'Could not calculate this simulation.');
+          render(data);
+        } catch (error) {
+          if (error.name === 'AbortError') return;
+          errorBox.textContent = error.message || 'Could not calculate this simulation.';
+          errorBox.hidden = false;
+        } finally {
+          resultCard.classList.remove('loading');
+        }
+      }
+
+      function schedule() {
+        clearTimeout(timer);
+        timer = setTimeout(calculate, 220);
+      }
+
+      function syncRuleset() {
+        targetLabel.hidden = ruleset.value !== 'race_to';
+      }
+
+      form.addEventListener('submit', (event) => event.preventDefault());
+      form.addEventListener('input', schedule);
+      form.addEventListener('change', () => { syncRuleset(); schedule(); });
+      document.getElementById('backButton').addEventListener('click', () => {
+        if (history.length > 1) history.back();
+        else window.location.href = 'index.html';
+      });
+
+      syncRuleset();
+      calculate();
+    })();
+  </script>
+</body>
+</html>
