@@ -21,7 +21,12 @@
       .rp-world-player-sort button.active b{color:#49d8ff}
       .rp-world-player-sort button:focus-visible{outline:2px solid rgba(72,215,255,.65);outline-offset:2px}
       .rp-world-player-sort b{margin-left:3px;color:#52667b;font-size:.55rem}
-      @media(max-width:360px){.rp-world-player-sort{gap:5px}.rp-world-player-sort button{padding-inline:5px;font-size:.46rem;letter-spacing:.055em}}
+      .rp-world-player-directory-head{position:relative}
+      .rp-world-player-ovr-info{position:absolute;top:0;right:1px;width:36px;height:36px;display:grid;place-items:center;padding:0;border:1px solid rgba(72,216,255,.24);border-radius:50%;background:rgba(5,12,19,.82);color:#48d8ff;font-family:Georgia,serif;font-size:1rem;font-style:italic;font-weight:900;line-height:1;box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);z-index:2}
+      .rp-world-player-ovr-info:hover{border-color:rgba(72,216,255,.46);background:rgba(13,54,72,.35)}
+      .rp-world-player-ovr-info:active{transform:scale(.96)}
+      .rp-world-player-ovr-info:focus-visible{outline:2px solid rgba(72,215,255,.7);outline-offset:2px}
+      @media(max-width:360px){.rp-world-player-sort{gap:5px}.rp-world-player-sort button{padding-inline:5px;font-size:.46rem;letter-spacing:.055em}.rp-world-player-ovr-info{width:34px;height:34px}}
     `;
     document.head.appendChild(style);
   }
@@ -118,6 +123,25 @@
     scheduleSort();
   }
 
+  function ensureOvrInfoButton(playersView) {
+    const header = playersView?.querySelector('.rp-world-player-directory-head');
+    if (!header || header.querySelector('[data-world-ovr-simulator]')) return;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'rp-world-player-ovr-info';
+    button.dataset.worldOvrSimulator = 'true';
+    button.setAttribute('aria-label', 'Open OVR simulator and calculation guide');
+    button.title = 'How OVR works';
+    button.textContent = 'i';
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      window.location.href = 'ovr-simulator.html';
+    });
+    header.appendChild(button);
+  }
+
   function install() {
     panel = document.querySelector('[data-rp-world]');
     if (!panel) return false;
@@ -125,6 +149,8 @@
     list = playersView?.querySelector('[data-world-player-list]') || null;
     const status = playersView?.querySelector('[data-world-player-status]') || null;
     if (!playersView || !list || !status) return false;
+
+    ensureOvrInfoButton(playersView);
 
     controls = playersView.querySelector('[data-world-player-sort]');
     if (!controls) {
