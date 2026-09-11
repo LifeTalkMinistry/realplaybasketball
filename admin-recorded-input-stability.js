@@ -64,6 +64,12 @@
   // scoring controller is still free to replace VIDEO with another VIDEO state
   // (loading -> setup -> scoring -> review). What is blocked is a non-VIDEO
   // legacy admin render landing on top of an already mounted VIDEO workspace.
+  //
+  // Once the YouTube scorer is mounted, also block scoring -> scoring body
+  // replacement. The base recorded-scoring listener receives admin-render and
+  // tries to rebuild the same scorer again. That destroys the iframe, briefly
+  // restores the native video placeholder, then remounts YouTube and the desktop
+  // layout. Preserving the mounted scorer keeps playback, layout and focus alive.
   // Explicit base-tab navigation remains allowed so leaving VIDEO still works.
   const innerHtmlDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
   if (innerHtmlDescriptor?.get && innerHtmlDescriptor?.set && innerHtmlDescriptor.configurable) {
@@ -76,13 +82,27 @@
           const explicitNavigation = performance.now() < allowAdminBodyReplaceUntil;
           const next = value == null ? '' : String(value);
           const hasMountedVideoWorkspace = Boolean(this.querySelector?.('.rp-video-screen'));
+          const hasMountedScoringWorkspace = Boolean(this.querySelector?.('.rp-video-scoring-screen'));
+          const hasMountedYouTubeScorer = Boolean(this.querySelector?.('.rp-video-scoring-screen [data-rp-youtube-player-shell="scoring"]'));
           const nextIsVideoWorkspace = next.includes('rp-video-screen');
+          const nextIsScoringWorkspace = next.includes('rp-video-scoring-screen');
           const nextIsReview = next.includes('rp-video-sheet-review');
-
-          if (adminRoot?.classList.contains('open')
-            && hasMountedVideoWorkspace
+          const videoOwnsWorkspace = Boolean(
+            adminRoot?.classList.contains('open')
             && videoTabActive(adminRoot)
             && !explicitNavigation
+          );
+
+          if (videoOwnsWorkspace
+            && hasMountedScoringWorkspace
+            && hasMountedYouTubeScorer
+            && nextIsScoringWorkspace) {
+            console.debug('[Real Play] Preserved mounted YouTube scorer; blocked duplicate scoring repaint.');
+            return;
+          }
+
+          if (videoOwnsWorkspace
+            && hasMountedVideoWorkspace
             && !nextIsVideoWorkspace
             && !nextIsReview) {
             console.debug('[Real Play] Preserved VIDEO workspace; blocked legacy admin repaint.');
