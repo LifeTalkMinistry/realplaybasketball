@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260911-recorded-input-stability-v9';
+  const ADMIN_ASSET_VERSION = '20260911-recorded-input-stability-v10';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
