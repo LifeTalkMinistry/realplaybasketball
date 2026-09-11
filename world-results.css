@@ -217,9 +217,79 @@ body.rp-simple-navigation-active [data-world-view="world"] [data-world-post-form
   display:none!important;
 }
 
+/* --------------------------------------------------------------------------
+   WORLD RESULT SEPARATION
+   The official result artwork is intentionally immersive, but consecutive
+   cards can visually merge into one long neon block. In WORLD only, every
+   visible official game that has another visible result after it gets a
+   heavyweight blue/red divider with a clear label. :has() lets this remain
+   correct when Week/Game Type filters hide intermediate cards.
+   -------------------------------------------------------------------------- */
+.rp-updates.rp-world-results-entry [data-updates-feed]
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]):has(~ .rp-update-result:not([hidden])){
+  overflow:visible!important;
+  margin-bottom:46px!important;
+}
+
+.rp-updates.rp-world-results-entry [data-updates-feed]
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]):has(~ .rp-update-result:not([hidden]))::before{
+  content:'NEXT GAME RESULT'!important;
+  position:absolute!important;
+  z-index:30!important;
+  left:2.5%!important;
+  right:2.5%!important;
+  top:auto!important;
+  bottom:-36px!important;
+  width:auto!important;
+  height:25px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+  border-radius:999px!important;
+  color:#f7fbff!important;
+  background:
+    linear-gradient(90deg,
+      rgba(0,194,255,.98) 0%,
+      rgba(0,117,184,.90) 21%,
+      rgba(5,12,20,.98) 42%,
+      rgba(5,12,20,.98) 58%,
+      rgba(177,25,49,.92) 79%,
+      rgba(255,45,66,.98) 100%)!important;
+  box-shadow:
+    0 0 0 1px rgba(45,205,255,.11),
+    0 0 18px rgba(0,181,255,.28),
+    0 0 22px rgba(255,44,66,.22),
+    inset 0 1px 0 rgba(255,255,255,.18)!important;
+  opacity:1!important;
+  pointer-events:none!important;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif)!important;
+  font-size:clamp(.48rem,2.05vw,.72rem)!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.16em!important;
+  line-height:1!important;
+  text-align:center!important;
+  text-transform:uppercase!important;
+  text-shadow:0 2px 7px rgba(0,0,0,.88),0 0 10px rgba(255,255,255,.12)!important;
+}
+
 @media(max-width:420px){
   .rp-world-result-card{padding:13px 14px 12px}
   .rp-world-result-score{min-height:64px}
   .rp-world-result-score strong{font-size:1.58rem}
   .rp-world-results-heading h1{font-size:1.08rem}
+
+  .rp-updates.rp-world-results-entry [data-updates-feed]
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]):has(~ .rp-update-result:not([hidden])){
+    margin-bottom:42px!important;
+  }
+
+  .rp-updates.rp-world-results-entry [data-updates-feed]
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]):has(~ .rp-update-result:not([hidden]))::before{
+    bottom:-33px!important;
+    height:23px!important;
+    font-size:.48rem!important;
+    letter-spacing:.14em!important;
+  }
 }
