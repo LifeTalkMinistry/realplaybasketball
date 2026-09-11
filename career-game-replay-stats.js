@@ -84,14 +84,12 @@
   }
 
   function impactScore(player) {
-    const shooting = shotSummary(player);
     return num(player?.pts)
       + (num(player?.reb) * 1.2)
       + (num(player?.ast) * 1.5)
       + (num(player?.stl) * 2)
       + (num(player?.blk) * 2)
       - (num(player?.tov) * 1.5)
-      - (shooting.misses * 0.5)
       - (num(player?.foul) * 0.25);
   }
 
