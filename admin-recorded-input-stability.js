@@ -1,11 +1,10 @@
 (() => {
-  if (window.__realPlayRecordedInputStabilityInstalledV1) return;
-  window.__realPlayRecordedInputStabilityInstalledV1 = true;
+  if (window.__realPlayRecordedInputStabilityInstalledV2) return;
+  window.__realPlayRecordedInputStabilityInstalledV2 = true;
 
-  // Recorded WATCH & SCORE is a long-lived workspace. A normal stat tap should
-  // change only the counters that actually changed; it must not wake every
-  // MutationObserver or let the legacy admin renderer tear down the YouTube
-  // player and rebuild the whole scoring screen.
+  // WATCH & SCORE is a long-lived workspace. A normal scoring/stat tap should
+  // patch only values that changed. It must never tear down the mounted video,
+  // scorer layout, or player panel just because another admin layer rendered.
 
   let allowAdminBodyReplaceUntil = 0;
 
@@ -21,18 +20,18 @@
   function allowExplicitNavigation(event) {
     const tab = event.target?.closest?.('.rp-admin-tab');
     if (!tab || tab.matches('[data-rp-video-tab]')) return;
-    // The base admin tab handler renders synchronously from the click. Give it
-    // a short allowance so intentional navigation is never blocked.
+    // Base-tab navigation renders synchronously from the click. This short
+    // allowance keeps SETUP / PLAYERS / OWNERSHIP / FINALIZE navigation normal.
     allowAdminBodyReplaceUntil = performance.now() + 750;
   }
 
   document.addEventListener('pointerdown', allowExplicitNavigation, true);
   document.addEventListener('click', allowExplicitNavigation, true);
 
-  // 1) Suppress no-op text writes inside WATCH & SCORE.
-  // patchScoringUI() intentionally revisits several counters on each tap. The
-  // old behavior still replaced their text nodes even when 0 stayed 0, which
-  // generated a cascade of childList mutations and repaint work.
+  // patchScoringUI() revisits many text nodes on every event. Native
+  // textContent replaces the underlying text node even if "0" is still "0".
+  // Ignore those no-op writes inside the scorer so one stat tap does not create
+  // a burst of childList mutations for every document-wide observer to process.
   const textContentDescriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
   if (textContentDescriptor?.get && textContentDescriptor?.set && textContentDescriptor.configurable) {
     Object.defineProperty(Node.prototype, 'textContent', {
@@ -47,9 +46,8 @@
     });
   }
 
-  // 2) Suppress no-op disabled writes on score-sheet buttons. The draft patch
-  // checks every +/- button after an event; setting an already-disabled button
-  // again can still create attribute mutation work in Chromium.
+  // The draft scorer also re-evaluates every +/- button after each event.
+  // Avoid reflecting the disabled attribute when its state is already correct.
   const disabledDescriptor = Object.getOwnPropertyDescriptor(HTMLButtonElement.prototype, 'disabled');
   if (disabledDescriptor?.get && disabledDescriptor?.set && disabledDescriptor.configurable) {
     Object.defineProperty(HTMLButtonElement.prototype, 'disabled', {
@@ -62,11 +60,13 @@
     });
   }
 
-  // 3) Protect the mounted recorded scorer from the legacy admin body's broad
-  // innerHTML renderer. During an active local draft, polling or unrelated
-  // admin state changes are not allowed to replace WATCH & SCORE with the old
-  // live-game body. Review mode and intentional tab navigation are still
-  // allowed, and the guard releases automatically when the draft deactivates.
+  // Most importantly, protect [data-admin-body]. The older admin controller
+  // still owns a broad innerHTML renderer. While a recorded draft is active,
+  // any attempt to replace an already-mounted WATCH & SCORE screen is ignored.
+  // The only automatic replacement allowed is the scorer's own REVIEW screen.
+  // Initial scorer mount, BACK TO SCORING, submit/finalize, and explicit tab
+  // navigation remain unaffected because there is no mounted active scorer at
+  // those transition points (or the navigation allowance above is active).
   const innerHtmlDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
   if (innerHtmlDescriptor?.get && innerHtmlDescriptor?.set && innerHtmlDescriptor.configurable) {
     Object.defineProperty(Element.prototype, 'innerHTML', {
@@ -79,15 +79,15 @@
           const hasMountedScorer = Boolean(this.querySelector?.('.rp-video-scoring-screen'));
           const explicitNavigation = performance.now() < allowAdminBodyReplaceUntil;
           const next = value == null ? '' : String(value);
-          const nextIsRecordedScreen = next.includes('rp-video-scoring-screen') || next.includes('rp-video-sheet-review');
+          const nextIsReview = next.includes('rp-video-sheet-review');
 
           if (adminRoot?.classList.contains('open')
             && draftActive
             && hasMountedScorer
             && videoTabActive(adminRoot)
             && !explicitNavigation
-            && !nextIsRecordedScreen) {
-            console.debug('[Real Play] Prevented legacy admin-body repaint during recorded scoring.');
+            && !nextIsReview) {
+            console.debug('[Real Play] Preserved mounted WATCH & SCORE; blocked broad admin repaint.');
             return;
           }
         }
