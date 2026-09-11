@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260911-recorded-input-stability-v36';
+  const version = '20260911-official-replay-mvp-v37';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -260,6 +260,7 @@
       'career-game-replay-positive-events.js',
       'career-game-replay-fullscreen-back.js',
       'career-game-replay-stats.js',
+      'career-game-replay-official-mvp.js',
       'career-game-replay-comments-viewport.js',
       'career-game-replay-winner.js',
       'membership-bootstrap.js',
