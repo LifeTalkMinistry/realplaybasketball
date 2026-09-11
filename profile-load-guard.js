@@ -194,7 +194,20 @@
 
   document.addEventListener('click', (event) => {
     if (event.target.closest('[data-rp-history-more]')) { event.preventDefault(); event.stopImmediatePropagation(); openArchive(); return; }
-    if (archive?.classList.contains('open') && event.target.closest('.rp-history-list .rp-profile-game')) closeArchive();
+    const card = archive?.classList.contains('open') ? event.target.closest('.rp-history-list .rp-profile-game') : null;
+    if (!card) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const id = Number(card.dataset.rpProfileGameSession || 0);
+    closeArchive();
+    window.RealPlayProfile?.close?.();
+    if (!Number.isSafeInteger(id) || id < 1) return;
+    const proxy = document.createElement('button');
+    proxy.type = 'button';
+    proxy.hidden = true;
+    proxy.dataset.rpCareerReplaySession = String(id);
+    document.body.appendChild(proxy);
+    requestAnimationFrame(() => { proxy.click(); setTimeout(() => proxy.remove(), 0); });
   }, true);
 
   window.addEventListener('keydown', (event) => {
