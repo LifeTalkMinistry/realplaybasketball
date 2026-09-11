@@ -1,134 +1,297 @@
-/* Real Play premium image-first Home mode tiles.
-   Titles are baked into the uploaded PNG artwork. Legacy schedule copy remains
-   hidden while each full card keeps its existing click action. */
+/* REAL PLAY HOME — PHASE 1 SIMPLIFICATION
+ * Home has one active player action: Sunday Open Ranking.
+ * Future league ideas stay behind a quiet "What's Coming" preview.
+ */
 
-/* OPEN RANK */
+/* Keep the Real Play masthead premium, but let the page itself stay calm. */
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before,
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
+  content:''!important;
+  display:block!important;
+  visibility:visible!important;
+  position:absolute!important;
+  z-index:2!important;
+  top:50%!important;
+  width:25%!important;
+  height:1px!important;
+  opacity:.82!important;
+  pointer-events:none!important;
+  transform:translateY(-50%)!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before{
+  left:3%!important;
+  background:linear-gradient(90deg,transparent,rgba(57,220,255,.72))!important;
+  box-shadow:0 0 10px rgba(57,220,255,.34)!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
+  right:3%!important;
+  background:linear-gradient(90deg,rgba(255,59,79,.68),transparent)!important;
+  box-shadow:0 0 10px rgba(255,59,79,.28)!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup strong,
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup span,
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup small{
+  position:relative!important;
+  z-index:3!important;
+}
+
+/* The CURRENT session card replaces the old wall of mode artwork. */
 body.rp-simple-navigation-active [data-rp-home-open-rank]{
   position:relative!important;
-  min-height:126px!important;
+  min-height:174px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:space-between!important;
+  gap:18px!important;
   overflow:hidden!important;
   isolation:isolate!important;
-  padding:0!important;
-  background:#02060c!important;
-  cursor:pointer!important;
+  padding:20px!important;
+  border:1px solid rgba(255,255,255,.085)!important;
+  border-radius:20px!important;
+  background:
+    radial-gradient(85% 110% at 0% 50%,rgba(34,155,218,.075),transparent 68%),
+    radial-gradient(82% 110% at 100% 50%,rgba(194,43,61,.06),transparent 70%),
+    linear-gradient(155deg,rgba(7,13,21,.985),rgba(3,7,12,.995))!important;
+  box-shadow:0 16px 38px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.025)!important;
 }
-
 body.rp-simple-navigation-active [data-rp-home-open-rank]::before{
   content:''!important;
-  display:block!important;
   position:absolute!important;
   inset:0!important;
-  z-index:1!important;
-  border-radius:inherit!important;
+  z-index:-1!important;
   pointer-events:none!important;
-  background:url('assets/home/home-open-rank.png?v=20260910-open-rank-png-v2') center center / cover no-repeat!important;
-  opacity:1!important;
-  filter:none!important;
-  transform:none!important;
+  background:linear-gradient(90deg,rgba(57,220,255,.42),transparent 24%,transparent 76%,rgba(255,59,79,.34)) top/100% 1px no-repeat!important;
 }
-
-body.rp-simple-navigation-active [data-rp-home-open-rank]>small,
-body.rp-simple-navigation-active [data-rp-home-open-rank]>strong,
-body.rp-simple-navigation-active [data-rp-home-open-rank]>p{
-  display:none!important;
-}
-
-body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-command-grid [data-rp-home-open-rank]::after{
+body.rp-simple-navigation-active [data-rp-home-open-rank]::after{
   content:none!important;
   display:none!important;
 }
 
-body.rp-simple-navigation-active [data-rp-home-open-rank]:focus-visible{
-  outline:2px solid rgba(57,220,255,.72)!important;
-  outline-offset:2px!important;
+body.rp-simple-navigation-active .rp-home-session-copy{
+  min-width:0;
+}
+body.rp-simple-navigation-active .rp-home-session-copy>small{
+  display:block!important;
+  margin:0 0 8px!important;
+  color:#58dcff!important;
+  font-size:.46rem!important;
+  font-weight:950!important;
+  letter-spacing:.17em!important;
+  text-transform:uppercase!important;
+}
+body.rp-simple-navigation-active .rp-home-session-copy>strong{
+  display:block!important;
+  margin:0!important;
+  color:#f5f8fb!important;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif)!important;
+  font-size:clamp(1.32rem,6.5vw,1.82rem)!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.02em!important;
+  line-height:1!important;
+  text-shadow:0 4px 18px rgba(0,0,0,.55)!important;
+}
+body.rp-simple-navigation-active .rp-home-session-copy>p{
+  margin:9px 0 0!important;
+  color:#a5b3c2!important;
+  font-size:.62rem!important;
+  font-weight:800!important;
+  letter-spacing:.055em!important;
+  line-height:1.45!important;
+}
+body.rp-simple-navigation-active .rp-home-session-copy>span{
+  display:inline-block!important;
+  margin-top:9px!important;
+  color:#68798b!important;
+  font-size:.44rem!important;
+  font-weight:900!important;
+  letter-spacing:.13em!important;
+  text-transform:uppercase!important;
 }
 
-/* 3V3 LEAGUE */
-body.rp-simple-navigation-active [data-rp-home-3v3]{
-  position:relative!important;
-  min-height:126px!important;
-  overflow:hidden!important;
-  isolation:isolate!important;
-  padding:0!important;
-  background:#02060c!important;
+body.rp-simple-navigation-active .rp-home-save-slot{
+  width:100%!important;
+  min-height:46px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:1px solid rgba(69,216,255,.30)!important;
+  border-radius:13px!important;
+  background:linear-gradient(180deg,rgba(16,71,96,.32),rgba(5,18,28,.76))!important;
+  color:#dff8ff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 20px rgba(0,0,0,.18)!important;
+  font-family:var(--rp-display,Arial,sans-serif)!important;
+  font-size:.66rem!important;
+  font-weight:950!important;
+  letter-spacing:.12em!important;
+  text-transform:uppercase!important;
+  cursor:pointer!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+body.rp-simple-navigation-active .rp-home-save-slot:active{
+  transform:scale(.992)!important;
+  background:linear-gradient(180deg,rgba(19,83,112,.38),rgba(6,22,34,.82))!important;
+}
+
+/* Quiet secondary action. This is intentionally much less prominent than Save My Slot. */
+body.rp-simple-navigation-active .rp-home-whats-coming{
+  width:100%!important;
+  min-height:40px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:9px!important;
+  padding:8px 12px!important;
+  border:0!important;
+  border-top:1px solid rgba(255,255,255,.055)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#66788a!important;
+  font-size:.49rem!important;
+  font-weight:900!important;
+  letter-spacing:.14em!important;
+  text-transform:uppercase!important;
   cursor:pointer!important;
 }
+body.rp-simple-navigation-active .rp-home-whats-coming span{
+  color:#91a4b8!important;
+  font-size:.7rem!important;
+}
+body.rp-simple-navigation-active .rp-home-whats-coming:active{
+  color:#a7b9ca!important;
+}
 
-body.rp-simple-navigation-active [data-rp-home-3v3]::before{
-  content:''!important;
-  display:block!important;
-  position:absolute!important;
+/* Roadmap bottom sheet. The ideas still exist, but they no longer compete with the active Sunday session. */
+body.rp-simple-navigation-active .rp-home-coming-backdrop{
+  position:fixed!important;
   inset:0!important;
-  z-index:1!important;
-  border-radius:inherit!important;
-  pointer-events:none!important;
-  background:url('assets/home/home-3v3.png?v=20260910-home-3v3-png-v1') center center / cover no-repeat!important;
-  opacity:1!important;
-  filter:none!important;
-  transform:none!important;
-}
-
-body.rp-simple-navigation-active [data-rp-home-3v3]>small,
-body.rp-simple-navigation-active [data-rp-home-3v3]>strong,
-body.rp-simple-navigation-active [data-rp-home-3v3]>p{
-  display:none!important;
-}
-
-body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-command-grid [data-rp-home-3v3]::after{
-  content:none!important;
-  display:none!important;
-}
-
-body.rp-simple-navigation-active [data-rp-home-3v3]:focus-visible{
-  outline:2px solid rgba(57,220,255,.72)!important;
-  outline-offset:2px!important;
-}
-
-/* 5V5 LEAGUE */
-body.rp-simple-navigation-active [data-rp-home-5v5]{
-  position:relative!important;
-  min-height:126px!important;
-  overflow:hidden!important;
-  isolation:isolate!important;
+  z-index:680!important;
+  display:flex!important;
+  align-items:flex-end!important;
+  justify-content:center!important;
   padding:0!important;
-  background:#02060c!important;
+  background:rgba(0,2,5,.72)!important;
+  -webkit-backdrop-filter:blur(7px)!important;
+  backdrop-filter:blur(7px)!important;
+}
+body.rp-simple-navigation-active .rp-home-coming-backdrop[hidden]{
+  display:none!important;
+}
+body.rp-simple-navigation-active .rp-home-coming-sheet{
+  width:min(100%,620px)!important;
+  max-height:min(72dvh,620px)!important;
+  overflow:auto!important;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom))!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-bottom:0!important;
+  border-radius:24px 24px 0 0!important;
+  background:linear-gradient(180deg,#080d14 0%,#03070c 100%)!important;
+  box-shadow:0 -24px 64px rgba(0,0,0,.62)!important;
+}
+body.rp-simple-navigation-active .rp-home-coming-head{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:16px!important;
+  margin-bottom:14px!important;
+}
+body.rp-simple-navigation-active .rp-home-coming-head small{
+  display:block!important;
+  margin-bottom:5px!important;
+  color:#708396!important;
+  font-size:.43rem!important;
+  font-weight:900!important;
+  letter-spacing:.16em!important;
+}
+body.rp-simple-navigation-active .rp-home-coming-head strong{
+  color:#f5f8fb!important;
+  font-family:var(--rp-display,Arial,sans-serif)!important;
+  font-size:1.18rem!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.03em!important;
+}
+body.rp-simple-navigation-active .rp-home-coming-close{
+  width:34px!important;
+  height:34px!important;
+  flex:0 0 34px!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:50%!important;
+  background:#0b1119!important;
+  color:#a8b7c6!important;
+  font-size:1rem!important;
   cursor:pointer!important;
 }
-
-body.rp-simple-navigation-active [data-rp-home-5v5]::before{
-  content:''!important;
+body.rp-simple-navigation-active .rp-home-coming-list{
+  display:grid!important;
+  gap:10px!important;
+}
+body.rp-simple-navigation-active .rp-home-coming-card{
+  position:relative!important;
+  min-height:102px!important;
+  overflow:hidden!important;
+  padding:16px!important;
+  border:1px solid rgba(255,255,255,.07)!important;
+  border-radius:16px!important;
+  background:#050a10!important;
+  isolation:isolate!important;
+}
+body.rp-simple-navigation-active .rp-home-coming-card::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  opacity:.15;
+  filter:grayscale(.45) saturate(.42) brightness(.62);
+  background-position:center;
+  background-size:cover;
+}
+body.rp-simple-navigation-active .rp-home-coming-card.is-3v3::before{
+  background-image:linear-gradient(90deg,rgba(3,8,13,.94),rgba(3,8,13,.50)),url('assets/home/home-3v3.png?v=20260910-home-3v3-png-v1');
+}
+body.rp-simple-navigation-active .rp-home-coming-card.is-5v5::before{
+  background-image:linear-gradient(90deg,rgba(3,8,13,.94),rgba(3,8,13,.50)),url('assets/home/home-5v5.png?v=20260910-home-5v5-png-v1');
+}
+body.rp-simple-navigation-active .rp-home-coming-card small{
   display:block!important;
-  position:absolute!important;
-  inset:0!important;
-  z-index:1!important;
-  border-radius:inherit!important;
-  pointer-events:none!important;
-  background:url('assets/home/home-5v5.png?v=20260910-home-5v5-png-v1') center center / cover no-repeat!important;
-  opacity:1!important;
-  filter:none!important;
-  transform:none!important;
+  color:#6e8295!important;
+  font-size:.42rem!important;
+  font-weight:950!important;
+  letter-spacing:.14em!important;
+}
+body.rp-simple-navigation-active .rp-home-coming-card strong{
+  display:block!important;
+  margin:7px 0 5px!important;
+  color:#edf3f8!important;
+  font-family:var(--rp-display,Arial,sans-serif)!important;
+  font-size:.92rem!important;
+  font-style:italic!important;
+  font-weight:950!important;
+  letter-spacing:.025em!important;
+}
+body.rp-simple-navigation-active .rp-home-coming-card p{
+  margin:0!important;
+  max-width:82%!important;
+  color:#7d8d9e!important;
+  font-size:.58rem!important;
+  font-weight:700!important;
+  line-height:1.42!important;
 }
 
-body.rp-simple-navigation-active [data-rp-home-5v5]>small,
-body.rp-simple-navigation-active [data-rp-home-5v5]>strong,
-body.rp-simple-navigation-active [data-rp-home-5v5]>p{
-  display:none!important;
-}
-
-body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-command-grid [data-rp-home-5v5]::after{
-  content:none!important;
-  display:none!important;
-}
-
-body.rp-simple-navigation-active [data-rp-home-5v5]:focus-visible{
-  outline:2px solid rgba(57,220,255,.72)!important;
-  outline-offset:2px!important;
+body.rp-home-coming-open{
+  overflow:hidden!important;
 }
 
 @media(max-width:420px){
-  body.rp-simple-navigation-active [data-rp-home-open-rank],
-  body.rp-simple-navigation-active [data-rp-home-3v3],
-  body.rp-simple-navigation-active [data-rp-home-5v5]{
-    min-height:116px!important;
+  body.rp-simple-navigation-active [data-rp-home-open-rank]{
+    min-height:164px!important;
+    padding:18px!important;
+  }
+  body.rp-simple-navigation-active .rp-home-coming-sheet{
+    max-height:76dvh!important;
+  }
+  body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before,
+  body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
+    width:22%!important;
   }
 }
