@@ -55,13 +55,15 @@ body.rp-simple-navigation-active:has([data-rp-simple-nav-item="players"].active)
     radial-gradient(44% 32% at 97% 61%,rgba(255,31,42,.09),transparent 77%)!important;
 }
 
+/* Anchor the shared basketball at the TOP of World and Players, matching Home's
+   hero treatment instead of letting the fixed viewport position push it down. */
 body.rp-simple-navigation-active .rp-updates.rp-world-results-entry::after,
 body.rp-simple-navigation-active:has([data-rp-simple-nav-item="players"].active) .rp-world::after{
   content:''!important;
   position:fixed!important;
   z-index:0!important;
   left:50%!important;
-  top:70%!important;
+  top:20%!important;
   width:min(150vw,720px)!important;
   aspect-ratio:2 / 3!important;
   border:0!important;
@@ -76,7 +78,7 @@ body.rp-simple-navigation-active:has([data-rp-simple-nav-item="players"].active)
       rgba(2,3,7,.08) 68%,
       rgba(2,3,7,.70) 100%
     ),
-    url('assets/main-menu/main-menu-basketball-bg.png?v=20260910-world-player-ball-v1') center / cover no-repeat!important;
+    url('assets/main-menu/main-menu-basketball-bg.png?v=20260910-world-player-ball-v2') center / cover no-repeat!important;
   box-shadow:none!important;
   opacity:.68!important;
   filter:brightness(.90) contrast(1.18) saturate(1.20)!important;
