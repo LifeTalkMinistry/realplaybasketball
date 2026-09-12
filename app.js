@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260911-players-freeze-fix-v41';
+  const version = '20260911-players-isolation-v42';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
