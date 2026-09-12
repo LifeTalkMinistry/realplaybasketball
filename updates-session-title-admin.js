@@ -11,6 +11,8 @@
   let admin = false;
   let checkingAdmin = false;
   let lastToken = '';
+  let feedObserver = null;
+  let decorateQueued = false;
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -123,6 +125,32 @@
       actions.append(renameButton, numberButton, deleteButton);
       row.appendChild(actions);
     });
+  }
+
+  function queueDecorate() {
+    if (!admin || decorateQueued) return;
+    decorateQueued = true;
+    window.requestAnimationFrame(() => {
+      decorateQueued = false;
+      decorateCards();
+    });
+  }
+
+  function attachFeedObserver() {
+    if (feedObserver) return true;
+    const feed = document.querySelector('[data-rp-updates] [data-updates-feed]');
+    if (!feed) return false;
+
+    feedObserver = new MutationObserver((mutations) => {
+      if (!admin) return;
+      const hasNewCard = mutations.some((mutation) => [...mutation.addedNodes].some((node) => (
+        node instanceof HTMLElement
+        && (node.matches?.('.rp-update-card') || node.querySelector?.('.rp-update-card'))
+      )));
+      if (hasNewCard) queueDecorate();
+    });
+    feedObserver.observe(feed, { childList: true });
+    return true;
   }
 
   async function renameSession(button) {
@@ -305,16 +333,24 @@
     else deleteSession(remove);
   }, true);
 
-  const observer = new MutationObserver(() => {
-    if (admin) decorateCards();
-  });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-
   async function refreshAuthorityAndDecorate() {
     const auth = token();
     if (auth !== lastToken) admin = false;
-    if (await detectAdmin()) decorateCards();
+    if (await detectAdmin()) {
+      attachFeedObserver();
+      queueDecorate();
+    }
   }
+
+  document.addEventListener('click', (event) => {
+    const opensUpdates = event.target.closest?.('[data-rp-simple-nav-item="world"], [data-rp-main-action="updates"], [data-rp-open-updates], [data-rp-action="updates"]');
+    if (!opensUpdates) return;
+    window.setTimeout(refreshAuthorityAndDecorate, 0);
+  }, true);
+
+  window.addEventListener('focus', () => {
+    if (document.querySelector('[data-rp-updates].open')) refreshAuthorityAndDecorate();
+  });
 
   window.addEventListener('storage', (event) => {
     if (event.key === TOKEN_KEY || event.key === VISITOR_KEY) {
@@ -330,9 +366,6 @@
   });
 
   injectStyles();
+  attachFeedObserver();
   refreshAuthorityAndDecorate();
-  window.setInterval(() => {
-    const panel = document.querySelector('[data-rp-updates].open');
-    if (panel) refreshAuthorityAndDecorate();
-  }, 2500);
 })();
