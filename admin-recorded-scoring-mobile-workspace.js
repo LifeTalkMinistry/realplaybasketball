@@ -21,14 +21,14 @@
   }
 
   function findExitScoring(screen) {
-    return [...screen.querySelectorAll('button')].find((button) => (
+    return screen.querySelector('[data-rp-exit-scoring]') || [...screen.querySelectorAll('button')].find((button) => (
       String(button.textContent || '').replace(/\s+/g, ' ').trim().toUpperCase().includes('EXIT SCORING')
     )) || null;
   }
 
   function restoreScoreboardStyle(scoreboard) {
     if (!scoreboard) return;
-    ['width','min-width','max-width','height','min-height','padding','margin','gap','border-radius','align-self','box-sizing'].forEach((property) => clearInline(scoreboard, property));
+    ['width','min-width','max-width','height','min-height','padding','margin','gap','border-radius','align-self','box-sizing','flex'].forEach((property) => clearInline(scoreboard, property));
     scoreboard.querySelectorAll('small').forEach((node) => {
       ['font-size','letter-spacing'].forEach((property) => clearInline(node, property));
     });
@@ -39,74 +39,87 @@
     if (dash) ['font-size','margin'].forEach((property) => clearInline(dash, property));
   }
 
-  function restoreDesktopTopRow(screen, scoreboard) {
-    const row = screen.querySelector('[data-rp-mobile-score-row]');
-    if (!row) {
-      restoreScoreboardStyle(scoreboard);
-      return;
+  function restoreTopRowStyle(row, exitButton) {
+    if (row) {
+      ['display','grid-template-columns','align-items','justify-content','gap','width','box-sizing','min-height'].forEach((property) => clearInline(row, property));
+      row.removeAttribute('data-rp-mobile-score-row');
     }
+    if (exitButton) {
+      ['width','margin','align-self','flex'].forEach((property) => clearInline(exitButton, property));
+    }
+  }
 
+  function restoreDesktopTopRow(screen, scoreboard) {
     const exitButton = findExitScoring(screen);
+    const exitRow = screen.querySelector('.rp-video-scoring-exit-row');
+    const legacyRow = screen.querySelector('[data-rp-mobile-score-row]:not(.rp-video-scoring-exit-row)');
     const playerWrap = screen.querySelector('.rp-video-player-wrap');
 
-    if (exitButton) row.insertAdjacentElement('beforebegin', exitButton);
+    // Clean up the older temporary mobile row if it exists from a cached render.
+    if (legacyRow) {
+      if (exitButton && exitRow && exitButton.parentElement !== exitRow) exitRow.appendChild(exitButton);
+      legacyRow.remove();
+    }
+
     if (scoreboard && playerWrap) playerWrap.insertAdjacentElement('afterend', scoreboard);
-    row.remove();
+    restoreTopRowStyle(exitRow, exitButton);
     restoreScoreboardStyle(scoreboard);
   }
 
-  function ensureCompactTopRow(screen, scoreboard, playerWrap) {
+  function ensureCompactTopRow(screen, scoreboard) {
     const exitButton = findExitScoring(screen);
-    if (!exitButton || !scoreboard || !playerWrap) return;
+    const exitRow = exitButton?.closest('.rp-video-scoring-exit-row') || screen.querySelector('.rp-video-scoring-exit-row');
+    if (!exitButton || !exitRow || !scoreboard) return;
 
-    let row = screen.querySelector('[data-rp-mobile-score-row]');
-    if (!row) {
-      row = document.createElement('div');
-      row.dataset.rpMobileScoreRow = '1';
-      playerWrap.insertAdjacentElement('beforebegin', row);
-    }
+    // The existing EXIT SCORING row is the mobile top bar. Keep it at the very
+    // top of the scoring screen and put the live score directly beside it.
+    if (screen.firstElementChild !== exitRow) screen.prepend(exitRow);
+    exitRow.dataset.rpMobileScoreRow = '1';
+    exitRow.style.setProperty('display', 'grid', 'important');
+    exitRow.style.setProperty('grid-template-columns', 'auto minmax(132px, 1fr)', 'important');
+    exitRow.style.setProperty('align-items', 'stretch', 'important');
+    exitRow.style.setProperty('justify-content', 'stretch', 'important');
+    exitRow.style.setProperty('gap', '8px', 'important');
+    exitRow.style.setProperty('width', '100%', 'important');
+    exitRow.style.setProperty('min-height', '34px', 'important');
+    exitRow.style.setProperty('box-sizing', 'border-box', 'important');
 
-    row.style.setProperty('display', 'grid', 'important');
-    row.style.setProperty('grid-template-columns', 'minmax(0, 1fr) minmax(150px, .95fr)', 'important');
-    row.style.setProperty('align-items', 'stretch', 'important');
-    row.style.setProperty('gap', '10px', 'important');
-    row.style.setProperty('width', '100%', 'important');
-    row.style.setProperty('box-sizing', 'border-box', 'important');
+    if (exitButton.parentElement !== exitRow) exitRow.prepend(exitButton);
+    if (scoreboard.parentElement !== exitRow) exitRow.appendChild(scoreboard);
 
-    if (exitButton.parentElement !== row) row.appendChild(exitButton);
-    if (scoreboard.parentElement !== row) row.appendChild(scoreboard);
-
-    // The scoreboard is intentionally compact here: same live data, reduced chrome.
+    // Compact score: same live score data, but sized like a top-bar control.
     scoreboard.style.setProperty('width', '100%', 'important');
     scoreboard.style.setProperty('min-width', '0', 'important');
     scoreboard.style.setProperty('max-width', 'none', 'important');
-    scoreboard.style.setProperty('height', 'auto', 'important');
-    scoreboard.style.setProperty('min-height', '58px', 'important');
-    scoreboard.style.setProperty('padding', '8px 10px', 'important');
+    scoreboard.style.setProperty('height', '34px', 'important');
+    scoreboard.style.setProperty('min-height', '34px', 'important');
+    scoreboard.style.setProperty('padding', '3px 9px', 'important');
     scoreboard.style.setProperty('margin', '0', 'important');
     scoreboard.style.setProperty('gap', '5px', 'important');
-    scoreboard.style.setProperty('border-radius', '12px', 'important');
+    scoreboard.style.setProperty('border-radius', '9px', 'important');
     scoreboard.style.setProperty('align-self', 'stretch', 'important');
     scoreboard.style.setProperty('box-sizing', 'border-box', 'important');
+    scoreboard.style.setProperty('flex', '1 1 auto', 'important');
 
     scoreboard.querySelectorAll('small').forEach((node) => {
       node.style.setProperty('font-size', '6px', 'important');
-      node.style.setProperty('letter-spacing', '.1em', 'important');
+      node.style.setProperty('letter-spacing', '.09em', 'important');
     });
     scoreboard.querySelectorAll('strong').forEach((node) => {
-      node.style.setProperty('font-size', '24px', 'important');
+      node.style.setProperty('font-size', '18px', 'important');
       node.style.setProperty('line-height', '.9', 'important');
     });
     const dash = scoreboard.querySelector(':scope > span');
     if (dash) {
-      dash.style.setProperty('font-size', '12px', 'important');
-      dash.style.setProperty('margin', '0 1px', 'important');
+      dash.style.setProperty('font-size', '10px', 'important');
+      dash.style.setProperty('margin', '0', 'important');
     }
 
-    // Keep the exit button naturally sized while filling the same row height.
-    exitButton.style.setProperty('width', '100%', 'important');
+    // Exit stays small; it should not expand to half of the screen.
+    exitButton.style.setProperty('width', 'auto', 'important');
     exitButton.style.setProperty('margin', '0', 'important');
     exitButton.style.setProperty('align-self', 'stretch', 'important');
+    exitButton.style.setProperty('flex', '0 0 auto', 'important');
   }
 
   function syncWorkspace() {
@@ -114,7 +127,6 @@
     const screen = scoringScreen();
     if (!screen) return;
 
-    const playerWrap = screen.querySelector('.rp-video-player-wrap');
     const rosters = screen.querySelector('.rp-video-score-rosters');
     const selectedPanel = screen.querySelector('[data-rp-video-selected-panel]');
     const scoreboard = screen.querySelector('.rp-video-scoreboard');
@@ -132,8 +144,8 @@
 
     screen.classList.toggle('rp-mobile-player-workspace', hasPlayer);
 
-    // Mobile top bar: Exit Scoring on the left, compact live score on the right.
-    ensureCompactTopRow(screen, scoreboard, playerWrap);
+    // Mobile top bar: Exit Scoring on the left, compact live score immediately beside it.
+    ensureCompactTopRow(screen, scoreboard);
 
     // Player selection and selected-player controls share the same workspace
     // below the video/timeline.
