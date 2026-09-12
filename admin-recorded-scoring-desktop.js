@@ -4,6 +4,7 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
+  const DESKTOP_MEDIA = '(min-width:1100px)';
 
   let layoutTimer = null;
   let rulesTimer = null;
@@ -115,12 +116,42 @@
       </div>`;
   }
 
+  function restoreMobileLayout(adminRoot, scoring) {
+    adminRoot?.classList.remove('rp-recorded-desktop-mode');
+    scoring?.classList.remove('rp-video-desktop-ready');
+    if (!scoring) return;
+
+    const grid = scoring.querySelector('[data-rp-video-desktop-grid]');
+    if (!grid) return;
+
+    const playerWrap = grid.querySelector('.rp-video-player-wrap');
+    const autoNote = grid.querySelector('.rp-video-auto-note');
+    const draftBanner = grid.querySelector('[data-rp-draft-banner]');
+    const cancelCard = grid.querySelector('[data-rp-cancel-video-card]');
+    const scoreboard = grid.querySelector('.rp-video-scoreboard');
+    const rosters = grid.querySelector('.rp-video-score-rosters');
+    const selectedPanel = grid.querySelector('[data-rp-video-selected-panel]');
+    const reviewActions = grid.querySelector('.rp-video-review-actions');
+
+    const anchor = grid;
+    [playerWrap, autoNote, draftBanner, cancelCard, scoreboard, rosters, selectedPanel, reviewActions]
+      .filter(Boolean)
+      .forEach((node) => scoring.insertBefore(node, anchor));
+
+    grid.remove();
+  }
+
   function applyDesktopLayout() {
     const adminRoot = root();
     const scoring = screen();
 
     if (!adminRoot || !scoring) {
       adminRoot?.classList.remove('rp-recorded-desktop-mode');
+      return;
+    }
+
+    if (!window.matchMedia(DESKTOP_MEDIA).matches) {
+      restoreMobileLayout(adminRoot, scoring);
       return;
     }
 
