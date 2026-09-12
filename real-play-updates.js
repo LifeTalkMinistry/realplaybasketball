@@ -13,6 +13,7 @@
   let admin = false;
   let loading = false;
   let pollTimer = null;
+  let lastFeedSignature = '';
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -49,6 +50,14 @@
     return new Intl.DateTimeFormat('en-PH', {
       weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila',
     }).format(date).toUpperCase();
+  }
+
+  function feedSignature(list = updates) {
+    try {
+      return JSON.stringify(Array.isArray(list) ? list : []);
+    } catch (_error) {
+      return `${Date.now()}-${Math.random()}`;
+    }
   }
 
   async function api(action, payload = {}) {
@@ -259,14 +268,20 @@
     if (!admin) closeAdminForm();
   }
 
-  async function refreshFeed({ quiet = false } = {}) {
+  async function refreshFeed({ quiet = false, force = false } = {}) {
     if (loading) return;
     loading = true;
     if (!quiet) setStatus('CHECKING REAL PLAY...');
     try {
       const data = await api('feed');
-      updates = Array.isArray(data.updates) ? data.updates : [];
-      renderFeed();
+      const nextUpdates = Array.isArray(data.updates) ? data.updates : [];
+      const nextSignature = feedSignature(nextUpdates);
+      const changed = nextSignature !== lastFeedSignature;
+      updates = nextUpdates;
+      if (force || changed) {
+        lastFeedSignature = nextSignature;
+        renderFeed();
+      }
       if (!quiet) setStatus('');
     } catch (error) {
       if (!quiet) setStatus(error.message || 'Could not load official updates.', 'error');
@@ -280,9 +295,11 @@
   }
 
   async function detectAdmin() {
+    const previousAdmin = admin;
     if (!token() || visitor() || new URLSearchParams(location.search).get('admin') !== '1') {
       admin = false;
       renderAdmin();
+      if (previousAdmin !== admin) renderFeed();
       return;
     }
     try {
@@ -292,7 +309,7 @@
       admin = false;
     }
     renderAdmin();
-    renderFeed();
+    if (previousAdmin !== admin) renderFeed();
   }
 
   async function publishUpdate(event) {
@@ -315,6 +332,7 @@
     try {
       const data = await api('publish', payload);
       updates = Array.isArray(data.updates) ? data.updates : updates;
+      lastFeedSignature = feedSignature(updates);
       closeAdminForm();
       renderFeed();
       setStatus('OFFICIAL UPDATE PUBLISHED.', 'success');
@@ -336,6 +354,7 @@
     try {
       const data = await api('delete', { id });
       updates = Array.isArray(data.updates) ? data.updates : updates;
+      lastFeedSignature = feedSignature(updates);
       renderFeed();
       setStatus('UPDATE DELETED.', 'success');
       setTimeout(() => setStatus(''), 1500);
@@ -348,7 +367,9 @@
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(() => {
-      if (panel?.classList.contains('open') && !document.hidden) refreshFeed({ quiet: true });
+      if (!panel?.classList.contains('open') || document.hidden) return;
+      if (panel.classList.contains('rp-world-results-entry')) return;
+      refreshFeed({ quiet: true });
     }, 15000);
   }
 
@@ -386,8 +407,17 @@
     openUpdates();
   }, true);
   window.addEventListener('keydown', (event) => { if (event.key === 'Escape' && panel?.classList.contains('open')) closeUpdates(); });
-  window.addEventListener('focus', () => { if (panel?.classList.contains('open')) refreshFeed({ quiet: true }); });
+  window.addEventListener('focus', () => {
+    if (!panel?.classList.contains('open')) return;
+    if (panel.classList.contains('rp-world-results-entry')) return;
+    refreshFeed({ quiet: true });
+  });
 
   createPanel();
-  window.RealPlayUpdates = { open: openUpdates, close: closeUpdates, refresh: refreshFeed };
+  window.RealPlayUpdates = {
+    open: openUpdates,
+    close: closeUpdates,
+    refresh: refreshFeed,
+    getUpdates: () => updates,
+  };
 })();
