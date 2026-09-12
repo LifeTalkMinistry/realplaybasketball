@@ -14,6 +14,7 @@
   let loading = false;
   let pollTimer = null;
   let lastFeedSignature = '';
+  let lastRenderKey = '';
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -241,10 +242,14 @@
     return pieces.length ? `<div class="rp-update-event-meta">${pieces.join('')}</div>` : '';
   }
 
-  function renderFeed() {
+  function renderFeed({ force = false } = {}) {
     const root = panel?.querySelector('[data-updates-feed]');
     if (!root) return;
     const visible = filter === 'all' ? updates : updates.filter((item) => item.category === filter);
+    const renderKey = `${filter}|${admin ? 1 : 0}|${visitor() ? 1 : 0}|${feedSignature(visible)}`;
+    if (!force && root.childNodes.length && renderKey === lastRenderKey) return;
+    lastRenderKey = renderKey;
+
     if (!visible.length) {
       root.innerHTML = `<div class="rp-updates-empty"><strong>NO ${filter === 'all' ? 'UPDATES' : categoryLabel(filter) + 'S'} YET.</strong><p>Official Real Play information will appear here.</p></div>`;
       return;
@@ -280,7 +285,7 @@
       updates = nextUpdates;
       if (force || changed) {
         lastFeedSignature = nextSignature;
-        renderFeed();
+        renderFeed({ force });
       }
       if (!quiet) setStatus('');
     } catch (error) {
