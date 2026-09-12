@@ -1,3 +1,18 @@
+.rp-admin-control:has(.rp-video-scoring-screen) .rp-admin-topbar,
+.rp-admin-control:has(.rp-video-scoring-screen) .rp-admin-livebar,
+.rp-admin-control:has(.rp-video-scoring-screen) .rp-admin-tabs{
+  display:none!important;
+}
+.rp-admin-control:has(.rp-video-scoring-screen) .rp-admin-body{
+  padding-top:0!important;
+}
+.rp-admin-control:has(.rp-video-scoring-screen) .rp-video-scoring-screen{
+  padding-top:8px;
+}
+.rp-admin-control:has(.rp-video-scoring-screen) .rp-video-scoring-screen>.rp-admin-title{
+  display:none!important;
+}
+
 .rp-admin-control.rp-recorded-desktop-mode .rp-admin-topbar,
 .rp-admin-control.rp-recorded-desktop-mode .rp-admin-livebar,
 .rp-admin-control.rp-recorded-desktop-mode .rp-admin-tabs{
