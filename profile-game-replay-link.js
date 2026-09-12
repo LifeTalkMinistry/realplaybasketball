@@ -7,6 +7,7 @@
   const VISITOR_KEY = 'real_play_visitor_mode';
   const COMMUNITY_URL = `${API_BASE_URL}/api/real-play/community`;
   const PUBLIC_COMMUNITY_URL = `${API_BASE_URL}/api/real-play/public/community`;
+  const RESOLVE_TIMEOUT_MS = 5000;
 
   let currentPublicPlayerId = null;
   let ownGamesCache = null;
@@ -38,21 +39,44 @@
     return Number.isSafeInteger(id) && id > 0 ? id : null;
   }
 
+  function visibleSessionIdFrom(card) {
+    if (!card) return null;
+    const label = String(card.querySelector('.rp-profile-game-main strong')?.textContent || '').trim();
+    if (!label) return null;
+
+    const explicit = label.match(/\b(?:SESSION|GAME)\s*#\s*0*(\d+)\b/i);
+    const fallback = label.match(/#\s*0*(\d+)\b/);
+    const raw = explicit?.[1] || fallback?.[1] || '';
+    const id = Number(raw);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+  }
+
   function gameIndex(card) {
     const history = card?.closest('.rp-profile-history');
     if (!history) return -1;
     return [...history.querySelectorAll(':scope > .rp-profile-game')].indexOf(card);
   }
 
+  async function fetchJsonWithTimeout(url, options = {}) {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), RESOLVE_TIMEOUT_MS);
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      const data = await response.json().catch(() => ({}));
+      return { response, data };
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
   async function loadOwnGames() {
     if (ownGamesCache && Date.now() - ownGamesCacheAt < 5000) return ownGamesCache;
     const auth = token();
     if (!auth) throw new Error('Sign in to Real Play to watch this game.');
-    const response = await fetch(`${API_BASE_URL}/api/real-play/me`, {
+    const { response, data } = await fetchJsonWithTimeout(`${API_BASE_URL}/api/real-play/me`, {
       headers: { Accept: 'application/json', Authorization: `Bearer ${auth}` },
       cache: 'no-store',
     });
-    const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data?.message || data?.error || 'Could not load this game.');
     ownGamesCache = recentGamesFrom(data);
     ownGamesCacheAt = Date.now();
@@ -69,7 +93,7 @@
     const visitor = visitorActive();
     if (!auth && !visitor) throw new Error('Sign in to Real Play to watch this game.');
 
-    const response = await fetch(visitor ? PUBLIC_COMMUNITY_URL : COMMUNITY_URL, {
+    const { response, data } = await fetchJsonWithTimeout(visitor ? PUBLIC_COMMUNITY_URL : COMMUNITY_URL, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -79,7 +103,6 @@
       body: JSON.stringify({ action: 'player_profile', playerId: id }),
       cache: 'no-store',
     });
-    const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data?.message || data?.error || 'Could not load this player game.');
     const games = recentGamesFrom(data?.player || data);
     publicGamesCache.set(id, { games, at: Date.now() });
@@ -87,27 +110,30 @@
   }
 
   function closeSourceProfile(card) {
-    const ownProfile = card?.closest('.rp-profile');
-    if (ownProfile) {
-      if (window.RealPlayProfile?.close) {
-        window.RealPlayProfile.close();
+    const publicProfile = card?.closest('[data-rp-public-profile], [data-rp-visitor-public-profile], .rp-public-player-profile');
+    if (publicProfile) {
+      const closeButton = publicProfile.querySelector('[data-rp-public-profile-close], [data-visitor-profile-close], [data-rp-profile-close], [data-rp-player-profile-close]');
+      if (closeButton) {
+        closeButton.click();
       } else {
-        ownProfile.classList.remove('open');
-        ownProfile.setAttribute('aria-hidden', 'true');
-        document.body.classList.remove('rp-profile-open');
+        publicProfile.classList.remove('open');
+        publicProfile.setAttribute('aria-hidden', 'true');
+        if (!document.querySelector('[data-rp-profile].open, [data-rp-public-profile].open, [data-rp-visitor-public-profile].open')) {
+          document.body.classList.remove('rp-profile-open');
+        }
       }
       return;
     }
 
-    const publicProfile = card?.closest('[data-rp-public-profile], .rp-public-player-profile');
-    if (!publicProfile) return;
-    const closeButton = publicProfile.querySelector('[data-rp-public-profile-close], [data-rp-profile-close], [data-rp-player-profile-close]');
-    if (closeButton) {
-      closeButton.click();
-      return;
+    const ownProfile = card?.closest('[data-rp-profile]');
+    if (!ownProfile) return;
+    if (window.RealPlayProfile?.close) {
+      window.RealPlayProfile.close();
+    } else {
+      ownProfile.classList.remove('open');
+      ownProfile.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('rp-profile-open');
     }
-    publicProfile.classList.remove('open');
-    publicProfile.setAttribute('aria-hidden', 'true');
   }
 
   function openReplay(sessionId, sourceCard = null) {
@@ -116,15 +142,15 @@
 
     closeSourceProfile(sourceCard);
 
-    // Reuse the canonical full-game viewer. The temporary trigger is consumed
-    // by career-game-replay.js, so profile history always lands on the exact
-    // same game page used everywhere else in Real Play.
+    // Reuse the canonical full-game viewer. The synthetic trigger is consumed
+    // only by career-game-replay.js, so the profile card lands on the exact
+    // verified game viewer instead of rebuilding another game screen.
     const proxy = document.createElement('button');
     proxy.type = 'button';
     proxy.hidden = true;
     proxy.dataset.rpCareerReplaySession = String(id);
     document.body.appendChild(proxy);
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       if (!proxy.isConnected) return;
       proxy.click();
       window.setTimeout(() => proxy.remove(), 0);
@@ -140,12 +166,24 @@
     if (hint) hint.textContent = busy ? 'OPENING GAME…' : 'VIEW GAME';
   }
 
+  function openResolvedCard(card, id) {
+    if (!card || !id) return false;
+    card.dataset.rpProfileGameSession = String(id);
+    setCardBusy(card, true);
+    const opened = openReplay(id, card);
+    if (!opened) setCardBusy(card, false);
+    return opened;
+  }
+
   async function handleGameCard(card) {
     if (!card || resolving) return;
 
-    const alreadyResolved = cachedSessionIdFrom(card);
-    if (alreadyResolved) {
-      openReplay(alreadyResolved, card);
+    // Profile labels are generated from the authoritative session id. Resolve
+    // them locally first so a normal VIEW GAME tap does not wait on another
+    // profile request before navigation.
+    const immediateId = cachedSessionIdFrom(card) || visibleSessionIdFrom(card);
+    if (immediateId) {
+      openResolvedCard(card, immediateId);
       return;
     }
 
@@ -155,7 +193,7 @@
     resolving = true;
     setCardBusy(card, true);
     try {
-      const publicProfile = card.closest('[data-rp-public-profile], .rp-public-player-profile');
+      const publicProfile = card.closest('[data-rp-public-profile], [data-rp-visitor-public-profile], .rp-public-player-profile');
       const games = publicProfile
         ? await loadPublicGames(currentPublicPlayerId)
         : await loadOwnGames();
@@ -167,14 +205,14 @@
       console.warn('[Real Play] Profile game page could not open.', error);
       const hint = card.querySelector('.rp-profile-game-open-hint span');
       if (hint) {
-        hint.textContent = 'GAME UNAVAILABLE';
+        hint.textContent = error?.name === 'AbortError' ? 'TRY AGAIN' : 'GAME UNAVAILABLE';
         window.setTimeout(() => {
           if (hint.isConnected) hint.textContent = 'VIEW GAME';
         }, 1800);
       }
     } finally {
       resolving = false;
-      setCardBusy(card, false);
+      if (card.isConnected) setCardBusy(card, false);
     }
   }
 
@@ -195,6 +233,11 @@
       .rp-profile-game:hover,.rp-profile-game:focus-within{border-color:rgba(55,202,255,.2);background:#060d17}
       .rp-profile-game-replay-loading{opacity:.72}
       .rp-profile-game-replay-loading .rp-profile-game-open-hint span{color:#48d7ff}
+
+      /* The replay used a large fixed image with live mask + filter compositing.
+         That can stall Chromium when the viewer appears. Keep the same black /
+         blue-red replay surface, but remove that decorative GPU-heavy layer. */
+      .rp-career-replay::before{display:none!important}
     `;
     document.head.appendChild(style);
   }
@@ -229,13 +272,4 @@
 
   installNavigationStyles();
   collapseProfileGames();
-
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      mutation.addedNodes.forEach((node) => {
-        if (node.nodeType === 1) collapseProfileGames(node);
-      });
-    }
-  });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
