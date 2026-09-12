@@ -217,29 +217,44 @@ body.rp-simple-navigation-active [data-world-view="world"] [data-world-post-form
   display:none!important;
 }
 
+/*
+   WORLD RESULT PERFORMANCE GUARD
+   Each official result card uses a large image template. Let Chromium skip
+   painting off-screen cards while preserving their aspect-ratio/layout space.
+   This keeps a long results history responsive without changing the artwork.
+*/
+.rp-updates.rp-world-results-entry [data-updates-feed]
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]{
+  content-visibility:auto;
+  contain-intrinsic-size:auto 360px;
+}
+
 /* --------------------------------------------------------------------------
    WORLD RESULT SEPARATION
-   The official result artwork is intentionally immersive, but consecutive
-   cards can visually merge into one long neon block. In WORLD only, every
-   visible official game that has another visible result after it gets a
-   heavyweight blue/red divider with a clear label. :has() lets this remain
-   correct when Week/Game Type filters hide intermediate cards.
+   Keep the blue/red NEXT GAME RESULT rail, but avoid :has(). The prior
+   forward-looking relational selector made every earlier card depend on every
+   later card's [hidden] state, which is expensive when the feed is rebuilt or
+   filtered. Put the divider BEFORE each visible result after the first visible
+   result instead. The visual stays the same while style invalidation stays
+   local and predictable.
    -------------------------------------------------------------------------- */
 .rp-updates.rp-world-results-entry [data-updates-feed]
-.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]):has(~ .rp-update-result:not([hidden])){
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]) ~
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]){
   overflow:visible!important;
-  margin-bottom:46px!important;
+  margin-top:46px!important;
 }
 
 .rp-updates.rp-world-results-entry [data-updates-feed]
-.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]):has(~ .rp-update-result:not([hidden]))::before{
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]) ~
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden])::before{
   content:'NEXT GAME RESULT'!important;
   position:absolute!important;
   z-index:30!important;
   left:2.5%!important;
   right:2.5%!important;
-  top:auto!important;
-  bottom:-36px!important;
+  top:-36px!important;
+  bottom:auto!important;
   width:auto!important;
   height:25px!important;
   display:flex!important;
@@ -281,13 +296,15 @@ body.rp-simple-navigation-active [data-world-view="world"] [data-world-post-form
   .rp-world-results-heading h1{font-size:1.08rem}
 
   .rp-updates.rp-world-results-entry [data-updates-feed]
-  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]):has(~ .rp-update-result:not([hidden])){
-    margin-bottom:42px!important;
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]) ~
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]){
+    margin-top:42px!important;
   }
 
   .rp-updates.rp-world-results-entry [data-updates-feed]
-  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]):has(~ .rp-update-result:not([hidden]))::before{
-    bottom:-33px!important;
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]) ~
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden])::before{
+    top:-33px!important;
     height:23px!important;
     font-size:.48rem!important;
     letter-spacing:.14em!important;
