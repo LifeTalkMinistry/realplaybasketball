@@ -217,18 +217,6 @@ body.rp-simple-navigation-active [data-world-view="world"] [data-world-post-form
   display:none!important;
 }
 
-/*
-   WORLD RESULT PERFORMANCE GUARD
-   Each official result card uses a large image template. Let Chromium skip
-   painting off-screen cards while preserving their aspect-ratio/layout space.
-   This keeps a long results history responsive without changing the artwork.
-*/
-.rp-updates.rp-world-results-entry [data-updates-feed]
-.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]{
-  content-visibility:auto;
-  contain-intrinsic-size:auto 360px;
-}
-
 /* --------------------------------------------------------------------------
    WORLD RESULT SEPARATION
    Keep the blue/red NEXT GAME RESULT rail, but avoid :has(). The prior
