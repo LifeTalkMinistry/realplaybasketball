@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260912-mobile-scoring-chrome-v11';
+  const ADMIN_ASSET_VERSION = '20260912-mobile-player-workspace-v12';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -38,6 +38,7 @@
     'admin-recorded-scoring-assist-link.js',
     'admin-recorded-scoring-score-confirmation.js',
     'admin-recorded-scoring-draft.js',
+    'admin-recorded-scoring-mobile-workspace.js',
     'admin-recorded-scoring-cancel.js',
     'admin-recorded-scoring.js',
     'admin-recorded-scoring-youtube.js',
