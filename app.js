@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260911-backend-resilience-v38';
+  const version = '20260911-world-results-stability-v39';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
