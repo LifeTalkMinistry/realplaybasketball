@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260911-players-isolation-v42';
+  const version = '20260911-profile-replay-direct-v43';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
