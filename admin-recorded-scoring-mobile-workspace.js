@@ -25,6 +25,7 @@
     const screen = scoringScreen();
     if (!screen) return;
 
+    const playerWrap = screen.querySelector('.rp-video-player-wrap');
     const rosters = screen.querySelector('.rp-video-score-rosters');
     const selectedPanel = screen.querySelector('[data-rp-video-selected-panel]');
     const scoreboard = screen.querySelector('.rp-video-scoreboard');
@@ -41,10 +42,17 @@
 
     screen.classList.toggle('rp-mobile-player-workspace', hasPlayer);
 
-    // Mobile uses one workspace in the position directly below the scoreboard:
-    // roster selection OR the selected player's scoring controls, never both.
-    if (selectedPanel && scoreboard && selectedPanel.previousElementSibling !== scoreboard) {
-      scoreboard.insertAdjacentElement('afterend', selectedPanel);
+    // Keep the live score immediately above the video on mobile. This uses the
+    // existing scoreboard node, so all score updates continue to hit one source.
+    if (scoreboard && playerWrap && scoreboard.nextElementSibling !== playerWrap) {
+      playerWrap.insertAdjacentElement('beforebegin', scoreboard);
+    }
+
+    // Player selection and selected-player controls share the same workspace
+    // below the video/timeline. The selected panel must no longer use the
+    // scoreboard as its anchor now that the scoreboard lives above the video.
+    if (selectedPanel && rosters && selectedPanel.previousElementSibling !== rosters) {
+      rosters.insertAdjacentElement('afterend', selectedPanel);
     }
 
     if (hasPlayer) {
