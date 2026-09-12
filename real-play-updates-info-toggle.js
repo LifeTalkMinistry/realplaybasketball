@@ -317,11 +317,14 @@
     }
   }, true);
 
-  const existing = document.querySelector('[data-rp-updates]');
-  if (existing) install(existing);
-
-  new MutationObserver(() => {
+  function installWhenReady(attempt = 0) {
     const panel = document.querySelector('[data-rp-updates]');
-    if (panel) install(panel);
-  }).observe(document.documentElement, { childList: true, subtree: true });
+    if (panel) {
+      install(panel);
+      return;
+    }
+    if (attempt < 20) window.setTimeout(() => installWhenReady(attempt + 1), 100);
+  }
+
+  installWhenReady();
 })();
