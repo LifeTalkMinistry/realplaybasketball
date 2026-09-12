@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260911-world-results-stability-v39';
+  const version = '20260911-world-freeze-fix-v40';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
