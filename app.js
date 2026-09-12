@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260911-profile-replay-direct-v43';
+  const version = '20260912-mobile-scoring-chrome-v44';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
