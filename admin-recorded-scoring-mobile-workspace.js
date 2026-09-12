@@ -20,6 +20,95 @@
     if (!node.getAttribute('style')) node.removeAttribute('style');
   }
 
+  function findExitScoring(screen) {
+    return [...screen.querySelectorAll('button')].find((button) => (
+      String(button.textContent || '').replace(/\s+/g, ' ').trim().toUpperCase().includes('EXIT SCORING')
+    )) || null;
+  }
+
+  function restoreScoreboardStyle(scoreboard) {
+    if (!scoreboard) return;
+    ['width','min-width','max-width','height','min-height','padding','margin','gap','border-radius','align-self','box-sizing'].forEach((property) => clearInline(scoreboard, property));
+    scoreboard.querySelectorAll('small').forEach((node) => {
+      ['font-size','letter-spacing'].forEach((property) => clearInline(node, property));
+    });
+    scoreboard.querySelectorAll('strong').forEach((node) => {
+      ['font-size','line-height'].forEach((property) => clearInline(node, property));
+    });
+    const dash = scoreboard.querySelector(':scope > span');
+    if (dash) ['font-size','margin'].forEach((property) => clearInline(dash, property));
+  }
+
+  function restoreDesktopTopRow(screen, scoreboard) {
+    const row = screen.querySelector('[data-rp-mobile-score-row]');
+    if (!row) {
+      restoreScoreboardStyle(scoreboard);
+      return;
+    }
+
+    const exitButton = findExitScoring(screen);
+    const playerWrap = screen.querySelector('.rp-video-player-wrap');
+
+    if (exitButton) row.insertAdjacentElement('beforebegin', exitButton);
+    if (scoreboard && playerWrap) playerWrap.insertAdjacentElement('afterend', scoreboard);
+    row.remove();
+    restoreScoreboardStyle(scoreboard);
+  }
+
+  function ensureCompactTopRow(screen, scoreboard, playerWrap) {
+    const exitButton = findExitScoring(screen);
+    if (!exitButton || !scoreboard || !playerWrap) return;
+
+    let row = screen.querySelector('[data-rp-mobile-score-row]');
+    if (!row) {
+      row = document.createElement('div');
+      row.dataset.rpMobileScoreRow = '1';
+      playerWrap.insertAdjacentElement('beforebegin', row);
+    }
+
+    row.style.setProperty('display', 'grid', 'important');
+    row.style.setProperty('grid-template-columns', 'minmax(0, 1fr) minmax(150px, .95fr)', 'important');
+    row.style.setProperty('align-items', 'stretch', 'important');
+    row.style.setProperty('gap', '10px', 'important');
+    row.style.setProperty('width', '100%', 'important');
+    row.style.setProperty('box-sizing', 'border-box', 'important');
+
+    if (exitButton.parentElement !== row) row.appendChild(exitButton);
+    if (scoreboard.parentElement !== row) row.appendChild(scoreboard);
+
+    // The scoreboard is intentionally compact here: same live data, reduced chrome.
+    scoreboard.style.setProperty('width', '100%', 'important');
+    scoreboard.style.setProperty('min-width', '0', 'important');
+    scoreboard.style.setProperty('max-width', 'none', 'important');
+    scoreboard.style.setProperty('height', 'auto', 'important');
+    scoreboard.style.setProperty('min-height', '58px', 'important');
+    scoreboard.style.setProperty('padding', '8px 10px', 'important');
+    scoreboard.style.setProperty('margin', '0', 'important');
+    scoreboard.style.setProperty('gap', '5px', 'important');
+    scoreboard.style.setProperty('border-radius', '12px', 'important');
+    scoreboard.style.setProperty('align-self', 'stretch', 'important');
+    scoreboard.style.setProperty('box-sizing', 'border-box', 'important');
+
+    scoreboard.querySelectorAll('small').forEach((node) => {
+      node.style.setProperty('font-size', '6px', 'important');
+      node.style.setProperty('letter-spacing', '.1em', 'important');
+    });
+    scoreboard.querySelectorAll('strong').forEach((node) => {
+      node.style.setProperty('font-size', '24px', 'important');
+      node.style.setProperty('line-height', '.9', 'important');
+    });
+    const dash = scoreboard.querySelector(':scope > span');
+    if (dash) {
+      dash.style.setProperty('font-size', '12px', 'important');
+      dash.style.setProperty('margin', '0 1px', 'important');
+    }
+
+    // Keep the exit button naturally sized while filling the same row height.
+    exitButton.style.setProperty('width', '100%', 'important');
+    exitButton.style.setProperty('margin', '0', 'important');
+    exitButton.style.setProperty('align-self', 'stretch', 'important');
+  }
+
   function syncWorkspace() {
     syncTimer = 0;
     const screen = scoringScreen();
@@ -37,20 +126,17 @@
       screen.classList.remove('rp-mobile-player-workspace');
       clearInline(rosters, 'display');
       clearInline(selectedPanel, 'display');
+      restoreDesktopTopRow(screen, scoreboard);
       return;
     }
 
     screen.classList.toggle('rp-mobile-player-workspace', hasPlayer);
 
-    // Keep the live score immediately above the video on mobile. This uses the
-    // existing scoreboard node, so all score updates continue to hit one source.
-    if (scoreboard && playerWrap && scoreboard.nextElementSibling !== playerWrap) {
-      playerWrap.insertAdjacentElement('beforebegin', scoreboard);
-    }
+    // Mobile top bar: Exit Scoring on the left, compact live score on the right.
+    ensureCompactTopRow(screen, scoreboard, playerWrap);
 
     // Player selection and selected-player controls share the same workspace
-    // below the video/timeline. The selected panel must no longer use the
-    // scoreboard as its anchor now that the scoreboard lives above the video.
+    // below the video/timeline.
     if (selectedPanel && rosters && selectedPanel.previousElementSibling !== rosters) {
       rosters.insertAdjacentElement('afterend', selectedPanel);
     }
