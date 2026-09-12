@@ -23,6 +23,25 @@
     return root()?.querySelector('[data-rp-video-race-form]') || null;
   }
 
+  function syncScoringChrome(adminRoot, scoring) {
+    if (!adminRoot) return;
+    const active = Boolean(scoring);
+    adminRoot.classList.toggle('rp-recorded-scoring-mode', active);
+
+    ['.rp-admin-topbar', '.rp-admin-livebar', '.rp-admin-tabs'].forEach((selector) => {
+      const node = adminRoot.querySelector(selector);
+      if (!node) return;
+      if (active) node.style.setProperty('display', 'none', 'important');
+      else node.style.removeProperty('display');
+    });
+
+    const adminBody = adminRoot.querySelector('.rp-admin-body');
+    if (adminBody) {
+      if (active) adminBody.style.setProperty('padding-top', '0', 'important');
+      else adminBody.style.removeProperty('padding-top');
+    }
+  }
+
   function normalizeRaceRules(control) {
     const session = control?.session || null;
     const rules = session?.rules || null;
@@ -144,6 +163,8 @@
   function applyDesktopLayout() {
     const adminRoot = root();
     const scoring = screen();
+
+    syncScoringChrome(adminRoot, scoring);
 
     if (!adminRoot || !scoring) {
       adminRoot?.classList.remove('rp-recorded-desktop-mode');
