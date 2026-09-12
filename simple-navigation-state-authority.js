@@ -5,8 +5,10 @@
   const TOKEN_KEY = 'real_play_access_token';
   const PUBLIC_UPDATES_URL = 'https://api.clarapmc.com/api/real-play/public/updates';
   let enforcing = false;
+  let enforceQueued = false;
   let homeRefreshTimer = 0;
   let homeLoading = false;
+  const observedAuthorityTargets = new WeakSet();
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -19,6 +21,17 @@
     const selected = document.querySelector('[data-rp-simple-nav-item][aria-current="page"]')
       || document.querySelector('[data-rp-simple-nav-item].active');
     return String(selected?.dataset?.rpSimpleNavItem || '');
+  }
+
+  function setClassState(node, className, enabled) {
+    if (!node) return;
+    if (node.classList.contains(className) === enabled) return;
+    node.classList.toggle(className, enabled);
+  }
+
+  function setHiddenState(node, hidden) {
+    if (!node || node.hidden === hidden) return;
+    node.hidden = hidden;
   }
 
   function enforcePlayersView() {
@@ -35,12 +48,11 @@
     if (badge && badge.textContent !== 'COMMUNITY') badge.textContent = 'COMMUNITY';
 
     panel.querySelectorAll('[data-world-tab]').forEach((button) => {
-      const shouldBeActive = button.dataset.worldTab === 'players';
-      button.classList.toggle('active', shouldBeActive);
+      setClassState(button, 'active', button.dataset.worldTab === 'players');
     });
 
     panel.querySelectorAll('[data-world-view]').forEach((view) => {
-      view.hidden = view.dataset.worldView !== 'players';
+      setHiddenState(view, view.dataset.worldView !== 'players');
     });
   }
 
@@ -59,12 +71,11 @@
     if (badge && badge.textContent !== expectedBadge) badge.textContent = expectedBadge;
 
     panel.querySelectorAll('[data-world-tab]').forEach((button) => {
-      const shouldBeActive = button.dataset.worldTab === 'chats';
-      button.classList.toggle('active', shouldBeActive);
+      setClassState(button, 'active', button.dataset.worldTab === 'chats');
     });
 
     panel.querySelectorAll('[data-world-view]').forEach((view) => {
-      view.hidden = view.dataset.worldView !== 'chats';
+      setHiddenState(view, view.dataset.worldView !== 'chats');
     });
   }
 
@@ -301,24 +312,59 @@
     }
   }
 
-  const observer = new MutationObserver(() => enforce());
-  observer.observe(document.documentElement, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['hidden', 'class', 'aria-current', 'aria-hidden'],
-  });
+  function queueEnforce() {
+    if (enforceQueued) return;
+    enforceQueued = true;
+    queueMicrotask(() => {
+      enforceQueued = false;
+      enforce();
+      bindAuthorityTargets();
+    });
+  }
 
-  document.addEventListener('click', () => queueMicrotask(enforce), true);
+  const authorityObserver = new MutationObserver(() => queueEnforce());
+
+  function bindAuthorityTargets() {
+    document.querySelectorAll('[data-rp-simple-nav-item]').forEach((node) => {
+      if (observedAuthorityTargets.has(node)) return;
+      observedAuthorityTargets.add(node);
+      authorityObserver.observe(node, { attributes: true, attributeFilter: ['class', 'aria-current'] });
+    });
+
+    document.querySelectorAll('[data-rp-world] [data-world-tab]').forEach((node) => {
+      if (observedAuthorityTargets.has(node)) return;
+      observedAuthorityTargets.add(node);
+      authorityObserver.observe(node, { attributes: true, attributeFilter: ['class'] });
+    });
+
+    document.querySelectorAll('[data-rp-world] [data-world-view]').forEach((node) => {
+      if (observedAuthorityTargets.has(node)) return;
+      observedAuthorityTargets.add(node);
+      authorityObserver.observe(node, { attributes: true, attributeFilter: ['hidden'] });
+    });
+  }
+
+  /*
+     Important performance boundary: do not observe the entire document.
+     The Players directory sorts and decorates rows dynamically; a global
+     subtree/attribute observer turned every row mutation into another route
+     enforcement pass and could starve the main thread. Only the handful of
+     navigation/view elements that this authority actually owns are observed.
+  */
+  bindAuthorityTargets();
+
+  document.addEventListener('click', () => queueEnforce(), true);
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') setComingOpen(false);
   });
   window.addEventListener('focus', () => {
+    bindAuthorityTargets();
     enforce();
     refreshHomeCommandCenter();
   });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
+      bindAuthorityTargets();
       enforce();
       refreshHomeCommandCenter();
     }
@@ -336,4 +382,5 @@
   });
 
   enforce();
+  bindAuthorityTargets();
 })();
