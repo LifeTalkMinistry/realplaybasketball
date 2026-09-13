@@ -95,9 +95,12 @@
 
   async function fetchOverallMvp(sessionId) {
     const accessToken = localStorage.getItem(TOKEN_KEY) || '';
-    if (!accessToken) return '';
-    const response = await fetch(`${API_BASE_URL}/api/real-play/career/games/${sessionId}/replay`, {
-      headers: { Accept: 'application/json', Authorization: `Bearer ${accessToken}` },
+    const hasRealToken = Boolean(accessToken && accessToken !== '__REAL_PLAY_VISITOR_REPLAY__');
+    const url = hasRealToken
+      ? `${API_BASE_URL}/api/real-play/career/games/${sessionId}/replay`
+      : `${API_BASE_URL}/api/real-play/public/career/games/${sessionId}/replay`;
+    const response = await fetch(url, {
+      headers: { Accept: 'application/json', ...(hasRealToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
       cache: 'no-store',
     });
     if (!response.ok) return '';
