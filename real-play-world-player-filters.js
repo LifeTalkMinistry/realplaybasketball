@@ -8,6 +8,7 @@
   let sortKey = 'name';
   const directions = { rankOvr: 'desc', unrankOvr: 'desc', name: 'asc', jersey: 'asc' };
   let scheduled = false, rankSyncPromise = null, listVersion = 0, rankSyncVersion = 0;
+  let canonicalRankMap = new Map();
 
   function installStyles() {
     if (document.querySelector('[data-rp-world-player-filter-styles]')) return;
@@ -47,12 +48,26 @@
     return map;
   }
 
+  function rowIsOfficial(row) {
+    const id = String(row?.dataset.worldPlayerId || '').trim();
+    if (id && canonicalRankMap.size) return canonicalRankMap.has(id);
+    const rankValue = Number.parseInt(String(row?.dataset.playerRank || '').trim(), 10);
+    return Number.isFinite(rankValue) && rankValue > 0;
+  }
+
+  function rowRank(row) {
+    const id = String(row?.dataset.worldPlayerId || '').trim();
+    if (id && canonicalRankMap.has(id)) return canonicalRankMap.get(id);
+    const rankValue = Number.parseInt(String(row?.dataset.playerRank || '').trim(), 10);
+    return Number.isFinite(rankValue) && rankValue > 0 ? rankValue : null;
+  }
+
   function renderRankLabels() {
     if(!list) return;
     list.querySelectorAll('.rp-world-player-row').forEach(row=>{
       const nameNode=row.querySelector('.rp-world-player-name');
       if(!nameNode) return;
-      const rankValue=Number.parseInt(String(row.dataset.playerRank||'').trim(),10);
+      const rankValue=rowRank(row);
       const official=Number.isFinite(rankValue)&&rankValue>0;
       let rankNode=nameNode.querySelector('[data-world-player-rank]');
       if(sortKey!=='rankOvr'||!official){rankNode?.remove();return;}
@@ -81,7 +96,8 @@
         if(syncVersion!==rankSyncVersion||requestedVersion!==listVersion)return;
         const current=rowIds();
         if(current.length!==requestedIds.length||current.some((id,i)=>id!==requestedIds[i]))return;
-        const rankMap=buildCanonicalRankMap(data?.players);
+        canonicalRankMap=buildCanonicalRankMap(data?.players);
+        const rankMap=canonicalRankMap;
         list.querySelectorAll('.rp-world-player-row').forEach(row=>{const id=String(row.dataset.worldPlayerId||'').trim();row.dataset.playerRank=rankMap.has(id)?String(rankMap.get(id)):'unranked'});
         renderRankLabels();
       }).catch(()=>{}).finally(()=>{rankSyncPromise=null;if(requestedVersion!==listVersion&&(sortKey==='rankOvr'||sortKey==='unrankOvr'))syncRankMap().then(scheduleSort)});
@@ -94,10 +110,10 @@
     const match=jerseyText.match(/#\s*(\d{1,2})/);
     const jersey=match?Number(match[1]):null;
     const ovrNode=row.querySelector('.rp-world-player-ovr');
-    const rank=Number.parseInt(String(row.dataset.playerRank||'').trim(),10);
-    const official=Number.isFinite(rank)&&rank>0;
+    const rank=rowRank(row);
+    const official=rowIsOfficial(row);
     const ovr=!ovrNode||ovrNode.classList.contains('unranked')?null:Number.parseFloat(String(ovrNode.textContent||'').replace(/[^0-9.\-]/g,''));
-    return {row,name,jersey:Number.isFinite(jersey)?jersey:null,ovr:Number.isFinite(ovr)?ovr:null,official};
+    return {row,name,jersey:Number.isFinite(jersey)?jersey:null,ovr:Number.isFinite(ovr)?ovr:null,rank,official};
   }
 
   function compareName(a,b){return a.name.localeCompare(b.name,undefined,{sensitivity:'base',numeric:true})}
@@ -105,8 +121,8 @@
   function compareOvr(a,b,direction){return compareNullableNumber(a,b,'ovr',direction)}
 
   function isVisibleForSort(meta) {
-    if (sortKey === 'rankOvr') return meta.official;
-    if (sortKey === 'unrankOvr') return !meta.official;
+    if (sortKey === 'rankOvr') return meta.official === true;
+    if (sortKey === 'unrankOvr') return meta.official === false;
     return true;
   }
 
@@ -119,7 +135,8 @@
   }
 
   function applySort(){
-    scheduled=false;if(!list)return;renderRankLabels();
+    scheduled=false;if(!list)return;
+    renderRankLabels();
     const allRows=[...list.querySelectorAll('.rp-world-player-row')];
     const next=sortedRows();
     const nextSet=new Set(next);
