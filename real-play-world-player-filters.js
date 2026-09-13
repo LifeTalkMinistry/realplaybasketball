@@ -96,7 +96,9 @@
     const ovrNode=row.querySelector('.rp-world-player-ovr');
     const rank=Number.parseInt(String(row.dataset.playerRank||'').trim(),10);
     const official=Number.isFinite(rank)&&rank>0;
-    const ovr=!ovrNode||!official||ovrNode.classList.contains('unranked')?null:Number.parseFloat(String(ovrNode.textContent||'').replace(/[^0-9.\-]/g,''));
+    // OVR is an independent player attribute. Official rank eligibility must never
+    // determine whether a player's OVR can participate in OVR sorting.
+    const ovr=!ovrNode||ovrNode.classList.contains('unranked')?null:Number.parseFloat(String(ovrNode.textContent||'').replace(/[^0-9.\-]/g,''));
     return {row,name,jersey:Number.isFinite(jersey)?jersey:null,ovr:Number.isFinite(ovr)?ovr:null};
   }
 
