@@ -6,7 +6,7 @@
   const COMMUNITY_URL = 'https://api.clarapmc.com/api/real-play/community';
   let panel = null, controls = null, list = null, listObserver = null;
   let sortKey = 'name';
-  const directions = { ovr: 'desc', name: 'asc', jersey: 'asc' };
+  const directions = { rankOvr: 'desc', unrankOvr: 'desc', name: 'asc', jersey: 'asc' };
   let scheduled = false, rankSyncPromise = null, listVersion = 0, rankSyncVersion = 0;
 
   function installStyles() {
@@ -14,8 +14,8 @@
     const style = document.createElement('style');
     style.dataset.rpWorldPlayerFilterStyles = '1';
     style.textContent = `
-      .rp-world-player-sort{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:2px 0 1px}
-      .rp-world-player-sort button{min-width:0;min-height:36px;padding:0 8px;border:1px solid rgba(255,255,255,.07);border-radius:11px;color:#64758a;background:#060b12;font-family:var(--rp-display,Arial,sans-serif);font-size:.5rem;font-weight:950;letter-spacing:.075em;white-space:nowrap}
+      .rp-world-player-sort{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:2px 0 1px}
+      .rp-world-player-sort button{min-width:0;min-height:36px;padding:0 7px;border:1px solid rgba(255,255,255,.07);border-radius:11px;color:#64758a;background:#060b12;font-family:var(--rp-display,Arial,sans-serif);font-size:.47rem;font-weight:950;letter-spacing:.06em;white-space:nowrap}
       .rp-world-player-sort button.active{color:#dff9ff;border-color:rgba(54,205,255,.25);background:rgba(24,111,164,.11)}
       .rp-world-player-sort button.active b{color:#49d8ff}
       .rp-world-player-sort button:focus-visible{outline:2px solid rgba(72,215,255,.65);outline-offset:2px}
@@ -27,7 +27,7 @@
       .rp-world-player-ovr-info:focus-visible{outline:2px solid rgba(72,215,255,.7);outline-offset:2px}
       .rp-world-player-rank{flex:none;color:#48d7ff;font-family:var(--rp-display,Arial,sans-serif);font-size:.68rem;font-style:italic;font-weight:950;letter-spacing:.02em;line-height:1}
       .rp-world-player-name > b{display:none !important}
-      @media(max-width:360px){.rp-world-player-sort{gap:5px}.rp-world-player-sort button{padding-inline:5px;font-size:.46rem;letter-spacing:.055em}.rp-world-player-ovr-info{width:34px;height:34px}.rp-world-player-rank{font-size:.64rem}}
+      @media(max-width:360px){.rp-world-player-sort{gap:5px}.rp-world-player-sort button{padding-inline:4px;font-size:.42rem;letter-spacing:.045em}.rp-world-player-ovr-info{width:34px;height:34px}.rp-world-player-rank{font-size:.64rem}}
     `;
     document.head.appendChild(style);
   }
@@ -55,7 +55,7 @@
       const rankValue=Number.parseInt(String(row.dataset.playerRank||'').trim(),10);
       const official=Number.isFinite(rankValue)&&rankValue>0;
       let rankNode=nameNode.querySelector('[data-world-player-rank]');
-      if(sortKey!=='ovr'||!official){rankNode?.remove();return;}
+      if(sortKey!=='rankOvr'||!official){rankNode?.remove();return;}
       if(!rankNode){
         rankNode=document.createElement('span');
         rankNode.className='rp-world-player-rank';
@@ -84,7 +84,7 @@
         const rankMap=buildCanonicalRankMap(data?.players);
         list.querySelectorAll('.rp-world-player-row').forEach(row=>{const id=String(row.dataset.worldPlayerId||'').trim();row.dataset.playerRank=rankMap.has(id)?String(rankMap.get(id)):'unranked'});
         renderRankLabels();
-      }).catch(()=>{}).finally(()=>{rankSyncPromise=null;if(requestedVersion!==listVersion&&sortKey==='ovr')syncRankMap().then(scheduleSort)});
+      }).catch(()=>{}).finally(()=>{rankSyncPromise=null;if(requestedVersion!==listVersion&&(sortKey==='rankOvr'||sortKey==='unrankOvr'))syncRankMap().then(scheduleSort)});
     return rankSyncPromise;
   }
 
@@ -96,18 +96,21 @@
     const ovrNode=row.querySelector('.rp-world-player-ovr');
     const rank=Number.parseInt(String(row.dataset.playerRank||'').trim(),10);
     const official=Number.isFinite(rank)&&rank>0;
-    // OVR is an independent player attribute. Official rank eligibility must never
-    // determine whether a player's OVR can participate in OVR sorting.
     const ovr=!ovrNode||ovrNode.classList.contains('unranked')?null:Number.parseFloat(String(ovrNode.textContent||'').replace(/[^0-9.\-]/g,''));
-    return {row,name,jersey:Number.isFinite(jersey)?jersey:null,ovr:Number.isFinite(ovr)?ovr:null};
+    return {row,name,jersey:Number.isFinite(jersey)?jersey:null,ovr:Number.isFinite(ovr)?ovr:null,official};
   }
 
   function compareName(a,b){return a.name.localeCompare(b.name,undefined,{sensitivity:'base',numeric:true})}
   function compareNullableNumber(a,b,key,direction){const av=a[key],bv=b[key],am=av==null,bm=bv==null;if(am!==bm)return am?1:-1;if(am&&bm)return compareName(a,b);if(av===bv)return compareName(a,b);return direction==='asc'?av-bv:bv-av}
+  function compareOvrGroup(a,b,official,direction){
+    const ag=a.official===official,bg=b.official===official;
+    if(ag!==bg)return ag?-1:1;
+    return compareNullableNumber(a,b,'ovr',direction);
+  }
   function sortedRows(){
     if(!list)return[];
     const rows=[...list.querySelectorAll('.rp-world-player-row')].map(rowMeta),direction=directions[sortKey];
-    rows.sort((a,b)=>sortKey==='ovr'?compareNullableNumber(a,b,'ovr',direction):sortKey==='jersey'?compareNullableNumber(a,b,'jersey',direction):((r=compareName(a,b))=>direction==='asc'?r:-r)());
+    rows.sort((a,b)=>sortKey==='rankOvr'?compareOvrGroup(a,b,true,direction):sortKey==='unrankOvr'?compareOvrGroup(a,b,false,direction):sortKey==='jersey'?compareNullableNumber(a,b,'jersey',direction):((r=compareName(a,b))=>direction==='asc'?r:-r)());
     return rows.map(x=>x.row);
   }
 
@@ -122,7 +125,7 @@
   function scheduleSort(){if(scheduled)return;scheduled=true;requestAnimationFrame(applySort)}
   function directionArrow(key){return key===sortKey?(directions[key]==='asc'?'↑':'↓'):''}
   function renderControls(){if(!controls)return;controls.querySelectorAll('[data-player-sort]').forEach(button=>{const key=button.dataset.playerSort,active=key===sortKey;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));const arrow=button.querySelector('b');if(arrow)arrow.textContent=directionArrow(key)});renderRankLabels()}
-  async function selectSort(key){if(!['ovr','name','jersey'].includes(key))return;if(sortKey===key)directions[key]=directions[key]==='asc'?'desc':'asc';else sortKey=key;renderControls();if(sortKey==='ovr')await syncRankMap();scheduleSort()}
+  async function selectSort(key){if(!['rankOvr','unrankOvr','name','jersey'].includes(key))return;if(sortKey===key)directions[key]=directions[key]==='asc'?'desc':'asc';else sortKey=key;renderControls();if(sortKey==='rankOvr'||sortKey==='unrankOvr')await syncRankMap();scheduleSort()}
 
   function ensureOvrInfoButton(playersView){
     const header=playersView?.querySelector('.rp-world-player-directory-head');if(!header||header.querySelector('[data-world-ovr-simulator]'))return;
@@ -137,11 +140,11 @@
     controls=playersView.querySelector('[data-world-player-sort]');
     if(!controls){
       controls=document.createElement('div');controls.className='rp-world-player-sort';controls.dataset.worldPlayerSort='true';controls.setAttribute('aria-label','Sort players');
-      controls.innerHTML='<button type="button" data-player-sort="ovr" aria-pressed="false">OVR / RANK <b></b></button><button type="button" data-player-sort="name" aria-pressed="true">NAME <b></b></button><button type="button" data-player-sort="jersey" aria-pressed="false">JERSEY # <b></b></button>';
+      controls.innerHTML='<button type="button" data-player-sort="rankOvr" aria-pressed="false">RANK OVR <b></b></button><button type="button" data-player-sort="unrankOvr" aria-pressed="false">UNRANK OVR <b></b></button><button type="button" data-player-sort="name" aria-pressed="true">NAME <b></b></button><button type="button" data-player-sort="jersey" aria-pressed="false">JERSEY # <b></b></button>';
       status.insertAdjacentElement('beforebegin',controls);controls.addEventListener('click',event=>{const button=event.target.closest('[data-player-sort]');if(button)selectSort(button.dataset.playerSort)});
     }
     renderControls();if(listObserver)listObserver.disconnect();
-    listObserver=new MutationObserver(()=>{listVersion++;if(sortKey==='ovr')syncRankMap().then(scheduleSort);else scheduleSort()});
+    listObserver=new MutationObserver(()=>{listVersion++;if(sortKey==='rankOvr'||sortKey==='unrankOvr')syncRankMap().then(scheduleSort);else scheduleSort()});
     listObserver.observe(list,{childList:true});scheduleSort();return true;
   }
 
