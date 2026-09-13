@@ -12,7 +12,6 @@
   const directions = { ovr: 'desc', name: 'asc', jersey: 'asc' };
   let scheduled = false;
   let rankSyncPromise = null;
-  let rankMap = new Map();
 
   function installStyles() {
     if (document.querySelector('[data-rp-world-player-filter-styles]')) return;
@@ -36,7 +35,11 @@
   }
 
   async function syncRankMap() {
+    if (!list) return;
+    const rows = [...list.querySelectorAll('.rp-world-player-row')];
+    if (rows.length && rows.every((row) => Object.prototype.hasOwnProperty.call(row.dataset, 'playerRank'))) return;
     if (rankSyncPromise) return rankSyncPromise;
+
     const accessToken = localStorage.getItem(TOKEN_KEY) || '';
     if (!accessToken) return;
 
@@ -52,19 +55,18 @@
     })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
-        const next = new Map();
-        const rows = Array.isArray(data?.players) ? data.players : [];
-        rows.forEach((player) => {
+        const rankMap = new Map();
+        const players = Array.isArray(data?.players) ? data.players : [];
+        players.forEach((player) => {
           const id = String(player?.userId ?? '').trim();
           if (!id) return;
           const rank = Number(player?.rank);
-          if (Number.isFinite(rank) && rank > 0) next.set(id, rank);
+          if (Number.isFinite(rank) && rank > 0) rankMap.set(id, rank);
         });
-        rankMap = next;
         list?.querySelectorAll('.rp-world-player-row').forEach((row) => {
           const id = String(row.dataset.worldPlayerId || '').trim();
           if (rankMap.has(id)) row.dataset.playerRank = String(rankMap.get(id));
-          else delete row.dataset.playerRank;
+          else row.dataset.playerRank = 'unranked';
         });
       })
       .catch(() => {})
