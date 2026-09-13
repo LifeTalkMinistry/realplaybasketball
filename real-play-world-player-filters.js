@@ -31,7 +31,8 @@
       .rp-world-player-ovr-info:hover{border-color:rgba(72,216,255,.46);background:rgba(13,54,72,.35)}
       .rp-world-player-ovr-info:active{transform:scale(.96)}
       .rp-world-player-ovr-info:focus-visible{outline:2px solid rgba(72,215,255,.7);outline-offset:2px}
-      @media(max-width:360px){.rp-world-player-sort{gap:5px}.rp-world-player-sort button{padding-inline:5px;font-size:.46rem;letter-spacing:.055em}.rp-world-player-ovr-info{width:34px;height:34px}}
+      .rp-world-player-rank{flex:none;color:#48d7ff;font-family:var(--rp-display,Arial,sans-serif);font-size:.68rem;font-style:italic;font-weight:950;letter-spacing:.02em;line-height:1}
+      @media(max-width:360px){.rp-world-player-sort{gap:5px}.rp-world-player-sort button{padding-inline:5px;font-size:.46rem;letter-spacing:.055em}.rp-world-player-ovr-info{width:34px;height:34px}.rp-world-player-rank{font-size:.64rem}}
     `;
     document.head.appendChild(style);
   }
@@ -40,6 +41,31 @@
     if (!list) return [];
     return [...list.querySelectorAll('.rp-world-player-row')]
       .map((row) => String(row.dataset.worldPlayerId || '').trim());
+  }
+
+  function renderRankLabels() {
+    if (!list) return;
+    list.querySelectorAll('.rp-world-player-row').forEach((row) => {
+      const nameNode = row.querySelector('.rp-world-player-name');
+      if (!nameNode) return;
+      let rankNode = nameNode.querySelector('[data-world-player-rank]');
+      const rankValue = Number.parseInt(String(row.dataset.playerRank || '').trim(), 10);
+      const hasOfficialRank = Number.isFinite(rankValue) && rankValue > 0;
+
+      if (sortKey !== 'ovr' || !hasOfficialRank) {
+        rankNode?.remove();
+        return;
+      }
+
+      if (!rankNode) {
+        rankNode = document.createElement('span');
+        rankNode.className = 'rp-world-player-rank';
+        rankNode.dataset.worldPlayerRank = 'true';
+        nameNode.insertBefore(rankNode, nameNode.querySelector('b'));
+      }
+      rankNode.textContent = `#${rankValue}`;
+      rankNode.setAttribute('aria-label', `Rank ${rankValue}`);
+    });
   }
 
   async function syncRankMap() {
@@ -84,6 +110,7 @@
           const id = String(row.dataset.worldPlayerId || '').trim();
           row.dataset.playerRank = rankMap.has(id) ? String(rankMap.get(id)) : 'unranked';
         });
+        renderRankLabels();
       })
       .catch(() => {})
       .finally(() => {
@@ -146,6 +173,7 @@
   function applySort() {
     scheduled = false;
     if (!list) return;
+    renderRankLabels();
     const next = sortedRows();
     if (!next.length) return;
     const current = [...list.querySelectorAll('.rp-world-player-row')];
@@ -185,6 +213,7 @@
       const arrow = button.querySelector('b');
       if (arrow) arrow.textContent = directionArrow(key);
     });
+    renderRankLabels();
   }
 
   async function selectSort(key) {
