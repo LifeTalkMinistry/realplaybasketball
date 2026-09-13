@@ -4,16 +4,10 @@
 
   const TOKEN_KEY = 'real_play_access_token';
   const COMMUNITY_URL = 'https://api.clarapmc.com/api/real-play/community';
-  let panel = null;
-  let controls = null;
-  let list = null;
-  let listObserver = null;
+  let panel = null, controls = null, list = null, listObserver = null;
   let sortKey = 'name';
   const directions = { ovr: 'desc', name: 'asc', jersey: 'asc' };
-  let scheduled = false;
-  let rankSyncPromise = null;
-  let listVersion = 0;
-  let rankSyncVersion = 0;
+  let scheduled = false, rankSyncPromise = null, listVersion = 0, rankSyncVersion = 0;
 
   function installStyles() {
     if (document.querySelector('[data-rp-world-player-filter-styles]')) return;
@@ -32,305 +26,134 @@
       .rp-world-player-ovr-info:active{transform:scale(.96)}
       .rp-world-player-ovr-info:focus-visible{outline:2px solid rgba(72,215,255,.7);outline-offset:2px}
       .rp-world-player-rank{flex:none;color:#48d7ff;font-family:var(--rp-display,Arial,sans-serif);font-size:.68rem;font-style:italic;font-weight:950;letter-spacing:.02em;line-height:1}
+      .rp-world-player-name > b{display:none !important}
       @media(max-width:360px){.rp-world-player-sort{gap:5px}.rp-world-player-sort button{padding-inline:5px;font-size:.46rem;letter-spacing:.055em}.rp-world-player-ovr-info{width:34px;height:34px}.rp-world-player-rank{font-size:.64rem}}
     `;
     document.head.appendChild(style);
   }
 
   function rowIds() {
-    if (!list) return [];
-    return [...list.querySelectorAll('.rp-world-player-row')]
-      .map((row) => String(row.dataset.worldPlayerId || '').trim());
-  }
-
-  function renderRankLabels() {
-    if (!list) return;
-    list.querySelectorAll('.rp-world-player-row').forEach((row) => {
-      const nameNode = row.querySelector('.rp-world-player-name');
-      if (!nameNode) return;
-      let rankNode = nameNode.querySelector('[data-world-player-rank]');
-      const rankValue = Number.parseInt(String(row.dataset.playerRank || '').trim(), 10);
-      const hasOfficialRank = Number.isFinite(rankValue) && rankValue > 0;
-
-      if (sortKey !== 'ovr' || !hasOfficialRank) {
-        rankNode?.remove();
-        return;
-      }
-
-      if (!rankNode) {
-        rankNode = document.createElement('span');
-        rankNode.className = 'rp-world-player-rank';
-        rankNode.dataset.worldPlayerRank = 'true';
-        nameNode.insertBefore(rankNode, nameNode.querySelector('b'));
-      }
-      rankNode.textContent = `#${rankValue}`;
-      rankNode.setAttribute('aria-label', `Rank ${rankValue}`);
-    });
+    return list ? [...list.querySelectorAll('.rp-world-player-row')].map(row => String(row.dataset.worldPlayerId || '').trim()) : [];
   }
 
   function isOfficiallyRanked(player) {
-    return Boolean(
-      player?.officialRankingEligible
-      ?? player?.rankingEligible
-      ?? player?.ranking?.officialRankingEligible
-      ?? player?.ranking?.rankingEligible
-      ?? player?.ranking?.ranked
-      ?? false
-    );
+    return Boolean(player?.officialRankingEligible ?? player?.rankingEligible ?? player?.ranking?.officialRankingEligible ?? player?.ranking?.rankingEligible ?? player?.ranking?.ranked ?? false);
   }
 
-  // OVR is the ranking score. Derive the displayed ordinal from the complete
-  // current player set instead of trusting a stale/duplicated rank field.
-  // This guarantees that two players with different OVR values can never
-  // receive the same ordinal rank. Existing rank and name are only used as
-  // deterministic tie-breakers when the OVR value itself is equal.
   function buildDeterministicRankMap(players) {
-    const rankedPlayers = players
-      .map((player, index) => ({ player, index, ovr: Number(player?.ovr) }))
-      .filter((entry) => Number.isFinite(entry.ovr) && entry.ovr > 0 && isOfficiallyRanked(entry.player))
-      .sort((a, b) => {
-        if (b.ovr !== a.ovr) return b.ovr - a.ovr;
-        const ar = Number(a.player?.rank);
-        const br = Number(b.player?.rank);
-        const aHasRank = Number.isFinite(ar) && ar > 0;
-        const bHasRank = Number.isFinite(br) && br > 0;
-        if (aHasRank !== bHasRank) return aHasRank ? -1 : 1;
-        if (aHasRank && ar !== br) return ar - br;
-        const an = String(a.player?.playerName || a.player?.player_name || '').trim();
-        const bn = String(b.player?.playerName || b.player?.player_name || '').trim();
-        const nameResult = an.localeCompare(bn, undefined, { sensitivity: 'base', numeric: true });
-        return nameResult || a.index - b.index;
+    const ranked = players.map((player,index)=>({player,index,ovr:Number(player?.ovr)}))
+      .filter(x=>Number.isFinite(x.ovr)&&x.ovr>0&&isOfficiallyRanked(x.player))
+      .sort((a,b)=>{
+        if(b.ovr!==a.ovr) return b.ovr-a.ovr;
+        const ar=Number(a.player?.rank), br=Number(b.player?.rank);
+        const ah=Number.isFinite(ar)&&ar>0, bh=Number.isFinite(br)&&br>0;
+        if(ah!==bh) return ah?-1:1;
+        if(ah&&ar!==br) return ar-br;
+        const an=String(a.player?.playerName||a.player?.player_name||'').trim();
+        const bn=String(b.player?.playerName||b.player?.player_name||'').trim();
+        return an.localeCompare(bn,undefined,{sensitivity:'base',numeric:true})||a.index-b.index;
       });
+    const map=new Map();
+    ranked.forEach((x,i)=>{const id=String(x.player?.userId??'').trim();if(id)map.set(id,i+1)});
+    return map;
+  }
 
-    const rankMap = new Map();
-    rankedPlayers.forEach((entry, index) => {
-      const id = String(entry.player?.userId ?? '').trim();
-      if (id) rankMap.set(id, index + 1);
+  function renderRankLabels() {
+    if(!list) return;
+    list.querySelectorAll('.rp-world-player-row').forEach(row=>{
+      const nameNode=row.querySelector('.rp-world-player-name');
+      if(!nameNode) return;
+      const rankValue=Number.parseInt(String(row.dataset.playerRank||'').trim(),10);
+      const official=Number.isFinite(rankValue)&&rankValue>0;
+      let rankNode=nameNode.querySelector('[data-world-player-rank]');
+      if(sortKey!=='ovr'||!official){rankNode?.remove();return;}
+      if(!rankNode){
+        rankNode=document.createElement('span');
+        rankNode.className='rp-world-player-rank';
+        rankNode.dataset.worldPlayerRank='true';
+        const playerName=nameNode.querySelector('strong');
+        if(playerName) nameNode.insertBefore(rankNode,playerName); else nameNode.prepend(rankNode);
+      }
+      rankNode.textContent=`#${rankValue}`;
+      rankNode.setAttribute('aria-label',`Rank ${rankValue}`);
     });
-    return rankMap;
   }
 
   async function syncRankMap() {
-    if (!list) return;
-    const accessToken = localStorage.getItem(TOKEN_KEY) || '';
-    if (!accessToken) return;
-
-    const requestedVersion = listVersion;
-    const requestedIds = rowIds();
-    if (!requestedIds.length) return;
-
-    if (rankSyncPromise) return rankSyncPromise;
-    const syncVersion = ++rankSyncVersion;
-
-    rankSyncPromise = fetch(COMMUNITY_URL, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({ action: 'players' }),
-      cache: 'no-store',
-    })
-      .then((response) => response.ok ? response.json() : null)
-      .then((data) => {
-        if (syncVersion !== rankSyncVersion || requestedVersion !== listVersion) return;
-
-        const currentIds = rowIds();
-        if (currentIds.length !== requestedIds.length || currentIds.some((id, index) => id !== requestedIds[index])) return;
-
-        const players = Array.isArray(data?.players) ? data.players : [];
-        const rankMap = buildDeterministicRankMap(players);
-
-        list?.querySelectorAll('.rp-world-player-row').forEach((row) => {
-          const id = String(row.dataset.worldPlayerId || '').trim();
-          row.dataset.playerRank = rankMap.has(id) ? String(rankMap.get(id)) : 'unranked';
-        });
+    if(!list) return;
+    const accessToken=localStorage.getItem(TOKEN_KEY)||'';
+    if(!accessToken) return;
+    const requestedVersion=listVersion, requestedIds=rowIds();
+    if(!requestedIds.length) return;
+    if(rankSyncPromise) return rankSyncPromise;
+    const syncVersion=++rankSyncVersion;
+    rankSyncPromise=fetch(COMMUNITY_URL,{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json',Authorization:`Bearer ${accessToken}`},body:JSON.stringify({action:'players'}),cache:'no-store'})
+      .then(r=>r.ok?r.json():null).then(data=>{
+        if(syncVersion!==rankSyncVersion||requestedVersion!==listVersion)return;
+        const current=rowIds();
+        if(current.length!==requestedIds.length||current.some((id,i)=>id!==requestedIds[i]))return;
+        const rankMap=buildDeterministicRankMap(Array.isArray(data?.players)?data.players:[]);
+        list.querySelectorAll('.rp-world-player-row').forEach(row=>{const id=String(row.dataset.worldPlayerId||'').trim();row.dataset.playerRank=rankMap.has(id)?String(rankMap.get(id)):'unranked'});
         renderRankLabels();
-      })
-      .catch(() => {})
-      .finally(() => {
-        rankSyncPromise = null;
-        if (requestedVersion !== listVersion && sortKey === 'ovr') {
-          syncRankMap().then(scheduleSort);
-        }
-      });
-
+      }).catch(()=>{}).finally(()=>{rankSyncPromise=null;if(requestedVersion!==listVersion&&sortKey==='ovr')syncRankMap().then(scheduleSort)});
     return rankSyncPromise;
   }
 
   function rowMeta(row) {
-    const name = String(row.querySelector('.rp-world-player-name strong')?.textContent || '').trim();
-    const jerseyText = String(row.querySelector('.rp-world-player-name b')?.textContent || '').trim();
-    const jerseyMatch = jerseyText.match(/#\s*(\d{1,2})/);
-    const jersey = jerseyMatch ? Number(jerseyMatch[1]) : null;
-    const ovrNode = row.querySelector('.rp-world-player-ovr');
-    const rankValue = Number.parseInt(String(row.dataset.playerRank || '').trim(), 10);
-    const hasOfficialRank = Number.isFinite(rankValue) && rankValue > 0;
-    const ovr = !ovrNode || !hasOfficialRank || ovrNode.classList.contains('unranked')
-      ? null
-      : Number.parseFloat(String(ovrNode.textContent || '').replace(/[^0-9.\-]/g, ''));
-    return {
-      row,
-      name,
-      jersey: Number.isFinite(jersey) ? jersey : null,
-      ovr: Number.isFinite(ovr) ? ovr : null,
-    };
+    const name=String(row.querySelector('.rp-world-player-name strong')?.textContent||'').trim();
+    const jerseyText=String(row.querySelector('.rp-world-player-name b')?.textContent||'').trim();
+    const match=jerseyText.match(/#\s*(\d{1,2})/);
+    const jersey=match?Number(match[1]):null;
+    const ovrNode=row.querySelector('.rp-world-player-ovr');
+    const rank=Number.parseInt(String(row.dataset.playerRank||'').trim(),10);
+    const official=Number.isFinite(rank)&&rank>0;
+    const ovr=!ovrNode||!official||ovrNode.classList.contains('unranked')?null:Number.parseFloat(String(ovrNode.textContent||'').replace(/[^0-9.\-]/g,''));
+    return {row,name,jersey:Number.isFinite(jersey)?jersey:null,ovr:Number.isFinite(ovr)?ovr:null};
   }
 
-  function compareName(a, b) {
-    return a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true });
+  function compareName(a,b){return a.name.localeCompare(b.name,undefined,{sensitivity:'base',numeric:true})}
+  function compareNullableNumber(a,b,key,direction){const av=a[key],bv=b[key],am=av==null,bm=bv==null;if(am!==bm)return am?1:-1;if(am&&bm)return compareName(a,b);if(av===bv)return compareName(a,b);return direction==='asc'?av-bv:bv-av}
+  function sortedRows(){
+    if(!list)return[];
+    const rows=[...list.querySelectorAll('.rp-world-player-row')].map(rowMeta),direction=directions[sortKey];
+    rows.sort((a,b)=>sortKey==='ovr'?compareNullableNumber(a,b,'ovr',direction):sortKey==='jersey'?compareNullableNumber(a,b,'jersey',direction):((r=compareName(a,b))=>direction==='asc'?r:-r)());
+    return rows.map(x=>x.row);
   }
 
-  function compareNullableNumber(a, b, key, direction) {
-    const av = a[key];
-    const bv = b[key];
-    const aMissing = av === null || av === undefined;
-    const bMissing = bv === null || bv === undefined;
-    if (aMissing !== bMissing) return aMissing ? 1 : -1;
-    if (aMissing && bMissing) return compareName(a, b);
-    if (av === bv) return compareName(a, b);
-    return direction === 'asc' ? av - bv : bv - av;
+  function applySort(){
+    scheduled=false;if(!list)return;renderRankLabels();
+    const next=sortedRows(),current=[...list.querySelectorAll('.rp-world-player-row')];
+    if(!next.length||current.length===next.length&&current.every((r,i)=>r===next[i]))return;
+    if(listObserver)listObserver.disconnect();
+    const fragment=document.createDocumentFragment();next.forEach(row=>fragment.appendChild(row));list.appendChild(fragment);
+    if(listObserver&&list.isConnected)listObserver.observe(list,{childList:true});
+  }
+  function scheduleSort(){if(scheduled)return;scheduled=true;requestAnimationFrame(applySort)}
+  function directionArrow(key){return key===sortKey?(directions[key]==='asc'?'↑':'↓'):''}
+  function renderControls(){if(!controls)return;controls.querySelectorAll('[data-player-sort]').forEach(button=>{const key=button.dataset.playerSort,active=key===sortKey;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));const arrow=button.querySelector('b');if(arrow)arrow.textContent=directionArrow(key)});renderRankLabels()}
+  async function selectSort(key){if(!['ovr','name','jersey'].includes(key))return;if(sortKey===key)directions[key]=directions[key]==='asc'?'desc':'asc';else sortKey=key;renderControls();if(sortKey==='ovr')await syncRankMap();scheduleSort()}
+
+  function ensureOvrInfoButton(playersView){
+    const header=playersView?.querySelector('.rp-world-player-directory-head');if(!header||header.querySelector('[data-world-ovr-simulator]'))return;
+    const button=document.createElement('button');button.type='button';button.className='rp-world-player-ovr-info';button.dataset.worldOvrSimulator='true';button.setAttribute('aria-label','Open OVR simulator and calculation guide');button.title='How OVR works';button.textContent='i';
+    button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();window.location.href='ovr-simulator.html'});header.appendChild(button);
   }
 
-  function sortedRows() {
-    if (!list) return [];
-    const rows = [...list.querySelectorAll('.rp-world-player-row')].map(rowMeta);
-    const direction = directions[sortKey];
-    rows.sort((a, b) => {
-      if (sortKey === 'ovr') return compareNullableNumber(a, b, 'ovr', direction);
-      if (sortKey === 'jersey') return compareNullableNumber(a, b, 'jersey', direction);
-      const result = compareName(a, b);
-      return direction === 'asc' ? result : -result;
-    });
-    return rows.map((item) => item.row);
-  }
-
-  function applySort() {
-    scheduled = false;
-    if (!list) return;
-    renderRankLabels();
-    const next = sortedRows();
-    if (!next.length) return;
-    const current = [...list.querySelectorAll('.rp-world-player-row')];
-    const alreadySorted = current.length === next.length && current.every((row, index) => row === next[index]);
-    if (alreadySorted) return;
-
-    // Do not observe our own reorder. Re-inserting existing rows fires
-    // childList mutations; feeding those mutations back into rank sync caused
-    // the OVR mode to continuously fetch, resort, and visually move rows.
-    if (listObserver) listObserver.disconnect();
-    const fragment = document.createDocumentFragment();
-    next.forEach((row) => fragment.appendChild(row));
-    list.appendChild(fragment);
-    if (listObserver && list.isConnected) {
-      listObserver.observe(list, { childList: true });
-    }
-  }
-
-  function scheduleSort() {
-    if (scheduled) return;
-    scheduled = true;
-    requestAnimationFrame(applySort);
-  }
-
-  function directionArrow(key) {
-    if (key !== sortKey) return '';
-    return directions[key] === 'asc' ? '↑' : '↓';
-  }
-
-  function renderControls() {
-    if (!controls) return;
-    controls.querySelectorAll('[data-player-sort]').forEach((button) => {
-      const key = button.dataset.playerSort;
-      const active = key === sortKey;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-pressed', String(active));
-      const arrow = button.querySelector('b');
-      if (arrow) arrow.textContent = directionArrow(key);
-    });
-    renderRankLabels();
-  }
-
-  async function selectSort(key) {
-    if (!['ovr', 'name', 'jersey'].includes(key)) return;
-    if (sortKey === key) {
-      directions[key] = directions[key] === 'asc' ? 'desc' : 'asc';
-    } else {
-      sortKey = key;
-    }
-    renderControls();
-    if (sortKey === 'ovr') await syncRankMap();
-    scheduleSort();
-  }
-
-  function ensureOvrInfoButton(playersView) {
-    const header = playersView?.querySelector('.rp-world-player-directory-head');
-    if (!header || header.querySelector('[data-world-ovr-simulator]')) return;
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'rp-world-player-ovr-info';
-    button.dataset.worldOvrSimulator = 'true';
-    button.setAttribute('aria-label', 'Open OVR simulator and calculation guide');
-    button.title = 'How OVR works';
-    button.textContent = 'i';
-    button.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      window.location.href = 'ovr-simulator.html';
-    });
-    header.appendChild(button);
-  }
-
-  function install() {
-    panel = document.querySelector('[data-rp-world]');
-    if (!panel) return false;
-    const playersView = panel.querySelector('[data-world-view="players"]');
-    list = playersView?.querySelector('[data-world-player-list]') || null;
-    const status = playersView?.querySelector('[data-world-player-status]') || null;
-    if (!playersView || !list || !status) return false;
-
+  function install(){
+    panel=document.querySelector('[data-rp-world]');if(!panel)return false;
+    const playersView=panel.querySelector('[data-world-view="players"]');list=playersView?.querySelector('[data-world-player-list]')||null;const status=playersView?.querySelector('[data-world-player-status]')||null;if(!playersView||!list||!status)return false;
     ensureOvrInfoButton(playersView);
-
-    controls = playersView.querySelector('[data-world-player-sort]');
-    if (!controls) {
-      controls = document.createElement('div');
-      controls.className = 'rp-world-player-sort';
-      controls.dataset.worldPlayerSort = 'true';
-      controls.setAttribute('aria-label', 'Sort players');
-      controls.innerHTML = `
-        <button type="button" data-player-sort="ovr" aria-pressed="false">OVR / RANK <b></b></button>
-        <button type="button" data-player-sort="name" aria-pressed="true">NAME <b></b></button>
-        <button type="button" data-player-sort="jersey" aria-pressed="false">JERSEY # <b></b></button>`;
-      status.insertAdjacentElement('beforebegin', controls);
-      controls.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-player-sort]');
-        if (!button) return;
-        selectSort(button.dataset.playerSort);
-      });
+    controls=playersView.querySelector('[data-world-player-sort]');
+    if(!controls){
+      controls=document.createElement('div');controls.className='rp-world-player-sort';controls.dataset.worldPlayerSort='true';controls.setAttribute('aria-label','Sort players');
+      controls.innerHTML='<button type="button" data-player-sort="ovr" aria-pressed="false">OVR / RANK <b></b></button><button type="button" data-player-sort="name" aria-pressed="true">NAME <b></b></button><button type="button" data-player-sort="jersey" aria-pressed="false">JERSEY # <b></b></button>';
+      status.insertAdjacentElement('beforebegin',controls);controls.addEventListener('click',event=>{const button=event.target.closest('[data-player-sort]');if(button)selectSort(button.dataset.playerSort)});
     }
-
-    renderControls();
-    if (listObserver) listObserver.disconnect();
-    listObserver = new MutationObserver(() => {
-      listVersion += 1;
-      if (sortKey === 'ovr') {
-        syncRankMap().then(scheduleSort);
-      } else {
-        scheduleSort();
-      }
-    });
-    listObserver.observe(list, { childList: true });
-    scheduleSort();
-    return true;
+    renderControls();if(listObserver)listObserver.disconnect();
+    listObserver=new MutationObserver(()=>{listVersion++;if(sortKey==='ovr')syncRankMap().then(scheduleSort);else scheduleSort()});
+    listObserver.observe(list,{childList:true});scheduleSort();return true;
   }
 
   installStyles();
-  if (!install()) {
-    const observer = new MutationObserver(() => {
-      if (install()) observer.disconnect();
-    });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
-  }
+  if(!install()){const observer=new MutationObserver(()=>{if(install())observer.disconnect()});observer.observe(document.documentElement,{childList:true,subtree:true})}
 })();
