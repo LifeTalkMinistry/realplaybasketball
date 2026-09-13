@@ -42,6 +42,7 @@
     'admin-recorded-scoring-cancel.js',
     'admin-recorded-scoring.js',
     'admin-recorded-scoring-youtube.js',
+    'admin-recorded-scoring-youtube-keyboard.js',
     'admin-recorded-scoring-desktop.js',
     'admin-recorded-scoring-lock.js',
     'admin-game-entry-mode.js',
