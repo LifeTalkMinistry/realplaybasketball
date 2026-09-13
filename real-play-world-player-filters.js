@@ -2,6 +2,8 @@
   if (window.__realPlayWorldPlayerFiltersInstalled) return;
   window.__realPlayWorldPlayerFiltersInstalled = true;
 
+  const TOKEN_KEY = 'real_play_access_token';
+  const COMMUNITY_URL = 'https://api.clarapmc.com/api/real-play/community';
   let panel = null;
   let controls = null;
   let list = null;
@@ -9,6 +11,8 @@
   let sortKey = 'name';
   const directions = { ovr: 'desc', name: 'asc', jersey: 'asc' };
   let scheduled = false;
+  let rankSyncPromise = null;
+  let rankMap = new Map();
 
   function installStyles() {
     if (document.querySelector('[data-rp-world-player-filter-styles]')) return;
@@ -29,6 +33,46 @@
       @media(max-width:360px){.rp-world-player-sort{gap:5px}.rp-world-player-sort button{padding-inline:5px;font-size:.46rem;letter-spacing:.055em}.rp-world-player-ovr-info{width:34px;height:34px}}
     `;
     document.head.appendChild(style);
+  }
+
+  async function syncRankMap() {
+    if (rankSyncPromise) return rankSyncPromise;
+    const accessToken = localStorage.getItem(TOKEN_KEY) || '';
+    if (!accessToken) return;
+
+    rankSyncPromise = fetch(COMMUNITY_URL, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ action: 'players' }),
+      cache: 'no-store',
+    })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        const next = new Map();
+        const rows = Array.isArray(data?.players) ? data.players : [];
+        rows.forEach((player) => {
+          const id = String(player?.userId ?? '').trim();
+          if (!id) return;
+          const rank = Number(player?.rank);
+          if (Number.isFinite(rank) && rank > 0) next.set(id, rank);
+        });
+        rankMap = next;
+        list?.querySelectorAll('.rp-world-player-row').forEach((row) => {
+          const id = String(row.dataset.worldPlayerId || '').trim();
+          if (rankMap.has(id)) row.dataset.playerRank = String(rankMap.get(id));
+          else delete row.dataset.playerRank;
+        });
+      })
+      .catch(() => {})
+      .finally(() => {
+        rankSyncPromise = null;
+      });
+
+    return rankSyncPromise;
   }
 
   function rowMeta(row) {
@@ -114,7 +158,7 @@
     });
   }
 
-  function selectSort(key) {
+  async function selectSort(key) {
     if (!['ovr', 'name', 'jersey'].includes(key)) return;
     if (sortKey === key) {
       directions[key] = directions[key] === 'asc' ? 'desc' : 'asc';
@@ -122,6 +166,7 @@
       sortKey = key;
     }
     renderControls();
+    if (sortKey === 'ovr') await syncRankMap();
     scheduleSort();
   }
 
@@ -174,7 +219,13 @@
 
     renderControls();
     if (listObserver) listObserver.disconnect();
-    listObserver = new MutationObserver(() => scheduleSort());
+    listObserver = new MutationObserver(() => {
+      if (sortKey === 'ovr') {
+        syncRankMap().then(scheduleSort);
+      } else {
+        scheduleSort();
+      }
+    });
     listObserver.observe(list, { childList: true });
     scheduleSort();
     return true;
