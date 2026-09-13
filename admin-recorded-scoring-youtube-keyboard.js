@@ -3,7 +3,7 @@
   window.__realPlayRecordedYouTubeKeyboardInstalled = true;
 
   document.addEventListener('keydown', (event) => {
-    if (event.code !== 'Space' || event.repeat) return;
+    if (event.repeat) return;
 
     const target = event.target;
     if (
@@ -19,10 +19,21 @@
     );
     if (!playerShell?.isConnected) return;
 
-    const playButton = playerShell.querySelector('[data-rp-youtube-play]');
-    if (!playButton || playButton.disabled) return;
+    if (event.code === 'Space') {
+      const playButton = playerShell.querySelector('[data-rp-youtube-play]');
+      if (!playButton || playButton.disabled) return;
 
-    event.preventDefault();
-    playButton.click();
+      event.preventDefault();
+      playButton.click();
+      return;
+    }
+
+    if (event.code === 'KeyC') {
+      const cancelButton = document.querySelector('[data-rp-video-close-player]');
+      if (!cancelButton || cancelButton.disabled) return;
+
+      event.preventDefault();
+      cancelButton.click();
+    }
   });
 })();
