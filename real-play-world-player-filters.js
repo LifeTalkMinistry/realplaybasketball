@@ -66,8 +66,6 @@
     })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
-        // Never let an older response annotate a newer player list. This was
-        // the race that could make rows appear to change identity or jump.
         if (syncVersion !== rankSyncVersion || requestedVersion !== listVersion) return;
 
         const currentIds = rowIds();
@@ -153,9 +151,17 @@
     const current = [...list.querySelectorAll('.rp-world-player-row')];
     const alreadySorted = current.length === next.length && current.every((row, index) => row === next[index]);
     if (alreadySorted) return;
+
+    // Do not observe our own reorder. Re-inserting existing rows fires
+    // childList mutations; feeding those mutations back into rank sync caused
+    // the OVR mode to continuously fetch, resort, and visually move rows.
+    if (listObserver) listObserver.disconnect();
     const fragment = document.createDocumentFragment();
     next.forEach((row) => fragment.appendChild(row));
     list.appendChild(fragment);
+    if (listObserver && list.isConnected) {
+      listObserver.observe(list, { childList: true });
+    }
   }
 
   function scheduleSort() {
