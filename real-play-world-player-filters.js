@@ -37,7 +37,9 @@
     const jerseyMatch = jerseyText.match(/#\s*(\d{1,2})/);
     const jersey = jerseyMatch ? Number(jerseyMatch[1]) : null;
     const ovrNode = row.querySelector('.rp-world-player-ovr');
-    const ovr = !ovrNode || ovrNode.classList.contains('unranked')
+    const rankValue = Number.parseInt(String(row.dataset.playerRank || '').trim(), 10);
+    const hasOfficialRank = Number.isFinite(rankValue) && rankValue > 0;
+    const ovr = !ovrNode || !hasOfficialRank || ovrNode.classList.contains('unranked')
       ? null
       : Number.parseFloat(String(ovrNode.textContent || '').replace(/[^0-9.\-]/g, ''));
     return {
