@@ -237,11 +237,13 @@
 
   function attachPageObserver() {
     if (pageObserver) return true;
+    const control = document.querySelector('.rp-admin-control');
+    if (!control) return false;
     pageObserver = new MutationObserver(() => {
       if (!admin) return;
       queueDecorate();
     });
-    pageObserver.observe(document.documentElement, { childList: true, subtree: true });
+    pageObserver.observe(control, { childList: true, subtree: true });
     return true;
   }
 
