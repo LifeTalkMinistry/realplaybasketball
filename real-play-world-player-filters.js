@@ -102,24 +102,33 @@
 
   function compareName(a,b){return a.name.localeCompare(b.name,undefined,{sensitivity:'base',numeric:true})}
   function compareNullableNumber(a,b,key,direction){const av=a[key],bv=b[key],am=av==null,bm=bv==null;if(am!==bm)return am?1:-1;if(am&&bm)return compareName(a,b);if(av===bv)return compareName(a,b);return direction==='asc'?av-bv:bv-av}
-  function compareOvrGroup(a,b,official,direction){
-    const ag=a.official===official,bg=b.official===official;
-    if(ag!==bg)return ag?-1:1;
-    return compareNullableNumber(a,b,'ovr',direction);
+  function compareOvr(a,b,direction){return compareNullableNumber(a,b,'ovr',direction)}
+
+  function isVisibleForSort(meta) {
+    if (sortKey === 'rankOvr') return meta.official;
+    if (sortKey === 'unrankOvr') return !meta.official;
+    return true;
   }
+
   function sortedRows(){
     if(!list)return[];
     const rows=[...list.querySelectorAll('.rp-world-player-row')].map(rowMeta),direction=directions[sortKey];
-    rows.sort((a,b)=>sortKey==='rankOvr'?compareOvrGroup(a,b,true,direction):sortKey==='unrankOvr'?compareOvrGroup(a,b,false,direction):sortKey==='jersey'?compareNullableNumber(a,b,'jersey',direction):((r=compareName(a,b))=>direction==='asc'?r:-r)());
-    return rows.map(x=>x.row);
+    const visible=rows.filter(isVisibleForSort);
+    visible.sort((a,b)=>sortKey==='rankOvr'||sortKey==='unrankOvr'?compareOvr(a,b,direction):sortKey==='jersey'?compareNullableNumber(a,b,'jersey',direction):((r=compareName(a,b))=>direction==='asc'?r:-r)());
+    return visible.map(x=>x.row);
   }
 
   function applySort(){
     scheduled=false;if(!list)return;renderRankLabels();
-    const next=sortedRows(),current=[...list.querySelectorAll('.rp-world-player-row')];
-    if(!next.length||current.length===next.length&&current.every((r,i)=>r===next[i]))return;
+    const allRows=[...list.querySelectorAll('.rp-world-player-row')];
+    const next=sortedRows();
+    const nextSet=new Set(next);
+    const hidden=allRows.filter(row=>!nextSet.has(row));
     if(listObserver)listObserver.disconnect();
-    const fragment=document.createDocumentFragment();next.forEach(row=>fragment.appendChild(row));list.appendChild(fragment);
+    const fragment=document.createDocumentFragment();
+    next.forEach(row=>{row.hidden=false;fragment.appendChild(row)});
+    hidden.forEach(row=>{row.hidden=true;fragment.appendChild(row)});
+    list.appendChild(fragment);
     if(listObserver&&list.isConnected)listObserver.observe(list,{childList:true});
   }
   function scheduleSort(){if(scheduled)return;scheduled=true;requestAnimationFrame(applySort)}
