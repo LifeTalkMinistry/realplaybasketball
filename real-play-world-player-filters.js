@@ -36,25 +36,14 @@
     return list ? [...list.querySelectorAll('.rp-world-player-row')].map(row => String(row.dataset.worldPlayerId || '').trim()) : [];
   }
 
-  function isOfficiallyRanked(player) {
-    return Boolean(player?.officialRankingEligible ?? player?.rankingEligible ?? player?.ranking?.officialRankingEligible ?? player?.ranking?.rankingEligible ?? player?.ranking?.ranked ?? false);
-  }
-
-  function buildDeterministicRankMap(players) {
-    const ranked = players.map((player,index)=>({player,index,ovr:Number(player?.ovr)}))
-      .filter(x=>Number.isFinite(x.ovr)&&x.ovr>0&&isOfficiallyRanked(x.player))
-      .sort((a,b)=>{
-        if(b.ovr!==a.ovr) return b.ovr-a.ovr;
-        const ar=Number(a.player?.rank), br=Number(b.player?.rank);
-        const ah=Number.isFinite(ar)&&ar>0, bh=Number.isFinite(br)&&br>0;
-        if(ah!==bh) return ah?-1:1;
-        if(ah&&ar!==br) return ar-br;
-        const an=String(a.player?.playerName||a.player?.player_name||'').trim();
-        const bn=String(b.player?.playerName||b.player?.player_name||'').trim();
-        return an.localeCompare(bn,undefined,{sensitivity:'base',numeric:true})||a.index-b.index;
-      });
-    const map=new Map();
-    ranked.forEach((x,i)=>{const id=String(x.player?.userId??'').trim();if(id)map.set(id,i+1)});
+  function buildCanonicalRankMap(players) {
+    const map = new Map();
+    (Array.isArray(players) ? players : []).forEach((player) => {
+      const id = String(player?.userId ?? '').trim();
+      const rank = Number(player?.rank);
+      if (!id || !Number.isFinite(rank) || rank <= 0) return;
+      map.set(id, rank);
+    });
     return map;
   }
 
@@ -92,7 +81,7 @@
         if(syncVersion!==rankSyncVersion||requestedVersion!==listVersion)return;
         const current=rowIds();
         if(current.length!==requestedIds.length||current.some((id,i)=>id!==requestedIds[i]))return;
-        const rankMap=buildDeterministicRankMap(Array.isArray(data?.players)?data.players:[]);
+        const rankMap=buildCanonicalRankMap(data?.players);
         list.querySelectorAll('.rp-world-player-row').forEach(row=>{const id=String(row.dataset.worldPlayerId||'').trim();row.dataset.playerRank=rankMap.has(id)?String(rankMap.get(id)):'unranked'});
         renderRankLabels();
       }).catch(()=>{}).finally(()=>{rankSyncPromise=null;if(requestedVersion!==listVersion&&sortKey==='ovr')syncRankMap().then(scheduleSort)});
