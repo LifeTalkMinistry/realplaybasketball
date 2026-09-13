@@ -68,6 +68,48 @@
     });
   }
 
+  function isOfficiallyRanked(player) {
+    return Boolean(
+      player?.officialRankingEligible
+      ?? player?.rankingEligible
+      ?? player?.ranking?.officialRankingEligible
+      ?? player?.ranking?.rankingEligible
+      ?? player?.ranking?.ranked
+      ?? false
+    );
+  }
+
+  // OVR is the ranking score. Derive the displayed ordinal from the complete
+  // current player set instead of trusting a stale/duplicated rank field.
+  // This guarantees that two players with different OVR values can never
+  // receive the same ordinal rank. Existing rank and name are only used as
+  // deterministic tie-breakers when the OVR value itself is equal.
+  function buildDeterministicRankMap(players) {
+    const rankedPlayers = players
+      .map((player, index) => ({ player, index, ovr: Number(player?.ovr) }))
+      .filter((entry) => Number.isFinite(entry.ovr) && entry.ovr > 0 && isOfficiallyRanked(entry.player))
+      .sort((a, b) => {
+        if (b.ovr !== a.ovr) return b.ovr - a.ovr;
+        const ar = Number(a.player?.rank);
+        const br = Number(b.player?.rank);
+        const aHasRank = Number.isFinite(ar) && ar > 0;
+        const bHasRank = Number.isFinite(br) && br > 0;
+        if (aHasRank !== bHasRank) return aHasRank ? -1 : 1;
+        if (aHasRank && ar !== br) return ar - br;
+        const an = String(a.player?.playerName || a.player?.player_name || '').trim();
+        const bn = String(b.player?.playerName || b.player?.player_name || '').trim();
+        const nameResult = an.localeCompare(bn, undefined, { sensitivity: 'base', numeric: true });
+        return nameResult || a.index - b.index;
+      });
+
+    const rankMap = new Map();
+    rankedPlayers.forEach((entry, index) => {
+      const id = String(entry.player?.userId ?? '').trim();
+      if (id) rankMap.set(id, index + 1);
+    });
+    return rankMap;
+  }
+
   async function syncRankMap() {
     if (!list) return;
     const accessToken = localStorage.getItem(TOKEN_KEY) || '';
@@ -97,14 +139,8 @@
         const currentIds = rowIds();
         if (currentIds.length !== requestedIds.length || currentIds.some((id, index) => id !== requestedIds[index])) return;
 
-        const rankMap = new Map();
         const players = Array.isArray(data?.players) ? data.players : [];
-        players.forEach((player) => {
-          const id = String(player?.userId ?? '').trim();
-          if (!id) return;
-          const rank = Number(player?.rank);
-          if (Number.isFinite(rank) && rank > 0) rankMap.set(id, rank);
-        });
+        const rankMap = buildDeterministicRankMap(players);
 
         list?.querySelectorAll('.rp-world-player-row').forEach((row) => {
           const id = String(row.dataset.worldPlayerId || '').trim();
