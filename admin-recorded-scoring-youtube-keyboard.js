@@ -31,7 +31,12 @@
     }
 
     if (event.code === 'KeyC') {
-      const cancelButton = playerShell.querySelector('[data-rp-video-close-player]');
+      // The player controls and the local score sheet are sibling sections;
+      // the cancel button is therefore not inside the YouTube player shell.
+      // Target the actual score-card close control in the scoring screen.
+      const cancelButton = document.querySelector(
+        '.rp-video-scoring-screen [data-rp-video-close-player]'
+      );
       if (!cancelButton || cancelButton.disabled) return;
 
       event.preventDefault();
