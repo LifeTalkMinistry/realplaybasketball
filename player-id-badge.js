@@ -119,12 +119,41 @@
     root.classList.add('open');
   }
 
+  function syncWinRates() {
+    document.querySelectorAll('.rp-profile-record').forEach((record) => {
+      const recordValue = record.querySelector(':scope > strong:not(.rp-profile-win-rate)');
+      const meta = record.querySelector(':scope > small');
+      if (!recordValue || !meta) return;
+
+      const recordMatch = String(recordValue.textContent || '').trim().match(/^(\d+)\s*-\s*(\d+)$/);
+      if (!recordMatch) return;
+
+      const wins = Number(recordMatch[1]);
+      const losses = Number(recordMatch[2]);
+      const gameMatch = String(meta.textContent || '').match(/(\d+)\s+GAME/i);
+      const games = gameMatch ? Number(gameMatch[1]) : wins + losses;
+      const winRate = games > 0 ? Math.round((wins / games) * 100) : 0;
+
+      let rate = record.querySelector(':scope > .rp-profile-win-rate');
+      if (!rate) {
+        rate = document.createElement('strong');
+        rate.className = 'rp-profile-win-rate';
+        recordValue.insertAdjacentElement('afterend', rate);
+      }
+
+      rate.textContent = `${winRate}%`;
+      meta.textContent = `WIN RATE · ${games} GAME${games === 1 ? '' : 'S'}`;
+    });
+  }
+
   async function syncOwnProfile() {
     const panel = document.querySelector('[data-rp-profile].open');
     if (!panel) return;
     badge(panel);
+    syncWinRates();
     const identity = await getSelfIdentity(panel);
     if (panel.classList.contains('open')) apply(panel, identity);
+    syncWinRates();
   }
 
   function syncPublicProfiles() {
@@ -132,6 +161,7 @@
       badge(panel);
       apply(panel, identityFromPublicPanel(panel));
     });
+    syncWinRates();
   }
 
   document.addEventListener('click', (event) => {
@@ -165,7 +195,17 @@
     syncPublicProfiles();
   });
 
+  const winRateObserver = new MutationObserver((mutations) => {
+    const hasRecordChange = mutations.some((mutation) => [...mutation.addedNodes].some((node) => {
+      if (node.nodeType !== 1) return false;
+      return node.matches?.('.rp-profile-record') || Boolean(node.querySelector?.('.rp-profile-record'));
+    }));
+    if (hasRecordChange) syncWinRates();
+  });
+  winRateObserver.observe(document.body, { childList: true, subtree: true });
+
   const style = document.createElement('style');
-  style.textContent = `.rp-profile-topbar>[data-rp-player-id-badge]{cursor:pointer;white-space:nowrap}.rp-profile-topbar>[data-rp-player-id-badge]:focus-visible{outline:2px solid #48d7ff;outline-offset:2px}.rp-player-id-sheet{position:fixed;z-index:590;inset:0;display:none;align-items:flex-end;justify-content:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(8px)}.rp-player-id-sheet.open{display:flex}.rp-player-id-card{position:relative;width:min(100%,390px);padding:24px 20px;border:1px solid rgba(72,215,255,.22);border-radius:24px;background:linear-gradient(145deg,#07111d,#04070d 66%,#10070b);text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.55)}.rp-player-id-card button{position:absolute;top:12px;right:12px;width:34px;height:34px;border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;background:#080d15;font-size:1rem}.rp-player-id-card small{display:block;color:#5fdcff;font-size:.48rem;font-weight:950;letter-spacing:.14em}.rp-player-id-card>strong{display:block;margin:12px 0 6px;font-family:var(--rp-display,Arial,sans-serif);font-size:2rem;font-style:italic;font-weight:950;letter-spacing:.04em}.rp-player-id-card h3{margin:0;font-family:var(--rp-display,Arial,sans-serif);font-size:1rem;font-style:italic;font-weight:950}.rp-player-id-card span{display:inline-block;margin-top:10px;padding:6px 9px;border:1px solid rgba(255,255,255,.08);border-radius:999px;color:#8294a8;font-size:.45rem;font-weight:950;letter-spacing:.09em}.rp-player-id-card p{margin:14px auto 0;max-width:285px;color:#65778c;font-size:.54rem;line-height:1.55}`;
+  style.textContent = `.rp-profile-topbar>[data-rp-player-id-badge]{cursor:pointer;white-space:nowrap}.rp-profile-topbar>[data-rp-player-id-badge]:focus-visible{outline:2px solid #48d7ff;outline-offset:2px}.rp-profile-record>.rp-profile-win-rate{margin-top:8px;color:#48d7ff}.rp-player-id-sheet{position:fixed;z-index:590;inset:0;display:none;align-items:flex-end;justify-content:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(8px)}.rp-player-id-sheet.open{display:flex}.rp-player-id-card{position:relative;width:min(100%,390px);padding:24px 20px;border:1px solid rgba(72,215,255,.22);border-radius:24px;background:linear-gradient(145deg,#07111d,#04070d 66%,#10070b);text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.55)}.rp-player-id-card button{position:absolute;top:12px;right:12px;width:34px;height:34px;border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;background:#080d15;font-size:1rem}.rp-player-id-card small{display:block;color:#5fdcff;font-size:.48rem;font-weight:950;letter-spacing:.14em}.rp-player-id-card>strong{display:block;margin:12px 0 6px;font-family:var(--rp-display,Arial,sans-serif);font-size:2rem;font-style:italic;font-weight:950;letter-spacing:.04em}.rp-player-id-card h3{margin:0;font-family:var(--rp-display,Arial,sans-serif);font-size:1rem;font-style:italic;font-weight:950}.rp-player-id-card span{display:inline-block;margin-top:10px;padding:6px 9px;border:1px solid rgba(255,255,255,.08);border-radius:999px;color:#8294a8;font-size:.45rem;font-weight:950;letter-spacing:.09em}.rp-player-id-card p{margin:14px auto 0;max-width:285px;color:#65778c;font-size:.54rem;line-height:1.55}`;
   document.head.appendChild(style);
+  syncWinRates();
 })();
