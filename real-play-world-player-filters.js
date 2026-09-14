@@ -108,7 +108,10 @@
   function renderAuthoritativeProfileRank(rank) {
     const numericRank = Number(rank);
     const hasRank = Number.isFinite(numericRank) && numericRank > 0;
-    document.querySelectorAll('.rp-profile-rank').forEach((node) => {
+    const ownProfile = document.querySelector('.rp-profile.open:not(.rp-public-player-profile)');
+    if (!ownProfile) return;
+
+    ownProfile.querySelectorAll('.rp-profile-rank').forEach((node) => {
       const strong = node.querySelector('strong');
       const small = node.querySelector('small');
       if (!strong) return;
@@ -142,7 +145,7 @@
     enforcePublicProfileRank();
     const profileRank = await refreshOwnProfileRank();
     if (profileRank !== null && profileRank !== undefined) renderAuthoritativeProfileRank(profileRank);
-    else if (document.querySelector('.rp-profile.open .rp-profile-rank')) renderAuthoritativeProfileRank(null);
+    else if (document.querySelector('.rp-profile.open:not(.rp-public-player-profile) .rp-profile-rank')) renderAuthoritativeProfileRank(null);
   }
 
   function rowMeta(row) {
