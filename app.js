@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260914-captain-eligibility-v47';
+  const version = '20260914-normal-player-open-name-v48';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
