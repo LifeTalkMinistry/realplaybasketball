@@ -12,7 +12,7 @@
   let currentPublicPlayerId = null;
   let ownGamesCache = null;
   let ownGamesCacheAt = 0;
-  let publicGamesCache = new Map();
+  const publicGamesCache = new Map();
   let resolving = false;
 
   function token() {
@@ -34,27 +34,54 @@
     return Number.isSafeInteger(id) && id > 0 ? id : null;
   }
 
+  function openRankNumberFrom(game) {
+    const value = Number(
+      game?.openRankNumber
+      ?? game?.open_rank_number
+      ?? game?.rankingNumber
+      ?? game?.ranking_number
+      ?? 0
+    );
+    return Number.isSafeInteger(value) && value > 0 ? value : null;
+  }
+
   function cachedSessionIdFrom(card) {
     const id = Number(card?.dataset?.rpProfileGameSession || 0);
     return Number.isSafeInteger(id) && id > 0 ? id : null;
   }
 
-  function visibleSessionIdFrom(card) {
+  function visibleOpenRankNumberFrom(card) {
     if (!card) return null;
     const label = String(card.querySelector('.rp-profile-game-main strong')?.textContent || '').trim();
     if (!label) return null;
 
-    const explicit = label.match(/\b(?:SESSION|GAME)\s*#\s*0*(\d+)\b/i);
-    const fallback = label.match(/#\s*0*(\d+)\b/);
-    const raw = explicit?.[1] || fallback?.[1] || '';
-    const id = Number(raw);
-    return Number.isSafeInteger(id) && id > 0 ? id : null;
+    // This number is the public Open Rank number, NOT the database session id.
+    // Examples: OPEN RANK #034, OPEN RANKING SESSION #034.
+    const match = label.match(/\bOPEN\s+RANK(?:ING)?(?:\s+(?:SESSION|GAME))?\s*#\s*0*(\d+)\b/i);
+    const value = Number(match?.[1] || 0);
+    return Number.isSafeInteger(value) && value > 0 ? value : null;
   }
 
   function gameIndex(card) {
     const history = card?.closest('.rp-profile-history');
     if (!history) return -1;
     return [...history.querySelectorAll(':scope > .rp-profile-game')].indexOf(card);
+  }
+
+  function resolveCanonicalSessionId(games, card, index) {
+    const rows = Array.isArray(games) ? games : [];
+    const openRankNumber = visibleOpenRankNumberFrom(card);
+
+    // Prefer matching the displayed Open Rank number to the API game record,
+    // then take that record's canonical sessionId. This prevents #034 from
+    // being mistaken for database session id 34.
+    if (openRankNumber) {
+      const matched = rows.find((game) => openRankNumberFrom(game) === openRankNumber);
+      const matchedSessionId = sessionIdFrom(matched);
+      if (matchedSessionId) return matchedSessionId;
+    }
+
+    return index >= 0 ? sessionIdFrom(rows[index]) : null;
   }
 
   async function fetchJsonWithTimeout(url, options = {}) {
@@ -109,6 +136,20 @@
     return games;
   }
 
+  function publicPlayerIdFrom(profile) {
+    const values = [
+      profile?.dataset?.rpPublicPlayerId,
+      profile?.__realPlayPublicPlayer?.playerId,
+      profile?.__realPlayPublicPlayer?.userId,
+      currentPublicPlayerId,
+    ];
+    for (const value of values) {
+      const id = Number(value);
+      if (Number.isSafeInteger(id) && id > 0) return id;
+    }
+    return null;
+  }
+
   function closeSourceProfile(card) {
     const publicProfile = card?.closest('[data-rp-public-profile], [data-rp-visitor-public-profile], .rp-public-player-profile');
     if (publicProfile) {
@@ -142,9 +183,6 @@
 
     closeSourceProfile(sourceCard);
 
-    // Reuse the canonical full-game viewer. The synthetic trigger is consumed
-    // only by career-game-replay.js, so the profile card lands on the exact
-    // verified game viewer instead of rebuilding another game screen.
     const proxy = document.createElement('button');
     proxy.type = 'button';
     proxy.hidden = true;
@@ -178,10 +216,9 @@
   async function handleGameCard(card) {
     if (!card || resolving) return;
 
-    // Profile labels are generated from the authoritative session id. Resolve
-    // them locally first so a normal VIEW GAME tap does not wait on another
-    // profile request before navigation.
-    const immediateId = cachedSessionIdFrom(card) || visibleSessionIdFrom(card);
+    // Only trust a session id previously resolved from API data. Never infer a
+    // database session id from the visible Open Rank number on the card.
+    const immediateId = cachedSessionIdFrom(card);
     if (immediateId) {
       openResolvedCard(card, immediateId);
       return;
@@ -195,9 +232,9 @@
     try {
       const publicProfile = card.closest('[data-rp-public-profile], [data-rp-visitor-public-profile], .rp-public-player-profile');
       const games = publicProfile
-        ? await loadPublicGames(currentPublicPlayerId)
+        ? await loadPublicGames(publicPlayerIdFrom(publicProfile))
         : await loadOwnGames();
-      const id = sessionIdFrom(games[index]);
+      const id = resolveCanonicalSessionId(games, card, index);
       if (!id) throw new Error('This game does not have a verified game page yet.');
       card.dataset.rpProfileGameSession = String(id);
       if (!openReplay(id, card)) throw new Error('This game could not be opened.');
@@ -234,9 +271,6 @@
       .rp-profile-game-replay-loading{opacity:.72}
       .rp-profile-game-replay-loading .rp-profile-game-open-hint span{color:#48d7ff}
 
-      /* The replay used a large fixed image with live mask + filter compositing.
-         That can stall Chromium when the viewer appears. Keep the same black /
-         blue-red replay surface, but remove that decorative GPU-heavy layer. */
       .rp-career-replay::before{display:none!important}
     `;
     document.head.appendChild(style);
@@ -262,6 +296,11 @@
     const card = event.target.closest?.('.rp-profile-history .rp-profile-game');
     if (card?.open) card.removeAttribute('open');
   }, true);
+
+  window.addEventListener('realplay:public-profile-loaded', (event) => {
+    const id = Number(event?.detail?.playerId || 0);
+    if (Number.isSafeInteger(id) && id > 0) currentPublicPlayerId = id;
+  });
 
   window.addEventListener('storage', (event) => {
     if (event.key !== TOKEN_KEY && event.key !== VISITOR_KEY) return;
