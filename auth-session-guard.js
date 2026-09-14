@@ -4,10 +4,18 @@
 
   const nativeFetch = window.fetch.bind(window);
   const REAL_PLAY_API = 'https://api.clarapmc.com/api/real-play/';
+  const COMMUNITY_URL = `${REAL_PLAY_API}community`;
+  const PUBLIC_COMMUNITY_URL = `${REAL_PLAY_API}public/community`;
   const TOKEN_KEY = 'real_play_access_token';
+  const VISITOR_KEY = 'real_play_visitor_mode';
+  const PUBLIC_ACTIONS = new Set(['bootstrap', 'feed', 'channels', 'chat', 'players', 'player_profile']);
+
+  function requestUrl(input) {
+    return typeof input === 'string' ? input : input?.url || '';
+  }
 
   function isProtectedRealPlayRequest(input, init = {}) {
-    const url = typeof input === 'string' ? input : input?.url || '';
+    const url = requestUrl(input);
     if (!url.startsWith(REAL_PLAY_API)) return false;
 
     const headers = new Headers(init.headers || (typeof input !== 'string' ? input?.headers : undefined) || {});
@@ -26,32 +34,76 @@
     ].some((phrase) => text.includes(phrase));
   }
 
-  function recoverExpiredSession() {
+  function switchToPublicSession() {
     try {
       window.localStorage.removeItem(TOKEN_KEY);
+      window.localStorage.setItem(VISITOR_KEY, '1');
     } catch (_error) {}
 
     try {
       window.dispatchEvent(new CustomEvent('realplay:session-expired'));
+      window.dispatchEvent(new CustomEvent('realplay:visitorchange'));
     } catch (_error) {}
+  }
 
-    // auth-core keeps an in-memory copy of the token. Reload once after removing
-    // the persisted token so every layer starts from the same logged-out state.
-    window.setTimeout(() => {
-      try {
-        window.location.reload();
-      } catch (_error) {}
-    }, 80);
+  function readBody(init = {}) {
+    if (typeof init.body !== 'string' || !init.body) return null;
+    try {
+      return JSON.parse(init.body);
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  async function retryPublicCommunity(input, init = {}) {
+    const url = requestUrl(input);
+    if (url !== COMMUNITY_URL) return null;
+
+    const body = readBody(init);
+    const action = String(body?.action || '');
+    if (!PUBLIC_ACTIONS.has(action)) return null;
+
+    const headers = new Headers(init.headers || {});
+    headers.delete('Authorization');
+    headers.set('Accept', 'application/json');
+    headers.set('Content-Type', 'application/json');
+
+    return nativeFetch(PUBLIC_COMMUNITY_URL, {
+      ...init,
+      method: init.method || 'POST',
+      headers,
+      body: JSON.stringify(body),
+      cache: 'no-store',
+    });
   }
 
   async function guardedFetch(input, init = {}) {
     const protectedRequest = isProtectedRealPlayRequest(input, init);
     let response = await nativeFetch(input, init);
 
-    if (!protectedRequest || response.status !== 401) return response;
+    if (!protectedRequest || response.ok) return response;
 
-    // A single failed protected request must never destroy the whole app session.
-    // Retry once in case the request raced with page/app initialization.
+    // Inspect explicit expired-token responses regardless of whether the backend
+    // surfaced them as 401, 403, or another auth failure status.
+    const firstBody = await response.clone().text().catch(() => '');
+    if (isConfirmedExpiredSession(firstBody)) {
+      switchToPublicSession();
+
+      // Public World/Players data should keep working instantly. Transparently
+      // retry the same read action against the public endpoint, so the user does
+      // not need to clear browser data, close the tab, or manually reset storage.
+      try {
+        const publicResponse = await retryPublicCommunity(input, init);
+        if (publicResponse) return publicResponse;
+      } catch (_error) {}
+
+      return response;
+    }
+
+    if (response.status !== 401) return response;
+
+    // A single ambiguous 401 must never destroy the whole app session. Retry once
+    // in case the request raced with page/app initialization.
     try {
       response = await nativeFetch(input, init);
     } catch (_error) {
@@ -60,13 +112,13 @@
 
     if (response.status !== 401) return response;
 
-    const body = await response.clone().text();
-
-    // A genuinely expired/invalid credential is not a transient sync problem.
-    // Clear only that stale device token and restart the app cleanly so mobile
-    // never gets trapped showing an empty Players screen with an auth error.
+    const body = await response.clone().text().catch(() => firstBody);
     if (isConfirmedExpiredSession(body)) {
-      recoverExpiredSession();
+      switchToPublicSession();
+      try {
+        const publicResponse = await retryPublicCommunity(input, init);
+        if (publicResponse) return publicResponse;
+      } catch (_error) {}
       return response;
     }
 
