@@ -136,6 +136,17 @@
     return `OPEN RANKING SESSION #${String(number).padStart(3, '0')}${suffix}`;
   }
 
+  function authoritativeResultTitle(sessionId, currentTitle = '') {
+    const update = officialResultUpdates.get(Number(sessionId));
+    const backendTitle = String(update?.title || '').trim();
+
+    // The backend title is authoritative whenever it is a deliberate custom
+    // matchup/event name. Only automatic/legacy numbered titles are normalized
+    // to the canonical stored Open Rank number.
+    if (backendTitle && !isAutomaticOpenRankTitle(backendTitle)) return backendTitle;
+    return officialResultLabel(sessionId, currentTitle);
+  }
+
   function applyOfficialResultLabels() {
     let missingIdentity = false;
 
@@ -152,16 +163,23 @@
       const heading = card.querySelector('.rp-update-session-name-row > h2, :scope > h2');
       if (!heading) return;
 
-      // Preserve intentionally custom matchup names. Automatic/legacy numbered
-      // titles always mirror the canonical stored Open Rank number. Admin SET #
-      // remains available, but it changes the backend authority rather than
-      // fighting this display synchronizer.
-      const alreadyOwned = card.dataset.rpOfficialOpenRankNumber === String(number);
-      if (alreadyOwned || isAutomaticOpenRankTitle(heading.textContent)) {
-        const next = officialResultLabel(sessionId, heading.textContent);
+      const update = officialResultUpdates.get(sessionId);
+      const backendTitle = String(update?.title || '').trim();
+      const backendHasCustomTitle = Boolean(backendTitle && !isAutomaticOpenRankTitle(backendTitle));
+      const currentIsAutomatic = isAutomaticOpenRankTitle(heading.textContent);
+
+      // Two independent authorities live here:
+      // 1) backend title = custom display name authority
+      // 2) open_rank_number = numbered identity authority
+      // A custom title must never be overwritten merely because this card was
+      // previously synchronized. Automatic titles always follow the canonical
+      // number, including admin corrections and swaps.
+      if (backendHasCustomTitle || currentIsAutomatic) {
+        const next = authoritativeResultTitle(sessionId, heading.textContent);
         if (next && heading.textContent !== next) heading.textContent = next;
-        card.dataset.rpOfficialOpenRankNumber = String(number);
       }
+
+      card.dataset.rpOfficialOpenRankNumber = String(number);
     });
 
     return missingIdentity;
