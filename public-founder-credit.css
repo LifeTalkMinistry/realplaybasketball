@@ -147,59 +147,12 @@ body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::aft
   border-radius:13px!important;
 }
 
-/* PLAYERS — every player gets a Real Play bar. Rows without any earned badge
-   use the open-name blue/red normal-player artwork so long names can occupy the
-   live center lane without looking boxed inside a decorative left capsule. */
-body.rp-simple-navigation-active .rp-world-player-row:not(.rp-recognition-themed){
-  position:relative!important;
-  isolation:isolate!important;
-  overflow:hidden!important;
-  min-height:66px!important;
-  margin:0!important;
-  border-color:transparent!important;
-  background:transparent!important;
-  box-shadow:none!important;
-}
-
-body.rp-simple-navigation-active .rp-world-player-row:not(.rp-recognition-themed)::before{
-  content:''!important;
-  position:absolute!important;
-  z-index:0!important;
-  inset:-7px -3px!important;
-  pointer-events:none!important;
-  background:url('bar-normal-playerv1.png?v=20260914-open-name-v1') center / 106% 178% no-repeat!important;
-  opacity:1!important;
-  filter:none!important;
-}
-
-body.rp-simple-navigation-active .rp-world-player-row:not(.rp-recognition-themed)::after{
-  content:''!important;
-  position:absolute!important;
-  z-index:1!important;
-  inset:2px!important;
-  border-radius:13px!important;
-  pointer-events:none!important;
-  background:linear-gradient(90deg,rgba(2,5,9,.20) 0%,rgba(2,5,9,.03) 48%,rgba(2,5,9,.12) 100%)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.055)!important;
-}
-
-body.rp-simple-navigation-active .rp-world-player-row:not(.rp-recognition-themed)>*{
-  position:relative!important;
-  z-index:2!important;
-}
-
-body.rp-simple-navigation-active .rp-world-player-row:not(.rp-recognition-themed):hover::before{
-  filter:brightness(1.07)!important;
-}
-
 @media(max-width:420px){
-  body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed,
-  body.rp-simple-navigation-active .rp-world-player-row:not(.rp-recognition-themed){
+  body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed{
     min-height:66px!important;
   }
 
-  body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::before,
-  body.rp-simple-navigation-active .rp-world-player-row:not(.rp-recognition-themed)::before{
+  body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::before{
     inset:-8px -4px!important;
     background-size:108% 186%!important;
   }
