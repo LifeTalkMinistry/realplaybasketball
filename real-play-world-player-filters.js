@@ -5,6 +5,7 @@
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
   const COMMUNITY_URL = `${API_BASE_URL}/api/real-play/community`;
+  const PROFILE_URL = `${API_BASE_URL}/api/real-play/me`;
 
   let panel = null;
   let controls = null;
@@ -17,6 +18,7 @@
   let rankByUserId = new Map();
   let rankAuthorityReady = false;
   let rankRefreshPromise = null;
+  let profileRankRefreshPromise = null;
 
   function installStyles() {
     if (document.querySelector('[data-rp-world-player-filter-styles]')) return;
@@ -76,6 +78,62 @@
     return rankRefreshPromise;
   }
 
+  async function refreshOwnProfileRank() {
+    if (profileRankRefreshPromise) return profileRankRefreshPromise;
+    profileRankRefreshPromise = (async () => {
+      try {
+        const accessToken = localStorage.getItem(TOKEN_KEY) || '';
+        if (!accessToken) return null;
+        const response = await fetch(PROFILE_URL, {
+          headers: { Accept: 'application/json', Authorization: `Bearer ${accessToken}` },
+          cache: 'no-store',
+        });
+        if (!response.ok) return null;
+        const data = await response.json().catch(() => ({}));
+        return data?.rank ?? data?.career?.rank ?? data?.careerStats?.rank ?? null;
+      } finally {
+        profileRankRefreshPromise = null;
+      }
+    })();
+    return profileRankRefreshPromise;
+  }
+
+  function renderAuthoritativeProfileRank(rank) {
+    const numericRank = Number(rank);
+    const hasRank = Number.isFinite(numericRank) && numericRank > 0;
+    document.querySelectorAll('.rp-profile-rank').forEach((node) => {
+      const strong = node.querySelector('strong');
+      const small = node.querySelector('small');
+      if (!strong) return;
+      strong.textContent = hasRank ? `#${numericRank}` : '—';
+      if (small) small.textContent = hasRank ? 'OFFICIAL RANK' : 'UNRANKED';
+    });
+  }
+
+  function enforcePublicProfileRank() {
+    document.querySelectorAll('.rp-public-player-profile').forEach((profile) => {
+      const player = profile.__realPlayPublicPlayer || null;
+      if (!player) return;
+      const rank = player?.rank ?? player?.career?.rank ?? player?.careerStats?.rank ?? null;
+      const numericRank = Number(rank);
+      const hasRank = Number.isFinite(numericRank) && numericRank > 0;
+      profile.querySelectorAll('.rp-profile-rank').forEach((node) => {
+        const strong = node.querySelector('strong');
+        const small = node.querySelector('small');
+        if (!strong) return;
+        strong.textContent = hasRank ? `#${numericRank}` : '—';
+        if (small) small.textContent = hasRank ? 'OFFICIAL RANK' : 'UNRANKED';
+      });
+    });
+  }
+
+  async function enforceRankAuthority() {
+    enforcePublicProfileRank();
+    const profileRank = await refreshOwnProfileRank();
+    if (profileRank !== null && profileRank !== undefined) renderAuthoritativeProfileRank(profileRank);
+    else if (document.querySelector('.rp-profile.open .rp-profile-rank')) renderAuthoritativeProfileRank(null);
+  }
+
   function rowMeta(row) {
     const name = String(row.querySelector('.rp-world-player-name strong')?.textContent || '').trim();
     const jerseyText = String(row.querySelector('.rp-world-player-name b')?.textContent || '').trim();
@@ -86,9 +144,7 @@
       ? Number.parseFloat(String(ovrNode.textContent || '').replace(/[^0-9.\-]/g, ''))
       : null;
     const userId = String(row.dataset.worldPlayerId || '').trim();
-    const ranked = rankAuthorityReady
-      ? rankByUserId.has(userId)
-      : Boolean(row.dataset.worldPlayerRank && Number(row.dataset.worldPlayerRank) > 0);
+    const ranked = rankAuthorityReady ? rankByUserId.has(userId) : false;
     return {
       row,
       name,
@@ -174,7 +230,10 @@
   function scheduleSort() {
     if (scheduled) return;
     scheduled = true;
-    requestAnimationFrame(applySort);
+    requestAnimationFrame(() => {
+      applySort();
+      enforceRankAuthority();
+    });
   }
 
   function directionArrow(key) {
@@ -290,4 +349,8 @@
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
   }
+
+  const profileObserver = new MutationObserver(() => enforceRankAuthority());
+  profileObserver.observe(document.documentElement, { childList: true, subtree: true });
+  enforceRankAuthority();
 })();
