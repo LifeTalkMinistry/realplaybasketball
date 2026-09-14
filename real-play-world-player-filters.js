@@ -13,7 +13,7 @@
   let listObserver = null;
   let sortKey = 'name';
   let filterMode = 'all';
-  const directions = { ovr: 'desc', name: 'asc', jersey: 'asc' };
+  const directions = { rank: 'asc', ovr: 'desc', name: 'asc', jersey: 'asc' };
   let scheduled = false;
   let rankByUserId = new Map();
   let rankByAccountUserId = new Map();
@@ -36,6 +36,8 @@
       .rp-world-player-sort b{margin-left:3px;color:#52667b;font-size:.55rem}
       .rp-world-player-directory-head{position:relative}
       .rp-world-player-row[hidden]{display:none!important}
+      .rp-world-player-rank-badge{display:none;flex:none;min-width:38px;margin-right:2px;color:#48d8ff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.18rem;font-style:italic;font-weight:1000;line-height:1;letter-spacing:-.035em;text-align:left;text-shadow:0 0 16px rgba(72,216,255,.28)}
+      .rp-world-player-rank-badge.is-visible{display:inline-block}
       .rp-world-player-ovr-info{position:absolute;top:0;right:1px;width:36px;height:36px;display:grid;place-items:center;padding:0;border:1px solid rgba(72,216,255,.24);border-radius:50%;background:rgba(5,12,19,.82);color:#48d8ff;font-family:Georgia,serif;font-size:1rem;font-style:italic;font-weight:900;line-height:1;box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);z-index:2}
       .rp-world-player-ovr-info:hover{border-color:rgba(72,216,255,.46);background:rgba(13,54,72,.35)}
       .rp-world-player-ovr-info:active{transform:scale(.96)}
@@ -43,8 +45,9 @@
       @media(max-width:420px){
         .rp-world-player-sort{gap:5px}
         .rp-world-player-sort button{padding-inline:4px;font-size:.43rem;letter-spacing:.045em}
+        .rp-world-player-rank-badge{min-width:34px;font-size:1.08rem}
       }
-      @media(max-width:360px){.rp-world-player-sort button{font-size:.39rem;letter-spacing:.03em}.rp-world-player-ovr-info{width:34px;height:34px}}
+      @media(max-width:360px){.rp-world-player-sort button{font-size:.39rem;letter-spacing:.03em}.rp-world-player-ovr-info{width:34px;height:34px}.rp-world-player-rank-badge{min-width:31px;font-size:1rem}}
     `;
     document.head.appendChild(style);
   }
@@ -184,6 +187,25 @@
     };
   }
 
+  function renderRowRank(meta) {
+    const nameNode = meta?.row?.querySelector('.rp-world-player-name');
+    if (!nameNode) return;
+
+    let badge = nameNode.querySelector('.rp-world-player-rank-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'rp-world-player-rank-badge';
+      badge.setAttribute('aria-hidden', 'true');
+      nameNode.prepend(badge);
+    }
+
+    const numericRank = Number(meta.rank);
+    const hasOfficialRank = Number.isSafeInteger(numericRank) && numericRank > 0;
+    badge.textContent = hasOfficialRank ? `#${numericRank}` : '';
+    badge.classList.toggle('is-visible', filterMode === 'ranked' && hasOfficialRank);
+    meta.row.dataset.officialRank = hasOfficialRank ? String(numericRank) : '';
+  }
+
   function compareName(a, b) {
     return a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true });
   }
@@ -214,6 +236,7 @@
     const rows = visibleRows();
     const direction = directions[sortKey];
     rows.sort((a, b) => {
+      if (sortKey === 'rank') return compareNullableNumber(a, b, 'rank', direction);
       if (sortKey === 'ovr') return compareNullableNumber(a, b, 'ovr', direction);
       if (sortKey === 'jersey') return compareNullableNumber(a, b, 'jersey', direction);
       const result = compareName(a, b);
@@ -226,6 +249,7 @@
     if (!list) return;
     [...list.querySelectorAll('.rp-world-player-row')].forEach((row) => {
       const meta = rowMeta(row);
+      renderRowRank(meta);
       const visible = matchesFilter(meta);
       row.hidden = !visible;
       row.setAttribute('aria-hidden', String(!visible));
@@ -268,6 +292,7 @@
   }
 
   function directionArrow(key) {
+    if (key === 'ranked' && filterMode === 'ranked') return '↑';
     if (key !== sortKey) return '';
     return directions[key] === 'asc' ? '↑' : '↓';
   }
@@ -289,8 +314,8 @@
 
     if (key === 'ranked') {
       filterMode = 'ranked';
-      sortKey = 'ovr';
-      directions.ovr = 'desc';
+      sortKey = 'rank';
+      directions.rank = 'asc';
       refreshRankAuthority(true).then(scheduleSort);
     } else if (key === 'unranked') {
       filterMode = 'unranked';
