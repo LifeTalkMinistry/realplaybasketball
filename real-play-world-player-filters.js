@@ -47,6 +47,10 @@
       .rp-world-player-row{min-height:58px}
       .rp-world-player-row .rp-world-player-winrate{display:none!important}
       .rp-world-player-row .rp-world-player-metrics{gap:0}
+      .rp-world-winrate-mode .rp-world-player-row .rp-world-player-ovr{display:none!important}
+      .rp-world-winrate-mode .rp-world-player-row .rp-world-player-winrate{display:flex!important;align-items:baseline;gap:4px;color:#48d7ff;font-family:var(--rp-display,Arial,sans-serif);font-size:1rem;font-weight:950;letter-spacing:.02em;line-height:1}
+      .rp-world-winrate-mode .rp-world-player-row .rp-world-player-winrate small{color:#5d7187;font-size:.43rem;font-weight:950;letter-spacing:.09em}
+      .rp-world-winrate-mode .rp-world-player-row .rp-world-player-winrate.empty{color:#66768a;font-size:.7rem}
       .rp-world-player-rank-badge{display:none;flex:none;min-width:38px;margin-right:2px;color:#48d8ff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.18rem;font-style:italic;font-weight:1000;line-height:1;letter-spacing:-.035em;text-align:left;text-shadow:0 0 16px rgba(72,216,255,.28)}
       .rp-world-player-rank-badge.is-visible{display:inline-block}
       .rp-world-player-ovr-info{position:absolute;top:0;right:1px;width:36px;height:36px;display:grid;place-items:center;padding:0;border:1px solid rgba(72,216,255,.24);border-radius:50%;background:rgba(5,12,19,.82);color:#48d8ff;font-family:Georgia,serif;font-size:1rem;font-style:italic;font-weight:900;line-height:1;box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);z-index:2}
@@ -380,6 +384,7 @@
       const arrow = button.querySelector('b');
       if (arrow) arrow.textContent = directionArrow(key);
     });
+    panel?.classList.toggle('rp-world-winrate-mode', filterMode === 'all' && sortKey === 'winrate');
   }
 
   function selectControl(key) {
