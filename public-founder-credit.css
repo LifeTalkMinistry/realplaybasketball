@@ -147,6 +147,13 @@ body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::aft
   border-radius:13px!important;
 }
 
+/* Keep the player name anchored where it already was, but move the official
+   rank number rightward so it sits visually centered inside the left bar slot. */
+body.rp-simple-navigation-active .rp-world-player-rank-badge{
+  margin-left:10px!important;
+  min-width:28px!important;
+}
+
 @media(max-width:420px){
   body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed{
     min-height:66px!important;
@@ -155,6 +162,11 @@ body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::aft
   body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::before{
     inset:-8px -4px!important;
     background-size:108% 186%!important;
+  }
+
+  body.rp-simple-navigation-active .rp-world-player-rank-badge{
+    margin-left:9px!important;
+    min-width:25px!important;
   }
 
   body.rp-simple-navigation-active .rp-player-featured-badge{
