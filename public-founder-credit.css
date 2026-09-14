@@ -166,11 +166,11 @@ body.rp-simple-navigation-active .rp-world-player-rank-badge.is-visible ~ b{
   display:none!important;
 }
 
-/* Lift the featured recognition badge slightly and move it toward the OVR side
-   so it sits in the intended right-side badge lane of the recognition bar. */
+/* Lift the featured recognition badge slightly and keep it in the right-side
+   recognition lane without crowding the OVR value. */
 body.rp-simple-navigation-active .rp-player-featured-badge{
   top:calc(50% - 4px)!important;
-  right:50px!important;
+  right:56px!important;
 }
 
 @media(max-width:420px){
@@ -195,7 +195,7 @@ body.rp-simple-navigation-active .rp-player-featured-badge{
 
   body.rp-simple-navigation-active .rp-player-featured-badge{
     top:calc(50% - 4px)!important;
-    right:43px!important;
+    right:49px!important;
     width:96px!important;
     height:47px!important;
   }
