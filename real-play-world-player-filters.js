@@ -5,7 +5,7 @@
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
   const COMMUNITY_URL = `${API_BASE_URL}/api/real-play/community`;
-  const PROFILE_URL = `${API_BASE_URL}/api/real-play/me`;
+  const RANK_AUTHORITY_TTL_MS = 2500;
 
   let panel = null;
   let controls = null;
@@ -16,11 +16,12 @@
   const directions = { ovr: 'desc', name: 'asc', jersey: 'asc' };
   let scheduled = false;
   let rankByUserId = new Map();
+  let rankByAccountUserId = new Map();
   let rankAuthorityReady = false;
   let rankRefreshPromise = null;
-  let profileRankRefreshPromise = null;
-  let cachedOwnRank;
-  let cachedOwnRankAt = 0;
+  let rankAuthorityAt = 0;
+  let ownWorldPlayerId = '';
+  let ownAccountUserId = '';
 
   function installStyles() {
     if (document.querySelector('[data-rp-world-player-filter-styles]')) return;
@@ -48,8 +49,11 @@
     document.head.appendChild(style);
   }
 
-  async function refreshRankAuthority() {
+  async function refreshRankAuthority(force = false) {
+    const now = Date.now();
+    if (!force && rankAuthorityReady && now - rankAuthorityAt < RANK_AUTHORITY_TTL_MS) return;
     if (rankRefreshPromise) return rankRefreshPromise;
+
     rankRefreshPromise = (async () => {
       try {
         const accessToken = localStorage.getItem(TOKEN_KEY) || '';
@@ -65,45 +69,43 @@
           cache: 'no-store',
         });
         if (!response.ok) return;
+
         const data = await response.json().catch(() => ({}));
-        const next = new Map();
+        const nextByPlayer = new Map();
+        const nextByAccount = new Map();
+
         (Array.isArray(data?.players) ? data.players : []).forEach((player) => {
-          const userId = String(player?.userId ?? '').trim();
+          const playerId = String(player?.playerId ?? player?.userId ?? '').trim();
+          const accountUserId = String(player?.accountUserId ?? '').trim();
           const rank = Number(player?.rank);
-          if (userId && Number.isFinite(rank) && rank > 0) next.set(userId, rank);
+          if (!Number.isFinite(rank) || rank <= 0) return;
+          if (playerId) nextByPlayer.set(playerId, rank);
+          if (accountUserId) nextByAccount.set(accountUserId, rank);
         });
-        rankByUserId = next;
+
+        rankByUserId = nextByPlayer;
+        rankByAccountUserId = nextByAccount;
+        ownWorldPlayerId = String(data?.meUserId ?? '').trim();
+        ownAccountUserId = String(data?.meAccountUserId ?? '').trim();
         rankAuthorityReady = true;
+        rankAuthorityAt = Date.now();
       } finally {
         rankRefreshPromise = null;
       }
     })();
+
     return rankRefreshPromise;
   }
 
-  async function refreshOwnProfileRank() {
-    const now = Date.now();
-    if (now - cachedOwnRankAt < 5000 && cachedOwnRank !== undefined) return cachedOwnRank;
-    if (profileRankRefreshPromise) return profileRankRefreshPromise;
-    profileRankRefreshPromise = (async () => {
-      try {
-        const accessToken = localStorage.getItem(TOKEN_KEY) || '';
-        if (!accessToken) return null;
-        const response = await fetch(PROFILE_URL, {
-          headers: { Accept: 'application/json', Authorization: `Bearer ${accessToken}` },
-          cache: 'no-store',
-        });
-        if (!response.ok) return null;
-        const data = await response.json().catch(() => ({}));
-        const rank = data?.rank ?? data?.career?.rank ?? data?.careerStats?.rank ?? null;
-        cachedOwnRank = rank;
-        cachedOwnRankAt = Date.now();
-        return rank;
-      } finally {
-        profileRankRefreshPromise = null;
-      }
-    })();
-    return profileRankRefreshPromise;
+  function ownRankFromAuthority() {
+    if (!rankAuthorityReady) return null;
+    if (ownWorldPlayerId && rankByUserId.has(ownWorldPlayerId)) {
+      return rankByUserId.get(ownWorldPlayerId);
+    }
+    if (ownAccountUserId && rankByAccountUserId.has(ownAccountUserId)) {
+      return rankByAccountUserId.get(ownAccountUserId);
+    }
+    return null;
   }
 
   function renderAuthoritativeProfileRank(rank) {
@@ -123,11 +125,21 @@
     });
   }
 
+  function publicRankFromAuthority(profile, player) {
+    if (!rankAuthorityReady) return null;
+    const playerId = String(player?.playerId ?? profile?.dataset?.rpPublicPlayerId ?? player?.userId ?? '').trim();
+    const accountUserId = String(player?.accountUserId ?? '').trim();
+    if (playerId && rankByUserId.has(playerId)) return rankByUserId.get(playerId);
+    if (accountUserId && rankByAccountUserId.has(accountUserId)) return rankByAccountUserId.get(accountUserId);
+    return null;
+  }
+
   function enforcePublicProfileRank() {
+    if (!rankAuthorityReady) return;
     document.querySelectorAll('.rp-public-player-profile').forEach((profile) => {
       const player = profile.__realPlayPublicPlayer || null;
       if (!player) return;
-      const rank = player?.rank ?? player?.career?.rank ?? player?.careerStats?.rank ?? null;
+      const rank = publicRankFromAuthority(profile, player);
       const numericRank = Number(rank);
       const hasRank = Number.isFinite(numericRank) && numericRank > 0;
       profile.querySelectorAll('.rp-profile-rank').forEach((node) => {
@@ -142,11 +154,11 @@
     });
   }
 
-  async function enforceRankAuthority() {
+  async function enforceRankAuthority(force = false) {
+    await refreshRankAuthority(force);
+    if (!rankAuthorityReady) return;
     enforcePublicProfileRank();
-    const profileRank = await refreshOwnProfileRank();
-    if (profileRank !== null && profileRank !== undefined) renderAuthoritativeProfileRank(profileRank);
-    else if (document.querySelector('.rp-profile.open:not(.rp-public-player-profile) .rp-profile-rank')) renderAuthoritativeProfileRank(null);
+    renderAuthoritativeProfileRank(ownRankFromAuthority());
   }
 
   function rowMeta(row) {
@@ -279,12 +291,12 @@
       filterMode = 'ranked';
       sortKey = 'ovr';
       directions.ovr = 'desc';
-      refreshRankAuthority().then(scheduleSort);
+      refreshRankAuthority(true).then(scheduleSort);
     } else if (key === 'unranked') {
       filterMode = 'unranked';
       sortKey = 'name';
       directions.name = 'asc';
-      refreshRankAuthority().then(scheduleSort);
+      refreshRankAuthority(true).then(scheduleSort);
     } else if (key === 'name') {
       filterMode = 'all';
       if (sortKey === 'name') directions.name = directions.name === 'asc' ? 'desc' : 'asc';
@@ -369,10 +381,19 @@
     observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 
+  window.addEventListener('realplay:public-profile-loaded', () => {
+    enforceRankAuthority(true);
+  });
+
   const profileObserver = new MutationObserver(() => {
     window.clearTimeout(window.__rpRankAuthorityTimer);
     window.__rpRankAuthorityTimer = window.setTimeout(() => enforceRankAuthority(), 60);
   });
-  profileObserver.observe(document.documentElement, { childList: true, subtree: true });
-  enforceRankAuthority();
+  profileObserver.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+  enforceRankAuthority(true);
 })();
