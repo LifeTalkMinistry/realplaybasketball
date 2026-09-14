@@ -70,16 +70,20 @@
       .rp-world-player-directory-head strong{display:block;margin-top:3px;font-family:var(--rp-display,Arial,sans-serif);font-size:1.05rem;font-style:italic;font-weight:950;letter-spacing:.025em}
       .rp-world-player-directory-head span{color:#536174;font-size:.46rem;font-weight:900;letter-spacing:.08em}
       .rp-world-player-list{display:grid;gap:7px}
-      .rp-world-player-row{width:100%;min-height:58px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;padding:0 14px;border:1px solid rgba(255,255,255,.075);border-radius:15px;color:#eef6ff;background:rgba(5,9,15,.94);text-align:left;transition:border-color .16s ease,background .16s ease,transform .16s ease}
+      .rp-world-player-row{width:100%;min-height:64px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;padding:0 14px;border:1px solid rgba(255,255,255,.075);border-radius:15px;color:#eef6ff;background:rgba(5,9,15,.94);text-align:left;transition:border-color .16s ease,background .16s ease,transform .16s ease}
       .rp-world-player-row:active{transform:scale(.992)}
       .rp-world-player-row:focus-visible{outline:2px solid rgba(72,215,255,.65);outline-offset:2px}
       .rp-world-player-row:hover{border-color:rgba(62,206,255,.2);background:#07101a}
       .rp-world-player-name{min-width:0;display:flex;align-items:baseline;gap:7px;overflow:hidden}
       .rp-world-player-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--rp-display,Arial,sans-serif);font-size:.84rem;font-style:italic;font-weight:950;letter-spacing:.02em;text-transform:uppercase}
       .rp-world-player-name b{flex:none;color:#5f7186;font-family:var(--rp-display,Arial,sans-serif);font-size:.7rem;font-weight:950}
+      .rp-world-player-metrics{display:grid;justify-items:end;gap:3px;min-width:61px}
       .rp-world-player-ovr{display:flex;align-items:baseline;gap:4px;color:#48d7ff;font-family:var(--rp-display,Arial,sans-serif);font-size:1rem;font-weight:950;letter-spacing:.02em}
       .rp-world-player-ovr small{color:#5d7187;font-size:.43rem;font-weight:950;letter-spacing:.09em}
       .rp-world-player-ovr.unranked{color:#66768a;font-size:.55rem;letter-spacing:.08em}
+      .rp-world-player-winrate{display:flex;align-items:baseline;gap:3px;color:#e3edf7;font-family:var(--rp-display,Arial,sans-serif);font-size:.67rem;font-weight:950;letter-spacing:.02em;line-height:1}
+      .rp-world-player-winrate small{color:#5d7187;font-size:.36rem;font-weight:950;letter-spacing:.08em}
+      .rp-world-player-winrate.empty{color:#596a7f}
       .rp-world-player-empty{padding:34px 16px;border:1px dashed rgba(255,255,255,.08);border-radius:16px;color:#627287;background:rgba(4,8,14,.55);font-size:.64rem;font-weight:800;text-align:center}
       .rp-world-player-status{min-height:16px;margin:2px 0 0;color:#617288;font-size:.52rem;font-weight:850;text-align:center;letter-spacing:.04em}
       .rp-world-player-status.error{color:#ff7f8e}
@@ -88,7 +92,8 @@
         .rp-world-primary-tabs{gap:12px}
         .rp-world-primary-tabs button{font-size:.72rem;letter-spacing:.1em}
         .rp-world-primary-tabs>span{font-size:.72rem}
-        .rp-world-player-row{min-height:56px;padding-inline:12px}
+        .rp-world-player-row{min-height:62px;padding-inline:12px;gap:10px}
+        .rp-world-player-metrics{min-width:57px}
       }
     `;
     document.head.appendChild(style);
@@ -112,10 +117,29 @@
       const rating = player.ovr === null || player.ovr === undefined
         ? '<span class="rp-world-player-ovr unranked">UNRANKED</span>'
         : `<span class="rp-world-player-ovr">${esc(player.ovr)} <small>OVR</small></span>`;
+
+      const wins = number(pick(player?.wins, player?.record?.wins, player?.careerStats?.wins));
+      const losses = number(pick(player?.losses, player?.record?.losses, player?.careerStats?.losses));
+      const games = number(pick(
+        player?.record?.games,
+        player?.careerStats?.games,
+        player?.careerStats?.gamesPlayed,
+        player?.games,
+        player?.gamesPlayed,
+        wins + losses
+      ));
+      const rawWinRate = pick(player?.winRate, player?.record?.winRate);
+      const calculatedWinRate = rawWinRate === undefined || rawWinRate === null || rawWinRate === ''
+        ? (games > 0 ? Math.round((wins / games) * 100) : null)
+        : Number(rawWinRate);
+      const winRate = Number.isFinite(calculatedWinRate)
+        ? `<span class="rp-world-player-winrate">${Math.round(calculatedWinRate)}% <small>WR</small></span>`
+        : '<span class="rp-world-player-winrate empty">— <small>WR</small></span>';
+
       return `
         <button type="button" class="rp-world-player-row" data-world-player-id="${esc(player.userId)}" aria-label="Open ${esc(player.playerName)} player profile">
           <span class="rp-world-player-name"><strong>${esc(player.playerName || 'REAL PLAY PLAYER')}</strong><b>${esc(jersey)}</b></span>
-          ${rating}
+          <span class="rp-world-player-metrics">${rating}${winRate}</span>
         </button>`;
     }).join('');
   }
