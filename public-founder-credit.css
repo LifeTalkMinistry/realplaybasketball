@@ -118,3 +118,47 @@ body.rp-simple-navigation-active .rp-home-project-credit strong{
     padding-top:12px;
   }
 }
+
+/* PLAYERS — recognition artwork should read as the row itself, not as a thin
+   image floating inside a taller invisible slot. The source PNGs have generous
+   transparent breathing room, so zoom them vertically while keeping the live
+   rank/name/OVR text in the same row footprint. */
+body.rp-simple-navigation-active .rp-world-player-list{
+  gap:3px!important;
+}
+
+body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed{
+  min-height:66px!important;
+  margin:0!important;
+  border-color:transparent!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::before{
+  inset:-7px -3px!important;
+  background-position:center!important;
+  background-size:106% 178%!important;
+  opacity:1!important;
+}
+
+body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::after{
+  inset:2px!important;
+  border-radius:13px!important;
+}
+
+@media(max-width:420px){
+  body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed{
+    min-height:66px!important;
+  }
+
+  body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::before{
+    inset:-8px -4px!important;
+    background-size:108% 186%!important;
+  }
+
+  body.rp-simple-navigation-active .rp-player-featured-badge{
+    width:96px!important;
+    height:47px!important;
+  }
+}
