@@ -370,6 +370,7 @@
 
   function directionArrow(key) {
     if (key === 'ranked' && filterMode === 'ranked') return '↑';
+    if (key === 'unranked' && filterMode === 'unranked') return '↓';
     if (key !== sortKey) return '';
     return directions[key] === 'asc' ? '↑' : '↓';
   }
@@ -397,8 +398,8 @@
       refreshRankAuthority(false).then(scheduleSort);
     } else if (key === 'unranked') {
       filterMode = 'unranked';
-      sortKey = 'name';
-      directions.name = 'asc';
+      sortKey = 'ovr';
+      directions.ovr = 'desc';
       refreshRankAuthority(false).then(scheduleSort);
     } else if (key === 'winrate') {
       filterMode = 'all';
