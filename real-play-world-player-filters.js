@@ -5,7 +5,12 @@
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
   const COMMUNITY_URL = `${API_BASE_URL}/api/real-play/community`;
-  const RANK_AUTHORITY_TTL_MS = 2500;
+
+  // Rank authority is relatively stable. Do not turn ordinary DOM changes into
+  // network traffic. A one-minute cache is more than fresh enough for the World
+  // list while keeping the community endpoint healthy.
+  const RANK_AUTHORITY_TTL_MS = 60_000;
+  const DEFAULT_429_BACKOFF_MS = 60_000;
 
   let panel = null;
   let controls = null;
@@ -20,6 +25,7 @@
   let rankAuthorityReady = false;
   let rankRefreshPromise = null;
   let rankAuthorityAt = 0;
+  let rankBackoffUntil = 0;
   let ownWorldPlayerId = '';
   let ownAccountUserId = '';
 
@@ -52,8 +58,49 @@
     document.head.appendChild(style);
   }
 
+  function retryAfterMs(response) {
+    const raw = String(response?.headers?.get?.('Retry-After') || '').trim();
+    if (!raw) return DEFAULT_429_BACKOFF_MS;
+
+    const seconds = Number(raw);
+    if (Number.isFinite(seconds) && seconds > 0) {
+      return Math.max(DEFAULT_429_BACKOFF_MS, seconds * 1000);
+    }
+
+    const date = new Date(raw);
+    const delta = date.getTime() - Date.now();
+    return Number.isFinite(delta) && delta > 0
+      ? Math.max(DEFAULT_429_BACKOFF_MS, delta)
+      : DEFAULT_429_BACKOFF_MS;
+  }
+
+  function absorbRankAuthority(data) {
+    const nextByPlayer = new Map();
+    const nextByAccount = new Map();
+
+    (Array.isArray(data?.players) ? data.players : []).forEach((player) => {
+      const playerId = String(player?.playerId ?? player?.userId ?? '').trim();
+      const accountUserId = String(player?.accountUserId ?? '').trim();
+      const rank = Number(player?.rank);
+      if (!Number.isFinite(rank) || rank <= 0) return;
+      if (playerId) nextByPlayer.set(playerId, rank);
+      if (accountUserId) nextByAccount.set(accountUserId, rank);
+    });
+
+    rankByUserId = nextByPlayer;
+    rankByAccountUserId = nextByAccount;
+    ownWorldPlayerId = String(data?.meUserId ?? '').trim();
+    ownAccountUserId = String(data?.meAccountUserId ?? '').trim();
+    rankAuthorityReady = true;
+    rankAuthorityAt = Date.now();
+    rankBackoffUntil = 0;
+  }
+
   async function refreshRankAuthority(force = false) {
     const now = Date.now();
+
+    // 429 backoff is absolute. A forced UI refresh is never allowed to bypass it.
+    if (now < rankBackoffUntil) return;
     if (!force && rankAuthorityReady && now - rankAuthorityAt < RANK_AUTHORITY_TTL_MS) return;
     if (rankRefreshPromise) return rankRefreshPromise;
 
@@ -61,6 +108,7 @@
       try {
         const accessToken = localStorage.getItem(TOKEN_KEY) || '';
         if (!accessToken) return;
+
         const response = await fetch(COMMUNITY_URL, {
           method: 'POST',
           headers: {
@@ -71,27 +119,18 @@
           body: JSON.stringify({ action: 'players' }),
           cache: 'no-store',
         });
+
+        if (response.status === 429) {
+          rankBackoffUntil = Date.now() + retryAfterMs(response);
+          return;
+        }
         if (!response.ok) return;
 
         const data = await response.json().catch(() => ({}));
-        const nextByPlayer = new Map();
-        const nextByAccount = new Map();
-
-        (Array.isArray(data?.players) ? data.players : []).forEach((player) => {
-          const playerId = String(player?.playerId ?? player?.userId ?? '').trim();
-          const accountUserId = String(player?.accountUserId ?? '').trim();
-          const rank = Number(player?.rank);
-          if (!Number.isFinite(rank) || rank <= 0) return;
-          if (playerId) nextByPlayer.set(playerId, rank);
-          if (accountUserId) nextByAccount.set(accountUserId, rank);
-        });
-
-        rankByUserId = nextByPlayer;
-        rankByAccountUserId = nextByAccount;
-        ownWorldPlayerId = String(data?.meUserId ?? '').trim();
-        ownAccountUserId = String(data?.meAccountUserId ?? '').trim();
-        rankAuthorityReady = true;
-        rankAuthorityAt = Date.now();
+        absorbRankAuthority(data);
+      } catch (_error) {
+        // Keep the last known authority. World sorting must remain usable even
+        // when the network is temporarily unavailable.
       } finally {
         rankRefreshPromise = null;
       }
@@ -157,11 +196,16 @@
     });
   }
 
-  async function enforceRankAuthority(force = false) {
-    await refreshRankAuthority(force);
+  function applyCachedRankAuthority() {
     if (!rankAuthorityReady) return;
     enforcePublicProfileRank();
     renderAuthoritativeProfileRank(ownRankFromAuthority());
+  }
+
+  async function enforceRankAuthority(force = false) {
+    await refreshRankAuthority(force);
+    applyCachedRankAuthority();
+    scheduleSort();
   }
 
   function rowMeta(row) {
@@ -171,12 +215,13 @@
     const jersey = jerseyMatch ? Number(jerseyMatch[1]) : null;
     const ovrNode = row.querySelector('.rp-world-player-ovr');
     const ovrText = String(ovrNode?.textContent || '').trim();
-    const unrankedOvr = !ovrNode || ovrNode.classList.contains('unranked') || /UNRANKED/i.test(ovrText);
-    const ovr = unrankedOvr
+    const missingOvr = !ovrNode || ovrNode.classList.contains('unranked') || /UNRANKED/i.test(ovrText);
+    const ovr = missingOvr
       ? null
       : Number.parseFloat(ovrText.replace(/[^0-9.\-]/g, ''));
     const userId = String(row.dataset.worldPlayerId || '').trim();
     const ranked = rankAuthorityReady ? rankByUserId.has(userId) : false;
+
     return {
       row,
       name,
@@ -222,8 +267,8 @@
   }
 
   function matchesFilter(meta) {
-    if (filterMode === 'ranked') return meta.ranked && meta.ovr !== null;
-    if (filterMode === 'unranked') return !meta.ranked || meta.ovr === null;
+    if (filterMode === 'ranked') return meta.ranked;
+    if (filterMode === 'unranked') return !meta.ranked;
     return true;
   }
 
@@ -258,9 +303,15 @@
     });
   }
 
+  function observeList() {
+    if (!listObserver || !list) return;
+    listObserver.observe(list, { childList: true });
+  }
+
   function applySort() {
     scheduled = false;
     if (!list) return;
+
     updateVisibility();
     const allRows = [...list.querySelectorAll('.rp-world-player-row')];
     const nextVisible = sortedRows();
@@ -268,11 +319,17 @@
 
     const hiddenRows = allRows.filter((row) => row.hidden);
     const ordered = [...nextVisible, ...hiddenRows];
-    const alreadyOrdered = allRows.length === ordered.length && allRows.every((row, index) => row === ordered[index]);
+    const alreadyOrdered = allRows.length === ordered.length
+      && allRows.every((row, index) => row === ordered[index]);
+
     if (!alreadyOrdered) {
+      // Do not let our own DOM reorder wake the observer and schedule another
+      // sorting cycle.
+      listObserver?.disconnect();
       const fragment = document.createDocumentFragment();
       ordered.forEach((row) => fragment.appendChild(row));
       list.appendChild(fragment);
+      observeList();
     }
 
     const count = panel?.querySelector('[data-world-player-count]');
@@ -287,7 +344,9 @@
     scheduled = true;
     requestAnimationFrame(() => {
       applySort();
-      enforceRankAuthority();
+      // Important: sorting and DOM mutations are local-only operations. They
+      // must never perform a community API request.
+      applyCachedRankAuthority();
     });
   }
 
@@ -316,12 +375,12 @@
       filterMode = 'ranked';
       sortKey = 'rank';
       directions.rank = 'asc';
-      refreshRankAuthority(true).then(scheduleSort);
+      refreshRankAuthority(false).then(scheduleSort);
     } else if (key === 'unranked') {
       filterMode = 'unranked';
       sortKey = 'name';
       directions.name = 'asc';
-      refreshRankAuthority(true).then(scheduleSort);
+      refreshRankAuthority(false).then(scheduleSort);
     } else if (key === 'name') {
       filterMode = 'all';
       if (sortKey === 'name') directions.name = directions.name === 'asc' ? 'desc' : 'asc';
@@ -364,6 +423,7 @@
   function install() {
     panel = document.querySelector('[data-rp-world]');
     if (!panel) return false;
+
     const playersView = panel.querySelector('[data-world-view="players"]');
     list = playersView?.querySelector('[data-world-player-list]') || null;
     const status = playersView?.querySelector('[data-world-player-status]') || null;
@@ -393,8 +453,12 @@
     renderControls();
     if (listObserver) listObserver.disconnect();
     listObserver = new MutationObserver(() => scheduleSort());
-    listObserver.observe(list, { childList: true });
+    observeList();
     scheduleSort();
+
+    // One authority request at installation. After this, normal rendering,
+    // profile opening and DOM mutations reuse the cached result.
+    enforceRankAuthority(false);
     return true;
   }
 
@@ -407,12 +471,18 @@
   }
 
   window.addEventListener('realplay:public-profile-loaded', () => {
-    enforceRankAuthority(true);
+    // A public profile already carries its own player data. Reuse cached rank
+    // authority immediately, and only refresh if the minute-long cache expired.
+    applyCachedRankAuthority();
+    refreshRankAuthority(false).then(applyCachedRankAuthority);
   });
 
+  // This observer is intentionally render-only. The old implementation called
+  // the API from here, which meant unrelated class animations across the entire
+  // document could trigger /community requests every few seconds.
   const profileObserver = new MutationObserver(() => {
-    window.clearTimeout(window.__rpRankAuthorityTimer);
-    window.__rpRankAuthorityTimer = window.setTimeout(() => enforceRankAuthority(), 60);
+    window.clearTimeout(window.__rpRankAuthorityRenderTimer);
+    window.__rpRankAuthorityRenderTimer = window.setTimeout(applyCachedRankAuthority, 60);
   });
   profileObserver.observe(document.documentElement, {
     childList: true,
@@ -420,5 +490,4 @@
     attributes: true,
     attributeFilter: ['class'],
   });
-  enforceRankAuthority(true);
 })();
