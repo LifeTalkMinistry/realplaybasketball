@@ -22,32 +22,9 @@
       .forEach(putWestFirst);
   }
 
-  function normalizePublicProfileRanks(root = document) {
-    root.querySelectorAll?.('.rp-public-player-profile').forEach((profile) => {
-      const player = profile.__realPlayPublicPlayer || null;
-      if (!player) return;
-
-      const rank = player?.rank ?? player?.career?.rank ?? player?.careerStats?.rank ?? null;
-      const numericRank = Number(rank);
-      const hasRank = Number.isFinite(numericRank) && numericRank > 0;
-      const nextStrong = hasRank ? `#${numericRank}` : '—';
-      const nextSmall = hasRank ? 'OFFICIAL RANK' : 'UNRANKED';
-
-      profile.querySelectorAll('.rp-profile-rank').forEach((node) => {
-        const strong = node.querySelector('strong');
-        const small = node.querySelector('small');
-        if (strong && strong.textContent !== nextStrong) strong.textContent = nextStrong;
-        if (small && small.textContent !== nextSmall) small.textContent = nextSmall;
-      });
-    });
-  }
-
   normalizePublicProfileScores();
-  normalizePublicProfileRanks();
 
   const observer = new MutationObserver((mutations) => {
-    let shouldNormalizeRanks = false;
-
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
         if (!(node instanceof HTMLElement)) continue;
@@ -55,20 +32,8 @@
           putWestFirst(node);
         }
         normalizePublicProfileScores(node);
-        if (node.matches?.('.rp-public-player-profile, .rp-public-player-profile *')) {
-          shouldNormalizeRanks = true;
-        }
-        normalizePublicProfileRanks(node);
-      }
-
-      if (mutation.type === 'childList' && mutation.target instanceof HTMLElement) {
-        if (mutation.target.closest?.('.rp-public-player-profile')) {
-          shouldNormalizeRanks = true;
-        }
       }
     }
-
-    if (shouldNormalizeRanks) normalizePublicProfileRanks();
   });
 
   observer.observe(document.documentElement, { childList: true, subtree: true });
