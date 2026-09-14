@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260914-public-profile-history-v46';
+  const version = '20260914-captain-eligibility-v47';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -289,6 +289,7 @@
       'real-play-world-score-order-fix.js',
       'profile-game-replay-link.js',
       'real-play-world-player-filters.js',
+      'real-play-captain-eligibility.js',
       'real-play-world-player-admin.js',
       'main-menu-fast-snap-restore.js',
       'main-menu-touch-lite.js',
