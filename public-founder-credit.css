@@ -166,6 +166,12 @@ body.rp-simple-navigation-active .rp-world-player-rank-badge.is-visible ~ b{
   display:none!important;
 }
 
+/* Lift the featured recognition badge slightly above the row's mathematical
+   center so the crest sits visually centered inside the artwork lane. */
+body.rp-simple-navigation-active .rp-player-featured-badge{
+  top:calc(50% - 4px)!important;
+}
+
 @media(max-width:420px){
   body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed{
     min-height:66px!important;
@@ -187,6 +193,7 @@ body.rp-simple-navigation-active .rp-world-player-rank-badge.is-visible ~ b{
   }
 
   body.rp-simple-navigation-active .rp-player-featured-badge{
+    top:calc(50% - 4px)!important;
     width:96px!important;
     height:47px!important;
   }
