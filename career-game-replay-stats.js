@@ -84,13 +84,16 @@
   }
 
   function impactScore(player) {
-    return num(player?.pts)
+    const shots = shotSummary(player);
+    const score = num(player?.pts)
       + (num(player?.reb) * 1.2)
       + (num(player?.ast) * 1.5)
       + (num(player?.stl) * 2)
       + (num(player?.blk) * 2)
       - (num(player?.tov) * 1.5)
+      - (shots.misses * 0.5)
       - (num(player?.foul) * 0.25);
+    return Math.round(score * 100) / 100;
   }
 
   function compareMvp(a, b) {
@@ -138,9 +141,12 @@
           ['STL', num(overall.stl)],
           ['BLK', num(overall.blk)],
           ['FG%', s.attempts ? `${Math.round(s.fgPct * 100)}%` : '—'],
+          ['MISS', s.misses],
+          ['TO', num(overall.tov)],
+          ['FOUL', num(overall.foul)],
           ['IMPACT', impactScore(overall).toFixed(1)],
         ],
-        note: `Highest overall game-impact score among all ${valid.length} players, regardless of which team won.`,
+        note: `Highest overall game-impact score among all ${valid.length} players. Impact subtracts 0.5 per missed shot, 1.5 per turnover, and 0.25 per foul.`,
       });
     }
 
@@ -159,9 +165,12 @@
           ['STL', num(winner.stl)],
           ['BLK', num(winner.blk)],
           ['FG%', s.attempts ? `${Math.round(s.fgPct * 100)}%` : '—'],
+          ['MISS', s.misses],
+          ['TO', num(winner.tov)],
+          ['FOUL', num(winner.foul)],
           ['IMPACT', impactScore(winner).toFixed(1)],
         ],
-        note: `Highest game-impact score among ${team.toUpperCase()} players.`,
+        note: `Highest game-impact score among ${team.toUpperCase()} players. Impact subtracts 0.5 per missed shot, 1.5 per turnover, and 0.25 per foul.`,
       });
     }
 
