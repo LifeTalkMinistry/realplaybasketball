@@ -2,6 +2,10 @@
   if (window.__realPlayWorldPlayerFiltersInstalled) return;
   window.__realPlayWorldPlayerFiltersInstalled = true;
 
+  const TOKEN_KEY = 'real_play_access_token';
+  const API_BASE_URL = 'https://api.clarapmc.com';
+  const COMMUNITY_URL = `${API_BASE_URL}/api/real-play/community`;
+
   let panel = null;
   let controls = null;
   let list = null;
@@ -10,6 +14,9 @@
   let filterMode = 'all';
   const directions = { ovr: 'desc', name: 'asc', jersey: 'asc' };
   let scheduled = false;
+  let rankByUserId = new Map();
+  let rankAuthorityReady = false;
+  let rankRefreshPromise = null;
 
   function installStyles() {
     if (document.querySelector('[data-rp-world-player-filter-styles]')) return;
@@ -36,22 +43,59 @@
     document.head.appendChild(style);
   }
 
+  async function refreshRankAuthority() {
+    if (rankRefreshPromise) return rankRefreshPromise;
+    rankRefreshPromise = (async () => {
+      try {
+        const accessToken = localStorage.getItem(TOKEN_KEY) || '';
+        if (!accessToken) return;
+        const response = await fetch(COMMUNITY_URL, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ action: 'players' }),
+          cache: 'no-store',
+        });
+        if (!response.ok) return;
+        const data = await response.json().catch(() => ({}));
+        const next = new Map();
+        (Array.isArray(data?.players) ? data.players : []).forEach((player) => {
+          const userId = String(player?.userId ?? '').trim();
+          const rank = Number(player?.rank);
+          if (userId && Number.isFinite(rank) && rank > 0) next.set(userId, rank);
+        });
+        rankByUserId = next;
+        rankAuthorityReady = true;
+      } finally {
+        rankRefreshPromise = null;
+      }
+    })();
+    return rankRefreshPromise;
+  }
+
   function rowMeta(row) {
     const name = String(row.querySelector('.rp-world-player-name strong')?.textContent || '').trim();
     const jerseyText = String(row.querySelector('.rp-world-player-name b')?.textContent || '').trim();
     const jerseyMatch = jerseyText.match(/#\s*(\d{1,2})/);
     const jersey = jerseyMatch ? Number(jerseyMatch[1]) : null;
     const ovrNode = row.querySelector('.rp-world-player-ovr');
-    const isUnranked = !ovrNode || ovrNode.classList.contains('unranked');
-    const ovr = isUnranked
-      ? null
-      : Number.parseFloat(String(ovrNode.textContent || '').replace(/[^0-9.\-]/g, ''));
+    const ovr = ovrNode && !ovrNode.classList.contains('unranked')
+      ? Number.parseFloat(String(ovrNode.textContent || '').replace(/[^0-9.\-]/g, ''))
+      : null;
+    const userId = String(row.dataset.worldPlayerId || '').trim();
+    const ranked = rankAuthorityReady
+      ? rankByUserId.has(userId)
+      : Boolean(row.dataset.worldPlayerRank && Number(row.dataset.worldPlayerRank) > 0);
     return {
       row,
       name,
       jersey: Number.isFinite(jersey) ? jersey : null,
       ovr: Number.isFinite(ovr) ? ovr : null,
-      ranked: !isUnranked && Number.isFinite(ovr),
+      rank: rankByUserId.get(userId) ?? null,
+      ranked,
     };
   }
 
@@ -157,10 +201,12 @@
       filterMode = 'ranked';
       sortKey = 'ovr';
       directions.ovr = 'desc';
+      refreshRankAuthority().then(scheduleSort);
     } else if (key === 'unranked') {
       filterMode = 'unranked';
       sortKey = 'name';
       directions.name = 'asc';
+      refreshRankAuthority().then(scheduleSort);
     } else if (key === 'name') {
       filterMode = 'all';
       if (sortKey === 'name') directions.name = directions.name === 'asc' ? 'desc' : 'asc';
