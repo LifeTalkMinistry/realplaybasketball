@@ -22,7 +22,18 @@
       .forEach(putWestFirst);
   }
 
+  function loadPublicProfileHistory() {
+    if (window.__realPlayPublicProfileHistoryInstalled || document.querySelector('script[data-rp-public-profile-history-loader]')) return;
+    const script = document.createElement('script');
+    script.src = 'public-profile-history.js?v=20260914-public-history-v1';
+    script.async = false;
+    script.dataset.rpPublicProfileHistoryLoader = '1';
+    script.addEventListener('error', () => console.warn('[Real Play] Public profile game history controls did not load.'), { once: true });
+    document.head.appendChild(script);
+  }
+
   normalizePublicProfileScores();
+  loadPublicProfileHistory();
 
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
