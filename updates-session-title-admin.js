@@ -38,6 +38,19 @@
     return { base: match[1].trim(), suffix: match[2] };
   }
 
+  function canonicalOpenRankNumberForCard(card) {
+    const sessionId = sessionIdFromCard(card);
+    if (sessionId) {
+      const canonical = Number(window.RealPlayOpenRankIdentity?.numberForSession?.(sessionId));
+      if (Number.isSafeInteger(canonical) && canonical > 0) return canonical;
+    }
+
+    const text = String(card?.textContent || '');
+    const match = text.match(/(?:OPEN\s+RANK(?:ING(?:\s+SESSION)?)?|CAREER)\s*#\s*(\d+)/i);
+    const number = Number(match?.[1]);
+    return Number.isSafeInteger(number) && number > 0 ? number : null;
+  }
+
   function injectStyles() {
     if (document.querySelector('[data-rp-session-title-admin-style]')) return;
     const style = document.createElement('style');
@@ -146,6 +159,14 @@
     actions.appendChild(button);
   }
 
+  async function refreshOpenRankIdentity() {
+    try {
+      await window.RealPlayOpenRankIdentity?.refresh?.();
+    } catch (_error) {
+      // The authoritative save already succeeded. A reload below is the fallback.
+    }
+  }
+
   async function setActiveOpenRankNumber(button) {
     if (!admin || !button) return;
     const auth = token();
@@ -196,10 +217,9 @@
       if (!saveResponse.ok) throw new Error(saveData?.message || saveData?.error || 'Could not change this Open Rank number.');
 
       button.textContent = 'SAVED ✓';
-      window.setTimeout(() => window.dispatchEvent(new CustomEvent('realplay:admin-render')), 250);
-      window.setTimeout(() => {
-        if (button.isConnected) button.textContent = 'EDIT OPEN RANK NUMBER';
-      }, 1200);
+      await refreshOpenRankIdentity();
+      window.dispatchEvent(new CustomEvent('realplay:admin-render'));
+      window.setTimeout(() => window.location.reload(), 350);
     } catch (error) {
       if (error?.message) window.alert(error.message);
       button.textContent = previousText;
@@ -296,8 +316,13 @@
         throw new Error(data?.message || data?.error || 'Could not rename this session.');
       }
 
+      // A custom title must stop being treated as an auto-number-owned heading.
+      // Otherwise open-rank-auto-id.js can immediately rewrite it back to the
+      // previous numbered label before the refreshed backend payload arrives.
+      delete card.dataset.rpOfficialOpenRankNumber;
       heading.textContent = `${title}${current.suffix}`;
       button.textContent = 'SAVED ✓';
+      await refreshOpenRankIdentity();
       window.setTimeout(() => {
         if (button.isConnected) button.textContent = 'NAME ✎';
       }, 1200);
@@ -310,9 +335,7 @@
   }
 
   function visibleOpenRankNumber(card) {
-    const text = String(card?.textContent || '');
-    const match = text.match(/OPEN\s+RANK\s*#\s*(\d+)/i);
-    return match ? Number(match[1]) : null;
+    return canonicalOpenRankNumberForCard(card);
   }
 
   async function setOpenRankNumber(button) {
@@ -359,7 +382,15 @@
       if (!response.ok) {
         throw new Error(data?.message || data?.error || 'Could not change this Open Rank number.');
       }
+
+      const persisted = Number(data?.control?.renumberedSession?.openRankNumber ?? value);
+      if (Number.isSafeInteger(persisted) && persisted !== value) {
+        throw new Error(`The backend returned Open Rank #${persisted} instead of #${value}.`);
+      }
+
       button.textContent = 'SAVED ✓';
+      await refreshOpenRankIdentity();
+      window.dispatchEvent(new CustomEvent('realplay:admin-render'));
       window.setTimeout(() => window.location.reload(), 350);
     } catch (error) {
       window.alert(error.message || 'Could not change this Open Rank number.');
