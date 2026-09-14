@@ -34,12 +34,14 @@
     const style = document.createElement('style');
     style.dataset.rpWorldPlayerFilterStyles = '1';
     style.textContent = `
-      .rp-world-player-sort{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:2px 0 1px}
-      .rp-world-player-sort button{min-width:0;min-height:36px;padding:0 5px;border:1px solid rgba(255,255,255,.07);border-radius:11px;color:#64758a;background:#060b12;font-family:var(--rp-display,Arial,sans-serif);font-size:.45rem;font-weight:950;letter-spacing:.045em;white-space:nowrap}
-      .rp-world-player-sort button.active{color:#dff9ff;border-color:rgba(54,205,255,.25);background:rgba(24,111,164,.11)}
-      .rp-world-player-sort button.active b{color:#49d8ff}
-      .rp-world-player-sort button:focus-visible{outline:2px solid rgba(72,215,255,.65);outline-offset:2px}
-      .rp-world-player-sort b{margin-left:3px;color:#52667b;font-size:.55rem}
+      .rp-world-player-sort{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:7px 0 5px;padding:7px;border:1px solid rgba(72,216,255,.18);border-radius:16px;background:rgba(2,7,13,.92);box-shadow:0 12px 28px rgba(0,0,0,.38),inset 0 0 0 1px rgba(255,255,255,.02);backdrop-filter:blur(8px)}
+      .rp-world-player-sort button{min-width:0;min-height:44px;padding:0 6px;border:1px solid rgba(160,194,224,.2);border-radius:12px;color:#d9e8f6;background:#0a1420;font-family:var(--rp-display,Arial,sans-serif);font-size:.52rem;font-weight:1000;letter-spacing:.05em;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 4px 10px rgba(0,0,0,.24);transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease,box-shadow .16s ease}
+      .rp-world-player-sort button:hover{color:#ffffff;border-color:rgba(72,216,255,.42);background:#0d1c2a}
+      .rp-world-player-sort button:active{transform:scale(.97)}
+      .rp-world-player-sort button.active{color:#00131c;border-color:#55ddff;background:linear-gradient(180deg,#57ddff 0%,#1fb8ea 100%);box-shadow:0 0 0 1px rgba(72,216,255,.2),0 0 18px rgba(41,195,239,.28)}
+      .rp-world-player-sort button.active b{color:#00384d}
+      .rp-world-player-sort button:focus-visible{outline:2px solid #71e4ff;outline-offset:2px}
+      .rp-world-player-sort b{margin-left:3px;color:#8da3b8;font-size:.58rem}
       .rp-world-player-directory-head{position:relative}
       .rp-world-player-row[hidden]{display:none!important}
       .rp-world-player-row{min-height:58px}
@@ -52,12 +54,12 @@
       .rp-world-player-ovr-info:active{transform:scale(.96)}
       .rp-world-player-ovr-info:focus-visible{outline:2px solid rgba(72,215,255,.7);outline-offset:2px}
       @media(max-width:420px){
-        .rp-world-player-sort{gap:4px}
-        .rp-world-player-sort button{padding-inline:3px;font-size:.39rem;letter-spacing:.025em}
+        .rp-world-player-sort{gap:5px;padding:6px;margin-top:6px}
+        .rp-world-player-sort button{min-height:42px;padding-inline:3px;font-size:.47rem;letter-spacing:.03em}
         .rp-world-player-rank-badge{min-width:34px;font-size:1.08rem}
         .rp-world-player-row{min-height:56px}
       }
-      @media(max-width:360px){.rp-world-player-sort button{font-size:.36rem;letter-spacing:.015em}.rp-world-player-ovr-info{width:34px;height:34px}.rp-world-player-rank-badge{min-width:31px;font-size:1rem}}
+      @media(max-width:360px){.rp-world-player-sort{gap:4px;padding:5px}.rp-world-player-sort button{font-size:.42rem;letter-spacing:.015em}.rp-world-player-ovr-info{width:34px;height:34px}.rp-world-player-rank-badge{min-width:31px;font-size:1rem}}
     `;
     document.head.appendChild(style);
   }
