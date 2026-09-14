@@ -8,16 +8,20 @@
   const PREVIEW_LIMIT = 3;
 
   let archive = null;
-  let allGames = [];
   let sourceProfile = null;
   let sourcePlayerId = null;
   let sourcePlayerName = 'PLAYER';
+  let allGames = [];
   let resultFilter = 'all';
   let modeFilter = 'all';
   let loading = false;
 
   const pick = (...values) => values.find((value) => value !== undefined && value !== null && value !== '');
   const num = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
+  const positiveId = (value) => {
+    const id = Number(value);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+  };
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -33,20 +37,26 @@
     return !token() && localStorage.getItem(VISITOR_KEY) === '1';
   }
 
-  function positiveId(value) {
-    const id = Number(value);
-    return Number.isSafeInteger(id) && id > 0 ? id : null;
-  }
-
   function publicProfileFor(node) {
     return node?.closest?.('.rp-public-player-profile, [data-rp-public-profile], [data-rp-visitor-public-profile]') || null;
   }
 
   function playerIdFromProfile(profile) {
     if (!profile) return null;
+
     const direct = positiveId(profile.dataset?.rpPublicPlayerId);
     if (direct) return direct;
 
+    // Authenticated public profiles retain the loaded player object on the panel.
+    // Use userId as the account profile id when playerId is not present.
+    const loaded = profile.__realPlayPublicPlayer || null;
+    const loadedId = positiveId(loaded?.playerId ?? loaded?.userId ?? loaded?.accountUserId);
+    if (loadedId) {
+      profile.dataset.rpPublicPlayerId = String(loadedId);
+      return loadedId;
+    }
+
+    // Visitor/manual profiles expose an RP-xxxxx identity in the header.
     const publicId = String(profile.querySelector('.rp-profile-identity-line b')?.textContent || '').trim();
     const match = publicId.match(/\bRP-0*(\d+)\b/i);
     return positiveId(match?.[1]);
@@ -84,9 +94,7 @@
   }
 
   function score(game, key) {
-    return num(key === 'east'
-      ? pick(game?.eastScore, game?.east_score)
-      : pick(game?.westScore, game?.west_score));
+    return num(key === 'east' ? pick(game?.eastScore, game?.east_score) : pick(game?.westScore, game?.west_score));
   }
 
   function labelOf(game) {
@@ -130,14 +138,16 @@
     });
 
     let more = history.querySelector(':scope > [data-rp-public-history-more]');
-    if (cards.length > PREVIEW_LIMIT && !more) {
-      more = document.createElement('button');
-      more.type = 'button';
-      more.className = 'rp-history-more';
-      more.dataset.rpPublicHistoryMore = '1';
-      more.textContent = 'SEE ALL GAMES  →';
-      history.appendChild(more);
-    } else if (cards.length <= PREVIEW_LIMIT) {
+    if (cards.length > PREVIEW_LIMIT) {
+      if (!more) {
+        more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'rp-history-more';
+        more.dataset.rpPublicHistoryMore = '1';
+        more.textContent = 'SEE ALL GAMES  →';
+        history.appendChild(more);
+      }
+    } else {
       more?.remove();
     }
   }
@@ -247,19 +257,16 @@
     const visitor = visitorActive();
     if (!auth && !visitor) throw new Error('PLEASE SIGN IN TO REAL PLAY FIRST.');
 
-    const response = await fetch(
-      visitor ? `${API}/api/real-play/public/community` : `${API}/api/real-play/community`,
-      {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          ...(auth ? { Authorization: `Bearer ${auth}` } : {}),
-        },
-        body: JSON.stringify({ action: 'player_profile', playerId }),
-        cache: 'no-store',
-      }
-    );
+    const response = await fetch(visitor ? `${API}/api/real-play/public/community` : `${API}/api/real-play/community`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(auth ? { Authorization: `Bearer ${auth}` } : {}),
+      },
+      body: JSON.stringify({ action: 'player_profile', playerId }),
+      cache: 'no-store',
+    });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data?.message || data?.error || 'COULD NOT LOAD GAME HISTORY.');
     return Array.isArray(data?.player?.recentGames)
