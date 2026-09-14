@@ -11,9 +11,9 @@
   let identityRequestInFlight = false;
   let lastIdentityFetchAt = 0;
 
-  // Public result cards are the actual published game history players see.
-  // Number those results by their official publish order so gaps in internal
-  // database/session ids never leak into OPEN RANKING SESSION #001, #002, etc.
+  // Every result surface must use the same canonical Open Rank number stored on
+  // the session. World/results must never invent a second ordinal from publish
+  // order, database id, array position, or any other local counter.
   let officialResultNumbers = new Map();
   let officialResultUpdates = new Map();
   let resultIdentityRequestInFlight = false;
@@ -70,10 +70,33 @@
     return Number.isSafeInteger(id) && id > 0 ? id : null;
   }
 
-  function resultPublishedAt(update) {
-    const value = update?.published_at ?? update?.publishedAt ?? update?.event_at ?? update?.eventAt ?? '';
-    const time = Date.parse(value || '');
-    return Number.isFinite(time) ? time : 0;
+  function canonicalOpenRankNumber(update) {
+    const candidates = [
+      update?.metadata?.openRankNumber,
+      update?.metadata?.open_rank_number,
+      update?.openRankNumber,
+      update?.open_rank_number,
+    ];
+    for (const candidate of candidates) {
+      const number = Number(candidate);
+      if (Number.isSafeInteger(number) && number > 0) return number;
+    }
+
+    // officialGameId is produced by the backend from the same stored
+    // open_rank_number, so it is a safe compatibility fallback for older result
+    // payload shapes. Never fall back to publish order or session id.
+    const ids = [
+      update?.metadata?.officialGameId,
+      update?.metadata?.official_game_id,
+      update?.officialGameId,
+      update?.official_game_id,
+    ];
+    for (const value of ids) {
+      const match = String(value || '').match(/OPEN\s+RANK(?:ING(?:\s+SESSION)?)?\s*#\s*(\d+)/i);
+      const number = Number(match?.[1]);
+      if (Number.isSafeInteger(number) && number > 0) return number;
+    }
+    return null;
   }
 
   function titleParts(value) {
@@ -130,12 +153,12 @@
       if (!heading) return;
 
       // Preserve intentionally custom matchup names. Automatic/legacy numbered
-      // titles, however, always follow the real published-result sequence.
-      const alreadyOwned = card.dataset.rpOfficialUploadNumber === String(number);
+      // titles always mirror the canonical stored Open Rank number.
+      const alreadyOwned = card.dataset.rpOfficialOpenRankNumber === String(number);
       if (alreadyOwned || isAutomaticOpenRankTitle(heading.textContent)) {
         const next = officialResultLabel(sessionId, heading.textContent);
         if (next && heading.textContent !== next) heading.textContent = next;
-        card.dataset.rpOfficialUploadNumber = String(number);
+        card.dataset.rpOfficialOpenRankNumber = String(number);
       }
 
       // The result number is system-owned now. Keep DELETE and optional naming,
@@ -166,18 +189,17 @@
       const data = await response.json().catch(() => ({}));
       const results = (Array.isArray(data?.updates) ? data.updates : [])
         .filter((item) => String(item?.category || '').toLowerCase() === 'result')
-        .map((item) => ({ item, sessionId: sessionIdFromUpdate(item) }))
-        .filter((entry) => entry.sessionId)
-        .sort((a, b) => {
-          const timeDiff = resultPublishedAt(a.item) - resultPublishedAt(b.item);
-          if (timeDiff) return timeDiff;
-          return a.sessionId - b.sessionId;
-        });
+        .map((item) => ({
+          item,
+          sessionId: sessionIdFromUpdate(item),
+          openRankNumber: canonicalOpenRankNumber(item),
+        }))
+        .filter((entry) => entry.sessionId && entry.openRankNumber);
 
       const numbers = new Map();
       const updates = new Map();
-      results.forEach((entry, index) => {
-        numbers.set(entry.sessionId, index + 1);
+      results.forEach((entry) => {
+        numbers.set(entry.sessionId, entry.openRankNumber);
         updates.set(entry.sessionId, entry.item);
       });
 
@@ -185,7 +207,7 @@
       officialResultUpdates = updates;
       applyOfficialResultLabels();
     } catch (_error) {
-      // The result feed still renders normally if numbering metadata cannot load.
+      // The result feed still renders normally if canonical numbering metadata cannot load.
     } finally {
       resultIdentityRequestInFlight = false;
     }
@@ -319,8 +341,8 @@
     applyOfficialResultLabels();
   }
 
-  // Shared read-only identity helper for replay/other surfaces that want the
-  // same published-game numbering without inventing another counter.
+  // Shared read-only identity helper for replay/other surfaces. It exposes the
+  // canonical stored Open Rank number; it never derives a number from list order.
   window.RealPlayOpenRankIdentity = {
     ...(window.RealPlayOpenRankIdentity || {}),
     labelForSession(sessionId, currentTitle = '') {
