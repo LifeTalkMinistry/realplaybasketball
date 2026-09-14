@@ -154,10 +154,12 @@ body.rp-simple-navigation-active .rp-world-player-rank-badge{
 }
 
 /* In Rank OVR mode the visible rank badge becomes the left identity marker.
-   Push the name farther into the center lane and keep the jersey number hidden
-   in this filtration only. */
+   Push the name a touch farther into the center lane and lift it slightly so it
+   sits visually centered against the recognition artwork. */
 body.rp-simple-navigation-active .rp-world-player-rank-badge.is-visible + strong{
-  margin-left:20px!important;
+  position:relative!important;
+  top:-2px!important;
+  margin-left:25px!important;
 }
 
 body.rp-simple-navigation-active .rp-world-player-rank-badge.is-visible ~ b{
@@ -180,7 +182,8 @@ body.rp-simple-navigation-active .rp-world-player-rank-badge.is-visible ~ b{
   }
 
   body.rp-simple-navigation-active .rp-world-player-rank-badge.is-visible + strong{
-    margin-left:20px!important;
+    top:-2px!important;
+    margin-left:25px!important;
   }
 
   body.rp-simple-navigation-active .rp-player-featured-badge{
