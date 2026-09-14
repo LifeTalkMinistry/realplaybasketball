@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260912-mobile-scoring-chrome-v44';
+  const version = '20260914-mvp-impact-cache-v45';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
