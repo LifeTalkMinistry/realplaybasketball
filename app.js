@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260914-ranked-name-alignment-v50';
+  const version = '20260914-ranked-name-alignment-v51';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
