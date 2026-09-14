@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260914-mvp-impact-cache-v45';
+  const version = '20260914-public-profile-history-v46';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -283,6 +283,7 @@
       'real-play-profile-metrics.js',
       'real-play-world-players.js',
       'visitor-world-players.js',
+      'public-profile-history.js',
       'world-results.js',
       'player-id-badge.js',
       'real-play-world-score-order-fix.js',
