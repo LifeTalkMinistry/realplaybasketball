@@ -99,3 +99,36 @@ body.rp-simple-navigation-active:has([data-rp-simple-nav-item="players"].active)
     width:min(100vw,760px)!important;
   }
 }
+
+/* Recognition rows: the uploaded award bar IS the row shell.
+   Remove the generic dark player-card treatment underneath it and crop the
+   transparent padding in the PNG so the artwork occupies the same full footprint
+   as a normal player row. */
+body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed{
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+
+body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed:hover{
+  background:transparent!important;
+  border-color:transparent!important;
+}
+
+body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::before{
+  inset:-9px -8px!important;
+  background-position:center!important;
+  background-size:100% 100%!important;
+  opacity:1!important;
+}
+
+body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::after{
+  background:none!important;
+  box-shadow:none!important;
+}
+
+@media(max-width:420px){
+  body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::before{
+    inset:-10px -7px!important;
+  }
+}
