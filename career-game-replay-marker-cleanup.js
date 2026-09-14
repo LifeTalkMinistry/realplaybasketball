@@ -82,6 +82,16 @@
       line-height:1!important;
       white-space:nowrap;
     }
+    .rp-replay-open-rank-edit{
+      width:38px;height:38px;display:grid;place-items:center;justify-self:end;
+      border:1px solid rgba(85,197,229,.22);border-radius:11px;background:#061722;
+      color:#a7edf6;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.2);
+      font-family:var(--rp-display,Arial,sans-serif);font-size:.72rem;font-weight:950;
+      letter-spacing:-.02em;
+    }
+    .rp-replay-open-rank-edit:hover{border-color:rgba(85,224,245,.5);background:#082331;color:#d9fbff}
+    .rp-replay-open-rank-edit:active{transform:scale(.96)}
+    .rp-replay-open-rank-edit:disabled{opacity:.5;cursor:wait}
     @media(max-width:620px){
       .rp-career-replay-score-pop{
         right:8px!important;
@@ -144,6 +154,147 @@
     if (pop) cleanScorePop(pop);
   }
 
+  const API_BASE_URL = 'https://api.clarapmc.com';
+  const TOKEN_KEY = 'real_play_access_token';
+  let replaySessionId = 0;
+  let renumberBusy = false;
+
+  function replayRoot() {
+    return document.querySelector('[data-rp-career-replay].open');
+  }
+
+  function visibleReplayNumber() {
+    const title = String(replayRoot()?.querySelector('[data-rp-career-replay-title]')?.textContent || '');
+    const match = title.match(/OPEN\s+RANK(?:ING\s+SESSION)?\s*#\s*(\d+)/i);
+    return match ? Number(match[1]) : null;
+  }
+
+  function canonicalReplayTitle(number) {
+    return `OPEN RANKING SESSION #${String(number).padStart(3, '0')}`;
+  }
+
+  function applyReplayTitle(number) {
+    const root = replayRoot();
+    if (!root) return;
+    const title = canonicalReplayTitle(number);
+    const header = root.querySelector('[data-rp-career-replay-title]');
+    const gameHead = root.querySelector('.rp-career-replay-gamehead h2');
+    const brand = root.querySelector('[data-rp-career-replay-brand-session]');
+    if (header) header.textContent = title;
+    if (gameHead) gameHead.textContent = title;
+    if (brand) brand.textContent = title;
+  }
+
+  async function renumberReplay(button) {
+    if (renumberBusy || window.__realPlayAdminVerified !== true) return;
+    const sessionId = Number(button?.dataset?.rpReplayOpenRankEdit || replaySessionId || 0);
+    if (!Number.isSafeInteger(sessionId) || sessionId < 1) {
+      window.alert('Real Play could not identify this game session. Close the replay, reopen it, and try again.');
+      return;
+    }
+
+    const current = visibleReplayNumber();
+    const proposed = window.prompt(
+      'Set the official Open Rank number for this game:',
+      current ? String(current) : ''
+    );
+    if (proposed === null) return;
+
+    const value = Number(String(proposed).trim());
+    if (!Number.isSafeInteger(value) || value < 1 || value > 999999) {
+      window.alert('Enter a whole Open Rank number from 1 to 999999.');
+      return;
+    }
+
+    const auth = localStorage.getItem(TOKEN_KEY) || '';
+    if (!auth) {
+      window.alert('Admin session is not available. Sign in again and try once more.');
+      return;
+    }
+
+    renumberBusy = true;
+    button.disabled = true;
+    const oldText = button.textContent;
+    button.textContent = '…';
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/real-play/admin/career/control`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${auth}`,
+        },
+        body: JSON.stringify({
+          action: 'set-open-rank-number',
+          sessionId,
+          openRankNumber: value,
+        }),
+        cache: 'no-store',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.message || data?.error || `Could not change this Open Rank number (${response.status}).`);
+      }
+
+      const saved = Number(data?.control?.renumberedSession?.openRankNumber ?? value);
+      if (!Number.isSafeInteger(saved) || saved < 1) {
+        throw new Error('The backend did not return the saved Open Rank number.');
+      }
+
+      replaySessionId = sessionId;
+      applyReplayTitle(saved);
+      button.textContent = '✓';
+      window.setTimeout(() => {
+        if (button.isConnected) button.textContent = '#';
+      }, 1100);
+    } catch (error) {
+      window.alert(error?.message || 'Could not change this Open Rank number.');
+      button.textContent = oldText;
+    } finally {
+      renumberBusy = false;
+      button.disabled = false;
+    }
+  }
+
+  function syncReplayNumberEditor() {
+    const root = replayRoot();
+    if (!root) return;
+    const topbar = root.querySelector('.rp-career-replay-topbar');
+    if (!topbar) return;
+
+    let button = topbar.querySelector('[data-rp-replay-open-rank-edit]');
+    const shouldShow = window.__realPlayAdminVerified === true && replaySessionId > 0;
+    if (!shouldShow) {
+      button?.remove();
+      return;
+    }
+
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'rp-replay-open-rank-edit';
+      button.dataset.rpReplayOpenRankEdit = String(replaySessionId);
+      button.setAttribute('aria-label', 'Edit Open Rank session number');
+      button.setAttribute('title', 'Edit Open Rank session number');
+      button.textContent = '#';
+      const pencil = topbar.querySelector('[data-rp-replay-admin-edit]');
+      if (pencil) topbar.insertBefore(button, pencil);
+      else topbar.appendChild(button);
+      button.addEventListener('click', () => renumberReplay(button));
+    } else {
+      button.dataset.rpReplayOpenRankEdit = String(replaySessionId);
+    }
+  }
+
+  document.addEventListener('click', (event) => {
+    const replayTrigger = event.target.closest?.('[data-rp-career-replay-session]');
+    if (replayTrigger) {
+      const id = Number(replayTrigger.dataset.rpCareerReplaySession || 0);
+      if (Number.isSafeInteger(id) && id > 0) replaySessionId = id;
+      window.setTimeout(syncReplayNumberEditor, 140);
+    }
+  }, true);
+
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       cleanScorePopFromMutationTarget(mutation.target);
@@ -159,13 +310,19 @@
         }
       }
     }
+    syncReplayNumberEditor();
   });
 
   observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+  window.setInterval(syncReplayNumberEditor, 700);
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => cleanReplayUi(), { once: true });
+    document.addEventListener('DOMContentLoaded', () => {
+      cleanReplayUi();
+      syncReplayNumberEditor();
+    }, { once: true });
   } else {
     cleanReplayUi();
+    syncReplayNumberEditor();
   }
 })();
