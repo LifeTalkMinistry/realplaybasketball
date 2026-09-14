@@ -32,8 +32,19 @@
     document.head.appendChild(script);
   }
 
+  function loadWorldPlayerBarAssets() {
+    if (window.__realPlayWorldPlayerBarAssetsInstalled || document.querySelector('script[data-rp-world-player-bar-assets-loader]')) return;
+    const script = document.createElement('script');
+    script.src = 'real-play-world-player-bar-assets.js?v=20260914-captain-bar-v1';
+    script.async = false;
+    script.dataset.rpWorldPlayerBarAssetsLoader = '1';
+    script.addEventListener('error', () => console.warn('[Real Play] World player bar assets did not load.'), { once: true });
+    document.head.appendChild(script);
+  }
+
   normalizePublicProfileScores();
   loadPublicProfileHistory();
+  loadWorldPlayerBarAssets();
 
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
