@@ -185,8 +185,8 @@
   }
 
   function matchesFilter(meta) {
-    if (filterMode === 'ranked') return meta.ranked;
-    if (filterMode === 'unranked') return !meta.ranked;
+    if (filterMode === 'ranked') return meta.ranked && meta.ovr !== null;
+    if (filterMode === 'unranked') return !meta.ranked || meta.ovr === null;
     return true;
   }
 
