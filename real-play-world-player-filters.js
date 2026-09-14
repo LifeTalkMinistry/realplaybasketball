@@ -18,7 +18,7 @@
   let listObserver = null;
   let sortKey = 'name';
   let filterMode = 'all';
-  const directions = { rank: 'asc', ovr: 'desc', name: 'asc', jersey: 'asc' };
+  const directions = { rank: 'asc', ovr: 'desc', winrate: 'desc', name: 'asc', jersey: 'asc' };
   let scheduled = false;
   let rankByUserId = new Map();
   let rankByAccountUserId = new Map();
@@ -34,14 +34,17 @@
     const style = document.createElement('style');
     style.dataset.rpWorldPlayerFilterStyles = '1';
     style.textContent = `
-      .rp-world-player-sort{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:2px 0 1px}
-      .rp-world-player-sort button{min-width:0;min-height:36px;padding:0 7px;border:1px solid rgba(255,255,255,.07);border-radius:11px;color:#64758a;background:#060b12;font-family:var(--rp-display,Arial,sans-serif);font-size:.48rem;font-weight:950;letter-spacing:.06em;white-space:nowrap}
+      .rp-world-player-sort{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:2px 0 1px}
+      .rp-world-player-sort button{min-width:0;min-height:36px;padding:0 5px;border:1px solid rgba(255,255,255,.07);border-radius:11px;color:#64758a;background:#060b12;font-family:var(--rp-display,Arial,sans-serif);font-size:.45rem;font-weight:950;letter-spacing:.045em;white-space:nowrap}
       .rp-world-player-sort button.active{color:#dff9ff;border-color:rgba(54,205,255,.25);background:rgba(24,111,164,.11)}
       .rp-world-player-sort button.active b{color:#49d8ff}
       .rp-world-player-sort button:focus-visible{outline:2px solid rgba(72,215,255,.65);outline-offset:2px}
       .rp-world-player-sort b{margin-left:3px;color:#52667b;font-size:.55rem}
       .rp-world-player-directory-head{position:relative}
       .rp-world-player-row[hidden]{display:none!important}
+      .rp-world-player-row{min-height:58px}
+      .rp-world-player-row .rp-world-player-winrate{display:none!important}
+      .rp-world-player-row .rp-world-player-metrics{gap:0}
       .rp-world-player-rank-badge{display:none;flex:none;min-width:38px;margin-right:2px;color:#48d8ff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.18rem;font-style:italic;font-weight:1000;line-height:1;letter-spacing:-.035em;text-align:left;text-shadow:0 0 16px rgba(72,216,255,.28)}
       .rp-world-player-rank-badge.is-visible{display:inline-block}
       .rp-world-player-ovr-info{position:absolute;top:0;right:1px;width:36px;height:36px;display:grid;place-items:center;padding:0;border:1px solid rgba(72,216,255,.24);border-radius:50%;background:rgba(5,12,19,.82);color:#48d8ff;font-family:Georgia,serif;font-size:1rem;font-style:italic;font-weight:900;line-height:1;box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);z-index:2}
@@ -49,11 +52,12 @@
       .rp-world-player-ovr-info:active{transform:scale(.96)}
       .rp-world-player-ovr-info:focus-visible{outline:2px solid rgba(72,215,255,.7);outline-offset:2px}
       @media(max-width:420px){
-        .rp-world-player-sort{gap:5px}
-        .rp-world-player-sort button{padding-inline:4px;font-size:.43rem;letter-spacing:.045em}
+        .rp-world-player-sort{gap:4px}
+        .rp-world-player-sort button{padding-inline:3px;font-size:.39rem;letter-spacing:.025em}
         .rp-world-player-rank-badge{min-width:34px;font-size:1.08rem}
+        .rp-world-player-row{min-height:56px}
       }
-      @media(max-width:360px){.rp-world-player-sort button{font-size:.39rem;letter-spacing:.03em}.rp-world-player-ovr-info{width:34px;height:34px}.rp-world-player-rank-badge{min-width:31px;font-size:1rem}}
+      @media(max-width:360px){.rp-world-player-sort button{font-size:.36rem;letter-spacing:.015em}.rp-world-player-ovr-info{width:34px;height:34px}.rp-world-player-rank-badge{min-width:31px;font-size:1rem}}
     `;
     document.head.appendChild(style);
   }
@@ -219,6 +223,12 @@
     const ovr = missingOvr
       ? null
       : Number.parseFloat(ovrText.replace(/[^0-9.\-]/g, ''));
+    const winRateNode = row.querySelector('.rp-world-player-winrate');
+    const winRateText = String(winRateNode?.textContent || '').trim();
+    const missingWinRate = !winRateNode || winRateNode.classList.contains('empty') || /^—/.test(winRateText);
+    const winrate = missingWinRate
+      ? null
+      : Number.parseFloat(winRateText.replace(/[^0-9.\-]/g, ''));
     const userId = String(row.dataset.worldPlayerId || '').trim();
     const ranked = rankAuthorityReady ? rankByUserId.has(userId) : false;
 
@@ -227,6 +237,7 @@
       name,
       jersey: Number.isFinite(jersey) ? jersey : null,
       ovr: Number.isFinite(ovr) ? ovr : null,
+      winrate: Number.isFinite(winrate) ? winrate : null,
       rank: rankByUserId.get(userId) ?? null,
       ranked,
     };
@@ -283,6 +294,7 @@
     rows.sort((a, b) => {
       if (sortKey === 'rank') return compareNullableNumber(a, b, 'rank', direction);
       if (sortKey === 'ovr') return compareNullableNumber(a, b, 'ovr', direction);
+      if (sortKey === 'winrate') return compareNullableNumber(a, b, 'winrate', direction);
       if (sortKey === 'jersey') return compareNullableNumber(a, b, 'jersey', direction);
       const result = compareName(a, b);
       return direction === 'asc' ? result : -result;
@@ -369,7 +381,7 @@
   }
 
   function selectControl(key) {
-    if (!['ranked', 'unranked', 'name', 'jersey'].includes(key)) return;
+    if (!['ranked', 'unranked', 'winrate', 'name', 'jersey'].includes(key)) return;
 
     if (key === 'ranked') {
       filterMode = 'ranked';
@@ -381,6 +393,13 @@
       sortKey = 'name';
       directions.name = 'asc';
       refreshRankAuthority(false).then(scheduleSort);
+    } else if (key === 'winrate') {
+      filterMode = 'all';
+      if (sortKey === 'winrate') directions.winrate = directions.winrate === 'desc' ? 'asc' : 'desc';
+      else {
+        sortKey = 'winrate';
+        directions.winrate = 'desc';
+      }
     } else if (key === 'name') {
       filterMode = 'all';
       if (sortKey === 'name') directions.name = directions.name === 'asc' ? 'desc' : 'asc';
@@ -440,6 +459,7 @@
       controls.innerHTML = `
         <button type="button" data-player-sort="ranked" aria-pressed="false">RANK OVR <b></b></button>
         <button type="button" data-player-sort="unranked" aria-pressed="false">UNRANK OVR <b></b></button>
+        <button type="button" data-player-sort="winrate" aria-pressed="false">WIN RATE <b></b></button>
         <button type="button" data-player-sort="name" aria-pressed="true">NAME <b></b></button>
         <button type="button" data-player-sort="jersey" aria-pressed="false">JERSEY # <b></b></button>`;
       status.insertAdjacentElement('beforebegin', controls);
