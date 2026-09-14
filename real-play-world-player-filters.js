@@ -34,6 +34,7 @@
       .rp-world-player-sort button:focus-visible{outline:2px solid rgba(72,215,255,.65);outline-offset:2px}
       .rp-world-player-sort b{margin-left:3px;color:#52667b;font-size:.55rem}
       .rp-world-player-directory-head{position:relative}
+      .rp-world-player-row[hidden]{display:none!important}
       .rp-world-player-ovr-info{position:absolute;top:0;right:1px;width:36px;height:36px;display:grid;place-items:center;padding:0;border:1px solid rgba(72,216,255,.24);border-radius:50%;background:rgba(5,12,19,.82);color:#48d8ff;font-family:Georgia,serif;font-size:1rem;font-style:italic;font-weight:900;line-height:1;box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);z-index:2}
       .rp-world-player-ovr-info:hover{border-color:rgba(72,216,255,.46);background:rgba(13,54,72,.35)}
       .rp-world-player-ovr-info:active{transform:scale(.96)}
@@ -154,9 +155,11 @@
     const jerseyMatch = jerseyText.match(/#\s*(\d{1,2})/);
     const jersey = jerseyMatch ? Number(jerseyMatch[1]) : null;
     const ovrNode = row.querySelector('.rp-world-player-ovr');
-    const ovr = ovrNode && !ovrNode.classList.contains('unranked')
-      ? Number.parseFloat(String(ovrNode.textContent || '').replace(/[^0-9.\-]/g, ''))
-      : null;
+    const ovrText = String(ovrNode?.textContent || '').trim();
+    const unrankedOvr = !ovrNode || ovrNode.classList.contains('unranked') || /UNRANKED/i.test(ovrText);
+    const ovr = unrankedOvr
+      ? null
+      : Number.parseFloat(ovrText.replace(/[^0-9.\-]/g, ''));
     const userId = String(row.dataset.worldPlayerId || '').trim();
     const ranked = rankAuthorityReady ? rankByUserId.has(userId) : false;
     return {
@@ -214,6 +217,8 @@
       const visible = matchesFilter(meta);
       row.hidden = !visible;
       row.setAttribute('aria-hidden', String(!visible));
+      if (visible) row.style.removeProperty('display');
+      else row.style.setProperty('display', 'none', 'important');
     });
   }
 
