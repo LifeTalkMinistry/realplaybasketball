@@ -19,6 +19,8 @@
   let rankAuthorityReady = false;
   let rankRefreshPromise = null;
   let profileRankRefreshPromise = null;
+  let cachedOwnRank;
+  let cachedOwnRankAt = 0;
 
   function installStyles() {
     if (document.querySelector('[data-rp-world-player-filter-styles]')) return;
@@ -79,6 +81,8 @@
   }
 
   async function refreshOwnProfileRank() {
+    const now = Date.now();
+    if (now - cachedOwnRankAt < 5000 && cachedOwnRank !== undefined) return cachedOwnRank;
     if (profileRankRefreshPromise) return profileRankRefreshPromise;
     profileRankRefreshPromise = (async () => {
       try {
@@ -90,7 +94,10 @@
         });
         if (!response.ok) return null;
         const data = await response.json().catch(() => ({}));
-        return data?.rank ?? data?.career?.rank ?? data?.careerStats?.rank ?? null;
+        const rank = data?.rank ?? data?.career?.rank ?? data?.careerStats?.rank ?? null;
+        cachedOwnRank = rank;
+        cachedOwnRankAt = Date.now();
+        return rank;
       } finally {
         profileRankRefreshPromise = null;
       }
@@ -105,8 +112,10 @@
       const strong = node.querySelector('strong');
       const small = node.querySelector('small');
       if (!strong) return;
-      strong.textContent = hasRank ? `#${numericRank}` : '—';
-      if (small) small.textContent = hasRank ? 'OFFICIAL RANK' : 'UNRANKED';
+      const nextStrong = hasRank ? `#${numericRank}` : '—';
+      const nextSmall = hasRank ? 'OFFICIAL RANK' : 'UNRANKED';
+      if (strong.textContent !== nextStrong) strong.textContent = nextStrong;
+      if (small && small.textContent !== nextSmall) small.textContent = nextSmall;
     });
   }
 
@@ -121,8 +130,10 @@
         const strong = node.querySelector('strong');
         const small = node.querySelector('small');
         if (!strong) return;
-        strong.textContent = hasRank ? `#${numericRank}` : '—';
-        if (small) small.textContent = hasRank ? 'OFFICIAL RANK' : 'UNRANKED';
+        const nextStrong = hasRank ? `#${numericRank}` : '—';
+        const nextSmall = hasRank ? 'OFFICIAL RANK' : 'UNRANKED';
+        if (strong.textContent !== nextStrong) strong.textContent = nextStrong;
+        if (small && small.textContent !== nextSmall) small.textContent = nextSmall;
       });
     });
   }
@@ -350,7 +361,10 @@
     observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 
-  const profileObserver = new MutationObserver(() => enforceRankAuthority());
+  const profileObserver = new MutationObserver(() => {
+    window.clearTimeout(window.__rpRankAuthorityTimer);
+    window.__rpRankAuthorityTimer = window.setTimeout(() => enforceRankAuthority(), 60);
+  });
   profileObserver.observe(document.documentElement, { childList: true, subtree: true });
   enforceRankAuthority();
 })();
