@@ -147,11 +147,21 @@ body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::aft
   border-radius:13px!important;
 }
 
-/* Keep the player name anchored where it already was, but move the official
-   rank number rightward so it sits visually centered inside the left bar slot. */
+/* Keep the official rank centered inside the left decorative slot. */
 body.rp-simple-navigation-active .rp-world-player-rank-badge{
   margin-left:10px!important;
   min-width:28px!important;
+}
+
+/* In Rank OVR mode the visible rank badge becomes the left identity marker.
+   Give the name a little more breathing room toward the center and remove the
+   jersey number from this filtration only. */
+body.rp-simple-navigation-active .rp-world-player-rank-badge.is-visible + strong{
+  margin-left:8px!important;
+}
+
+body.rp-simple-navigation-active .rp-world-player-rank-badge.is-visible ~ b{
+  display:none!important;
 }
 
 @media(max-width:420px){
@@ -167,6 +177,10 @@ body.rp-simple-navigation-active .rp-world-player-rank-badge{
   body.rp-simple-navigation-active .rp-world-player-rank-badge{
     margin-left:9px!important;
     min-width:25px!important;
+  }
+
+  body.rp-simple-navigation-active .rp-world-player-rank-badge.is-visible + strong{
+    margin-left:8px!important;
   }
 
   body.rp-simple-navigation-active .rp-player-featured-badge{
