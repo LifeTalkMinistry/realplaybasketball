@@ -153,17 +153,15 @@
       if (!heading) return;
 
       // Preserve intentionally custom matchup names. Automatic/legacy numbered
-      // titles always mirror the canonical stored Open Rank number.
+      // titles always mirror the canonical stored Open Rank number. Admin SET #
+      // remains available, but it changes the backend authority rather than
+      // fighting this display synchronizer.
       const alreadyOwned = card.dataset.rpOfficialOpenRankNumber === String(number);
       if (alreadyOwned || isAutomaticOpenRankTitle(heading.textContent)) {
         const next = officialResultLabel(sessionId, heading.textContent);
         if (next && heading.textContent !== next) heading.textContent = next;
         card.dataset.rpOfficialOpenRankNumber = String(number);
       }
-
-      // The result number is system-owned now. Keep DELETE and optional naming,
-      // but remove the old manual SET # control so history cannot drift again.
-      card.querySelectorAll('[data-rp-set-open-rank-number]').forEach((button) => button.remove());
     });
 
     return missingIdentity;
@@ -283,9 +281,8 @@
       });
     }
 
-    // Session numbers are system-owned historical identities. Remove the old
-    // manual renumber control so an admin cannot accidentally rewrite history.
-    document.querySelectorAll('[data-rp-set-open-rank-number]').forEach((button) => button.remove());
+    // Automatic numbering remains the default, but trusted admin corrections
+    // are allowed through the backend-backed SET # / EDIT OPEN RANK NUMBER controls.
   }
 
   function refineSessionForm() {
@@ -303,7 +300,7 @@
           if (firstText) firstText.textContent = 'Optional display name';
 
           const helper = document.createElement('small');
-          helper.textContent = 'SESSION NUMBER IS ASSIGNED AUTOMATICALLY AND STAYS WITH THAT SESSION.';
+          helper.textContent = 'SESSION NUMBER IS ASSIGNED AUTOMATICALLY. ADMINS CAN CORRECT A MISTAKEN NUMBER.';
           helper.style.color = '#61748a';
           helper.style.fontSize = '.48rem';
           helper.style.fontWeight = '900';
@@ -332,7 +329,7 @@
         if (kicker?.textContent.trim() === 'BETA OPERATIONS') kicker.textContent = 'OPEN RANKING OPERATIONS';
         const copy = adminTitle.querySelector('p');
         if (copy?.textContent.includes('Open the game your testers can join')) {
-          copy.textContent = 'Create the next Open Ranking session. Its official session number is assigned automatically and remains permanent.';
+          copy.textContent = 'Create the next Open Ranking session. Its official session number is assigned automatically and can be corrected by an admin if needed.';
         }
       }
     }
