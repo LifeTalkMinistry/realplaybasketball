@@ -148,8 +148,8 @@ body.rp-simple-navigation-active .rp-world-player-row.rp-recognition-themed::aft
 }
 
 /* PLAYERS — every player gets a Real Play bar. Rows without any earned badge
-   use the branded blue/red normal-player artwork instead of the old generic
-   dark rounded rectangle. Recognition winners keep their award-specific bar. */
+   use the open-name blue/red normal-player artwork so long names can occupy the
+   live center lane without looking boxed inside a decorative left capsule. */
 body.rp-simple-navigation-active .rp-world-player-row:not(.rp-recognition-themed){
   position:relative!important;
   isolation:isolate!important;
@@ -167,7 +167,7 @@ body.rp-simple-navigation-active .rp-world-player-row:not(.rp-recognition-themed
   z-index:0!important;
   inset:-7px -3px!important;
   pointer-events:none!important;
-  background:url('assets/recognitions/bars/bar-normal-player.png') center / 106% 178% no-repeat!important;
+  background:url('bar-normal-playerv1.png?v=20260914-open-name-v1') center / 106% 178% no-repeat!important;
   opacity:1!important;
   filter:none!important;
 }
