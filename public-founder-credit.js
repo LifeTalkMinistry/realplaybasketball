@@ -1,4 +1,15 @@
 (() => {
+  function loadFuture4v4Preview() {
+    if (window.__realPlayFuture4v4PreviewInstalled) return;
+    if (document.querySelector('script[data-rp-home-future-4v4-loader]')) return;
+
+    const script = document.createElement('script');
+    script.src = 'home-future-4v4-preview.js?v=20260915-future-4v4-preview-v1';
+    script.async = false;
+    script.dataset.rpHomeFuture4v4Loader = 'true';
+    document.head.appendChild(script);
+  }
+
   function buildCredit({ home = false } = {}) {
     const credit = document.createElement('p');
     credit.className = home
@@ -26,4 +37,6 @@
     if (whatsComing) whatsComing.insertAdjacentElement('afterend', credit);
     else home.appendChild(credit);
   }
+
+  loadFuture4v4Preview();
 })();
