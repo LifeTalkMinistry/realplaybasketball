@@ -87,13 +87,15 @@
         box-shadow:0 14px 34px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.035)!important;
       }
       .rp-4v4-preference-action{
-        width:100%!important;min-height:46px!important;margin:0!important;cursor:pointer!important;
+        width:100%!important;min-height:46px!important;margin:0!important;padding:0 14px!important;cursor:pointer!important;
         border:1px solid rgba(84,219,255,.2)!important;border-radius:14px!important;
         color:#eefaff!important;background:#091727!important;
         font-family:var(--rp-display,Arial,sans-serif)!important;font-size:.72rem!important;
         font-style:italic!important;font-weight:1000!important;letter-spacing:.035em!important;
-        text-transform:uppercase!important;transition:transform .16s ease,border-color .16s ease,background .16s ease!important;
+        line-height:1!important;text-transform:uppercase!important;
+        transition:transform .16s ease,border-color .16s ease,background .16s ease!important;
       }
+      .rp-4v4-preference-action::before,.rp-4v4-preference-action::after{display:none!important;content:none!important}
       .rp-4v4-preference-action:hover:not(:disabled){border-color:rgba(84,219,255,.52)!important;background:#0b1d31!important}
       .rp-4v4-preference-action:active:not(:disabled){transform:scale(.985)}
       .rp-4v4-preference-action.is-selected{
@@ -144,7 +146,6 @@
       }
       .rp-4v4-preference-loading{color:#86a8bd}
       .rp-4v4-preference-error{color:#ff8e9a!important}
-
       @media(max-width:420px){
         .rp-4v4-preference-panel{margin-left:10px!important;margin-right:10px!important;padding:10px 10px 12px!important;border-radius:18px!important}
         .rp-4v4-preference-row{gap:8px;min-height:40px;padding:8px 10px}
@@ -216,7 +217,7 @@
         </div>
         <p class="rp-3v3-status" data-rp-4v4-status></p>
         <section class="rp-3v3-session rp-4v4-preference-panel">
-          <button class="rp-3v3-session-action rp-4v4-preference-action" type="button" data-rp-4v4-preference-action>I PREFER THIS TEAM</button>
+          <button class="rp-4v4-preference-action" type="button" data-rp-4v4-preference-action>I PREFER THIS TEAM</button>
           <p class="rp-4v4-preference-note">EARLY PREFERENCE · NOT AN OFFICIAL ROSTER</p>
           <div class="rp-4v4-preference-board">
             <div class="rp-4v4-preference-board-head">
@@ -260,10 +261,7 @@
       const rank = validRank(player?.rank);
       if (rank) {
         const ovr = validOvr(player?.ovr);
-        return {
-          ranked: true,
-          text: ovr === null ? `#${rank}` : `#${rank} · ${ovr} OVR`,
-        };
+        return { ranked: true, text: ovr === null ? `#${rank}` : `#${rank} · ${ovr} OVR` };
       }
       const games = Math.max(0, Math.min(5, Number(player?.verifiedGames ?? player?.games ?? 0) || 0));
       return { ranked: false, text: `UNRANKED · ${games}/5` };
@@ -293,26 +291,19 @@
       const selected = preferredClub === club.id;
       preferenceAction.classList.toggle('is-selected', selected);
       preferenceAction.disabled = preferenceSaving || selected;
-      if (preferenceSaving) {
-        preferenceAction.textContent = 'SAVING…';
-      } else if (selected) {
-        preferenceAction.textContent = `${club.name} PREFERRED ✓`;
-      } else if (preferredClub) {
-        preferenceAction.textContent = `MAKE ${club.name} MY PREFERENCE`;
-      } else {
-        preferenceAction.textContent = `I PREFER ${club.name}`;
-      }
+      if (preferenceSaving) preferenceAction.textContent = 'SAVING…';
+      else if (selected) preferenceAction.textContent = `${club.name} PREFERRED ✓`;
+      else if (preferredClub) preferenceAction.textContent = `MAKE ${club.name} MY PREFERENCE`;
+      else preferenceAction.textContent = `I PREFER ${club.name}`;
 
       if (preferenceLoading && !preferenceLoaded) {
         preferenceList.innerHTML = '<p class="rp-4v4-preference-loading">LOADING PLAYER PREFERENCES…</p>';
         return;
       }
-
       if (preferenceError && !preferenceLoaded) {
         preferenceList.innerHTML = `<p class="rp-4v4-preference-empty rp-4v4-preference-error">${escapeHtml(preferenceError)}</p>`;
         return;
       }
-
       if (!players.length) {
         preferenceList.innerHTML = '<p class="rp-4v4-preference-empty">NO PLAYER PREFERENCES YET · BE THE FIRST</p>';
         return;
@@ -352,7 +343,9 @@
         preferenceLoaded = true;
         preferenceError = '';
       } catch (error) {
-        preferenceError = error?.message || 'Could not load team preferences.';
+        preferenceError = error?.status === 404
+          ? 'TEAM PREFERENCE SERVICE IS UPDATING · TRY AGAIN SHORTLY'
+          : (error?.message || 'Could not load team preferences.');
       } finally {
         preferenceLoading = false;
         renderPreferenceBoard();
@@ -378,7 +371,9 @@
         setStatus(`${club.name} SAVED AS YOUR EARLY TEAM PREFERENCE.`, 'success');
         await loadPreferences({ silent: true });
       } catch (error) {
-        setStatus(error?.message || 'Could not save your team preference.', 'error');
+        setStatus(error?.status === 404
+          ? 'TEAM PREFERENCE SERVICE IS UPDATING · TRY AGAIN SHORTLY.'
+          : (error?.message || 'Could not save your team preference.'), 'error');
       } finally {
         preferenceSaving = false;
         renderPreferenceBoard();
@@ -414,7 +409,9 @@
     view.querySelector('[data-rp-4v4-next]')?.addEventListener('click', () => render(activeIndex + 1));
     cards.forEach((card, index) => card.addEventListener('click', () => { if (index !== activeIndex) render(index); }));
     preferenceAction?.addEventListener('click', savePreference);
-    carousel?.addEventListener('pointerdown', (event) => { if (!(event.pointerType === 'mouse' && event.button !== 0)) pointerStartX = event.clientX; });
+    carousel?.addEventListener('pointerdown', (event) => {
+      if (!(event.pointerType === 'mouse' && event.button !== 0)) pointerStartX = event.clientX;
+    });
     carousel?.addEventListener('pointerup', (event) => {
       if (pointerStartX === null) return;
       const delta = event.clientX - pointerStartX;
