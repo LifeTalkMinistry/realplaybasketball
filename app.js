@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260915-desktop-scoring-layout-v54';
+  const version = '20260915-home-4v4-loader-v55';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -249,6 +249,8 @@
       'public-landing.js',
       'visitor-mode.js',
       'public-founder-credit.js',
+      'home-future-4v4-preview.js',
+      'home-future-4v4-card-cleanup.js',
       'login-landing-fix.js',
       'persistent-session-fix.js',
       'career-beta.js',
