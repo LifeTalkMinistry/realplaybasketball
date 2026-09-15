@@ -144,12 +144,11 @@
   line-height:1.05;
 }
 
-/* Keep OVR, Rank/standing and Record/Win Rate in one contained stat layer.
-   RECORD carries two equally-important values, so it receives the most width.
-   OVR and RANK stay compact and give that space back instead of forcing the
-   standing and win-rate values onto a second visual layer. */
+/* Keep OVR, Rank and Record/Win Rate balanced. RECORD still gets enough room
+   for two headline values, but it must not dominate half the row or create a
+   large dead zone between 7-6 and 54%. */
 .rp-profile-rating-row{
-  grid-template-columns:minmax(0,.9fr) minmax(0,.78fr) minmax(0,1.62fr)!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,.9fr) minmax(0,1.35fr)!important;
   gap:7px!important;
   overflow:hidden!important;
 }
@@ -164,7 +163,7 @@
   min-width:0!important;
   grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
   grid-template-rows:auto auto auto!important;
-  column-gap:8px!important;
+  column-gap:6px!important;
   align-items:end!important;
 }
 
@@ -175,31 +174,31 @@
   max-width:100%!important;
   font-size:.40rem!important;
   line-height:1.05!important;
-  letter-spacing:.055em!important;
+  letter-spacing:.045em!important;
   white-space:nowrap!important;
 }
 
 .rp-profile-record > .rp-profile-win-rate-label{
-  justify-self:end!important;
-  text-align:right!important;
+  justify-self:start!important;
+  text-align:left!important;
 }
 
 /* 7-6 and 54% are equal-status headline values: same type size, same weight,
-   same baseline. */
+   same baseline, with no exaggerated separation between them. */
 .rp-profile-record > strong:not(.rp-profile-win-rate),
 .rp-profile-record > .rp-profile-win-rate{
   min-width:0!important;
   max-width:100%!important;
   margin-top:5px!important;
   font-family:var(--rp-display,Arial,sans-serif)!important;
-  font-size:1.34rem!important;
+  font-size:1.28rem!important;
   font-weight:950!important;
   line-height:1!important;
   white-space:nowrap!important;
+  justify-self:start!important;
 }
 
 .rp-profile-record > .rp-profile-win-rate{
-  justify-self:end!important;
   color:#48d7ff!important;
 }
 
@@ -209,7 +208,7 @@
 
 @media(max-width:340px){
   .rp-profile-rating-row{
-    grid-template-columns:minmax(0,.86fr) minmax(0,.72fr) minmax(0,1.72fr)!important;
+    grid-template-columns:minmax(0,.96fr) minmax(0,.82fr) minmax(0,1.42fr)!important;
     gap:6px!important;
   }
 
@@ -218,13 +217,13 @@
   }
 
   .rp-profile-record{
-    column-gap:5px!important;
+    column-gap:4px!important;
   }
 
   .rp-profile-record > span:not(.rp-profile-win-rate-label),
   .rp-profile-record > .rp-profile-win-rate-label{
     font-size:.34rem!important;
-    letter-spacing:.025em!important;
+    letter-spacing:.02em!important;
   }
 
   .rp-profile-record > strong:not(.rp-profile-win-rate),
