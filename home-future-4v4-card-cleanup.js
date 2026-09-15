@@ -86,8 +86,11 @@
         background:linear-gradient(180deg,rgba(4,12,21,.92),rgba(3,8,14,.96))!important;
         box-shadow:0 14px 34px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.035)!important;
       }
+      .rp-4v4-preference-actions{
+        display:flex;align-items:stretch;gap:8px;width:100%;
+      }
       .rp-4v4-preference-action{
-        width:100%!important;min-height:46px!important;margin:0!important;padding:0 14px!important;cursor:pointer!important;
+        flex:1 1 auto!important;width:auto!important;min-width:0!important;min-height:46px!important;margin:0!important;padding:0 14px!important;cursor:pointer!important;
         border:1px solid rgba(84,219,255,.2)!important;border-radius:14px!important;
         color:#eefaff!important;background:#091727!important;
         font-family:var(--rp-display,Arial,sans-serif)!important;font-size:.72rem!important;
@@ -103,6 +106,18 @@
         background:linear-gradient(180deg,rgba(17,53,75,.96),rgba(8,29,44,.98))!important;
       }
       .rp-4v4-preference-action:disabled{cursor:default!important;opacity:.78!important}
+      .rp-4v4-preference-cancel{
+        flex:0 0 88px;min-height:46px;margin:0;padding:0 10px;cursor:pointer;
+        border:1px solid rgba(255,117,132,.3);border-radius:14px;
+        color:#ff9eaa;background:rgba(61,15,24,.34);
+        font-family:var(--rp-display,Arial,sans-serif);font-size:.6rem;font-style:italic;font-weight:1000;
+        letter-spacing:.04em;line-height:1;text-transform:uppercase;
+        transition:transform .16s ease,border-color .16s ease,background .16s ease;
+      }
+      .rp-4v4-preference-cancel[hidden]{display:none!important}
+      .rp-4v4-preference-cancel:hover:not(:disabled){border-color:rgba(255,117,132,.62);background:rgba(81,18,29,.5)}
+      .rp-4v4-preference-cancel:active:not(:disabled){transform:scale(.985)}
+      .rp-4v4-preference-cancel:disabled{cursor:default;opacity:.66}
       .rp-4v4-preference-note{
         margin:8px 2px 12px;color:#637a8d;font-size:.46rem;font-weight:900;letter-spacing:.085em;
         line-height:1.35;text-align:center;text-transform:uppercase;
@@ -148,6 +163,7 @@
       .rp-4v4-preference-error{color:#ff8e9a!important}
       @media(max-width:420px){
         .rp-4v4-preference-panel{margin-left:10px!important;margin-right:10px!important;padding:10px 10px 12px!important;border-radius:18px!important}
+        .rp-4v4-preference-cancel{flex-basis:80px;font-size:.55rem;padding:0 8px}
         .rp-4v4-preference-row{gap:8px;min-height:40px;padding:8px 10px}
         .rp-4v4-preference-player strong{font-size:.61rem}
         .rp-4v4-preference-standing{font-size:.52rem}
@@ -217,7 +233,10 @@
         </div>
         <p class="rp-3v3-status" data-rp-4v4-status></p>
         <section class="rp-3v3-session rp-4v4-preference-panel">
-          <button class="rp-4v4-preference-action" type="button" data-rp-4v4-preference-action>I PREFER THIS TEAM</button>
+          <div class="rp-4v4-preference-actions">
+            <button class="rp-4v4-preference-action" type="button" data-rp-4v4-preference-action>I PREFER THIS TEAM</button>
+            <button class="rp-4v4-preference-cancel" type="button" data-rp-4v4-preference-cancel hidden>CANCEL</button>
+          </div>
           <p class="rp-4v4-preference-note">EARLY PREFERENCE · NOT AN OFFICIAL ROSTER</p>
           <div class="rp-4v4-preference-board">
             <div class="rp-4v4-preference-board-head">
@@ -238,6 +257,7 @@
     const carousel = view.querySelector('[data-rp-4v4-carousel]');
     const status = view.querySelector('[data-rp-4v4-status]');
     const preferenceAction = view.querySelector('[data-rp-4v4-preference-action]');
+    const preferenceCancel = view.querySelector('[data-rp-4v4-preference-cancel]');
     const preferenceTeam = view.querySelector('[data-rp-4v4-preference-team]');
     const preferenceCount = view.querySelector('[data-rp-4v4-preference-count]');
     const preferenceList = view.querySelector('[data-rp-4v4-preference-list]');
@@ -248,6 +268,7 @@
     let preferenceLoading = false;
     let preferenceLoaded = false;
     let preferenceSaving = false;
+    let preferenceCancelling = false;
     let preferenceError = '';
     const normalize = (index) => (index + cards.length) % cards.length;
 
@@ -290,11 +311,15 @@
 
       const selected = preferredClub === club.id;
       preferenceAction.classList.toggle('is-selected', selected);
-      preferenceAction.disabled = preferenceSaving || selected;
+      preferenceAction.disabled = preferenceSaving || preferenceCancelling || selected;
       if (preferenceSaving) preferenceAction.textContent = 'SAVING…';
       else if (selected) preferenceAction.textContent = `${club.name} PREFERRED ✓`;
       else if (preferredClub) preferenceAction.textContent = `MAKE ${club.name} MY PREFERENCE`;
       else preferenceAction.textContent = `I PREFER ${club.name}`;
+
+      preferenceCancel.hidden = !selected;
+      preferenceCancel.disabled = preferenceSaving || preferenceCancelling;
+      preferenceCancel.textContent = preferenceCancelling ? 'CANCELLING…' : 'CANCEL';
 
       if (preferenceLoading && !preferenceLoaded) {
         preferenceList.innerHTML = '<p class="rp-4v4-preference-loading">LOADING PLAYER PREFERENCES…</p>';
@@ -358,7 +383,7 @@
         setStatus('SIGN IN TO SAVE YOUR TEAM PREFERENCE.', 'error');
         return;
       }
-      if (preferenceSaving || preferredClub === club.id) return;
+      if (preferenceSaving || preferenceCancelling || preferredClub === club.id) return;
       preferenceSaving = true;
       setStatus('');
       renderPreferenceBoard();
@@ -376,6 +401,31 @@
           : (error?.message || 'Could not save your team preference.'), 'error');
       } finally {
         preferenceSaving = false;
+        renderPreferenceBoard();
+      }
+    }
+
+    async function clearPreference() {
+      const club = CLUBS[activeIndex];
+      if (!token()) {
+        setStatus('SIGN IN TO CHANGE YOUR TEAM PREFERENCE.', 'error');
+        return;
+      }
+      if (preferenceSaving || preferenceCancelling || preferredClub !== club.id) return;
+      preferenceCancelling = true;
+      setStatus('');
+      renderPreferenceBoard();
+      try {
+        await api('/api/real-play/4v4/preference', { method: 'DELETE' });
+        preferredClub = null;
+        setStatus(`${club.name} REMOVED AS YOUR EARLY TEAM PREFERENCE.`, 'success');
+        await loadPreferences({ silent: true });
+      } catch (error) {
+        setStatus(error?.status === 404
+          ? 'TEAM PREFERENCE SERVICE IS UPDATING · TRY AGAIN SHORTLY.'
+          : (error?.message || 'Could not remove your team preference.'), 'error');
+      } finally {
+        preferenceCancelling = false;
         renderPreferenceBoard();
       }
     }
@@ -409,6 +459,7 @@
     view.querySelector('[data-rp-4v4-next]')?.addEventListener('click', () => render(activeIndex + 1));
     cards.forEach((card, index) => card.addEventListener('click', () => { if (index !== activeIndex) render(index); }));
     preferenceAction?.addEventListener('click', savePreference);
+    preferenceCancel?.addEventListener('click', clearPreference);
     carousel?.addEventListener('pointerdown', (event) => {
       if (!(event.pointerType === 'mouse' && event.button !== 0)) pointerStartX = event.clientX;
     });
