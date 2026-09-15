@@ -4,11 +4,11 @@
 
   const STYLE_ID = 'rp-home-future-4v4-card-cleanup-style';
   const VIEW_ATTR = 'data-rp-4v4-static-view';
-  const CAPTAINS = [
-    { rank: '#1', label: 'CAPTAIN #1', sub: 'FIRST ELIGIBLE CAPTAIN' },
-    { rank: '#2', label: 'CAPTAIN #2', sub: 'SECOND ELIGIBLE CAPTAIN' },
-    { rank: '#3', label: 'CAPTAIN #3', sub: 'THIRD ELIGIBLE CAPTAIN' },
-    { rank: '#4', label: 'CAPTAIN #4', sub: 'FOURTH ELIGIBLE CAPTAIN' },
+  const CLUBS = [
+    { id: 'lions', name: 'LIONS', verse: 'Proverbs 28:1' },
+    { id: 'valiant', name: 'VALIANT', verse: 'Joshua 1:9' },
+    { id: 'watchmen', name: 'WATCHMEN', verse: 'Isaiah 62:6' },
+    { id: 'conquerors', name: 'CONQUERORS', verse: 'Romans 8:37' },
   ];
 
   function installStyle() {
@@ -41,7 +41,6 @@
       .rp-4v4-static-view .rp-3v3-brand span{color:var(--rp-cyan)}
       .rp-4v4-static-view .rp-team-card small{color:#647990}
       .rp-4v4-static-view .rp-team-card span{color:#8095ad}
-      .rp-4v4-static-view .rp-team-card strong{margin-top:63px;font-size:2.05rem}
       .rp-4v4-static-view .rp-3v3-session{margin-bottom:28px}
       .rp-4v4-static-view .rp-3v3-session-action{cursor:default}
       .rp-4v4-static-view .rp-3v3-status{min-height:18px}
@@ -104,14 +103,14 @@
         </section>
 
         <div data-rp-4v4-browse>
-          <section class="rp-3v3-team-picker" aria-label="Browse future 4V4 captain-led teams">
+          <section class="rp-3v3-team-picker" aria-label="Choose a Real Play team">
             <button class="rp-team-arrow rp-team-arrow-left" type="button" aria-label="Previous team" data-rp-4v4-prev>‹</button>
             <div class="rp-team-carousel" data-rp-4v4-carousel tabindex="0" aria-live="polite">
-              ${CAPTAINS.map((captain, index) => `
-                <button class="rp-team-card" type="button" data-rp-4v4-card="${index}">
-                  <small>FUTURE 4V4 TEAM</small>
-                  <strong>${captain.label}</strong>
-                  <span>${captain.sub}</span>
+              ${CLUBS.map((club, index) => `
+                <button class="rp-team-card" id="rp-4v4-team-${club.id}" type="button" data-rp-4v4-card="${index}">
+                  <small>REAL PLAY CLUB</small>
+                  <strong>${club.name}</strong>
+                  <span>${club.verse}</span>
                 </button>
               `).join('')}
             </div>
@@ -119,11 +118,11 @@
           </section>
 
           <div class="rp-team-dots" data-rp-4v4-dots aria-hidden="true">
-            ${CAPTAINS.map(() => '<i></i>').join('')}
+            ${CLUBS.map(() => '<i></i>').join('')}
           </div>
         </div>
 
-        <p class="rp-3v3-status" data-rp-4v4-status>Captain-led teams will be formed from officially ranked Real Play players.</p>
+        <p class="rp-3v3-status" data-rp-4v4-status></p>
 
         <section class="rp-3v3-session">
           <div class="rp-3v3-session-head">
@@ -134,9 +133,8 @@
             </div>
             <b data-rp-4v4-session-count>—</b>
           </div>
-          <p class="rp-3v3-roster-needed" data-rp-4v4-roster-needed>Choose freely from verified ranked players. Final rosters must pass the League Team OVR range.</p>
+          <p class="rp-3v3-roster-needed" data-rp-4v4-roster-needed>Choose one of the original Real Play teams.</p>
           <button class="rp-3v3-session-action" type="button" disabled>FORMATION OPENS SOON</button>
-          <p class="rp-3v3-session-message">This page intentionally reuses the exact dedicated 3V3 visual system without activating the old 3V3 API, polling, or reservation runtime.</p>
         </section>
       </div>`;
 
@@ -173,12 +171,13 @@
         card.tabIndex = hidden ? -1 : 0;
       });
       dots.forEach((dot, dotIndex) => dot.classList.toggle('active', dotIndex === activeIndex));
+      carousel?.setAttribute('aria-activedescendant', cards[activeIndex]?.id || '');
 
-      const captain = CAPTAINS[activeIndex];
-      sessionTitle.textContent = `${captain.label} · TEAM SLOT`;
-      sessionCount.textContent = captain.rank;
-      rosterNeeded.textContent = 'This captain slot will eventually accept verified ranked players while enforcing the League Team OVR minimum and maximum.';
-      status.textContent = `${captain.label} is a future captain-led roster slot. No roster has been committed yet.`;
+      const club = CLUBS[activeIndex];
+      sessionTitle.textContent = `${club.name} · 4V4 TEAM`;
+      sessionCount.textContent = `${activeIndex + 1}/4`;
+      rosterNeeded.textContent = `${club.name} remains one of the original Real Play clubs for future 4V4 team formation.`;
+      status.textContent = `${club.name} · ${club.verse}`;
     }
 
     view.querySelector('[data-rp-4v4-prev]')?.addEventListener('click', () => render(activeIndex - 1));
