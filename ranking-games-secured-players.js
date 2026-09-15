@@ -45,6 +45,7 @@
       gap:7px;
     }
     .rp-ranking-secured-player{
+      width:100%;
       min-width:0;
       display:flex;
       align-items:center;
@@ -53,7 +54,26 @@
       padding:8px 10px;
       border:1px solid rgba(120,160,199,.10);
       border-radius:10px;
+      box-sizing:border-box;
       background:rgba(4,12,21,.72);
+      color:inherit;
+      font:inherit;
+      text-align:left;
+    }
+    .rp-ranking-secured-player.is-clickable{
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+      transition:border-color .16s ease,background .16s ease,transform .16s ease;
+    }
+    .rp-ranking-secured-player.is-clickable:hover{
+      border-color:rgba(80,220,255,.30);
+      background:rgba(6,24,36,.88);
+    }
+    .rp-ranking-secured-player.is-clickable:active{transform:scale(.992)}
+    .rp-ranking-secured-player.is-clickable:focus-visible{
+      outline:2px solid rgba(80,220,255,.62);
+      outline-offset:2px;
     }
     .rp-ranking-secured-player> b{
       flex:0 0 auto;
@@ -161,6 +181,20 @@
     return Number.isFinite(parsed) ? parsed : null;
   }
 
+  function openPlayerProfile(player) {
+    const playerId = Number(player?.playerId);
+    if (!Number.isSafeInteger(playerId) || playerId <= 0) return;
+
+    if (player?.isYou && window.RealPlayProfile?.open) {
+      window.RealPlayProfile.open();
+      return;
+    }
+
+    if (window.RealPlayPlayers?.openProfile) {
+      window.RealPlayPlayers.openProfile(playerId);
+    }
+  }
+
   function ensureRoster() {
     const card = view.querySelector('[data-rp-ranking-session]');
     if (!card) return null;
@@ -220,9 +254,18 @@
     }
 
     players.forEach((player, index) => {
-      const item = document.createElement('div');
+      const profileId = finiteNumber(player?.playerId);
+      const canOpenProfile = Number.isSafeInteger(profileId) && profileId > 0;
+      const item = document.createElement(canOpenProfile ? 'button' : 'div');
       item.className = 'rp-ranking-secured-player';
       if (player?.isYou) item.classList.add('is-you');
+      if (canOpenProfile) {
+        item.type = 'button';
+        item.classList.add('is-clickable');
+        item.dataset.rpSecuredPlayerId = String(profileId);
+        item.setAttribute('aria-label', `Open ${String(player?.playerName || 'Real Play player')} profile`);
+        item.addEventListener('click', () => openPlayerProfile(player));
+      }
 
       const number = document.createElement('b');
       number.textContent = String(index + 1).padStart(2, '0');
