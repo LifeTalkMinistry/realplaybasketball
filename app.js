@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260915-replay-editor-root-v53';
+  const version = '20260915-desktop-scoring-layout-v54';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -284,6 +284,7 @@
       'real-play-world-players.js',
       'visitor-world-players.js',
       'public-profile-history.js',
+      'real-play-rank-explainer.js',
       'world-results.js',
       'player-id-badge.js',
       'real-play-world-score-order-fix.js',

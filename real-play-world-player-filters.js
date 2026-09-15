@@ -39,7 +39,7 @@
   let sortKey = 'ovr';
   let filterMode = 'ranked';
   const directions = {
-    ovr: 'desc', winrate: 'desc', overallmvp: 'desc', teammvp: 'desc',
+    rank: 'asc', ovr: 'desc', winrate: 'desc', overallmvp: 'desc', teammvp: 'desc',
     shooting: 'desc', rebounding: 'desc', scoring: 'desc', assists: 'desc',
     steals: 'desc', blocks: 'desc', games: 'desc', name: 'asc', jersey: 'asc',
   };
@@ -403,6 +403,11 @@
 
   function sortedRows() {
     const rows = visibleRows();
+    if (filterMode === 'ranked') {
+      const rankDirection = directions.rank || 'asc';
+      rows.sort((a, b) => compareNullableNumber(a, b, 'rank', rankDirection));
+      return rows.map((item) => item.row);
+    }
     const direction = directions[sortKey] || 'desc';
     rows.sort((a, b) => {
       if (sortKey === 'name') {
@@ -467,7 +472,11 @@
   }
 
   function directionArrow(key) {
-    if (key === 'ranked' || key === 'unranked') {
+    if (key === 'ranked') {
+      if (filterMode !== key) return '';
+      return directions.rank === 'asc' ? '↑' : '↓';
+    }
+    if (key === 'unranked') {
       if (filterMode !== key) return '';
       return directions.ovr === 'asc' ? '↑' : '↓';
     }
@@ -494,7 +503,13 @@
   function selectControl(key) {
     if (!FILTERS.some(([filterKey]) => filterKey === key)) return;
 
-    if (key === 'ranked' || key === 'unranked') {
+    if (key === 'ranked') {
+      if (filterMode === key) directions.rank = directions.rank === 'asc' ? 'desc' : 'asc';
+      else directions.rank = 'asc';
+      filterMode = key;
+      sortKey = 'ovr';
+      refreshRankAuthority(false).then(scheduleSort);
+    } else if (key === 'unranked') {
       if (filterMode === key) directions.ovr = directions.ovr === 'desc' ? 'asc' : 'desc';
       else directions.ovr = 'desc';
       filterMode = key;

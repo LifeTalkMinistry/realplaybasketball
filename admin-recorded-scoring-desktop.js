@@ -141,32 +141,33 @@
   function restoreMobileLayout(adminRoot, scoring) {
     adminRoot?.classList.remove('rp-recorded-desktop-mode');
     scoring?.classList.remove('rp-video-desktop-ready');
+    scoring?.removeAttribute('data-rp-desktop-ownership-stable');
     if (!scoring) return;
 
-    const grid = scoring.querySelector('[data-rp-video-desktop-grid]');
-    if (!grid) return;
+    const grids = [...scoring.querySelectorAll(':scope > [data-rp-video-desktop-grid]')];
+    if (!grids.length) return;
 
-    const playerWrap = grid.querySelector('.rp-video-player-wrap');
-    const autoNote = grid.querySelector('.rp-video-auto-note');
-    const draftBanner = grid.querySelector('[data-rp-draft-banner]');
-    const cancelCard = grid.querySelector('[data-rp-cancel-video-card]');
-    const scoreboard = grid.querySelector('.rp-video-scoreboard');
-    const rosters = grid.querySelector('.rp-video-score-rosters');
-    const selectedPanel = grid.querySelector('[data-rp-video-selected-panel]');
-    const reviewActions = grid.querySelector('.rp-video-review-actions');
+    const playerWrap = scoring.querySelector('.rp-video-player-wrap');
+    const autoNote = scoring.querySelector('.rp-video-auto-note');
+    const draftBanner = scoring.querySelector('[data-rp-draft-banner]');
+    const cancelCard = scoring.querySelector('[data-rp-cancel-video-card]');
+    const scoreboard = scoring.querySelector('.rp-video-scoreboard');
+    const rosters = scoring.querySelector('.rp-video-score-rosters');
+    const selectedPanel = scoring.querySelector('[data-rp-video-selected-panel]');
+    const reviewActions = scoring.querySelector('.rp-video-review-actions');
 
-    const anchor = grid;
+    const anchor = grids[0];
     [playerWrap, autoNote, draftBanner, cancelCard, scoreboard, rosters, selectedPanel, reviewActions]
       .filter(Boolean)
       .forEach((node) => scoring.insertBefore(node, anchor));
 
-    grid.remove();
+    grids.forEach((grid) => grid.remove());
   }
 
   function syncDesktopColumns(scoring, grid) {
     const left = grid?.querySelector('[data-rp-video-desktop-left]');
     const right = grid?.querySelector('[data-rp-video-desktop-right]');
-    if (!left || !right) return;
+    if (!left || !right) return null;
 
     const moveIfNeeded = (node, target) => {
       if (node && node.parentElement !== target) target.appendChild(node);
@@ -181,6 +182,31 @@
     moveIfNeeded(scoring.querySelector('.rp-video-score-rosters'), right);
     moveIfNeeded(scoring.querySelector('[data-rp-video-selected-panel]'), right);
     moveIfNeeded(scoring.querySelector('.rp-video-review-actions'), right);
+
+    return { left, right };
+  }
+
+  function settleDesktopOwnership(scoring, grid) {
+    const columns = syncDesktopColumns(scoring, grid);
+    if (!columns) return;
+
+    // There must only ever be one desktop workspace. If a stale duplicate grid
+    // exists, move the known scoring nodes into the active grid first, then remove it.
+    [...scoring.querySelectorAll(':scope > [data-rp-video-desktop-grid]')]
+      .filter((candidate) => candidate !== grid)
+      .forEach((candidate) => candidate.remove());
+
+    const scoreboard = scoring.querySelector('.rp-video-scoreboard');
+    const stable = !scoreboard || scoreboard.parentElement === columns.right;
+    scoring.dataset.rpDesktopOwnershipStable = stable ? '1' : '0';
+
+    // Regression safeguard: desktop owns the scoreboard parent. This is normally
+    // a no-op because syncDesktopColumns is idempotent, but it reclaims ownership
+    // immediately if another renderer ever moves the node unexpectedly.
+    if (!stable && scoreboard) {
+      columns.right.appendChild(scoreboard);
+      scoring.dataset.rpDesktopOwnershipStable = '1';
+    }
   }
 
   function applyDesktopLayout() {
@@ -202,9 +228,9 @@
     adminRoot.classList.add('rp-recorded-desktop-mode');
     scoring.classList.add('rp-video-desktop-ready');
 
-    let grid = scoring.querySelector('[data-rp-video-desktop-grid]');
+    let grid = scoring.querySelector(':scope > [data-rp-video-desktop-grid]');
     if (grid) {
-      syncDesktopColumns(scoring, grid);
+      settleDesktopOwnership(scoring, grid);
       return;
     }
 
@@ -227,7 +253,7 @@
 
     playerWrap.insertAdjacentElement('beforebegin', grid);
     grid.append(left, right);
-    syncDesktopColumns(scoring, grid);
+    settleDesktopOwnership(scoring, grid);
   }
 
   function scheduleLayout() {
