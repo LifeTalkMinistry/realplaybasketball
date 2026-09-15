@@ -75,6 +75,16 @@
       .rp-world-player-row.rp-recognition-themed .rp-player-featured-badge:active{
         transform:translate(-50%,-50%) scale(.97)!important;
       }
+
+      /* Keep the recognition count clear of the OVR value on the right. */
+      .rp-world-player-row.rp-recognition-themed .rp-player-featured-count{
+        bottom:6px!important;
+      }
+      @media(max-width:420px){
+        .rp-world-player-row.rp-recognition-themed .rp-player-featured-count{
+          bottom:5px!important;
+        }
+      }
     `;
     document.head.appendChild(style);
   }
