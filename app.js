@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260915-home-4v4-loader-v55';
+  const version = '20260915-home-4v4-loader-v56';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -293,6 +293,7 @@
       'profile-game-replay-link.js',
       'real-play-world-player-filters.js',
       'real-play-captain-eligibility.js',
+      'real-play-world-player-bar-vector.js',
       'real-play-world-player-admin.js',
       'main-menu-fast-snap-restore.js',
       'main-menu-touch-lite.js',
