@@ -51,19 +51,13 @@
     }
   }
 
-  function restoreDesktopTopRow(screen, scoreboard) {
+  function clearMobileWorkspaceState(screen, scoreboard, rosters, selectedPanel) {
+    screen.classList.remove('rp-mobile-player-workspace');
+    clearInline(rosters, 'display');
+    clearInline(selectedPanel, 'display');
+
     const exitButton = findExitScoring(screen);
     const exitRow = screen.querySelector('.rp-video-scoring-exit-row');
-    const legacyRow = screen.querySelector('[data-rp-mobile-score-row]:not(.rp-video-scoring-exit-row)');
-    const playerWrap = screen.querySelector('.rp-video-player-wrap');
-
-    // Clean up the older temporary mobile row if it exists from a cached render.
-    if (legacyRow) {
-      if (exitButton && exitRow && exitButton.parentElement !== exitRow) exitRow.appendChild(exitButton);
-      legacyRow.remove();
-    }
-
-    if (scoreboard && playerWrap) playerWrap.insertAdjacentElement('afterend', scoreboard);
     restoreTopRowStyle(exitRow, exitButton);
     restoreScoreboardStyle(scoreboard);
   }
@@ -137,10 +131,10 @@
     const hasPlayer = Boolean(activeButton || selectedDraft);
 
     if (!window.matchMedia(MOBILE_MEDIA).matches) {
-      screen.classList.remove('rp-mobile-player-workspace');
-      clearInline(rosters, 'display');
-      clearInline(selectedPanel, 'display');
-      restoreDesktopTopRow(screen, scoreboard);
+      // Desktop structure belongs exclusively to admin-recorded-scoring-desktop.js.
+      // This branch only removes mobile styling/state; it must never reposition
+      // the scoreboard, rosters, selected-player panel, or any scoring DOM node.
+      clearMobileWorkspaceState(screen, scoreboard, rosters, selectedPanel);
       return;
     }
 
