@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260915-home-4v4-loader-v56';
+  const version = '20260915-home-open-rank-admin-v57';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
