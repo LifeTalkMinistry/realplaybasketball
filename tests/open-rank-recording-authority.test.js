@@ -41,14 +41,16 @@ test('completed result heading is inline editable without exposing root-number m
   assert.match(admin, /heading\.textContent = `\$\{persisted\}\$\{suffix\}`/);
   assert.match(admin, /The result suffix remains automatic/);
 
-  // Result-card UI edits presentation only. The technical Open Rank repair
-  // endpoint is not produced or called from this surface anymore.
-  assert.doesNotMatch(admin, /set-open-rank-number/);
+  // Result-card UI edits presentation only. It may mention the old selector in
+  // order to remove cached controls, but it must never call the technical
+  // renumber action or recreate the renumber handler/data property.
+  assert.doesNotMatch(admin, /action:\s*['"]set-open-rank-number['"]/);
   assert.doesNotMatch(admin, /function setOpenRankNumber\(/);
-  assert.doesNotMatch(admin, /dataset\.rpSetOpenRankNumber/);
+  assert.doesNotMatch(admin, /dataset\.rpSetOpenRankNumber\s*=/);
   assert.doesNotMatch(admin, /EDIT OPEN RANK NUMBER/);
 
   // Old cached root-number controls are actively removed from the rendered UI.
+  assert.match(admin, /\[data-rp-set-open-rank-number\]/);
   assert.match(identity, /function removeLegacyManualNumberControls\(\)/);
   assert.match(identity, /\[data-rp-set-open-rank-number\], \[data-rp-manual-open-rank-number\]/);
 });
