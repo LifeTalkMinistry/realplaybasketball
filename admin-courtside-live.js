@@ -50,10 +50,11 @@
   function unlockAndRenameAuditTab() {
     const tab = document.querySelector('[data-rp-video-tab]');
     if (!tab) return;
-    tab.hidden = false;
-    tab.removeAttribute('hidden');
-    tab.setAttribute('aria-hidden', 'false');
-    tab.tabIndex = 0;
+
+    if (tab.hidden) tab.hidden = false;
+    if (tab.hasAttribute('hidden')) tab.removeAttribute('hidden');
+    if (tab.getAttribute('aria-hidden') !== 'false') tab.setAttribute('aria-hidden', 'false');
+    if (tab.tabIndex !== 0) tab.tabIndex = 0;
     if (String(tab.textContent || '').trim().toUpperCase() !== 'AUDIT') {
       tab.textContent = 'AUDIT';
     }
