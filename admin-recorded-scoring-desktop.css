@@ -29,14 +29,16 @@
 }
 
 /*
- * Full-browser score workspace. Start at 900 CSS px so a 1280px desktop using
- * Windows/browser scaling still gets the intended video-left / score-right UI.
+ * A desktop browser can report a much smaller CSS viewport when Windows display
+ * scaling or browser zoom is active. Use the split workspace from 700px upward
+ * so a full browser still shows VIDEO LEFT and SCORE DESK RIGHT.
  */
-@media (min-width:900px){
+@media (min-width:700px){
   .rp-admin-control.rp-recorded-desktop-mode .rp-admin-shell{
-    width:min(100%,1480px);
-    padding-left:24px;
-    padding-right:24px;
+    width:min(100%,1480px)!important;
+    max-width:none!important;
+    padding-left:18px;
+    padding-right:18px;
   }
   .rp-admin-control.rp-recorded-desktop-mode .rp-video-scoring-screen{
     gap:10px;
@@ -45,9 +47,10 @@
   }
   .rp-video-desktop-grid{
     display:grid;
-    grid-template-columns:minmax(0,1.42fr) minmax(430px,.88fr);
-    gap:20px;
+    grid-template-columns:minmax(0,1.45fr) minmax(300px,.8fr);
+    gap:16px;
     align-items:start;
+    width:100%;
     min-width:0;
   }
   .rp-video-desktop-left{
@@ -69,7 +72,7 @@
     display:grid;
     gap:12px;
     min-width:0;
-    padding:14px;
+    padding:12px;
     border:1px solid rgba(91,157,184,.2);
     border-radius:18px;
     background:linear-gradient(180deg,rgba(6,18,28,.98),rgba(3,10,17,.98));
@@ -174,16 +177,16 @@
   }
 }
 
-@media (min-width:900px) and (max-width:1240px){
+@media (min-width:700px) and (max-width:980px){
   .rp-video-desktop-grid{
-    grid-template-columns:minmax(0,1.32fr) minmax(360px,.78fr);
-    gap:14px;
+    grid-template-columns:minmax(0,1.25fr) minmax(280px,.78fr);
+    gap:12px;
   }
   .rp-admin-control.rp-recorded-desktop-mode .rp-admin-shell{
-    padding-left:18px;
-    padding-right:18px;
+    padding-left:12px;
+    padding-right:12px;
   }
   .rp-video-desktop-right{
-    padding:12px;
+    padding:10px;
   }
 }
