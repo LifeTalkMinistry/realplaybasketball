@@ -50,22 +50,24 @@
 
       /*
        * The artwork itself scales with the row width, so the badge must use the
-       * same coordinate system. Fixed right/width pixel values drift on devices
-       * with different viewport widths. Anchor the badge to the socket inside
-       * the artwork using percentages of the player row instead.
+       * same coordinate system. Fixed pixel offsets drift across devices.
+       * Keep X/Y and size as row-relative variables so every viewport preserves
+       * the same visual socket alignment.
        */
       .rp-world-player-row.rp-recognition-themed{
         --rp-featured-badge-x:75%;
-        --rp-featured-badge-width:24%;
+        --rp-featured-badge-y:47%;
+        --rp-featured-badge-width:23.5%;
       }
       .rp-world-player-row.rp-recognition-themed .rp-player-featured-badge{
         left:var(--rp-featured-badge-x)!important;
         right:auto!important;
-        top:50%!important;
+        top:var(--rp-featured-badge-y)!important;
         width:var(--rp-featured-badge-width)!important;
         height:auto!important;
         aspect-ratio:9 / 4;
         transform:translate(-50%,-50%)!important;
+        transform-origin:center center!important;
       }
       .rp-world-player-row.rp-recognition-themed .rp-player-featured-badge:hover{
         transform:translate(-50%,-50%) scale(1.055)!important;
