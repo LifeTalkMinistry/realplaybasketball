@@ -94,6 +94,24 @@
     document.documentElement.setAttribute(FILTER_ATTRIBUTE, activeFilterKey());
   }
 
+  function vectorForRow(row) {
+    return bars[String(row?.dataset?.recognitionType || '').trim().toLowerCase()] || '';
+  }
+
+  function applyVectorAuthority(root = document) {
+    const rows = [];
+    if (root instanceof HTMLElement && root.matches('.rp-world-player-row[data-recognition-type]')) rows.push(root);
+    root.querySelectorAll?.('.rp-world-player-row[data-recognition-type]').forEach((row) => rows.push(row));
+
+    rows.forEach((row) => {
+      const vector = vectorForRow(row);
+      if (!vector) return;
+      const value = `url("${vector}")`;
+      if (row.style.getPropertyValue('--rp-recognition-bar') === value && row.style.getPropertyPriority('--rp-recognition-bar') === 'important') return;
+      row.style.setProperty('--rp-recognition-bar', value, 'important');
+    });
+  }
+
   const style = document.createElement('style');
   style.dataset.rpWorldPlayerBarVector = '1';
   style.textContent = `
@@ -121,13 +139,39 @@
     .rp-world-player-row.rp-recognition-themed .rp-player-featured-badge:hover{transform:translate(-50%,-50%) scale(1.055)!important}
     .rp-world-player-row.rp-recognition-themed .rp-player-featured-badge:active{transform:translate(-50%,-50%) scale(.97)!important}
     .rp-world-player-row.rp-recognition-themed .rp-player-featured-count{right:4px!important;top:-8px!important;bottom:auto!important}
-    @media(max-width:420px){.rp-world-player-row.rp-recognition-themed .rp-player-featured-count{right:3px!important;top:-7px!important}}
+    @media(max-width:420px){.rp-world-player-row.rp-recognition-themed .rp-player-featured-count{right:3px!important;top:-7px!important;bottom:auto!important}}
   `;
   document.head.appendChild(style);
 
   document.addEventListener('click', (event) => {
-    if (event.target.closest?.('[data-player-sort]')) requestAnimationFrame(syncFilter);
+    if (event.target.closest?.('[data-player-sort]')) requestAnimationFrame(() => {
+      syncFilter();
+      applyVectorAuthority();
+    });
+  });
+
+  const observer = new MutationObserver((mutations) => {
+    let shouldSync = false;
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList') {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof HTMLElement) applyVectorAuthority(node);
+        });
+      } else if (mutation.type === 'attributes' && mutation.target instanceof HTMLElement) {
+        if (mutation.target.matches('.rp-world-player-row')) applyVectorAuthority(mutation.target);
+        if (mutation.target.matches('[data-player-sort]')) shouldSync = true;
+      }
+    });
+    if (shouldSync) syncFilter();
+  });
+
+  observer.observe(document.documentElement, {
+    childList:true,
+    subtree:true,
+    attributes:true,
+    attributeFilter:['data-recognition-type','class','style'],
   });
 
   syncFilter();
+  applyVectorAuthority();
 })();
