@@ -56,7 +56,7 @@
        */
       .rp-world-player-row.rp-recognition-themed{
         --rp-featured-badge-x:75%;
-        --rp-featured-badge-y:47%;
+        --rp-featured-badge-y:45.8%;
         --rp-featured-badge-width:23.5%;
       }
       .rp-world-player-row.rp-recognition-themed .rp-player-featured-badge{
