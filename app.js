@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260915-home-open-rank-admin-v58';
+  const version = '20260915-ranking-secured-roster-v59';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -300,6 +300,7 @@
       'main-menu-desktop-input-fix.js',
       'player-number-recovery.js',
       'ranking-games.js',
+      'ranking-games-secured-players.js',
       'ranking-games-info-toggle.js',
       'ranking-games-session-cleanup.js',
       'overlay-focus-release.js',
