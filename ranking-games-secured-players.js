@@ -48,14 +48,14 @@
       min-width:0;
       display:flex;
       align-items:center;
-      gap:8px;
-      min-height:34px;
-      padding:7px 9px;
+      gap:9px;
+      min-height:46px;
+      padding:8px 10px;
       border:1px solid rgba(120,160,199,.10);
       border-radius:10px;
       background:rgba(4,12,21,.72);
     }
-    .rp-ranking-secured-player b{
+    .rp-ranking-secured-player> b{
       flex:0 0 auto;
       color:#54718e;
       font-family:var(--rp-display,Arial,sans-serif);
@@ -63,19 +63,61 @@
       font-weight:950;
       letter-spacing:.04em;
     }
-    .rp-ranking-secured-player span{
+    .rp-ranking-secured-info{
+      min-width:0;
+      flex:1 1 auto;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:3px;
+    }
+    .rp-ranking-secured-name{
       min-width:0;
       overflow:hidden;
       color:#d9e5ef;
       font-family:var(--rp-display,Arial,sans-serif);
-      font-size:.55rem;
+      font-size:.56rem;
       font-weight:900;
       letter-spacing:.035em;
+      line-height:1.1;
       text-overflow:ellipsis;
       text-transform:uppercase;
       white-space:nowrap;
     }
-    .rp-ranking-secured-player em{
+    .rp-ranking-secured-meta{
+      min-width:0;
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:4px;
+      line-height:1;
+    }
+    .rp-ranking-secured-metric{
+      display:inline-flex;
+      align-items:center;
+      min-height:15px;
+      padding:2px 5px;
+      border:1px solid rgba(81,196,236,.13);
+      border-radius:999px;
+      background:rgba(17,49,70,.28);
+      color:#86a7bf;
+      font-family:var(--rp-display,Arial,sans-serif);
+      font-size:.36rem;
+      font-weight:950;
+      letter-spacing:.075em;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+    .rp-ranking-secured-metric.is-rank{
+      color:#57dbff;
+      border-color:rgba(71,211,250,.20);
+    }
+    .rp-ranking-secured-metric.is-unranked{
+      color:#72869a;
+      border-color:rgba(114,134,154,.14);
+      background:rgba(14,24,34,.34);
+    }
+    .rp-ranking-secured-player> em{
       flex:0 0 auto;
       margin-left:auto;
       padding:3px 5px;
@@ -103,7 +145,7 @@
       text-align:center;
       text-transform:uppercase;
     }
-    @media(max-width:390px){
+    @media(max-width:560px){
       .rp-ranking-secured-list{grid-template-columns:1fr}
     }
   `;
@@ -111,6 +153,12 @@
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
+  }
+
+  function finiteNumber(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
   function ensureRoster() {
@@ -179,11 +227,35 @@
       const number = document.createElement('b');
       number.textContent = String(index + 1).padStart(2, '0');
 
-      const name = document.createElement('span');
+      const info = document.createElement('div');
+      info.className = 'rp-ranking-secured-info';
+
+      const name = document.createElement('div');
+      name.className = 'rp-ranking-secured-name';
       name.textContent = String(player?.playerName || 'REAL PLAY PLAYER');
       name.title = name.textContent;
 
-      item.append(number, name);
+      const meta = document.createElement('div');
+      meta.className = 'rp-ranking-secured-meta';
+
+      const rank = finiteNumber(player?.rank);
+      const rankMetric = document.createElement('span');
+      rankMetric.className = rank && Number.isSafeInteger(rank) && rank > 0
+        ? 'rp-ranking-secured-metric is-rank'
+        : 'rp-ranking-secured-metric is-unranked';
+      rankMetric.textContent = rank && Number.isSafeInteger(rank) && rank > 0
+        ? `RANK #${rank}`
+        : 'UNRANKED';
+      meta.appendChild(rankMetric);
+
+      const ovr = finiteNumber(player?.ovr);
+      const ovrMetric = document.createElement('span');
+      ovrMetric.className = 'rp-ranking-secured-metric';
+      ovrMetric.textContent = ovr === null ? 'OVR —' : `OVR ${Math.round(ovr)}`;
+      meta.appendChild(ovrMetric);
+
+      info.append(name, meta);
+      item.append(number, info);
 
       if (player?.isYou) {
         const you = document.createElement('em');
