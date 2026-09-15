@@ -1,0 +1,30 @@
+name: Open Rank Identity CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  identity-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check changed JavaScript syntax
+        run: |
+          node --check open-rank-auto-id.js
+          node --check public-profile-history.js
+          node --check updates-session-title-admin.js
+
+      - name: Run Open Rank identity contract tests
+        run: node --test tests/open-rank-recording-authority.test.js

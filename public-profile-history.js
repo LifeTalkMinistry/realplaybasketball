@@ -85,6 +85,13 @@
     return positiveId(pick(game?.sessionId, game?.session_id, game?.id));
   }
 
+  function canonicalOpenRankNumber(game) {
+    const raw = game?.openRankNumber ?? game?.open_rank_number;
+    if (raw === null || raw === undefined || raw === '') return null;
+    const number = Number(raw);
+    return Number.isSafeInteger(number) && number > 0 ? number : null;
+  }
+
   function resultOf(game) {
     return String(game?.result || 'FINAL').toUpperCase();
   }
@@ -101,9 +108,11 @@
     if (game?.displayLabel || game?.officialGameId || game?.official_game_id) {
       return String(game.displayLabel || game.officialGameId || game.official_game_id);
     }
-    const openRankNumber = Number(pick(game?.openRankNumber, game?.open_rank_number));
-    if (openRankNumber > 0) return `OPEN RANK #${String(openRankNumber).padStart(3, '0')}`;
-    return String(game?.label || game?.title || `OFFICIAL GAME #${sessionId(game) || ''}`);
+    const openRankNumber = canonicalOpenRankNumber(game);
+    if (openRankNumber !== null) return `OPEN RANK #${String(openRankNumber).padStart(3, '0')}`;
+    // Internal session ids are relationship keys only; they are never public
+    // Open Ranking ordinals or display-number fallbacks.
+    return String(game?.label || game?.title || 'OPEN RANKING SESSION');
   }
 
   function dateOf(value) {

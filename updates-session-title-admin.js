@@ -12,7 +12,6 @@
   let checkingAdmin = false;
   let lastToken = '';
   let feedObserver = null;
-  let pageObserver = null;
   let decorateQueued = false;
 
   function token() {
@@ -31,6 +30,10 @@
     return Number.isSafeInteger(id) && id > 0 ? id : null;
   }
 
+  function isResultCard(card) {
+    return /^career-\d+-result$/i.test(String(card?.dataset?.updateId || ''));
+  }
+
   function titleParts(value) {
     const text = String(value || '').trim();
     const match = text.match(/^(.*?)(\s*·\s*(?:WEST WINS|EAST WINS|FINAL SCORE|LIVE))$/i);
@@ -40,15 +43,13 @@
 
   function canonicalOpenRankNumberForCard(card) {
     const sessionId = sessionIdFromCard(card);
-    if (sessionId) {
-      const canonical = Number(window.RealPlayOpenRankIdentity?.numberForSession?.(sessionId));
-      if (Number.isSafeInteger(canonical) && canonical > 0) return canonical;
-    }
+    if (!sessionId) return null;
 
-    const text = String(card?.textContent || '');
-    const match = text.match(/(?:OPEN\s+RANK(?:ING(?:\s+SESSION)?)?|CAREER)\s*#\s*(\d+)/i);
-    const number = Number(match?.[1]);
-    return Number.isSafeInteger(number) && number > 0 ? number : null;
+    const canonical = Number(window.RealPlayOpenRankIdentity?.numberForSession?.(sessionId));
+    if (Number.isSafeInteger(canonical) && canonical > 0) return canonical;
+
+    const datasetNumber = Number(card?.dataset?.rpOfficialOpenRankNumber);
+    return Number.isSafeInteger(datasetNumber) && datasetNumber > 0 ? datasetNumber : null;
   }
 
   function injectStyles() {
@@ -62,7 +63,6 @@
       .rp-update-session-action{flex:0 0 auto;margin-top:1px;padding:5px 7px;border:1px solid rgba(55,205,255,.2);border-radius:8px;color:#54d9ff;background:rgba(22,105,190,.08);font-family:var(--rp-display,Arial,sans-serif);font-size:.40rem;font-weight:950;letter-spacing:.06em;white-space:nowrap}
       .rp-update-session-action[data-rp-delete-session]{border-color:rgba(255,74,91,.24);color:#ff6d79;background:rgba(130,18,30,.09)}
       .rp-update-session-action:disabled{opacity:.5}
-      .rp-admin-session-manage-action[data-rp-manual-open-rank-number]{border-color:rgba(55,205,255,.38);color:#54d9ff;background:rgba(22,105,190,.10)}
       @media(max-width:380px){.rp-update-session-name-row{gap:7px}.rp-update-session-actions{gap:4px}.rp-update-session-action{padding:4px 6px;font-size:.37rem}}
     `;
     document.head.appendChild(style);
@@ -100,6 +100,32 @@
     return admin;
   }
 
+  function syncResultRepairButton(card, actions, sessionId) {
+    const existing = actions.querySelector('[data-rp-set-open-rank-number]');
+
+    // SET # is a repair surface only for a completed result card. Schedule/live
+    // cards and the active setup/control surface must never produce this button.
+    if (!isResultCard(card)) {
+      existing?.remove();
+      return;
+    }
+
+    let button = existing;
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'rp-update-session-action';
+      button.dataset.rpSetOpenRankNumber = String(sessionId);
+      button.textContent = 'SET #';
+      actions.appendChild(button);
+    }
+
+    const canonical = canonicalOpenRankNumberForCard(card);
+    const repairable = Number.isSafeInteger(canonical) && canonical > 0;
+    button.hidden = !repairable;
+    button.disabled = !repairable;
+  }
+
   function decorateCards() {
     if (!admin) return;
     const panel = document.querySelector('[data-rp-updates]');
@@ -107,56 +133,41 @@
 
     panel.querySelectorAll('.rp-update-card[data-update-id]').forEach((card) => {
       const sessionId = sessionIdFromCard(card);
-      if (!sessionId || card.querySelector('[data-rp-edit-session-name]')) return;
-      const heading = card.querySelector(':scope > h2');
-      if (!heading) return;
+      if (!sessionId) return;
 
-      const row = document.createElement('div');
-      row.className = 'rp-update-session-name-row';
-      heading.parentNode.insertBefore(row, heading);
-      row.appendChild(heading);
+      let row = card.querySelector('.rp-update-session-name-row');
+      let actions = row?.querySelector('.rp-update-session-actions');
 
-      const actions = document.createElement('div');
-      actions.className = 'rp-update-session-actions';
+      if (!row || !actions) {
+        const heading = card.querySelector(':scope > h2');
+        if (!heading) return;
 
-      const renameButton = document.createElement('button');
-      renameButton.type = 'button';
-      renameButton.className = 'rp-update-session-action';
-      renameButton.dataset.rpEditSessionName = String(sessionId);
-      renameButton.textContent = 'NAME ✎';
+        row = document.createElement('div');
+        row.className = 'rp-update-session-name-row';
+        heading.parentNode.insertBefore(row, heading);
+        row.appendChild(heading);
 
-      const numberButton = document.createElement('button');
-      numberButton.type = 'button';
-      numberButton.className = 'rp-update-session-action';
-      numberButton.dataset.rpSetOpenRankNumber = String(sessionId);
-      numberButton.textContent = 'SET #';
+        actions = document.createElement('div');
+        actions.className = 'rp-update-session-actions';
 
-      const deleteButton = document.createElement('button');
-      deleteButton.type = 'button';
-      deleteButton.className = 'rp-update-session-action';
-      deleteButton.dataset.rpDeleteSession = String(sessionId);
-      deleteButton.textContent = 'DELETE';
+        const renameButton = document.createElement('button');
+        renameButton.type = 'button';
+        renameButton.className = 'rp-update-session-action';
+        renameButton.dataset.rpEditSessionName = String(sessionId);
+        renameButton.textContent = 'NAME ✎';
 
-      actions.append(renameButton, numberButton, deleteButton);
-      row.appendChild(actions);
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'rp-update-session-action';
+        deleteButton.dataset.rpDeleteSession = String(sessionId);
+        deleteButton.textContent = 'DELETE';
+
+        actions.append(renameButton, deleteButton);
+        row.appendChild(actions);
+      }
+
+      syncResultRepairButton(card, actions, sessionId);
     });
-  }
-
-  function decorateGameControlManage() {
-    if (!admin) return;
-    const control = document.querySelector('.rp-admin-control');
-    if (!control) return;
-
-    const manage = control.querySelector('.rp-admin-session-manage');
-    const actions = manage?.querySelector('.rp-admin-session-manage-actions');
-    if (!actions || actions.querySelector('[data-rp-manual-open-rank-number]')) return;
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'rp-admin-session-manage-action';
-    button.dataset.rpManualOpenRankNumber = '1';
-    button.textContent = 'EDIT OPEN RANK NUMBER';
-    actions.appendChild(button);
   }
 
   async function refreshOpenRankIdentity() {
@@ -167,74 +178,12 @@
     }
   }
 
-  async function setActiveOpenRankNumber(button) {
-    if (!admin || !button) return;
-    const auth = token();
-    if (!auth) return;
-
-    button.disabled = true;
-    const previousText = button.textContent;
-    button.textContent = 'LOADING…';
-
-    try {
-      const response = await fetch(CONTROL_URL, {
-        method: 'GET',
-        headers: { Accept: 'application/json', Authorization: `Bearer ${auth}` },
-        cache: 'no-store',
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data?.message || data?.error || `Request failed (${response.status}).`);
-
-      const session = data?.control?.session || null;
-      const sessionId = Number(session?.id || 0);
-      const current = Number(session?.openRankNumber ?? session?.open_rank_number ?? 0);
-      if (!Number.isSafeInteger(sessionId) || sessionId < 1) throw new Error('No active Open Ranking session is available.');
-
-      const proposed = window.prompt(
-        'Set the official Open Rank number for this game:',
-        current > 0 ? String(current) : ''
-      );
-      if (proposed === null) return;
-
-      const value = Number(String(proposed).trim());
-      if (!Number.isSafeInteger(value) || value < 1 || value > 999999) {
-        window.alert('Enter a whole Open Rank number from 1 to 999999.');
-        return;
-      }
-
-      button.textContent = 'SAVING…';
-      const saveResponse = await fetch(CONTROL_URL, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${auth}`,
-        },
-        body: JSON.stringify({ action: 'set-open-rank-number', sessionId, openRankNumber: value }),
-        cache: 'no-store',
-      });
-      const saveData = await saveResponse.json().catch(() => ({}));
-      if (!saveResponse.ok) throw new Error(saveData?.message || saveData?.error || 'Could not change this Open Rank number.');
-
-      button.textContent = 'SAVED ✓';
-      await refreshOpenRankIdentity();
-      window.dispatchEvent(new CustomEvent('realplay:admin-render'));
-      window.setTimeout(() => window.location.reload(), 350);
-    } catch (error) {
-      if (error?.message) window.alert(error.message);
-      button.textContent = previousText;
-    } finally {
-      button.disabled = false;
-    }
-  }
-
   function queueDecorate() {
     if (!admin || decorateQueued) return;
     decorateQueued = true;
     window.requestAnimationFrame(() => {
       decorateQueued = false;
       decorateCards();
-      decorateGameControlManage();
     });
   }
 
@@ -252,18 +201,6 @@
       if (hasNewCard) queueDecorate();
     });
     feedObserver.observe(feed, { childList: true });
-    return true;
-  }
-
-  function attachPageObserver() {
-    if (pageObserver) return true;
-    const control = document.querySelector('.rp-admin-control');
-    if (!control) return false;
-    pageObserver = new MutationObserver(() => {
-      if (!admin) return;
-      queueDecorate();
-    });
-    pageObserver.observe(control, { childList: true, subtree: true });
     return true;
   }
 
@@ -344,10 +281,17 @@
     if (!Number.isSafeInteger(sessionId) || sessionId < 1) return;
 
     const card = button.closest('.rp-update-card');
+    if (!card || !isResultCard(card)) return;
+
     const current = visibleOpenRankNumber(card);
+    if (!Number.isSafeInteger(current) || current < 1) {
+      window.alert('This game has no official Open Rank number yet. A number is assigned only after the first successful official game upload.');
+      return;
+    }
+
     const proposed = window.prompt(
-      'Set the official Open Rank number for this game:',
-      current ? String(current) : ''
+      'Repair the official Open Rank number for this recorded game:',
+      String(current)
     );
     if (proposed === null) return;
 
@@ -408,7 +352,9 @@
     const openRankNumber = visibleOpenRankNumber(card);
     const label = openRankNumber ? `OPEN RANK #${String(openRankNumber).padStart(3, '0')}` : `SESSION ${sessionId}`;
 
-    if (!window.confirm(`Delete ${label}?\n\nThis removes the session and its linked game data from Real Play.`)) return;
+    if (!window.confirm(`Delete ${label}?\
+\
+This removes the session and its linked game data from Real Play.`)) return;
     const typed = window.prompt(`Type DELETE to permanently remove ${label}.`, '');
     if (typed !== 'DELETE') {
       if (typed !== null) window.alert('Deletion cancelled. Type DELETE exactly to confirm.');
@@ -446,16 +392,14 @@
   }
 
   document.addEventListener('click', (event) => {
-    const manualManageNumber = event.target.closest('[data-rp-manual-open-rank-number]');
     const rename = event.target.closest('[data-rp-edit-session-name]');
     const renumber = event.target.closest('[data-rp-set-open-rank-number]');
     const remove = event.target.closest('[data-rp-delete-session]');
-    const button = manualManageNumber || rename || renumber || remove;
+    const button = rename || renumber || remove;
     if (!button) return;
     event.preventDefault();
     event.stopPropagation();
-    if (manualManageNumber) setActiveOpenRankNumber(manualManageNumber);
-    else if (rename) renameSession(rename);
+    if (rename) renameSession(rename);
     else if (renumber) setOpenRankNumber(renumber);
     else deleteSession(remove);
   }, true);
@@ -465,7 +409,6 @@
     if (auth !== lastToken) admin = false;
     if (await detectAdmin()) {
       attachFeedObserver();
-      attachPageObserver();
       queueDecorate();
     }
   }
@@ -492,9 +435,11 @@
     lastToken = '';
     refreshAuthorityAndDecorate();
   });
+  window.addEventListener('realplay:admin-render', () => {
+    queueDecorate();
+  });
 
   injectStyles();
   attachFeedObserver();
-  attachPageObserver();
   refreshAuthorityAndDecorate();
 })();
