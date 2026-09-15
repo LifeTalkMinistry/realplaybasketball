@@ -4,7 +4,9 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
-  const DESKTOP_MEDIA = '(min-width:1100px)';
+  // Full-browser scoring should use the side-by-side workspace even when
+  // Windows/browser scaling reduces the CSS viewport below 1100px.
+  const DESKTOP_MEDIA = '(min-width:900px)';
 
   let layoutTimer = null;
   let rulesTimer = null;
@@ -160,6 +162,26 @@
     grid.remove();
   }
 
+  function syncDesktopColumns(scoring, grid) {
+    const left = grid?.querySelector('[data-rp-video-desktop-left]');
+    const right = grid?.querySelector('[data-rp-video-desktop-right]');
+    if (!left || !right) return;
+
+    const moveIfNeeded = (node, target) => {
+      if (node && node.parentElement !== target) target.appendChild(node);
+    };
+
+    moveIfNeeded(scoring.querySelector('.rp-video-player-wrap'), left);
+    moveIfNeeded(scoring.querySelector('.rp-video-auto-note'), left);
+    moveIfNeeded(scoring.querySelector('[data-rp-draft-banner]'), left);
+    moveIfNeeded(scoring.querySelector('[data-rp-cancel-video-card]'), left);
+
+    moveIfNeeded(scoring.querySelector('.rp-video-scoreboard'), right);
+    moveIfNeeded(scoring.querySelector('.rp-video-score-rosters'), right);
+    moveIfNeeded(scoring.querySelector('[data-rp-video-selected-panel]'), right);
+    moveIfNeeded(scoring.querySelector('.rp-video-review-actions'), right);
+  }
+
   function applyDesktopLayout() {
     const adminRoot = root();
     const scoring = screen();
@@ -179,18 +201,20 @@
     adminRoot.classList.add('rp-recorded-desktop-mode');
     scoring.classList.add('rp-video-desktop-ready');
 
-    const existing = scoring.querySelector('[data-rp-video-desktop-grid]');
-    if (existing) return;
+    let grid = scoring.querySelector('[data-rp-video-desktop-grid]');
+    if (grid) {
+      syncDesktopColumns(scoring, grid);
+      return;
+    }
 
     const playerWrap = scoring.querySelector('.rp-video-player-wrap');
     const scoreboard = scoring.querySelector('.rp-video-scoreboard');
-    const rosters = scoring.querySelector('.rp-video-score-rosters');
-    const selectedPanel = scoring.querySelector('[data-rp-video-selected-panel]');
-    const reviewActions = scoring.querySelector('.rp-video-review-actions');
 
-    if (!playerWrap || !scoreboard || !rosters || !selectedPanel || !reviewActions) return;
+    // These are the two true desktop anchors. Other scoring controls may render
+    // a moment later; the observer will move them into the correct column.
+    if (!playerWrap || !scoreboard) return;
 
-    const grid = document.createElement('div');
+    grid = document.createElement('div');
     grid.className = 'rp-video-desktop-grid';
     grid.dataset.rpVideoDesktopGrid = '1';
 
@@ -205,19 +229,7 @@
 
     playerWrap.insertAdjacentElement('beforebegin', grid);
     grid.append(left, right);
-
-    left.appendChild(playerWrap);
-
-    const autoNote = scoring.querySelector('.rp-video-auto-note');
-    if (autoNote) left.appendChild(autoNote);
-
-    const draftBanner = scoring.querySelector('[data-rp-draft-banner]');
-    if (draftBanner) left.appendChild(draftBanner);
-
-    const cancelCard = scoring.querySelector('[data-rp-cancel-video-card]');
-    if (cancelCard) left.appendChild(cancelCard);
-
-    right.append(scoreboard, rosters, selectedPanel, reviewActions);
+    syncDesktopColumns(scoring, grid);
   }
 
   function scheduleLayout() {
