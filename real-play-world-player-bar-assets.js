@@ -76,13 +76,17 @@
         transform:translate(-50%,-50%) scale(.97)!important;
       }
 
-      /* Keep the recognition count clear of the OVR value on the right. */
+      /* Sit the recognition count on the badge's upper edge, not beside the OVR. */
       .rp-world-player-row.rp-recognition-themed .rp-player-featured-count{
-        bottom:6px!important;
+        right:4px!important;
+        top:-8px!important;
+        bottom:auto!important;
       }
       @media(max-width:420px){
         .rp-world-player-row.rp-recognition-themed .rp-player-featured-count{
-          bottom:5px!important;
+          right:3px!important;
+          top:-7px!important;
+          bottom:auto!important;
         }
       }
     `;
