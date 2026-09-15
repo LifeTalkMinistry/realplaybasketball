@@ -130,25 +130,43 @@
     return numeric(text, null);
   }
 
+  function sameId(left, right) {
+    const a = numeric(left, null);
+    const b = numeric(right, null);
+    return a !== null && b !== null && a === b;
+  }
+
   function matchPlayer(players, selected, profile, meUserId) {
     if (!Array.isArray(players)) return selected || null;
 
-    const selectedIds = [selected?.playerId, selected?.userId, selected?.accountUserId]
-      .map((value) => numeric(value, null))
-      .filter((value) => value !== null);
-    if (selectedIds.length) {
-      const byId = players.find((player) => {
-        const ids = [player?.playerId, player?.userId, player?.accountUserId]
-          .map((value) => numeric(value, null))
-          .filter((value) => value !== null);
-        return ids.some((id) => selectedIds.includes(id));
-      });
-      if (byId) return byId;
+    const isPublic = Boolean(profile?.classList?.contains('rp-public-player-profile'));
+
+    // Public profiles already expose the canonical playerId on the panel.
+    // Match playerId only to playerId so numeric values from different ID
+    // namespaces (playerId vs accountUserId/userId) can never collide.
+    if (isPublic) {
+      const canonicalPlayerId = numeric(profile?.dataset?.rpPublicPlayerId ?? selected?.playerId, null);
+      if (canonicalPlayerId !== null) {
+        const byPlayerId = players.find((player) => sameId(player?.playerId, canonicalPlayerId));
+        if (byPlayerId) return byPlayerId;
+      }
+    }
+
+    // If we have a selected player object, preserve each identifier namespace.
+    // Never compare a playerId against an accountUserId or userId.
+    if (selected) {
+      const identifierKeys = ['playerId', 'accountUserId', 'userId'];
+      for (const key of identifierKeys) {
+        const selectedValue = numeric(selected?.[key], null);
+        if (selectedValue === null) continue;
+        const exact = players.find((player) => sameId(player?.[key], selectedValue));
+        if (exact) return exact;
+      }
     }
 
     const ownId = numeric(meUserId, null);
-    if (!profile?.classList?.contains('rp-public-player-profile') && ownId !== null) {
-      const own = players.find((player) => numeric(player?.userId, null) === ownId || numeric(player?.accountUserId, null) === ownId);
+    if (!isPublic && ownId !== null) {
+      const own = players.find((player) => sameId(player?.userId, ownId) || sameId(player?.accountUserId, ownId));
       if (own) return own;
     }
 
