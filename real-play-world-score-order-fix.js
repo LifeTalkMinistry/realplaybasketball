@@ -35,7 +35,7 @@
   function loadWorldPlayerBarAssets() {
     if (window.__realPlayWorldPlayerBarAssetsInstalled || document.querySelector('script[data-rp-world-player-bar-assets-loader]')) return;
     const script = document.createElement('script');
-    script.src = 'real-play-world-player-bar-assets.js?v=20260915-recognition-count-clearance-v7';
+    script.src = 'real-play-world-player-bar-assets.js?v=20260915-recognition-count-top-v8';
     script.async = false;
     script.dataset.rpWorldPlayerBarAssetsLoader = '1';
     script.addEventListener('error', () => console.warn('[Real Play] World player bar assets did not load.'), { once: true });
