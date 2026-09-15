@@ -57,4 +57,15 @@
     attributes: true,
     attributeFilter: ['data-recognition-type'],
   });
+
+  // Load the dedicated 4v4 preference OVR header enhancement. Keeping the
+  // feature in its own file lets the team-formation UI stay independent from
+  // the recognition artwork compatibility code above.
+  if (!document.querySelector('script[data-rp-4v4-team-ovr-header-loader]')) {
+    const script = document.createElement('script');
+    script.dataset.rp4v4TeamOvrHeaderLoader = '1';
+    script.src = 'home-future-4v4-team-ovr-header.js?v=20260915-4v4-team-ovr-v1';
+    script.async = false;
+    document.head.appendChild(script);
+  }
 })();
