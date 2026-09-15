@@ -28,7 +28,11 @@
   display:none!important;
 }
 
-@media (min-width:1100px){
+/*
+ * Full-browser score workspace. Start at 900 CSS px so a 1280px desktop using
+ * Windows/browser scaling still gets the intended video-left / score-right UI.
+ */
+@media (min-width:900px){
   .rp-admin-control.rp-recorded-desktop-mode .rp-admin-shell{
     width:min(100%,1480px);
     padding-left:24px;
@@ -95,6 +99,8 @@
     font:650 9px/1.4 system-ui,sans-serif;
   }
   .rp-video-desktop-left .rp-video-player-wrap{
+    width:100%;
+    min-width:0;
     padding:10px;
     border:1px solid rgba(87,150,177,.18);
     border-radius:18px;
@@ -102,6 +108,7 @@
   }
   .rp-video-desktop-left .rp-youtube-stage,
   .rp-video-desktop-left .rp-video-player-wrap video{
+    width:100%;
     border-radius:15px;
   }
   .rp-video-desktop-left .rp-youtube-controls{
@@ -167,13 +174,16 @@
   }
 }
 
-@media (min-width:1100px) and (max-width:1240px){
+@media (min-width:900px) and (max-width:1240px){
   .rp-video-desktop-grid{
-    grid-template-columns:minmax(0,1.2fr) minmax(410px,.95fr);
+    grid-template-columns:minmax(0,1.32fr) minmax(360px,.78fr);
     gap:14px;
   }
   .rp-admin-control.rp-recorded-desktop-mode .rp-admin-shell{
     padding-left:18px;
     padding-right:18px;
+  }
+  .rp-video-desktop-right{
+    padding:12px;
   }
 }
