@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260915-ranking-secured-metrics-v61';
+  const version = '20260915-ranking-secured-profile-links-v62';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
