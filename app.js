@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260915-replay-editor-root-v53';
+  const version = '20260915-desktop-scoring-layout-v54';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
