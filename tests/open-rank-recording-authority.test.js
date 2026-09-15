@@ -24,13 +24,25 @@ test('Open Rank display consumes canonical backend identity and preserves NULL a
   assert.doesNotMatch(history, /OPEN RANKING SESSION #000/i);
 });
 
-test('normal setup/schedule flow cannot expose manual SET # as a numbering engine', () => {
+test('manual Open Rank correction is produced only as repair for recorded result cards', () => {
   const identity = read('open-rank-auto-id.js');
+  const admin = read('updates-session-title-admin.js');
 
   assert.match(identity, /sessionIdFromResultCard\(card\)/);
   assert.match(identity, /const repairable = Number\.isSafeInteger\(number\) && number > 0/);
   assert.match(identity, /button\.hidden = !repairable/);
   assert.match(identity, /button\.disabled = !repairable/);
-  assert.match(identity, /\[data-rp-manual-open-rank-number\]/);
-  assert.match(identity, /button\.remove\(\)/);
+
+  assert.match(admin, /function isResultCard\(card\)/);
+  assert.match(admin, /if \(!isResultCard\(card\)\)/);
+  assert.match(admin, /const repairable = Number\.isSafeInteger\(canonical\) && canonical > 0/);
+  assert.match(admin, /button\.hidden = !repairable/);
+  assert.match(admin, /button\.disabled = !repairable/);
+  assert.match(admin, /Repair the official Open Rank number for this recorded game/);
+
+  // The old active-session producer caused a MutationObserver append/remove loop.
+  assert.doesNotMatch(admin, /function decorateGameControlManage\(/);
+  assert.doesNotMatch(admin, /function setActiveOpenRankNumber\(/);
+  assert.doesNotMatch(admin, /dataset\.rpManualOpenRankNumber/);
+  assert.doesNotMatch(admin, /EDIT OPEN RANK NUMBER/);
 });
