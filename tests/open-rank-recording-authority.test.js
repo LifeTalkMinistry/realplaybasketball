@@ -6,7 +6,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('Open Rank display consumes canonical backend identity and preserves NULL as unnumbered', () => {
+test('Open Rank identity remains canonical while result display text may be overridden', () => {
   const identity = read('open-rank-auto-id.js');
   const history = read('public-profile-history.js');
 
@@ -15,7 +15,12 @@ test('Open Rank display consumes canonical backend identity and preserves NULL a
   assert.match(identity, /officialSessionNumber = positiveOpenRankNumber\(rawNumber\)/);
   assert.match(identity, /node\.textContent = 'OPEN RANKING SESSION'/);
   assert.match(identity, /FIRST SUCCESSFUL GAME UPLOAD/i);
-  assert.match(identity, /SET # IS REPAIR-ONLY/i);
+  assert.match(identity, /RESULT CARD DISPLAY TEXT CAN BE EDITED SEPARATELY/i);
+
+  // The routed backend result title is presentation authority. This is
+  // intentionally unconditional so an admin can display another #xxx text
+  // without the frontend snapping it back to canonical identity metadata.
+  assert.match(identity, /if \(backendTitle\) return backendTitle/);
 
   assert.match(history, /function canonicalOpenRankNumber\(game\)/);
   assert.match(history, /return String\(game\?\.label \|\| game\?\.title \|\| 'OPEN RANKING SESSION'\)/);
@@ -24,25 +29,28 @@ test('Open Rank display consumes canonical backend identity and preserves NULL a
   assert.doesNotMatch(history, /OPEN RANKING SESSION #000/i);
 });
 
-test('manual Open Rank correction is produced only as repair for recorded result cards', () => {
+test('completed result heading is inline editable without exposing root-number mutation', () => {
   const identity = read('open-rank-auto-id.js');
   const admin = read('updates-session-title-admin.js');
 
-  assert.match(identity, /sessionIdFromResultCard\(card\)/);
-  assert.match(identity, /const repairable = Number\.isSafeInteger\(number\) && number > 0/);
-  assert.match(identity, /button\.hidden = !repairable/);
-  assert.match(identity, /button\.disabled = !repairable/);
+  assert.match(admin, /function beginResultTitleEdit\(target\)/);
+  assert.match(admin, /dataset\.rpEditResultTitleHeading = String\(sessionId\)/);
+  assert.match(admin, /data-rp-result-title-editor/);
+  assert.match(admin, /action: 'set-result-display-title'/);
+  assert.match(admin, /displayTitle,/);
+  assert.match(admin, /heading\.textContent = `\$\{persisted\}\$\{suffix\}`/);
+  assert.match(admin, /The result suffix remains automatic/);
 
-  assert.match(admin, /function isResultCard\(card\)/);
-  assert.match(admin, /if \(!isResultCard\(card\)\)/);
-  assert.match(admin, /const repairable = Number\.isSafeInteger\(canonical\) && canonical > 0/);
-  assert.match(admin, /button\.hidden = !repairable/);
-  assert.match(admin, /button\.disabled = !repairable/);
-  assert.match(admin, /Repair the official Open Rank number for this recorded game/);
-
-  // The old active-session producer caused a MutationObserver append/remove loop.
-  assert.doesNotMatch(admin, /function decorateGameControlManage\(/);
-  assert.doesNotMatch(admin, /function setActiveOpenRankNumber\(/);
-  assert.doesNotMatch(admin, /dataset\.rpManualOpenRankNumber/);
+  // Result-card UI edits presentation only. It may mention the old selector in
+  // order to remove cached controls, but it must never call the technical
+  // renumber action or recreate the renumber handler/data property.
+  assert.doesNotMatch(admin, /action:\s*['"]set-open-rank-number['"]/);
+  assert.doesNotMatch(admin, /function setOpenRankNumber\(/);
+  assert.doesNotMatch(admin, /dataset\.rpSetOpenRankNumber\s*=/);
   assert.doesNotMatch(admin, /EDIT OPEN RANK NUMBER/);
+
+  // Old cached root-number controls are actively removed from the rendered UI.
+  assert.match(admin, /\[data-rp-set-open-rank-number\]/);
+  assert.match(identity, /function removeLegacyManualNumberControls\(\)/);
+  assert.match(identity, /\[data-rp-set-open-rank-number\], \[data-rp-manual-open-rank-number\]/);
 });

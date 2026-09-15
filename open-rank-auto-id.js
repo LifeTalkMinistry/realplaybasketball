@@ -11,9 +11,8 @@
   let identityRequestInFlight = false;
   let lastIdentityFetchAt = 0;
 
-  // Every result surface must use the same canonical Open Rank number stored on
-  // the session. World/results must never invent a second ordinal from publish
-  // order, database id, array position, or any other local counter.
+  // Canonical Open Rank identity remains backend-owned metadata. Result-card
+  // display text is a separate presentation concern and may be admin-overridden.
   let officialResultNumbers = new Map();
   let officialResultUpdates = new Map();
   let resultIdentityRequestInFlight = false;
@@ -133,11 +132,6 @@
     return '';
   }
 
-  function isAutomaticOpenRankTitle(value) {
-    const base = titleParts(value).base;
-    return /^(?:CAREER|OPEN\s+RANK(?:ING)?(?:\s+SESSION)?)\s*#\s*\d+$/i.test(base);
-  }
-
   function officialResultLabel(sessionId, currentTitle = '') {
     const number = officialResultNumbers.get(Number(sessionId));
     if (!Number.isSafeInteger(number) || number < 1) return null;
@@ -150,29 +144,18 @@
     const update = officialResultUpdates.get(Number(sessionId));
     const backendTitle = String(update?.title || '').trim();
 
-    // The backend title is authoritative whenever it is a deliberate custom
-    // matchup/event name. Only automatic/legacy numbered titles are normalized
-    // to the canonical stored Open Rank number.
-    if (backendTitle && !isAutomaticOpenRankTitle(backendTitle)) return backendTitle;
+    // The routed backend result title already applies result_display_title when
+    // an admin has set one. Trust that presentation value exactly, even when it
+    // intentionally looks like another OPEN RANKING SESSION #xxx label.
+    if (backendTitle) return backendTitle;
     return officialResultLabel(sessionId, currentTitle);
   }
 
-  function syncManualRepairControls() {
-    // SET # remains emergency repair only for an already-numbered official
-    // result. Schedule/live/setup cards must never offer a way to manufacture an
-    // Open Rank number before the first successful recording exists.
-    document.querySelectorAll('[data-rp-set-open-rank-number]').forEach((button) => {
-      const card = button.closest('[data-update-id]');
-      const sessionId = sessionIdFromResultCard(card);
-      const number = sessionId ? officialResultNumbers.get(sessionId) : null;
-      const repairable = Number.isSafeInteger(number) && number > 0;
-      button.hidden = !repairable;
-      button.disabled = !repairable;
-    });
-
-    // The active game-control surface is session/setup flow, not historical
-    // repair. Remove its manual-number control entirely.
-    document.querySelectorAll('[data-rp-manual-open-rank-number]').forEach((button) => button.remove());
+  function removeLegacyManualNumberControls() {
+    // The result card no longer edits technical identity. Any legacy root-number
+    // controls left by an old cached asset are removed from the visible UI.
+    document.querySelectorAll('[data-rp-set-open-rank-number], [data-rp-manual-open-rank-number]')
+      .forEach((button) => button.remove());
   }
 
   function applyOfficialResultLabels() {
@@ -185,32 +168,18 @@
       const number = officialResultNumbers.get(sessionId);
       if (!Number.isSafeInteger(number) || number < 1) {
         missingIdentity = true;
-        return;
+      } else {
+        card.dataset.rpOfficialOpenRankNumber = String(number);
       }
 
       const heading = card.querySelector('.rp-update-session-name-row > h2, :scope > h2');
       if (!heading) return;
 
-      const update = officialResultUpdates.get(sessionId);
-      const backendTitle = String(update?.title || '').trim();
-      const backendHasCustomTitle = Boolean(backendTitle && !isAutomaticOpenRankTitle(backendTitle));
-      const currentIsAutomatic = isAutomaticOpenRankTitle(heading.textContent);
-
-      // Two independent authorities live here:
-      // 1) backend title = custom display name authority
-      // 2) open_rank_number = numbered identity authority
-      // A custom title must never be overwritten merely because this card was
-      // previously synchronized. Automatic titles always follow the canonical
-      // number, including admin corrections and swaps.
-      if (backendHasCustomTitle || currentIsAutomatic) {
-        const next = authoritativeResultTitle(sessionId, heading.textContent);
-        if (next && heading.textContent !== next) heading.textContent = next;
-      }
-
-      card.dataset.rpOfficialOpenRankNumber = String(number);
+      const next = authoritativeResultTitle(sessionId, heading.textContent);
+      if (next && heading.textContent !== next) heading.textContent = next;
     });
 
-    syncManualRepairControls();
+    removeLegacyManualNumberControls();
     return missingIdentity;
   }
 
@@ -239,12 +208,12 @@
           sessionId: sessionIdFromUpdate(item),
           openRankNumber: canonicalOpenRankNumber(item),
         }))
-        .filter((entry) => entry.sessionId && entry.openRankNumber);
+        .filter((entry) => entry.sessionId);
 
       const numbers = new Map();
       const updates = new Map();
       results.forEach((entry) => {
-        numbers.set(entry.sessionId, entry.openRankNumber);
+        if (entry.openRankNumber) numbers.set(entry.sessionId, entry.openRankNumber);
         updates.set(entry.sessionId, entry.item);
       });
 
@@ -252,7 +221,7 @@
       officialResultUpdates = updates;
       applyOfficialResultLabels();
     } catch (_error) {
-      // The result feed still renders normally if canonical numbering metadata cannot load.
+      // The result feed still renders normally if canonical metadata cannot load.
     } finally {
       resultIdentityRequestInFlight = false;
     }
@@ -262,7 +231,7 @@
     if (resultIdentityTimer) clearTimeout(resultIdentityTimer);
     resultIdentityTimer = setTimeout(() => {
       const missingIdentity = applyOfficialResultLabels();
-      if (force || missingIdentity || !officialResultNumbers.size) {
+      if (force || missingIdentity || !officialResultUpdates.size) {
         refreshOfficialResultIdentity({ force }).catch(() => {});
       }
     }, 30);
@@ -297,7 +266,7 @@
         officialSessionNumber = null;
         officialSessionId = null;
         applyCanonicalSessionLabel();
-        syncManualRepairControls();
+        removeLegacyManualNumberControls();
         return;
       }
 
@@ -305,7 +274,7 @@
       officialSessionNumber = positiveOpenRankNumber(rawNumber);
       officialSessionId = Number(session.id || 0) || null;
       applyCanonicalSessionLabel();
-      syncManualRepairControls();
+      removeLegacyManualNumberControls();
     } catch (_error) {
       // The base admin UI owns network/error messaging. This layer only refines
       // the identity when the canonical control response is available.
@@ -331,9 +300,7 @@
       });
     }
 
-    // Numbering is recording-authoritative. Manual SET # remains repair-only
-    // after a permanent official identity already exists.
-    syncManualRepairControls();
+    removeLegacyManualNumberControls();
   }
 
   function refineSessionForm() {
@@ -351,7 +318,7 @@
           if (firstText) firstText.textContent = 'Optional display name';
 
           const helper = document.createElement('small');
-          helper.textContent = 'OFFICIAL # IS ASSIGNED AFTER THE FIRST SUCCESSFUL GAME UPLOAD. SET # IS REPAIR-ONLY.';
+          helper.textContent = 'OFFICIAL # IS ASSIGNED AFTER THE FIRST SUCCESSFUL GAME UPLOAD. RESULT CARD DISPLAY TEXT CAN BE EDITED SEPARATELY.';
           helper.style.color = '#61748a';
           helper.style.fontSize = '.48rem';
           helper.style.fontWeight = '900';
@@ -387,7 +354,7 @@
 
     cleanLegacySessionIdentityUi();
     applyOfficialResultLabels();
-    syncManualRepairControls();
+    removeLegacyManualNumberControls();
   }
 
   // Shared read-only identity helper for replay/other surfaces. It exposes the
