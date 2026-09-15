@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260914-ranked-name-alignment-v52';
+  const version = '20260915-replay-editor-root-v53';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -312,6 +312,7 @@
       'admin-session-picker-v5-loader.js',
       'open-rank-auto-id.js',
       'career-game-replay-admin-edit.js',
+      'career-game-replay-admin-root.js',
       'admin-game-rotation.js',
       'admin-live-refresh-fix.js',
     ];
