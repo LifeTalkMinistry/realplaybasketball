@@ -110,7 +110,17 @@
   }
 
   function rawOvr(player) {
-    return numeric(ranking(player)?.rawOvr ?? player?.rawOvr ?? player?.ratingMean, null);
+    return numeric(
+      ranking(player)?.rawOvr
+      ?? player?.rawOvr
+      ?? player?.ovrRaw
+      ?? player?.careerStats?.rawOvr
+      ?? player?.careerStats?.ovrRaw
+      ?? player?.career?.rawOvr
+      ?? player?.career?.ovrRaw
+      ?? player?.ratingMean,
+      null
+    );
   }
 
   function publicSelectedPlayer(profile) {
@@ -136,14 +146,17 @@
     return a !== null && b !== null && a === b;
   }
 
-  function matchPlayer(players, selected, profile, meUserId) {
+  function sameName(left, right) {
+    return String(left || '').trim().toLowerCase() === String(right || '').trim().toLowerCase();
+  }
+
+  function matchPlayer(players, selected, profile, authority) {
     if (!Array.isArray(players)) return selected || null;
 
     const isPublic = Boolean(profile?.classList?.contains('rp-public-player-profile'));
 
-    // Public profiles already expose the canonical playerId on the panel.
-    // Match playerId only to playerId so numeric values from different ID
-    // namespaces (playerId vs accountUserId/userId) can never collide.
+    // Public profiles expose the canonical playerId on the panel. Keep ID
+    // namespaces isolated so playerId can never collide with accountUserId.
     if (isPublic) {
       const canonicalPlayerId = numeric(profile?.dataset?.rpPublicPlayerId ?? selected?.playerId, null);
       if (canonicalPlayerId !== null) {
@@ -152,8 +165,7 @@
       }
     }
 
-    // If we have a selected player object, preserve each identifier namespace.
-    // Never compare a playerId against an accountUserId or userId.
+    // If the profile already carries a selected player, preserve each namespace.
     if (selected) {
       const identifierKeys = ['playerId', 'accountUserId', 'userId'];
       for (const key of identifierKeys) {
@@ -164,14 +176,31 @@
       }
     }
 
-    const ownId = numeric(meUserId, null);
-    if (!isPublic && ownId !== null) {
-      const own = players.find((player) => sameId(player?.userId, ownId) || sameId(player?.accountUserId, ownId));
-      if (own) return own;
+    if (!isPublic) {
+      // The canonical community response distinguishes the signed-in account ID
+      // from the permanent Real Play player ID. Never compare one namespace to
+      // the other: numeric collisions can select somebody else's player record.
+      const accountUserId = numeric(authority?.meAccountUserId, null);
+      if (accountUserId !== null) {
+        const byAccount = players.find((player) => sameId(player?.accountUserId, accountUserId));
+        if (byAccount) return byAccount;
+      }
+
+      // The visible profile name is a safer fallback than cross-namespace ID
+      // matching when an older/cached response does not expose meAccountUserId.
+      const visibleName = displayedName(profile);
+      const byVisibleName = players.find((player) => sameName(player?.playerName, visibleName));
+      if (byVisibleName) return byVisibleName;
+
+      const canonicalPlayerId = numeric(authority?.mePlayerId ?? authority?.meUserId, null);
+      if (canonicalPlayerId !== null) {
+        const byCanonicalPlayerId = players.find((player) => sameId(player?.playerId, canonicalPlayerId));
+        if (byCanonicalPlayerId) return byCanonicalPlayerId;
+      }
     }
 
-    const name = displayedName(profile).toLowerCase();
-    const byName = players.find((player) => String(player?.playerName || '').trim().toLowerCase() === name);
+    const name = displayedName(profile);
+    const byName = players.find((player) => sameName(player?.playerName, name));
     return byName || selected || null;
   }
 
@@ -198,6 +227,29 @@
     modal.setAttribute('aria-hidden', 'true');
   }
 
+  function renderUnranked(body, name) {
+    body.innerHTML = `
+      <p class="rp-rank-explainer-kicker">OFFICIAL RANKING</p>
+      <h2 id="rp-rank-explainer-title">WHY THIS RANK?</h2>
+      <p class="rp-rank-explainer-player">${esc(name)}</p>
+      <p class="rp-rank-explainer-copy">This player does not currently have an authoritative official ordinal rank. Real Play requires the official eligibility gate and verified competitive evidence before a player enters the ranked population.</p>
+      <p class="rp-rank-note">Career averages and recognition badges do not create an official rank by themselves.</p>`;
+  }
+
+  function renderRankWithoutRawReceipt(body, { rank, name, publicOvr }) {
+    body.innerHTML = `
+      <p class="rp-rank-explainer-kicker">OFFICIAL RANKING</p>
+      <h2 id="rp-rank-explainer-title">WHY #${rank}?</h2>
+      <p class="rp-rank-explainer-player">${esc(name)}</p>
+      <div class="rp-rank-receipt">
+        <div><strong>#${rank}</strong><small>OFFICIAL RANK</small></div>
+        <div><strong>${publicOvr === null ? '—' : esc(publicOvr)}</strong><small>PUBLIC OVR</small></div>
+      </div>
+      <p class="rp-rank-explainer-copy"><strong>#${rank} is the authoritative official rank currently assigned to this player.</strong> The detailed underlying rating receipt is not available on this surface right now, so Real Play will not invent or recalculate one in the browser.</p>
+      <p class="rp-rank-explainer-copy" style="margin-top:12px">Official Rank comes from the canonical ranking authority. Rounded OVR, career averages, win rate, list position, and recognition badges do not independently assign the ordinal.</p>
+      <p class="rp-rank-note">Missing receipt detail does not make an already-ranked player Unranked.</p>`;
+  }
+
   async function openExplanation(profile) {
     createModal();
     const body = modal.querySelector('[data-rp-rank-body]');
@@ -208,7 +260,7 @@
     const selected = publicSelectedPlayer(profile);
     const authority = await loadAuthority(true);
     const players = Array.isArray(authority?.players) ? authority.players : [];
-    const player = matchPlayer(players, selected, profile, authority?.meUserId);
+    const player = matchPlayer(players, selected, profile, authority || {});
     const rank = playerRank(player) ?? displayedRank(profile);
     const raw = rawOvr(player);
     const publicOvr = numeric(player?.ovr, displayedOvr(profile));
@@ -220,13 +272,15 @@
     const nextBelow = rank === null ? null : ordered.find((item) => playerRank(item) === rank + 1) || null;
     const nextRaw = rawOvr(nextBelow);
 
-    if (rank === null || raw === null) {
-      body.innerHTML = `
-        <p class="rp-rank-explainer-kicker">OFFICIAL RANKING</p>
-        <h2 id="rp-rank-explainer-title">WHY THIS RANK?</h2>
-        <p class="rp-rank-explainer-player">${esc(name)}</p>
-        <p class="rp-rank-explainer-copy">This player does not currently have enough authoritative ranking data for a full rank receipt. Real Play requires the official eligibility gate and an underlying competitive rating before assigning an ordinal rank.</p>
-        <p class="rp-rank-note">Career averages and recognition badges do not create an official rank by themselves.</p>`;
+    // Rank eligibility and receipt precision are different questions. A missing
+    // raw rating must never turn an already-canonical #rank into "not ranked".
+    if (rank === null) {
+      renderUnranked(body, name);
+      return;
+    }
+
+    if (raw === null) {
+      renderRankWithoutRawReceipt(body, { rank, name, publicOvr });
       return;
     }
 
