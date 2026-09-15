@@ -184,6 +184,14 @@
       background:linear-gradient(90deg,rgba(1,5,10,.10),rgba(1,5,10,.015) 45%,rgba(1,5,10,.09))!important;
       box-shadow:none!important;
     }
+    .rp-world-player-row.rp-recognition-themed .rp-world-player-rank-badge.is-visible{
+      min-width:50px!important;
+      width:50px!important;
+      margin-right:5px!important;
+      text-align:center!important;
+      transform:translateX(4px);
+      transform-origin:center center;
+    }
     .rp-world-player-row.rp-recognition-themed .rp-player-featured-badge{
       left:var(--rp-featured-badge-x)!important;
       right:auto!important;
@@ -197,7 +205,10 @@
     .rp-world-player-row.rp-recognition-themed .rp-player-featured-badge:hover{transform:translate(-50%,-50%) scale(1.055)!important}
     .rp-world-player-row.rp-recognition-themed .rp-player-featured-badge:active{transform:translate(-50%,-50%) scale(.97)!important}
     .rp-world-player-row.rp-recognition-themed .rp-player-featured-count{right:4px!important;top:-8px!important;bottom:auto!important}
-    @media(max-width:420px){.rp-world-player-row.rp-recognition-themed .rp-player-featured-count{right:3px!important;top:-7px!important;bottom:auto!important}}
+    @media(max-width:420px){
+      .rp-world-player-row.rp-recognition-themed .rp-world-player-rank-badge.is-visible{min-width:46px!important;width:46px!important;margin-right:4px!important;transform:translateX(3px)}
+      .rp-world-player-row.rp-recognition-themed .rp-player-featured-count{right:3px!important;top:-7px!important;bottom:auto!important}
+    }
   `;
   document.head.appendChild(style);
 
