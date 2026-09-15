@@ -2,7 +2,9 @@
   if (window.__realPlayRecordedMobileWorkspaceInstalled) return;
   window.__realPlayRecordedMobileWorkspaceInstalled = true;
 
-  const MOBILE_MEDIA = '(max-width:1099px)';
+  // Desktop scoring starts at 700px. Keep the mobile workspace strictly below
+  // that breakpoint so both layout authorities never fight over the scoreboard.
+  const MOBILE_MEDIA = '(max-width:699px)';
   let syncTimer = 0;
 
   function scoringScreen() {
