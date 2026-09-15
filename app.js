@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260915-ranking-secured-roster-v59';
+  const version = '20260915-ranking-secured-metrics-v60';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
