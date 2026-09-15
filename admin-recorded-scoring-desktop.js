@@ -4,9 +4,10 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
-  // Full-browser scoring should use the side-by-side workspace even when
-  // Windows/browser scaling reduces the CSS viewport below 1100px.
-  const DESKTOP_MEDIA = '(min-width:900px)';
+  // Treat any genuinely wide browser workspace as desktop. This keeps the
+  // video-left / score-right layout active even when Windows display scaling
+  // or browser zoom reduces the CSS viewport more than expected.
+  const DESKTOP_MEDIA = '(min-width:700px)';
 
   let layoutTimer = null;
   let rulesTimer = null;
@@ -209,9 +210,6 @@
 
     const playerWrap = scoring.querySelector('.rp-video-player-wrap');
     const scoreboard = scoring.querySelector('.rp-video-scoreboard');
-
-    // These are the two true desktop anchors. Other scoring controls may render
-    // a moment later; the observer will move them into the correct column.
     if (!playerWrap || !scoreboard) return;
 
     grid = document.createElement('div');
