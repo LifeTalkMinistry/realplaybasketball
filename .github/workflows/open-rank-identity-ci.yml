@@ -24,6 +24,7 @@ jobs:
         run: |
           node --check open-rank-auto-id.js
           node --check public-profile-history.js
+          node --check updates-session-title-admin.js
 
       - name: Run Open Rank identity contract tests
         run: node --test tests/open-rank-recording-authority.test.js
