@@ -284,6 +284,7 @@
       'real-play-world-players.js',
       'visitor-world-players.js',
       'public-profile-history.js',
+      'real-play-rank-explainer.js',
       'world-results.js',
       'player-id-badge.js',
       'real-play-world-score-order-fix.js',
