@@ -7,6 +7,7 @@
   const ROOT = "assets/world/player-bars";
   const BADGE_DOMINANT = `${ROOT}/badge-dominant`;
   const LEGACY_CAPTAIN_RANKING_BAR = "assets/recognitions/bars/bar-captain-eligible.png";
+  const FILTER_ATTRIBUTE = "data-rp-player-bar-filter";
 
   const paths = {
     root: ROOT,
@@ -35,66 +36,60 @@
     return String(active?.dataset?.playerSort || 'ranked').trim().toLowerCase();
   }
 
-  function expectedCaptainBar() {
-    return activeFilterKey() === 'ranked'
-      ? paths.captainEligibleRanking
-      : paths.captainEligible;
+  function installStyles() {
+    if (document.querySelector('[data-rp-world-player-bar-variant-styles]')) return;
+    const style = document.createElement('style');
+    style.dataset.rpWorldPlayerBarVariantStyles = '1';
+    style.textContent = `
+      html[${FILTER_ATTRIBUTE}="ranked"] .rp-world-player-row[data-recognition-type="captain_eligible"]{
+        --rp-recognition-bar:url("${paths.captainEligibleRanking}")!important;
+      }
+      html:not([${FILTER_ATTRIBUTE}="ranked"]) .rp-world-player-row[data-recognition-type="captain_eligible"]{
+        --rp-recognition-bar:url("${paths.captainEligible}")!important;
+      }
+    `;
+    document.head.appendChild(style);
   }
 
-  function applyCaptainBar(row) {
-    if (!(row instanceof HTMLElement)) return;
-
-    if (String(row.dataset.recognitionType || '').toLowerCase() !== 'captain_eligible') {
-      row.removeAttribute('data-rp-captain-bar-variant');
-      return;
+  function syncFilterVariant() {
+    const next = activeFilterKey() || 'ranked';
+    if (document.documentElement.getAttribute(FILTER_ATTRIBUTE) !== next) {
+      document.documentElement.setAttribute(FILTER_ATTRIBUTE, next);
     }
-
-    const filter = activeFilterKey();
-    const variant = filter === 'ranked' ? 'ranking' : 'badge-dominant';
-    const asset = expectedCaptainBar();
-    const cssValue = `url("${asset}")`;
-    const current = row.style.getPropertyValue('--rp-recognition-bar');
-
-    if (current !== cssValue) row.style.setProperty('--rp-recognition-bar', cssValue);
-    if (row.dataset.rpCaptainBarVariant !== variant) row.dataset.rpCaptainBarVariant = variant;
-  }
-
-  function applyAllCaptainBars() {
-    document.querySelectorAll('.rp-world-player-row').forEach(applyCaptainBar);
   }
 
   let scheduled = false;
-  function scheduleApply() {
+  function scheduleSync() {
     if (scheduled) return;
     scheduled = true;
     requestAnimationFrame(() => {
       scheduled = false;
-      applyAllCaptainBars();
+      syncFilterVariant();
     });
   }
 
+  // IMPORTANT: this layer never writes --rp-recognition-bar inline anymore.
+  // real-play-captain-eligibility.js owns row rendering; this file only selects
+  // which Captain Eligible artwork wins through one CSS authority. That avoids
+  // the two MutationObservers repeatedly overwriting the same inline variable.
   document.addEventListener('click', (event) => {
-    if (!event.target.closest?.('[data-player-sort]')) return;
-    scheduleApply();
-    window.setTimeout(scheduleApply, 0);
-  }, true);
+    if (event.target.closest?.('[data-player-sort]')) scheduleSync();
+  });
 
   const observer = new MutationObserver((mutations) => {
     if (mutations.some((mutation) => {
       if (mutation.type === 'childList') return true;
-      if (mutation.type !== 'attributes') return false;
-      const target = mutation.target;
-      if (!(target instanceof HTMLElement)) return false;
-      return target.matches('.rp-world-player-row, [data-player-sort]');
-    })) scheduleApply();
+      if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') return false;
+      return mutation.target instanceof HTMLElement && mutation.target.matches('[data-player-sort]');
+    })) scheduleSync();
   });
 
+  installStyles();
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['class', 'style', 'data-recognition-type'],
+    attributeFilter: ['class'],
   });
-
-  scheduleApply();
+  syncFilterVariant();
 })(window);
