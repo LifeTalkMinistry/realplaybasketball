@@ -120,7 +120,9 @@
 
   // Keep track of the public player selected before visitor-world-players stops
   // propagation on the row click. This listener is installed earlier, so it
-  // records the identity without changing the visitor UI behavior.
+  // records the identity without changing the visitor UI behavior. Any replay
+  // trigger also arms the one-request public replay bridge before the canonical
+  // authenticated replay viewer handles the same click.
   document.addEventListener('click', (event) => {
     if (!visitorActive()) return;
 
@@ -131,8 +133,8 @@
       return;
     }
 
-    const card = event.target?.closest?.('.rp-profile-history .rp-profile-game');
-    if (card) armBridge();
+    const replayTrigger = event.target?.closest?.('[data-rp-career-replay-session], .rp-profile-history .rp-profile-game');
+    if (replayTrigger) armBridge();
   }, true);
 
   window.addEventListener('realplay:visitorchange', (event) => {
