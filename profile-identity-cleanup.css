@@ -143,3 +143,61 @@
   font-weight:950;
   line-height:1.05;
 }
+
+/* Keep OVR, Rank/standing and Record/Win Rate in one contained stat layer.
+   The win-rate enhancer adds a second column inside RECORD. Its old auto-sized
+   column could exceed the card width on narrow phones and visually spill over
+   the Rank card, making those values look like a separate overlapping layer. */
+.rp-profile-rating-row{
+  grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.25fr)!important;
+  overflow:hidden!important;
+}
+
+.rp-profile-rating-row > div{
+  min-width:0!important;
+  overflow:hidden!important;
+}
+
+.rp-profile-record{
+  min-width:0!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,.82fr)!important;
+  column-gap:4px!important;
+}
+
+.rp-profile-record > .rp-profile-win-rate-label{
+  min-width:0!important;
+  max-width:100%!important;
+  justify-self:end!important;
+  white-space:normal!important;
+  text-align:right!important;
+  font-size:.36rem!important;
+  line-height:1.05!important;
+  letter-spacing:.045em!important;
+}
+
+.rp-profile-record > .rp-profile-win-rate{
+  min-width:0!important;
+  max-width:100%!important;
+  justify-self:end!important;
+  font-size:1.05rem!important;
+  white-space:nowrap!important;
+}
+
+@media(max-width:340px){
+  .rp-profile-rating-row{
+    gap:6px!important;
+  }
+
+  .rp-profile-rating-row > div{
+    padding:9px 8px!important;
+  }
+
+  .rp-profile-record > .rp-profile-win-rate-label{
+    font-size:.33rem!important;
+    letter-spacing:.025em!important;
+  }
+
+  .rp-profile-record > .rp-profile-win-rate{
+    font-size:.96rem!important;
+  }
+}
