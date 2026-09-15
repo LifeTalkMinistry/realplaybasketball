@@ -234,27 +234,37 @@
       name.className = 'rp-ranking-secured-name';
       name.textContent = String(player?.playerName || 'REAL PLAY PLAYER');
       name.title = name.textContent;
+      info.appendChild(name);
 
-      const meta = document.createElement('div');
-      meta.className = 'rp-ranking-secured-meta';
+      // Older production backends return only the secured name. Do not pretend
+      // that a missing metric means UNRANKED; show the mini layer only when the
+      // canonical Rank/OVR fields are actually supplied by the server.
+      const hasCanonicalMetrics = Object.prototype.hasOwnProperty.call(player || {}, 'rank')
+        || Object.prototype.hasOwnProperty.call(player || {}, 'ovr');
 
-      const rank = finiteNumber(player?.rank);
-      const rankMetric = document.createElement('span');
-      rankMetric.className = rank && Number.isSafeInteger(rank) && rank > 0
-        ? 'rp-ranking-secured-metric is-rank'
-        : 'rp-ranking-secured-metric is-unranked';
-      rankMetric.textContent = rank && Number.isSafeInteger(rank) && rank > 0
-        ? `RANK #${rank}`
-        : 'UNRANKED';
-      meta.appendChild(rankMetric);
+      if (hasCanonicalMetrics) {
+        const meta = document.createElement('div');
+        meta.className = 'rp-ranking-secured-meta';
 
-      const ovr = finiteNumber(player?.ovr);
-      const ovrMetric = document.createElement('span');
-      ovrMetric.className = 'rp-ranking-secured-metric';
-      ovrMetric.textContent = ovr === null ? 'OVR —' : `OVR ${Math.round(ovr)}`;
-      meta.appendChild(ovrMetric);
+        const rank = finiteNumber(player?.rank);
+        const rankMetric = document.createElement('span');
+        rankMetric.className = rank && Number.isSafeInteger(rank) && rank > 0
+          ? 'rp-ranking-secured-metric is-rank'
+          : 'rp-ranking-secured-metric is-unranked';
+        rankMetric.textContent = rank && Number.isSafeInteger(rank) && rank > 0
+          ? `RANK #${rank}`
+          : 'UNRANKED';
+        meta.appendChild(rankMetric);
 
-      info.append(name, meta);
+        const ovr = finiteNumber(player?.ovr);
+        const ovrMetric = document.createElement('span');
+        ovrMetric.className = 'rp-ranking-secured-metric';
+        ovrMetric.textContent = ovr === null ? 'OVR —' : `OVR ${Math.round(ovr)}`;
+        meta.appendChild(ovrMetric);
+
+        info.appendChild(meta);
+      }
+
       item.append(number, info);
 
       if (player?.isYou) {
