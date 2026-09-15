@@ -7,7 +7,8 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260912-mobile-score-row-v15';
+  const ADMIN_ASSET_VERSION = '20260915-replay-editor-root-v16';
+  const REPLAY_ADMIN_ROOT_VERSION = '20260915-replay-editor-root-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
     'admin-launcher-mobile-fix.css',
@@ -161,6 +162,16 @@
     });
   }
 
+  function loadReplayAdminRoot() {
+    if (window.__realPlayReplayAdminEditRootInstalled) return;
+    if ([...document.scripts].some((script) => String(script.src || '').includes('career-game-replay-admin-root.js'))) return;
+    const script = document.createElement('script');
+    script.src = `career-game-replay-admin-root.js?v=${REPLAY_ADMIN_ROOT_VERSION}`;
+    script.async = false;
+    script.onerror = () => console.error('[Real Play] Replay admin root failed to load.');
+    document.head.appendChild(script);
+  }
+
   async function ensureAdminLoaded() {
     if (adminLoaded) return true;
     if (loadingAdmin) {
@@ -182,9 +193,24 @@
     }
   }
 
-  async function openAdmin() {
+  // Official shared admin-runtime API. Replay editing and any future admin entry
+  // can prepare Game Control directly instead of simulating Settings clicks.
+  window.__realPlayVerifyAdminAccess = verifyAdmin;
+  window.__realPlayEnsureAdminLoaded = async () => {
     if (!verifiedAdmin && !(await verifyAdmin())) {
-      window.alert('Real Play could not verify Head Admin access for this session. Please sign in again and retry.');
+      throw new Error('Real Play could not verify Head Admin access for this session.');
+    }
+    const loaded = await ensureAdminLoaded();
+    if (!loaded) throw new Error('Real Play Admin tools could not finish loading.');
+    await window.__realPlayRefreshAdminGameControl?.();
+    return true;
+  };
+
+  async function openAdmin() {
+    try {
+      await window.__realPlayEnsureAdminLoaded();
+    } catch (error) {
+      window.alert(error?.message || 'Real Play could not verify Head Admin access for this session. Please sign in again and retry.');
       return;
     }
 
@@ -207,7 +233,6 @@
 
     try {
       await new Promise((resolve) => window.setTimeout(resolve, 90));
-      await ensureAdminLoaded();
       await window.__realPlayRefreshAdminGameControl?.();
 
       let opened = window.__realPlayOpenAdminGameControl?.();
@@ -227,6 +252,7 @@
   }
 
   function boot() {
+    loadReplayAdminRoot();
     const observer = new MutationObserver(() => {
       if (settingsList()) {
         syncSettingsRow();
