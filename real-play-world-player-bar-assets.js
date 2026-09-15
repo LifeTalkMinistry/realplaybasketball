@@ -47,6 +47,32 @@
       html:not([${FILTER_ATTRIBUTE}="ranked"]) .rp-world-player-row[data-recognition-type="captain_eligible"]{
         --rp-recognition-bar:url("${paths.captainEligible}")!important;
       }
+
+      /*
+       * The artwork itself scales with the row width, so the badge must use the
+       * same coordinate system. Fixed right/width pixel values drift on devices
+       * with different viewport widths. Anchor the badge to the socket inside
+       * the artwork using percentages of the player row instead.
+       */
+      .rp-world-player-row.rp-recognition-themed{
+        --rp-featured-badge-x:75%;
+        --rp-featured-badge-width:24%;
+      }
+      .rp-world-player-row.rp-recognition-themed .rp-player-featured-badge{
+        left:var(--rp-featured-badge-x)!important;
+        right:auto!important;
+        top:50%!important;
+        width:var(--rp-featured-badge-width)!important;
+        height:auto!important;
+        aspect-ratio:9 / 4;
+        transform:translate(-50%,-50%)!important;
+      }
+      .rp-world-player-row.rp-recognition-themed .rp-player-featured-badge:hover{
+        transform:translate(-50%,-50%) scale(1.055)!important;
+      }
+      .rp-world-player-row.rp-recognition-themed .rp-player-featured-badge:active{
+        transform:translate(-50%,-50%) scale(.97)!important;
+      }
     `;
     document.head.appendChild(style);
   }
