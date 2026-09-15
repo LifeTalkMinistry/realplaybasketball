@@ -40,6 +40,19 @@
     }, 0);
   }
 
+  function togglePlaybackDirectly(playerShell) {
+    const playback = playerShell.querySelector('[data-rp-recorded-video]');
+    if (!playback) return false;
+
+    try {
+      if (playback.paused) playback.play?.();
+      else playback.pause?.();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   function handleKeydown(event) {
     if (event.repeat || isTextEntry(event.target)) return;
 
@@ -48,15 +61,13 @@
 
     const isSpace = event.code === 'Space' || event.key === ' ' || event.key === 'Spacebar';
     if (isSpace) {
-      const playButton = playerShell.querySelector('[data-rp-youtube-play]');
-      if (!playButton || playButton.disabled) return;
-
-      // Space is a dedicated scoring shortcut. Capture it before a focused
-      // button can receive the browser's native Space activation (which could
-      // otherwise repeat the last scoring action or scroll the page).
+      // Space belongs exclusively to scorer video transport. Do not route it
+      // through playButton.click(): a synthetic click can collide with the
+      // focused button's native Space activation and can be less reliable for
+      // iframe-hosted media. Call the existing playback proxy directly instead.
       event.preventDefault();
-      event.stopPropagation();
-      playButton.click();
+      event.stopImmediatePropagation();
+      togglePlaybackDirectly(playerShell);
       return;
     }
 
