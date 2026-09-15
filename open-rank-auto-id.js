@@ -20,6 +20,12 @@
   let lastResultIdentityFetchAt = 0;
   let resultIdentityTimer = null;
 
+  function positiveOpenRankNumber(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const number = Number(value);
+    return Number.isSafeInteger(number) && number > 0 ? number : null;
+  }
+
   function permanentSessionLabel(value) {
     const match = String(value || '').trim().match(/^(?:CAREER|OPEN\s+RANK(?:ING\s+SESSION)?)\s*#\s*(\d+)$/i);
     if (!match) return null;
@@ -42,7 +48,11 @@
         if (node.textContent !== canonical) node.textContent = canonical;
         return;
       }
-      if (legacy && node.textContent !== legacy) node.textContent = legacy;
+      if (!canonical && legacy) {
+        // An unuploaded setup session has no official public ordinal. Never keep
+        // a stale legacy number visible while waiting for the first recording.
+        node.textContent = 'OPEN RANKING SESSION';
+      }
     });
   }
 
@@ -78,8 +88,8 @@
       update?.open_rank_number,
     ];
     for (const candidate of candidates) {
-      const number = Number(candidate);
-      if (Number.isSafeInteger(number) && number > 0) return number;
+      const number = positiveOpenRankNumber(candidate);
+      if (number !== null) return number;
     }
 
     // officialGameId is produced by the backend from the same stored
@@ -93,8 +103,8 @@
     ];
     for (const value of ids) {
       const match = String(value || '').match(/OPEN\s+RANK(?:ING(?:\s+SESSION)?)?\s*#\s*(\d+)/i);
-      const number = Number(match?.[1]);
-      if (Number.isSafeInteger(number) && number > 0) return number;
+      const number = positiveOpenRankNumber(match?.[1]);
+      if (number !== null) return number;
     }
     return null;
   }
@@ -147,6 +157,24 @@
     return officialResultLabel(sessionId, currentTitle);
   }
 
+  function syncManualRepairControls() {
+    // SET # remains emergency repair only for an already-numbered official
+    // result. Schedule/live/setup cards must never offer a way to manufacture an
+    // Open Rank number before the first successful recording exists.
+    document.querySelectorAll('[data-rp-set-open-rank-number]').forEach((button) => {
+      const card = button.closest('[data-update-id]');
+      const sessionId = sessionIdFromResultCard(card);
+      const number = sessionId ? officialResultNumbers.get(sessionId) : null;
+      const repairable = Number.isSafeInteger(number) && number > 0;
+      button.hidden = !repairable;
+      button.disabled = !repairable;
+    });
+
+    // The active game-control surface is session/setup flow, not historical
+    // repair. Remove its manual-number control entirely.
+    document.querySelectorAll('[data-rp-manual-open-rank-number]').forEach((button) => button.remove());
+  }
+
   function applyOfficialResultLabels() {
     let missingIdentity = false;
 
@@ -182,6 +210,7 @@
       card.dataset.rpOfficialOpenRankNumber = String(number);
     });
 
+    syncManualRepairControls();
     return missingIdentity;
   }
 
@@ -267,13 +296,16 @@
       if (!session) {
         officialSessionNumber = null;
         officialSessionId = null;
+        applyCanonicalSessionLabel();
+        syncManualRepairControls();
         return;
       }
 
-      const number = Number(session.openRankNumber ?? session.open_rank_number ?? 0);
-      officialSessionNumber = Number.isSafeInteger(number) && number > 0 ? number : null;
+      const rawNumber = session.openRankNumber ?? session.open_rank_number;
+      officialSessionNumber = positiveOpenRankNumber(rawNumber);
       officialSessionId = Number(session.id || 0) || null;
       applyCanonicalSessionLabel();
+      syncManualRepairControls();
     } catch (_error) {
       // The base admin UI owns network/error messaging. This layer only refines
       // the identity when the canonical control response is available.
@@ -299,8 +331,9 @@
       });
     }
 
-    // Automatic numbering remains the default, but trusted admin corrections
-    // are allowed through the backend-backed SET # / EDIT OPEN RANK NUMBER controls.
+    // Numbering is recording-authoritative. Manual SET # remains repair-only
+    // after a permanent official identity already exists.
+    syncManualRepairControls();
   }
 
   function refineSessionForm() {
@@ -318,7 +351,7 @@
           if (firstText) firstText.textContent = 'Optional display name';
 
           const helper = document.createElement('small');
-          helper.textContent = 'SESSION NUMBER IS ASSIGNED AUTOMATICALLY. ADMINS CAN CORRECT A MISTAKEN NUMBER.';
+          helper.textContent = 'OFFICIAL # IS ASSIGNED AFTER THE FIRST SUCCESSFUL GAME UPLOAD. SET # IS REPAIR-ONLY.';
           helper.style.color = '#61748a';
           helper.style.fontSize = '.48rem';
           helper.style.fontWeight = '900';
@@ -347,13 +380,14 @@
         if (kicker?.textContent.trim() === 'BETA OPERATIONS') kicker.textContent = 'OPEN RANKING OPERATIONS';
         const copy = adminTitle.querySelector('p');
         if (copy?.textContent.includes('Open the game your testers can join')) {
-          copy.textContent = 'Create the next Open Ranking session. Its official session number is assigned automatically and can be corrected by an admin if needed.';
+          copy.textContent = 'Create the next Open Ranking session. It remains unnumbered until its first successful official game upload.';
         }
       }
     }
 
     cleanLegacySessionIdentityUi();
     applyOfficialResultLabels();
+    syncManualRepairControls();
   }
 
   // Shared read-only identity helper for replay/other surfaces. It exposes the
