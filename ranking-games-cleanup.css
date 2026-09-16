@@ -6,6 +6,10 @@
 .rp-ranking-session .rp-ranking-secured-player.is-you,.rp-ranking-session .rp-ranking-secured-player.is-you:not(:disabled){border-color:rgba(114,239,196,.28);background:linear-gradient(105deg,rgba(7,30,30,.98),rgba(3,16,22,.99) 58%,rgba(5,27,30,.97))}
 .rp-ranking-session .rp-ranking-secured-name{color:#f7fbff}.rp-ranking-session .rp-ranking-secured-label{color:#6f8499}.rp-ranking-session .rp-ranking-secured-value{color:#dbe7f0}.rp-ranking-session .rp-ranking-secured-stat.is-ovr .rp-ranking-secured-value{color:#fff}.rp-ranking-session .rp-ranking-secured-stat.is-winrate .rp-ranking-secured-value{color:#72efc4}.rp-ranking-session .rp-ranking-secured-stat.is-top-stats .rp-ranking-secured-value{color:#8fdcf3}
 
+/* The player-facing session is the weekly Sunday Open Ranking. */
+.rp-ranking-next .rp-ranking-section-head h2{visibility:hidden!important}
+.rp-ranking-next .rp-ranking-section-head h2::after{content:"SUNDAY OPEN RANKING";display:block;visibility:visible!important}
+
 /* Open Rank primary CTA — deliberately dark and restrained. The enabled button
  * rule in ranking-games.css has higher specificity, so this selector targets the
  * actual button and uses explicit overrides to prevent the old bright cyan fill.
