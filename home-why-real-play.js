@@ -8,9 +8,14 @@
   let currentIndex = 0;
   let pointerStart = null;
   let lastTrigger = null;
+  let positionFrame = 0;
 
   function storySource() {
     return document.querySelector('[data-public-experience="story"]');
+  }
+
+  function homeRoot() {
+    return document.querySelector('.rp-simple-home.rp-home-command-center');
   }
 
   function slides() {
@@ -136,11 +141,45 @@
     return true;
   }
 
-  function ensureTrigger() {
-    const lockup = document.querySelector('.rp-simple-home.rp-home-command-center .rp-home-brand-lockup');
-    if (!lockup) return false;
+  function positionTrigger(trigger) {
+    const root = homeRoot();
+    const lockup = root?.querySelector('.rp-home-brand-lockup');
+    const tagline = lockup?.querySelector('small');
+    const session = root?.querySelector('[data-rp-home-open-rank]');
+    if (!root || !tagline || !trigger) return;
 
-    let trigger = lockup.querySelector(`[${TRIGGER_ATTR}]`);
+    const rootRect = root.getBoundingClientRect();
+    const taglineRect = tagline.getBoundingClientRect();
+    const sessionRect = session?.getBoundingClientRect();
+
+    // The control belongs visually to the tagline, not to the session card.
+    // Measure the rendered tagline so font size / viewport changes cannot move
+    // the button onto the wordmark or the card again.
+    let top = taglineRect.bottom - rootRect.top + 11;
+
+    if (sessionRect) {
+      const sessionTop = sessionRect.top - rootRect.top;
+      top = Math.min(top, sessionTop - 36);
+    }
+
+    trigger.style.top = `${Math.max(0, Math.round(top))}px`;
+  }
+
+  function queuePosition(trigger) {
+    if (!trigger) return;
+    if (positionFrame) cancelAnimationFrame(positionFrame);
+    positionFrame = requestAnimationFrame(() => {
+      positionFrame = 0;
+      positionTrigger(trigger);
+    });
+  }
+
+  function ensureTrigger() {
+    const root = homeRoot();
+    const lockup = root?.querySelector('.rp-home-brand-lockup');
+    if (!root || !lockup) return false;
+
+    let trigger = root.querySelector(`[${TRIGGER_ATTR}]`);
     if (!trigger) {
       trigger = document.createElement('button');
       trigger.type = 'button';
@@ -149,8 +188,15 @@
       trigger.setAttribute('aria-label', 'Why Real Play? Open the Real Play story');
       trigger.innerHTML = 'WHY REAL PLAY? <span aria-hidden="true">i</span>';
       trigger.addEventListener('click', () => open(trigger));
-      lockup.appendChild(trigger);
     }
+
+    // Keep this as a sibling of the masthead. Putting it inside the absolutely
+    // positioned lockup makes percentage positioning depend on the lockup's
+    // computed box and caused the previous overlap/large-gap bugs.
+    if (trigger.parentElement !== root) root.appendChild(trigger);
+    queuePosition(trigger);
+    window.setTimeout(() => queuePosition(trigger), 250);
+    window.setTimeout(() => queuePosition(trigger), 900);
     return true;
   }
 
@@ -168,6 +214,9 @@
     if (event.key === 'ArrowLeft') render(currentIndex - 1);
     if (event.key === 'ArrowRight') render(currentIndex + 1);
   });
+
+  window.addEventListener('resize', () => queuePosition(document.querySelector(`[${TRIGGER_ATTR}]`)));
+  window.addEventListener('orientationchange', () => window.setTimeout(() => queuePosition(document.querySelector(`[${TRIGGER_ATTR}]`)), 120));
 
   window.RealPlayWhyRealPlay = { open: () => open(), close };
   install();
