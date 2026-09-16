@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260916-fullscreen-ball-timestamp-v70';
+  const version = '20260916-fullscreen-basket-markers-v71';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
