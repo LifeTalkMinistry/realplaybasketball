@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260916-public-pass-profile-v74';
+  const version = '20260916-session-guide-v75';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -305,6 +305,7 @@
       'ranking-games-secured-players.js',
       'ranking-games-info-toggle.js',
       'ranking-games-session-cleanup.js',
+      'ranking-spot-priority.js',
       'overlay-focus-release.js',
       'settings-panel.js',
       'player-admin-probe-guard.js',
