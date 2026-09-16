@@ -33,6 +33,23 @@
     document.head.appendChild(script);
   }
 
+  function loadRankingEntryActions() {
+    if (document.querySelector('script[data-rp-entry-actions]')) return;
+    const actions = document.createElement('script');
+    actions.src = 'ranking-game-entry-actions.js?v=20260916-functional-entry-v1';
+    actions.async = true;
+    actions.dataset.rpEntryActions = 'true';
+    actions.onload = () => {
+      if (document.querySelector('script[data-rp-entry-open-state]')) return;
+      const state = document.createElement('script');
+      state.src = 'ranking-game-entry-open-state.js?v=20260916-functional-entry-v1';
+      state.async = true;
+      state.dataset.rpEntryOpenState = 'true';
+      document.head.appendChild(state);
+    };
+    document.head.appendChild(actions);
+  }
+
   async function probeMembershipService() {
     relabelFreePlayerEntry();
     const token = localStorage.getItem(TOKEN_KEY) || '';
@@ -66,9 +83,6 @@
   const observer = new MutationObserver(relabelFreePlayerEntry);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
-  // Membership is optional during the current Beta build. Do not probe its API
-  // during normal browsing. Only test it when the player actually asks for a
-  // membership-related action, and only once per authenticated token.
   document.addEventListener('click', (event) => {
     const target = event.target.closest?.(
       '[data-auth-membership-card], [data-membership-open], [data-plus-one-prompt], [data-rp-settings-action="membership"], [data-session-action]'
@@ -82,5 +96,6 @@
   });
 
   window.__realPlayEnsureMembership = probeMembershipService;
+  loadRankingEntryActions();
   relabelFreePlayerEntry();
 })();
