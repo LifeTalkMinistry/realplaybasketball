@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260915-home-why-real-play-v63';
+  const version = '20260915-home-why-real-play-v64';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
