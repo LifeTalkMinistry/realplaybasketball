@@ -10,6 +10,10 @@
     .replaceAll("'", '&#039;');
   const number = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const pick = (...values) => values.find((value) => value !== undefined && value !== null && value !== '');
+  const positiveId = (value) => {
+    const id = Number(value);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+  };
   const isVisitor = () => Boolean(window.RealPlayVisitor?.isActive?.());
 
   let profilePanel = null;
@@ -151,12 +155,25 @@
         <div class="rp-profile-rating-row"><div class="rp-profile-ovr"><span>OVR</span><strong>${rating === null ? '—' : rating}</strong><small>${rating === null ? 'UNRANKED' : 'BETA RATING'}</small></div><div class="rp-profile-rank"><span>RANK</span><strong>${rank === null ? '—' : `#${rank}`}</strong><small>REAL PLAY</small></div><div class="rp-profile-record"><span>RECORD</span><strong>${wins}-${losses}</strong><small>${games} GAME${games === 1 ? '' : 'S'}</small></div></div>
       </section>
       <section class="rp-profile-section"><div class="rp-profile-section-head"><div><small>CAREER NUMBERS</small><h2>THE COURT KEEPS THE RECEIPTS.</h2></div><span>OFFICIAL GAMES ONLY</span></div><div class="rp-profile-stat-grid"><article><strong>${number(pick(stats.pts, stats.points))}</strong><span>PTS</span></article><article><strong>${number(pick(stats.ast, stats.assists))}</strong><span>AST</span></article><article><strong>${number(pick(stats.reb, stats.rebounds))}</strong><span>REB</span></article><article><strong>${number(pick(stats.to, stats.tov, stats.turnovers))}</strong><span>TO</span></article></div></section>
-      <section class="rp-profile-section rp-profile-history"><div class="rp-profile-section-head"><div><small>RECENT HISTORY</small><h2>RECENT REAL PLAY.</h2></div><span>FINALIZED GAMES</span></div>${recent.length ? recent.map((game) => `<article class="rp-profile-game"><div class="rp-profile-game-summary"><div class="rp-profile-game-main"><strong>${esc(game.displayLabel || game.title || game.label || 'OFFICIAL GAME')}</strong><span>${esc([formatDate(game.finalizedAt || game.startsAt), game.locationName].filter(Boolean).join(' · '))}</span></div><b class="${String(game.result || '').toLowerCase()}">${esc(game.result || 'FINAL')}</b><div class="rp-profile-game-stats"><span>${number(pick(game.pts, game.points))} PTS</span><span>${number(pick(game.ast, game.assists))} AST</span><span>${number(pick(game.reb, game.rebounds))} REB</span><span>${number(pick(game.tov, game.to, game.turnovers))} TO</span></div></div></article>`).join('') : '<div class="rp-profile-no-games"><strong>NO OFFICIAL GAMES YET.</strong><p>This player’s verified game history will build here automatically.</p></div>'}</section>`;
+      <section class="rp-profile-section rp-profile-history"><div class="rp-profile-section-head"><div><small>RECENT HISTORY</small><h2>RECENT REAL PLAY.</h2></div><span>FINALIZED GAMES</span></div>${recent.length ? recent.map((game) => {
+        const sessionId = positiveId(game?.sessionId ?? game?.session_id);
+        const sessionAttr = sessionId ? ` data-rp-profile-game-session="${sessionId}"` : '';
+        return `<article class="rp-profile-game"${sessionAttr}><div class="rp-profile-game-summary"><div class="rp-profile-game-main"><strong>${esc(game.displayLabel || game.title || game.label || 'OFFICIAL GAME')}</strong><span>${esc([formatDate(game.finalizedAt || game.startsAt), game.locationName].filter(Boolean).join(' · '))}</span></div><b class="${String(game.result || '').toLowerCase()}">${esc(game.result || 'FINAL')}</b><div class="rp-profile-game-stats"><span>${number(pick(game.pts, game.points))} PTS</span><span>${number(pick(game.ast, game.assists))} AST</span><span>${number(pick(game.reb, game.rebounds))} REB</span><span>${number(pick(game.tov, game.to, game.turnovers))} TO</span></div><div class="rp-profile-game-open-hint"><span>VIEW GAME</span><b>›</b></div></div></article>`;
+      }).join('') : '<div class="rp-profile-no-games"><strong>NO OFFICIAL GAMES YET.</strong><p>This player’s verified game history will build here automatically.</p></div>'}</section>`;
   }
 
   async function openProfile(playerId) {
     if (loadingProfile || !isVisitor()) return;
+    const requestedPlayerId = positiveId(playerId);
+    if (!requestedPlayerId) return;
+
     createProfilePanel();
+    // The replay linker must know which public player owns these cards. Visitor
+    // row clicks are captured here before other listeners can see them, so keep
+    // the identity directly on the profile panel instead of relying on click
+    // propagation.
+    profilePanel.dataset.rpPublicPlayerId = String(requestedPlayerId);
+    profilePanel.__realPlayPublicPlayer = { playerId: requestedPlayerId };
     syncBottomNavToPlayers();
     profilePanel.classList.add('open');
     profilePanel.setAttribute('aria-hidden', 'false');
@@ -168,8 +185,15 @@
     if (root) root.innerHTML = '';
     loadingProfile = true;
     try {
-      const data = await window.RealPlayWorld?.community?.('player_profile', { playerId });
-      renderProfile(data?.player || null);
+      const data = await window.RealPlayWorld?.community?.('player_profile', { playerId: requestedPlayerId });
+      const player = data?.player || null;
+      const loadedPlayerId = positiveId(player?.playerId ?? player?.userId) || requestedPlayerId;
+      profilePanel.dataset.rpPublicPlayerId = String(loadedPlayerId);
+      profilePanel.__realPlayPublicPlayer = player || { playerId: loadedPlayerId };
+      renderProfile(player);
+      window.dispatchEvent(new CustomEvent('realplay:public-profile-loaded', {
+        detail: { playerId: loadedPlayerId, player },
+      }));
       if (status) status.textContent = '';
     } catch (error) {
       if (status) status.textContent = error.message || 'Could not load this player profile.';
