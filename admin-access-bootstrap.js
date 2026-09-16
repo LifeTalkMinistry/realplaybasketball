@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260916-play-token-editor-v24';
+  const ADMIN_ASSET_VERSION = '20260916-admin-on-demand-v25';
   const REPLAY_ADMIN_ROOT_VERSION = '20260915-replay-editor-root-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
@@ -98,8 +98,8 @@
   }
 
   function scheduleAdminWarm() {
-    preloadAdminAssets();
     if (!verifiedAdmin || adminLoaded || warmScheduled) return;
+    preloadAdminAssets();
     warmScheduled = true;
 
     const start = () => {
@@ -147,7 +147,6 @@
 
     window.__realPlayAdminVerified = verifiedAdmin;
     syncSettingsRow();
-    if (verifiedAdmin) scheduleAdminWarm();
     return verifiedAdmin;
   }
 
@@ -191,28 +190,52 @@
     if (arrow) arrow.textContent = busy ? '…' : '→';
   }
 
-  function loadCss(href) {
+  function loadCss(href, timeoutMs = 6500) {
     return new Promise((resolve) => {
       const existing = [...document.querySelectorAll('link[rel="stylesheet"]')].find((link) => String(link.href || '').includes(href));
       if (existing) return resolve(true);
       const link = document.createElement('link');
+      let settled = false;
+      let timer = 0;
+      const finish = (loaded) => {
+        if (settled) return;
+        settled = true;
+        if (timer) window.clearTimeout(timer);
+        resolve(Boolean(loaded));
+      };
       link.rel = 'stylesheet';
       link.href = `${href}?v=${ADMIN_ASSET_VERSION}`;
-      link.onload = () => resolve(true);
-      link.onerror = () => resolve(false);
+      link.onload = () => finish(true);
+      link.onerror = () => finish(false);
+      timer = window.setTimeout(() => {
+        try { link.remove(); } catch (_error) {}
+        finish(false);
+      }, timeoutMs);
       document.head.appendChild(link);
     });
   }
 
-  function loadScript(src) {
+  function loadScript(src, timeoutMs = 6500) {
     return new Promise((resolve) => {
       const existing = [...document.scripts].find((script) => String(script.src || '').includes(src));
       if (existing) return resolve(true);
       const script = document.createElement('script');
+      let settled = false;
+      let timer = 0;
+      const finish = (loaded) => {
+        if (settled) return;
+        settled = true;
+        if (timer) window.clearTimeout(timer);
+        resolve(Boolean(loaded));
+      };
       script.src = `${src}?v=${ADMIN_ASSET_VERSION}`;
       script.async = false;
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
+      script.onload = () => finish(true);
+      script.onerror = () => finish(false);
+      timer = window.setTimeout(() => {
+        try { script.remove(); } catch (_error) {}
+        finish(false);
+      }, timeoutMs);
       document.head.appendChild(script);
     });
   }
@@ -236,8 +259,9 @@
 
     loadingAdmin = true;
     try {
+      loadReplayAdminRoot();
       preloadAdminAssets();
-      await Promise.all(ADMIN_CSS.map(loadCss));
+      await Promise.all(ADMIN_CSS.map((href) => loadCss(href)));
       for (const src of ADMIN_SCRIPTS) {
         const ok = await loadScript(src);
         if (!ok) throw new Error(`Unable to load ${src}`);
@@ -309,8 +333,6 @@
   }
 
   function boot() {
-    loadReplayAdminRoot();
-    preloadAdminAssets();
     const observer = new MutationObserver(() => {
       if (settingsList()) {
         syncSettingsRow();
@@ -324,9 +346,13 @@
 
   window.addEventListener('realplay:settings-open', () => {
     syncSettingsRow();
-    preloadAdminAssets();
-    if (verifiedAdmin) scheduleAdminWarm();
-    else verifyAdmin();
+    if (verifiedAdmin) {
+      scheduleAdminWarm();
+    } else {
+      verifyAdmin().then((ok) => {
+        if (ok) scheduleAdminWarm();
+      }).catch(() => {});
+    }
   });
 
   window.addEventListener('storage', (event) => {
