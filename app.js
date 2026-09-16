@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260915-home-doctrine-brand-v67';
+  const version = '20260916-visitor-replay-stats-v68';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
