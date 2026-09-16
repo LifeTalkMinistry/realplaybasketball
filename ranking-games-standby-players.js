@@ -52,7 +52,8 @@
       line-height:1;
       text-transform:uppercase;
     }
-    .rp-ranking-leave-standby{
+    .rp-ranking-session button.rp-ranking-leave-standby,
+    .rp-ranking-session button.rp-ranking-leave-standby:not(:disabled){
       width:100%;
       min-height:36px;
       margin:9px 0 0;
@@ -61,20 +62,30 @@
       border-radius:11px;
       background:rgba(105,37,28,.08);
       color:#c99c8b;
+      box-shadow:none;
       font-family:var(--rp-display,Arial,sans-serif);
       font-size:.48rem;
       font-weight:950;
       letter-spacing:.09em;
       text-transform:uppercase;
+      text-shadow:none;
       cursor:pointer;
       transition:border-color .16s ease,background .16s ease,color .16s ease;
     }
-    .rp-ranking-leave-standby:hover{
+    .rp-ranking-session button.rp-ranking-leave-standby:not(:disabled):hover{
       border-color:rgba(235,164,132,.32);
       background:rgba(128,48,37,.13);
       color:#e0b2a1;
+      box-shadow:none;
     }
-    .rp-ranking-leave-standby:disabled{opacity:.55;cursor:wait}
+    .rp-ranking-session button.rp-ranking-leave-standby:disabled{
+      border-color:rgba(224,150,118,.12);
+      background:rgba(105,37,28,.06);
+      color:#9a796d;
+      box-shadow:none;
+      opacity:.55;
+      cursor:wait;
+    }
   `;
   document.head.appendChild(style);
 
