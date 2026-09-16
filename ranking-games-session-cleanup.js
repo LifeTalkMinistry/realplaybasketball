@@ -224,9 +224,6 @@
       line-height:1!important;
       white-space:nowrap!important;
     }
-    .rp-ranking-next .rp-ranking-session.joined ~ * .rp-ranking-capacity-badge strong{
-      color:#72efc4!important;
-    }
     @media(max-width:390px){
       .rp-ranking-next .rp-ranking-capacity-badge{
         min-width:46px;
@@ -253,6 +250,10 @@
     return String(Math.max(0, Math.trunc(Number(number) || 0))).padStart(2, '0');
   }
 
+  function setHidden(hidden) {
+    if (badge.hidden !== hidden) badge.hidden = hidden;
+  }
+
   function syncCapacity() {
     const roster = view.querySelector('[data-rp-ranking-secured]');
     const countNode = view.querySelector('[data-rp-ranking-secured-count]');
@@ -260,19 +261,20 @@
     const match = text.match(/(\d+)\s*\/\s*(\d+)/);
 
     if (!roster || roster.hidden || !match) {
-      badge.hidden = true;
+      setHidden(true);
       return;
     }
 
     const joined = Number(match[1]);
     const capacity = Number(match[2]);
     if (!Number.isFinite(capacity) || capacity <= 0) {
-      badge.hidden = true;
+      setHidden(true);
       return;
     }
 
-    if (value) value.textContent = `${pad(joined)}/${pad(capacity)}`;
-    badge.hidden = false;
+    const nextValue = `${pad(joined)}/${pad(capacity)}`;
+    if (value && value.textContent !== nextValue) value.textContent = nextValue;
+    setHidden(false);
   }
 
   const observer = new MutationObserver(syncCapacity);
