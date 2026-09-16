@@ -9,6 +9,8 @@
   let syncing = false;
   let syncTimer = 0;
   let cutoffTimer = 0;
+  let rankingStateLoading = false;
+  let rankingWasOpen = document.body.classList.contains('rp-ranking-open');
 
   function authToken() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -31,23 +33,33 @@
       .replace(/'/g, '&#39;');
   }
 
-  async function getAccessState() {
+  async function api(path, options = {}) {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 10000);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/real-play/career/access`, {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        method: options.method || 'GET',
         headers: {
           Accept: 'application/json',
-          Authorization: `Bearer ${authToken()}`,
+          ...(authToken() ? { Authorization: `Bearer ${authToken()}` } : {}),
         },
         cache: 'no-store',
         signal: controller.signal,
       });
-      if (!response.ok) throw new Error('Unable to load Play Token status.');
-      return await response.json();
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(data?.message || data?.error || 'Unable to complete this Real Play action.');
+        error.code = data?.code || null;
+        throw error;
+      }
+      return data;
     } finally {
       window.clearTimeout(timer);
     }
+  }
+
+  function getAccessState() {
+    return api('/api/real-play/career/access');
   }
 
   function installStyles() {
@@ -223,7 +235,10 @@
     if (!cutoffAt) return;
     const delay = new Date(cutoffAt).getTime() - Date.now();
     if (!Number.isFinite(delay) || delay <= 0) return;
-    cutoffTimer = window.setTimeout(() => scheduleSync(80), Math.min(delay + 100, 2147483000));
+    cutoffTimer = window.setTimeout(() => {
+      scheduleSync(80);
+      refreshRankingTokenState();
+    }, Math.min(delay + 100, 2147483000));
   }
 
   function renderConfirmation(state) {
@@ -302,12 +317,108 @@
     return heading === 'SPOT RELEASED' || heading === 'PAYMENT RECORDED';
   }
 
+  function syncRankingCancelControl(state) {
+    const button = document.querySelector('[data-rp-ranking-cancel]');
+    if (!button) return;
+    const entry = state?.entry;
+    const activeToken = entry && entry.status !== 'cancelled' && entry.entryType === 'token';
+    if (!activeToken) {
+      delete button.dataset.rpTokenLocked;
+      return;
+    }
+    const policy = policyFromState(state);
+    button.dataset.rpTokenManaged = 'true';
+    button.dataset.rpTokenLocked = policy.locked ? 'true' : 'false';
+    if (policy.locked) {
+      button.hidden = true;
+      button.disabled = true;
+      button.textContent = 'SPOT LOCKED';
+    } else if (document.body.classList.contains('rp-ranking-open')) {
+      button.hidden = false;
+      button.disabled = false;
+      button.textContent = 'CANCEL SPOT';
+      armCutoffRefresh(policy.cutoffAt);
+    }
+  }
+
+  async function refreshRankingTokenState() {
+    if (rankingStateLoading || !authToken() || !document.body.classList.contains('rp-ranking-open')) return;
+    rankingStateLoading = true;
+    try {
+      const state = await getAccessState();
+      syncRankingCancelControl(state);
+    } catch (_error) {
+      // Do not alter the base Open Rank controls if access state cannot be verified.
+    } finally {
+      rankingStateLoading = false;
+    }
+  }
+
+  function setRankingMessage(message, type = '') {
+    const node = document.querySelector('[data-rp-ranking-message]');
+    if (!node) return;
+    node.textContent = message || '';
+    node.classList.toggle('error', type === 'error');
+    node.classList.toggle('success', type === 'success');
+  }
+
+  async function cancelFromRanking(button) {
+    if (!authToken() || button.disabled) return;
+    button.disabled = true;
+    const originalText = button.textContent;
+    button.textContent = 'CHECKING…';
+    setRankingMessage('');
+
+    try {
+      const state = await getAccessState();
+      const entry = state?.entry;
+      const activeEntry = entry && entry.status !== 'cancelled';
+
+      if (activeEntry) {
+        const policy = policyFromState(state);
+        if (entry.entryType === 'token' && policy.locked) {
+          syncRankingCancelControl(state);
+          setRankingMessage('Cancellation window has closed. This Play Token is committed to the Ranking Game.', 'error');
+          return;
+        }
+
+        const deadline = entry.entryType === 'token' ? formatCutoff(policy.cutoffAt) : null;
+        const question = entry.entryType === 'token'
+          ? `Cancel this secured spot?\n\nYour Play Token will be returned because you are cancelling before ${deadline}.`
+          : 'Cancel your secured spot for this Ranking Game?';
+        if (!window.confirm(question)) return;
+
+        button.textContent = 'CANCELLING…';
+        const result = await api('/api/real-play/career/access', { method: 'DELETE' });
+        window.dispatchEvent(new CustomEvent('realplay:ranking-entry-updated', { detail: result }));
+        await window.RealPlayRankingGames?.refresh?.();
+        setRankingMessage(entry.entryType === 'token' ? 'Spot released. Your Play Token was returned.' : 'Spot released.', 'success');
+        return;
+      }
+
+      if (!window.confirm('Cancel your reservation for this Ranking Game?\n\nYour spot will be released for another player.')) return;
+      button.textContent = 'CANCELLING…';
+      await api('/api/real-play/career/play', { method: 'DELETE' });
+      await window.RealPlayRankingGames?.refresh?.();
+      setRankingMessage('Spot released.', 'success');
+    } catch (error) {
+      setRankingMessage(error?.message || 'Unable to cancel this spot right now.', 'error');
+      await refreshRankingTokenState();
+    } finally {
+      if (document.body.contains(button) && !button.hidden) {
+        button.disabled = false;
+        if (button.textContent === 'CHECKING…' || button.textContent === 'CANCELLING…') button.textContent = originalText || 'CANCEL SPOT';
+      }
+    }
+  }
+
   async function syncTokenFlow() {
     if (syncing || !authToken() || !overlay()?.classList.contains('is-open')) return;
     syncing = true;
     try {
       const state = await getAccessState();
       if (!overlay()?.classList.contains('is-open')) return;
+      syncRankingCancelControl(state);
       const entry = state?.entry;
       const activeEntry = entry && entry.status !== 'cancelled';
       if (activeEntry && entry.entryType === 'token') {
@@ -338,7 +449,14 @@
       if (!activeOverlay?.classList.contains('is-open')) return;
       const node = sheet();
       if (!node) return;
-      if (node.querySelector('[data-rp-token-flow-screen]')) return;
+      const tokenScreen = node.querySelector('[data-rp-token-flow-screen]');
+      if (tokenScreen) {
+        const confirm = tokenScreen.querySelector('[data-rp-use-token]');
+        if (confirm && String(confirm.textContent || '').trim() === 'CONFIRM · USE 1 TOKEN') {
+          confirm.textContent = 'CONFIRM SPOT · 1 TOKEN';
+        }
+        return;
+      }
       if (shouldPreserveLegacyResult()) return;
       scheduleSync(50);
     });
@@ -348,6 +466,13 @@
       attributes: true,
       attributeFilter: ['class'],
     });
+
+    const rankingObserver = new MutationObserver(() => {
+      const isOpen = document.body.classList.contains('rp-ranking-open');
+      if (isOpen && !rankingWasOpen) refreshRankingTokenState();
+      rankingWasOpen = isOpen;
+    });
+    rankingObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   }
 
   installStyles();
@@ -356,6 +481,16 @@
   document.addEventListener('click', (event) => {
     const target = event.target instanceof Element ? event.target : null;
     if (!target) return;
+
+    const cancel = target.closest('[data-rp-ranking-cancel]');
+    if (cancel) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+      cancelFromRanking(cancel);
+      return;
+    }
+
     const join = target.closest('[data-rp-ranking-session-action]');
     if (join && !join.disabled && /JOIN\s+RANKING\s+GAME/i.test(String(join.textContent || ''))) {
       scheduleSync(40);
@@ -365,7 +500,13 @@
   window.addEventListener('realplay:ranking-entry-updated', (event) => {
     const entry = event?.detail?.entry;
     if (entry?.entryType === 'token') scheduleSync(20);
+    if (document.body.classList.contains('rp-ranking-open')) refreshRankingTokenState();
+  });
+
+  window.addEventListener('focus', () => {
+    if (document.body.classList.contains('rp-ranking-open')) refreshRankingTokenState();
   });
 
   if (overlay()?.classList.contains('is-open')) scheduleSync(0);
+  if (rankingWasOpen) refreshRankingTokenState();
 })();
