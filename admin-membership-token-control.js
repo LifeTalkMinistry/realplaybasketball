@@ -6,6 +6,8 @@
   const TOKEN_KEY = 'real_play_access_token';
   const nativeFetch = window.fetch.bind(window);
   let activePlayerId = null;
+  let currentTokenBalance = 0;
+  let tokenAdjustment = 0;
   let tokenReady = false;
   let tokenManageable = false;
   let loadSequence = 0;
@@ -14,10 +16,8 @@
     return localStorage.getItem(TOKEN_KEY) || '';
   }
 
-  function tokenValue() {
-    const input = document.querySelector('[data-member-editor-token-count]');
-    const value = Number(input?.value);
-    return Number.isSafeInteger(value) && value >= 0 ? Math.min(99, value) : 0;
+  function resultingBalance() {
+    return Math.max(0, currentTokenBalance + tokenAdjustment);
   }
 
   function ensureStyles() {
@@ -26,14 +26,17 @@
     style.id = 'rp-admin-membership-token-style';
     style.textContent = `
       .rp-member-token-control{display:grid;gap:8px;margin-top:2px}
-      .rp-member-token-control>span{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6f879c}
+      .rp-member-token-control>span,.rp-member-token-adjust-label{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6f879c}
+      .rp-member-token-current{min-height:46px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;border:1px solid #17334a;border-radius:12px;background:#06121d}
+      .rp-member-token-current small{color:#71889c;font-size:10px;font-weight:750;letter-spacing:.04em;text-transform:uppercase}
+      .rp-member-token-current strong{color:#f7fbff;font:900 18px/1 system-ui}
       .rp-member-token-stepper{display:grid;grid-template-columns:52px 1fr 52px;min-height:46px;border:1px solid #17334a;border-radius:12px;overflow:hidden;background:#06121d}
       .rp-member-token-stepper button{border:0;background:#0a1b29;color:#66eaff;font:900 23px/1 system-ui;cursor:pointer}
       .rp-member-token-stepper button:disabled{cursor:not-allowed;color:#405363;opacity:.55}
-      .rp-member-token-stepper input{min-width:0;border:0;border-left:1px solid #17334a;border-right:1px solid #17334a;background:#06121d;color:#f7fbff;text-align:center;font:900 16px/1 system-ui;outline:none;-moz-appearance:textfield}
-      .rp-member-token-stepper input::-webkit-inner-spin-button,.rp-member-token-stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+      .rp-member-token-stepper output{min-width:0;display:grid;place-items:center;border-left:1px solid #17334a;border-right:1px solid #17334a;background:#06121d;color:#f7fbff;text-align:center;font:900 16px/1 system-ui}
       .rp-member-token-help{margin:0;color:#71889c;font-size:10px;line-height:1.45}
-      .rp-member-token-control.is-loading .rp-member-token-stepper{opacity:.65}
+      .rp-member-token-help strong{color:#a9f3ff}
+      .rp-member-token-control.is-loading .rp-member-token-current,.rp-member-token-control.is-loading .rp-member-token-stepper{opacity:.65}
     `;
     document.head.appendChild(style);
   }
@@ -50,12 +53,17 @@
     wrap.dataset.memberEditorTokenWrap = '1';
     wrap.innerHTML = `
       <span>Play Tokens</span>
-      <div class="rp-member-token-stepper">
-        <button type="button" data-member-token-minus aria-label="Remove one Play Token">−</button>
-        <input type="number" min="0" max="99" step="1" value="0" inputmode="numeric" data-member-editor-token-count aria-label="Available Play Tokens">
-        <button type="button" data-member-token-plus aria-label="Add one Play Token">+</button>
+      <div class="rp-member-token-current">
+        <small>Current balance</small>
+        <strong data-member-token-current>—</strong>
       </div>
-      <p class="rp-member-token-help" data-member-token-help>Loading available Play Tokens…</p>`;
+      <div class="rp-member-token-adjust-label">Admin adjustment</div>
+      <div class="rp-member-token-stepper">
+        <button type="button" data-member-token-minus aria-label="Subtract one Play Token as an admin correction">−</button>
+        <output data-member-token-adjustment aria-label="Play Token admin adjustment">0</output>
+        <button type="button" data-member-token-plus aria-label="Add one Play Token as an admin correction">+</button>
+      </div>
+      <p class="rp-member-token-help" data-member-token-help>Loading Play Tokens…</p>`;
 
     const amountWrap = backdrop.querySelector('[data-member-editor-amount-wrap]');
     const note = backdrop.querySelector('[data-member-editor-note]');
@@ -65,45 +73,58 @@
     return wrap;
   }
 
-  function setTokenState(value, manageable, helpText) {
+  function renderAdjustment(helpOverride = '') {
     const wrap = ensureControl();
     if (!wrap) return;
-    const input = wrap.querySelector('[data-member-editor-token-count]');
+    const current = wrap.querySelector('[data-member-token-current]');
+    const output = wrap.querySelector('[data-member-token-adjustment]');
     const minus = wrap.querySelector('[data-member-token-minus]');
     const plus = wrap.querySelector('[data-member-token-plus]');
     const help = wrap.querySelector('[data-member-token-help]');
-    const count = Number.isFinite(Number(value)) ? Math.max(0, Math.min(99, Number(value))) : 0;
+    const after = resultingBalance();
 
+    if (current) current.textContent = tokenManageable ? String(currentTokenBalance) : '—';
+    if (output) output.textContent = tokenAdjustment > 0 ? `+${tokenAdjustment}` : String(tokenAdjustment);
+    if (minus) minus.disabled = !tokenManageable || after <= 0;
+    if (plus) plus.disabled = !tokenManageable || after >= 99;
+    if (help) {
+      help.innerHTML = helpOverride || (tokenManageable
+        ? (tokenAdjustment === 0
+          ? 'Monthly membership includes <strong>4 Play Tokens automatically</strong>. Use this adjustment only for corrections or disputes.'
+          : `After correction: <strong>${after} available Play Token${after === 1 ? '' : 's'}</strong>. Save Access to apply.`)
+        : 'A Real Play account is required before Play Tokens can be adjusted.');
+    }
+  }
+
+  function setTokenState(value, manageable, helpText = '') {
+    const wrap = ensureControl();
+    if (!wrap) return;
+    currentTokenBalance = Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
+    tokenAdjustment = 0;
     tokenManageable = Boolean(manageable);
     tokenReady = true;
     wrap.classList.remove('is-loading');
-    if (input) {
-      input.value = tokenManageable ? String(count) : '';
-      input.disabled = !tokenManageable;
-    }
-    if (minus) minus.disabled = !tokenManageable || count <= 0;
-    if (plus) plus.disabled = !tokenManageable || count >= 99;
-    if (help) {
-      help.textContent = helpText || (tokenManageable
-        ? `${count} available Play Token${count === 1 ? '' : 's'}. Use − or +, then Save Access.`
-        : 'A Real Play account is required before Play Tokens can be managed.');
-    }
+    renderAdjustment(helpText);
   }
 
   function setLoading() {
     tokenReady = false;
     tokenManageable = false;
+    currentTokenBalance = 0;
+    tokenAdjustment = 0;
     const wrap = ensureControl();
     if (!wrap) return;
     wrap.classList.add('is-loading');
-    const input = wrap.querySelector('[data-member-editor-token-count]');
+    const current = wrap.querySelector('[data-member-token-current]');
+    const output = wrap.querySelector('[data-member-token-adjustment]');
     const minus = wrap.querySelector('[data-member-token-minus]');
     const plus = wrap.querySelector('[data-member-token-plus]');
     const help = wrap.querySelector('[data-member-token-help]');
-    if (input) { input.value = '0'; input.disabled = true; }
+    if (current) current.textContent = '—';
+    if (output) output.textContent = '0';
     if (minus) minus.disabled = true;
     if (plus) plus.disabled = true;
-    if (help) help.textContent = 'Loading available Play Tokens…';
+    if (help) help.textContent = 'Loading Play Tokens…';
   }
 
   async function hydrateTokens(playerId) {
@@ -144,17 +165,11 @@
 
   function changeToken(delta) {
     if (!tokenReady || !tokenManageable) return;
-    const input = document.querySelector('[data-member-editor-token-count]');
-    if (!input) return;
-    const next = Math.max(0, Math.min(99, tokenValue() + delta));
-    input.value = String(next);
-    const wrap = input.closest('[data-member-editor-token-wrap]');
-    const minus = wrap?.querySelector('[data-member-token-minus]');
-    const plus = wrap?.querySelector('[data-member-token-plus]');
-    const help = wrap?.querySelector('[data-member-token-help]');
-    if (minus) minus.disabled = next <= 0;
-    if (plus) plus.disabled = next >= 99;
-    if (help) help.textContent = `${next} available Play Token${next === 1 ? '' : 's'}. Save Access to apply.`;
+    const nextAdjustment = tokenAdjustment + delta;
+    const nextBalance = currentTokenBalance + nextAdjustment;
+    if (nextBalance < 0 || nextBalance > 99) return;
+    tokenAdjustment = Math.max(-99, Math.min(99, nextAdjustment));
+    renderAdjustment();
   }
 
   window.fetch = function realPlayAdminTokenFetch(input, init = {}) {
@@ -172,7 +187,7 @@
         ) {
           init = {
             ...init,
-            body: JSON.stringify({ ...body, playTokensAvailable: tokenValue() }),
+            body: JSON.stringify({ ...body, playTokenAdjustment: tokenAdjustment }),
           };
         }
       }
@@ -205,17 +220,4 @@
       changeToken(1);
     }
   }, true);
-
-  document.addEventListener('input', (event) => {
-    if (!event.target.matches?.('[data-member-editor-token-count]') || !tokenManageable) return;
-    const normalized = Math.max(0, Math.min(99, Math.trunc(Number(event.target.value) || 0)));
-    event.target.value = String(normalized);
-    const wrap = event.target.closest('[data-member-editor-token-wrap]');
-    const minus = wrap?.querySelector('[data-member-token-minus]');
-    const plus = wrap?.querySelector('[data-member-token-plus]');
-    const help = wrap?.querySelector('[data-member-token-help]');
-    if (minus) minus.disabled = normalized <= 0;
-    if (plus) plus.disabled = normalized >= 99;
-    if (help) help.textContent = `${normalized} available Play Token${normalized === 1 ? '' : 's'}. Save Access to apply.`;
-  });
 })();
