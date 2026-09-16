@@ -1,105 +1,14 @@
-/* Open Rank cleanup — remove redundant helper labels/details while preserving core actions and titles. */
-.rp-ranking-next .rp-ranking-section-head small,
-.rp-ranking-rules .rp-ranking-section-head small,
-.rp-ranking-session > p{
-  display:none!important;
-}
-
-/* Tighten spacing after the removed session details line. */
-.rp-ranking-session button{
-  margin-top:12px;
-}
-
-/* Secured-player rows are information cards, not primary CTA buttons.
- * Override the generic session button treatment so player identity/stats stay readable.
- */
-.rp-ranking-session .rp-ranking-secured-player,
-.rp-ranking-session .rp-ranking-secured-player:not(:disabled){
-  min-height:0;
-  margin-top:0;
-  padding:0;
-  border:1px solid rgba(80,220,255,.18);
-  border-radius:13px;
-  background:linear-gradient(105deg,rgba(7,20,31,.98),rgba(3,12,20,.99) 58%,rgba(6,21,30,.97));
-  color:inherit;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 8px 24px rgba(0,0,0,.18);
-  text-align:left;
-}
-
-.rp-ranking-session .rp-ranking-secured-player.is-clickable:hover{
-  border-color:rgba(80,220,255,.34);
-  background:linear-gradient(105deg,rgba(9,27,40,.99),rgba(4,15,24,.99) 58%,rgba(7,25,34,.98));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 28px rgba(0,0,0,.22);
-}
-
-.rp-ranking-session .rp-ranking-secured-player.is-you,
-.rp-ranking-session .rp-ranking-secured-player.is-you:not(:disabled){
-  border-color:rgba(114,239,196,.28);
-  background:linear-gradient(105deg,rgba(7,30,30,.98),rgba(3,16,22,.99) 58%,rgba(5,27,30,.97));
-}
-
-.rp-ranking-session .rp-ranking-secured-name{color:#f7fbff}
-.rp-ranking-session .rp-ranking-secured-label{color:#6f8499}
-.rp-ranking-session .rp-ranking-secured-value{color:#dbe7f0}
-.rp-ranking-session .rp-ranking-secured-stat.is-ovr .rp-ranking-secured-value{color:#fff}
-.rp-ranking-session .rp-ranking-secured-stat.is-winrate .rp-ranking-secured-value{color:#72efc4}
-.rp-ranking-session .rp-ranking-secured-stat.is-top-stats .rp-ranking-secured-value{color:#8fdcf3}
-
-/* Refined primary Ranking Game CTA.
- * Richer blue/cyan, quieter glow, stronger typography, and cleaner proportions.
- */
-.rp-ranking-session [data-rp-ranking-session-action]{
-  position:relative;
-  overflow:hidden;
-  min-height:48px;
-  margin-top:14px;
-  border:1px solid rgba(88,213,255,.30);
-  border-radius:14px;
-  background:linear-gradient(100deg,#0d4fb8 0%,#117fd2 52%,#18b9da 100%);
-  color:#f8fcff;
-  font-size:.62rem;
-  font-weight:950;
-  letter-spacing:.075em;
-  text-shadow:0 1px 0 rgba(0,0,0,.18);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.18),
-    inset 0 -1px 0 rgba(0,37,79,.20),
-    0 8px 20px rgba(0,92,210,.18);
-  transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,filter .16s ease;
-}
-
-.rp-ranking-session [data-rp-ranking-session-action]::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(180deg,rgba(255,255,255,.10),transparent 44%);
-  pointer-events:none;
-}
-
-.rp-ranking-session [data-rp-ranking-session-action]:not(:disabled):hover{
-  border-color:rgba(105,225,255,.46);
-  filter:brightness(1.045);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.22),
-    inset 0 -1px 0 rgba(0,37,79,.22),
-    0 10px 24px rgba(0,108,225,.23);
-}
-
-.rp-ranking-session [data-rp-ranking-session-action]:not(:disabled):active{
-  transform:translateY(1px) scale(.995);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 5px 14px rgba(0,83,190,.18);
-}
-
-.rp-ranking-session [data-rp-ranking-session-action]:focus-visible{
-  outline:2px solid rgba(87,220,255,.72);
-  outline-offset:3px;
-}
-
-@media(max-width:390px){
-  .rp-ranking-session [data-rp-ranking-session-action]{
-    min-height:46px;
-    border-radius:13px;
-    font-size:.59rem;
-    letter-spacing:.065em;
-  }
-}
+/* Open Rank cleanup */
+.rp-ranking-next .rp-ranking-section-head small,.rp-ranking-rules .rp-ranking-section-head small,.rp-ranking-session>p{display:none!important}
+.rp-ranking-session button{margin-top:12px}
+.rp-ranking-session .rp-ranking-secured-player,.rp-ranking-session .rp-ranking-secured-player:not(:disabled){min-height:0;margin-top:0;padding:0;border:1px solid rgba(80,220,255,.18);border-radius:13px;background:linear-gradient(105deg,rgba(7,20,31,.98),rgba(3,12,20,.99) 58%,rgba(6,21,30,.97));color:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 8px 24px rgba(0,0,0,.18);text-align:left}
+.rp-ranking-session .rp-ranking-secured-player.is-clickable:hover{border-color:rgba(80,220,255,.34);background:linear-gradient(105deg,rgba(9,27,40,.99),rgba(4,15,24,.99) 58%,rgba(7,25,34,.98));box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 28px rgba(0,0,0,.22)}
+.rp-ranking-session .rp-ranking-secured-player.is-you,.rp-ranking-session .rp-ranking-secured-player.is-you:not(:disabled){border-color:rgba(114,239,196,.28);background:linear-gradient(105deg,rgba(7,30,30,.98),rgba(3,16,22,.99) 58%,rgba(5,27,30,.97))}
+.rp-ranking-session .rp-ranking-secured-name{color:#f7fbff}.rp-ranking-session .rp-ranking-secured-label{color:#6f8499}.rp-ranking-session .rp-ranking-secured-value{color:#dbe7f0}.rp-ranking-session .rp-ranking-secured-stat.is-ovr .rp-ranking-secured-value{color:#fff}.rp-ranking-session .rp-ranking-secured-stat.is-winrate .rp-ranking-secured-value{color:#72efc4}.rp-ranking-session .rp-ranking-secured-stat.is-top-stats .rp-ranking-secured-value{color:#8fdcf3}
+/* Darker blue CTA: keep blue identity without the bright cyan wash. */
+.rp-ranking-session [data-rp-ranking-session-action]{position:relative;overflow:hidden;min-height:48px;margin-top:14px;border:1px solid rgba(64,164,225,.34);border-radius:14px;background:linear-gradient(100deg,#0a2d63 0%,#0d4d8f 52%,#0b6f98 100%);color:#f8fcff;font-size:.62rem;font-weight:950;letter-spacing:.075em;text-shadow:0 1px 0 rgba(0,0,0,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 -1px 0 rgba(0,20,50,.32),0 8px 20px rgba(0,57,135,.16);transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,filter .16s ease}
+.rp-ranking-session [data-rp-ranking-session-action]::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.055),transparent 45%);pointer-events:none}
+.rp-ranking-session [data-rp-ranking-session-action]:not(:disabled):hover{border-color:rgba(78,184,238,.46);filter:brightness(1.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.13),inset 0 -1px 0 rgba(0,20,50,.34),0 10px 24px rgba(0,67,150,.21)}
+.rp-ranking-session [data-rp-ranking-session-action]:not(:disabled):active{transform:translateY(1px) scale(.995);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 5px 14px rgba(0,52,118,.18)}
+.rp-ranking-session [data-rp-ranking-session-action]:focus-visible{outline:2px solid rgba(70,175,230,.66);outline-offset:3px}
+@media(max-width:390px){.rp-ranking-session [data-rp-ranking-session-action]{min-height:46px;border-radius:13px;font-size:.59rem;letter-spacing:.065em}}
