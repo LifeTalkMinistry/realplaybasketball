@@ -22,6 +22,24 @@
     if (completeSubmit && completeSubmit.textContent !== 'CREATE MY PLAYER') completeSubmit.textContent = 'CREATE MY PLAYER';
   }
 
+  // Play Token membership is prepaid and verified before tokens are issued.
+  // Keep Cash available only for Pay-to-Play; never present Cash as a way to buy
+  // the ₱99 monthly token pack because an unpaid promise must not create tokens.
+  function enforceGcashOnlyMembership() {
+    document.querySelectorAll('[data-rp-entry-method="membership-cash"]').forEach((cashButton) => {
+      const methods = cashButton.closest('.rp-entry-action-methods');
+      const flow = cashButton.closest('.rp-entry-action-flow');
+      cashButton.remove();
+
+      if (methods) methods.style.gridTemplateColumns = '1fr';
+
+      const description = flow?.querySelector('h2 + p');
+      if (description && /monthly token pack|choose how you want to pay/i.test(String(description.textContent || ''))) {
+        description.textContent = 'Pay via GCash. Once payment is verified, 4 Play Tokens are added to your account and stay valid for 90 days.';
+      }
+    });
+  }
+
   function loadMembershipExperience() {
     if (membershipLoaded || document.querySelector('script[data-rp-membership-script]')) return;
     membershipLoaded = true;
@@ -52,6 +70,7 @@
     actions.async = true;
     actions.dataset.rpEntryActions = 'true';
     actions.onload = () => {
+      enforceGcashOnlyMembership();
       if (document.querySelector('script[data-rp-entry-open-state]')) {
         loadTokenCancellationFlow();
         return;
@@ -97,10 +116,22 @@
     return false;
   }
 
-  const observer = new MutationObserver(relabelFreePlayerEntry);
+  const observer = new MutationObserver(() => {
+    relabelFreePlayerEntry();
+    enforceGcashOnlyMembership();
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   document.addEventListener('click', (event) => {
+    // Defensive guard for any stale/cached membership Cash button that might
+    // briefly survive while older markup is being replaced.
+    if (event.target.closest?.('[data-rp-entry-method="membership-cash"]')) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      enforceGcashOnlyMembership();
+      return;
+    }
+
     const target = event.target.closest?.(
       '[data-auth-membership-card], [data-membership-open], [data-plus-one-prompt], [data-rp-settings-action="membership"], [data-session-action]'
     );
@@ -115,4 +146,5 @@
   window.__realPlayEnsureMembership = probeMembershipService;
   loadRankingEntryActions();
   relabelFreePlayerEntry();
+  enforceGcashOnlyMembership();
 })();
