@@ -198,7 +198,7 @@
         <style>.rp-doctrine-list::before{content:'REAL PLAY CHAPTERS'!important}</style>
         <header class="rp-doctrine-topbar">
           <button class="rp-doctrine-home" type="button" data-rp-doctrine-home>← HOME</button>
-          <div class="rp-doctrine-brand"><strong>REAL PLAY</strong><span>REAL PLAY BASKETBALL</span></div>
+          <div class="rp-doctrine-brand"><strong style="font-size:.78rem;white-space:nowrap">REAL PLAY BASKETBALL</strong></div>
           <span class="rp-doctrine-count">12 CHAPTERS</span>
         </header>
 
