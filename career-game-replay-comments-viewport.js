@@ -129,3 +129,140 @@
     });
   }, { passive: true });
 })();
+
+(() => {
+  if (window.__realPlaySafariReplayFillInstalled) return;
+  window.__realPlaySafariReplayFillInstalled = true;
+
+  const STYLE_ID = 'rp-replay-safari-pseudo-fullscreen-fill';
+  const PSEUDO = 'rp-career-replay-pseudo-fullscreen';
+  const PSEUDO_OPEN = 'rp-career-replay-pseudo-fullscreen-open';
+
+  function installFillStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      html.${PSEUDO_OPEN},
+      body.${PSEUDO_OPEN}{
+        width:100%!important;
+        height:100%!important;
+        min-width:100%!important;
+        min-height:100%!important;
+        margin:0!important;
+        padding:0!important;
+        overflow:hidden!important;
+        background:#000!important;
+      }
+      .rp-career-replay-stage.${PSEUDO}{
+        position:fixed!important;
+        top:var(--rp-replay-vtop,0px)!important;
+        left:var(--rp-replay-vleft,0px)!important;
+        right:auto!important;
+        bottom:auto!important;
+        width:var(--rp-replay-vw,100vw)!important;
+        height:var(--rp-replay-vh,100dvh)!important;
+        max-width:none!important;
+        max-height:none!important;
+        margin:0!important;
+        padding:0!important;
+        border:0!important;
+        border-radius:0!important;
+        aspect-ratio:auto!important;
+        overflow:hidden!important;
+        background:#000!important;
+        transform:none!important;
+        box-shadow:none!important;
+      }
+      .rp-career-replay-stage.${PSEUDO} [data-rp-career-replay-media]{
+        position:absolute!important;
+        inset:0!important;
+        width:100%!important;
+        height:100%!important;
+        max-width:none!important;
+        max-height:none!important;
+        overflow:hidden!important;
+        background:#000!important;
+      }
+      .rp-career-replay-stage.${PSEUDO} [data-rp-career-replay-media] > div,
+      .rp-career-replay-stage.${PSEUDO} .rp-career-replay-yt-host{
+        position:absolute!important;
+        inset:0!important;
+        width:100%!important;
+        height:100%!important;
+        max-width:none!important;
+        max-height:none!important;
+        overflow:hidden!important;
+        background:#000!important;
+      }
+      .rp-career-replay-stage.${PSEUDO} video{
+        position:absolute!important;
+        inset:0!important;
+        width:100%!important;
+        height:100%!important;
+        max-width:none!important;
+        max-height:none!important;
+        object-fit:cover!important;
+        object-position:center center!important;
+        transform:none!important;
+        background:#000!important;
+      }
+      .rp-career-replay-stage.${PSEUDO} iframe{
+        position:absolute!important;
+        top:50%!important;
+        left:50%!important;
+        right:auto!important;
+        bottom:auto!important;
+        width:var(--rp-replay-cover-w,100%)!important;
+        height:var(--rp-replay-cover-h,100%)!important;
+        min-width:0!important;
+        min-height:0!important;
+        max-width:none!important;
+        max-height:none!important;
+        margin:0!important;
+        transform:translate(-50%,-50%)!important;
+        border:0!important;
+        background:#000!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function syncReplayViewport() {
+    const vv = window.visualViewport;
+    const width = Math.max(1, Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 1));
+    const height = Math.max(1, Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 1));
+    const offsetLeft = Math.max(0, Math.round(vv?.offsetLeft || 0));
+    const offsetTop = Math.max(0, Math.round(vv?.offsetTop || 0));
+    const ratio = 16 / 9;
+    let coverWidth = width;
+    let coverHeight = height;
+
+    if (width / height >= ratio) {
+      coverWidth = width;
+      coverHeight = Math.ceil(width / ratio);
+    } else {
+      coverHeight = height;
+      coverWidth = Math.ceil(height * ratio);
+    }
+
+    const root = document.documentElement;
+    root.style.setProperty('--rp-replay-vw', `${width}px`);
+    root.style.setProperty('--rp-replay-vh', `${height}px`);
+    root.style.setProperty('--rp-replay-vleft', `${offsetLeft}px`);
+    root.style.setProperty('--rp-replay-vtop', `${offsetTop}px`);
+    root.style.setProperty('--rp-replay-cover-w', `${coverWidth}px`);
+    root.style.setProperty('--rp-replay-cover-h', `${coverHeight}px`);
+  }
+
+  installFillStyles();
+  syncReplayViewport();
+
+  window.addEventListener('resize', syncReplayViewport, { passive: true });
+  window.addEventListener('orientationchange', () => {
+    window.setTimeout(syncReplayViewport, 60);
+    window.setTimeout(syncReplayViewport, 240);
+  }, { passive: true });
+  window.visualViewport?.addEventListener('resize', syncReplayViewport, { passive: true });
+  window.visualViewport?.addEventListener('scroll', syncReplayViewport, { passive: true });
+})();
