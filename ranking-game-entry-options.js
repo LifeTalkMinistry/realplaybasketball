@@ -284,7 +284,7 @@
           <div>
             <small>JOIN RANKING GAME</small>
             <h2 id="rp-entry-options-title">CHOOSE HOW TO PLAY</h2>
-            <p>Choose the access that fits how often you want to join Real Play.</p>
+            <p>Choose how you want to secure this Ranking Game.</p>
           </div>
           <button class="rp-entry-options-close" type="button" aria-label="Close entry options" data-rp-entry-close>×</button>
         </div>
@@ -292,17 +292,17 @@
         <div class="rp-entry-option-stack">
           <button class="rp-entry-option membership" type="button" data-rp-entry-choice="membership">
             <div class="rp-entry-option-badges">
-              <span class="rp-entry-option-badge primary">BEST VALUE</span>
-              <span class="rp-entry-option-badge">PRIORITY ACCESS</span>
+              <span class="rp-entry-option-badge primary">4 PLAY TOKENS</span>
+              <span class="rp-entry-option-badge">90-DAY VALIDITY</span>
             </div>
             <div class="rp-entry-option-main">
               <div class="rp-entry-option-copy">
                 <strong>₱99 MONTHLY MEMBERSHIP</strong>
-                <p>For players who want to stay in the recurring monthly Sunday group.</p>
+                <p>Get 4 Play Tokens every month. Use 1 token to secure any eligible Real Play session.</p>
               </div>
               <div class="rp-entry-price"><b>₱99</b><span>PER MONTH</span></div>
             </div>
-            <div class="rp-entry-option-note">≈ ₱24.75 per session if you play all 4 Sundays.</div>
+            <div class="rp-entry-option-note">₱24.75 / TOKEN · 1 TOKEN = 1 SECURED PLAY · CONFIRMED NO-SHOW = TOKEN USED</div>
           </button>
 
           <button class="rp-entry-option payplay" type="button" data-rp-entry-choice="pay-to-play">
@@ -312,7 +312,7 @@
             <div class="rp-entry-option-main">
               <div class="rp-entry-option-copy">
                 <strong>₱50 PAY TO PLAY</strong>
-                <p>No monthly commitment. Secure this specific session only.</p>
+                <p>No monthly commitment. Pay ₱50 to secure this specific session.</p>
               </div>
               <div class="rp-entry-price"><b>₱50</b><span>THIS SESSION</span></div>
             </div>
@@ -325,15 +325,15 @@
             <div class="rp-entry-option-main">
               <div class="rp-entry-option-copy">
                 <strong>FREE STANDBY</strong>
-                <p>Pay nothing. Play only if open capacity remains or a secured player does not show.</p>
+                <p>No payment and no reserved spot. Play only if a secured spot opens.</p>
               </div>
               <div class="rp-entry-price"><b>FREE</b><span>STANDBY</span></div>
             </div>
-            <div class="rp-entry-option-note">Standby does not secure or displace a paid spot.</div>
+            <div class="rp-entry-option-note">Standby never displaces a confirmed paid player.</div>
           </button>
         </div>
 
-        <p class="rp-entry-options-foot">Preview UI only — payment and booking actions are not connected yet.</p>
+        <p class="rp-entry-options-foot">Preview UI only — payment and token booking are not connected yet.</p>
       </section>
     `;
     document.body.appendChild(overlay);
