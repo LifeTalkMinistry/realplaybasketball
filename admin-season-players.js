@@ -1,23 +1,20 @@
 (() => {
-  if (window.__realPlayAdminSeasonPlayersInstalled) return;
-  window.__realPlayAdminSeasonPlayersInstalled = true;
+  if (window.__realPlayAdminMembershipDirectoryInstalled) return;
+  window.__realPlayAdminMembershipDirectoryInstalled = true;
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
-  const CLUBS = [
-    { id: 'lions', name: 'LIONS' },
-    { id: 'valiant', name: 'VALIANT' },
-    { id: 'watchmen', name: 'WATCHMEN' },
-    { id: 'conquerors', name: 'CONQUERORS' },
-  ];
+  const EXPIRING_SOON_DAYS = 7;
 
-  let season = null;
-  let registered = [];
-  let profiles = [];
+  let players = [];
+  let slotCap = 16;
+  let activeMembers = 0;
+  let availableSlots = 16;
   let loading = false;
-  let assigningUserId = null;
-  let notice = '';
-  let noticeType = '';
+  let loaded = false;
+  let errorMessage = '';
+  let activeFilter = 'all';
+  let searchQuery = '';
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -47,8 +44,96 @@
       .replaceAll("'", '&#039;');
   }
 
-  function clubName(id) {
-    return CLUBS.find((club) => club.id === id)?.name || 'UNASSIGNED';
+  function membershipOf(player) {
+    return player?.membership && typeof player.membership === 'object'
+      ? player.membership
+      : { status: 'free', active: false, startedAt: null, endsAt: null };
+  }
+
+  function dateValue(value) {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  function formatDate(value) {
+    const date = dateValue(value);
+    if (!date) return '—';
+    return new Intl.DateTimeFormat('en-PH', {
+      timeZone: 'Asia/Manila',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date).toUpperCase();
+  }
+
+  function isExpiringSoon(player) {
+    const membership = membershipOf(player);
+    if (!membership.active) return false;
+    const end = dateValue(membership.endsAt);
+    if (!end) return false;
+    const remaining = end.getTime() - Date.now();
+    return remaining >= 0 && remaining <= EXPIRING_SOON_DAYS * 24 * 60 * 60 * 1000;
+  }
+
+  function displayStatus(player) {
+    const membership = membershipOf(player);
+    if (membership.active) return isExpiringSoon(player) ? 'expiring' : 'active';
+    if (membership.status === 'pending') return 'pending';
+    if (membership.status === 'expired') return 'expired';
+    if (membership.status === 'suspended') return 'suspended';
+    return 'free';
+  }
+
+  function statusLabel(status) {
+    if (status === 'active') return 'ACTIVE';
+    if (status === 'expiring') return 'EXPIRING';
+    if (status === 'pending') return 'PENDING';
+    if (status === 'expired') return 'EXPIRED';
+    if (status === 'suspended') return 'SUSPENDED';
+    return 'FREE';
+  }
+
+  function memberLabel(player) {
+    const status = displayStatus(player);
+    if (status === 'active' || status === 'expiring') return 'MONTHLY MEMBER';
+    if (status === 'pending') return 'PAYMENT PENDING';
+    if (status === 'expired') return 'FORMER MONTHLY MEMBER';
+    if (status === 'suspended') return 'MEMBERSHIP SUSPENDED';
+    return 'FREE PLAYER';
+  }
+
+  function filteredPlayers() {
+    const query = searchQuery.trim().toLowerCase();
+    return players.filter((player) => {
+      const status = displayStatus(player);
+      const membership = membershipOf(player);
+      const filterMatch = activeFilter === 'all'
+        || (activeFilter === 'active' && membership.active)
+        || (activeFilter === 'free' && status === 'free')
+        || (activeFilter === 'expiring' && status === 'expiring')
+        || (activeFilter === 'expired' && status === 'expired');
+      if (!filterMatch) return false;
+      if (!query) return true;
+      const number = player.playerNumber === null || player.playerNumber === undefined
+        ? ''
+        : String(player.playerNumber);
+      return String(player.playerName || '').toLowerCase().includes(query)
+        || number.includes(query)
+        || `#${number}`.includes(query);
+    });
+  }
+
+  function counts() {
+    return players.reduce((result, player) => {
+      const status = displayStatus(player);
+      result.all += 1;
+      if (membershipOf(player).active) result.active += 1;
+      if (status === 'free') result.free += 1;
+      if (status === 'expiring') result.expiring += 1;
+      if (status === 'expired') result.expired += 1;
+      return result;
+    }, { all: 0, active: 0, free: 0, expiring: 0, expired: 0 });
   }
 
   async function api(path, options = {}) {
@@ -70,211 +155,219 @@
   }
 
   function ensureStyles() {
-    if (document.querySelector('[data-rp-season-players-styles]')) return;
+    if (document.querySelector('[data-rp-membership-directory-styles]')) return;
     const style = document.createElement('style');
-    style.dataset.rpSeasonPlayersStyles = '1';
+    style.dataset.rpMembershipDirectoryStyles = '1';
     style.textContent = `
-      .rp-admin-season-roster{margin:0 0 16px;padding:15px;border:1px solid rgba(47,220,255,.22);border-radius:16px;background:linear-gradient(160deg,rgba(4,21,34,.95),rgba(2,8,15,.98))}
-      .rp-admin-season-roster-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
-      .rp-admin-season-roster-head small{display:block;color:#38dfff;font-size:.55rem;font-weight:950;letter-spacing:.14em}
-      .rp-admin-season-roster-head strong{display:block;margin-top:5px;color:#fff;font-family:var(--rp-display);font-size:1.18rem;font-style:italic;line-height:1}
-      .rp-admin-season-roster-count{flex:0 0 auto;padding:6px 8px;border:1px solid rgba(47,220,255,.2);border-radius:999px;color:#63e6ff;font-size:.55rem;font-weight:950}
-      .rp-admin-season-roster-note{margin:0 0 12px;color:#7f96ad;font-size:.65rem;line-height:1.45}
-      .rp-admin-season-player-list{display:grid;gap:10px}
-      .rp-admin-season-player{padding:12px;border:1px solid rgba(126,173,232,.13);border-radius:13px;background:#030a12}
-      .rp-admin-season-player-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-      .rp-admin-season-player-name strong{display:block;color:#fff;font-size:.78rem;font-weight:950}
-      .rp-admin-season-player-name span{display:block;margin-top:4px;color:#70879f;font-size:.58rem}
-      .rp-admin-season-assigned{flex:0 0 auto;color:#63e6ff;font-size:.57rem;font-weight:950;letter-spacing:.06em}
-      .rp-admin-season-pref{margin-top:8px;color:#8399af;font-size:.59rem;font-weight:800}
-      .rp-admin-season-pref b{color:#dbeeff}
-      .rp-admin-season-preferred{width:100%;min-height:40px;margin-top:9px;border:1px solid rgba(47,220,255,.28);border-radius:10px;background:#071623;color:#63e6ff;font-size:.63rem;font-weight:950}
-      .rp-admin-season-clubs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
-      .rp-admin-season-clubs button{min-height:40px;border:1px solid rgba(126,173,232,.14);border-radius:10px;background:#030a12;color:#90a6bb;font-size:.59rem;font-weight:900}
-      .rp-admin-season-clubs button.active{border-color:rgba(47,220,255,.42);background:#071824;color:#66e7ff}
-      .rp-admin-season-unassign{width:100%;min-height:38px;margin-top:7px;border:1px solid rgba(255,120,145,.2);border-radius:10px;background:#10070b;color:#ff93a8;font-size:.58rem;font-weight:900}
-      .rp-admin-season-player button:disabled{opacity:.5}
-      .rp-admin-season-roster-message{margin:10px 0 0;color:#ff9aaa;font-size:.62rem;line-height:1.4}
-      .rp-admin-season-roster-message.success{color:#65e6ff}
-      .rp-admin-season-roster-empty{padding:14px;border:1px dashed rgba(126,173,232,.14);border-radius:12px;color:#71879d;font-size:.64rem;text-align:center}
+      .rp-member-directory{display:grid;gap:12px;padding-bottom:24px}
+      .rp-member-directory-head{margin:10px 0 0}
+      .rp-member-directory-kicker{display:block;color:#43e8ff;font-size:.52rem;font-weight:950;letter-spacing:.14em;text-transform:uppercase}
+      .rp-member-directory-head h1{margin:5px 0 0;color:#fff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.72rem;font-style:italic;font-weight:950;line-height:.95;text-transform:uppercase}
+      .rp-member-directory-head p{margin:8px 0 0;color:#7f91a6;font-size:.7rem;line-height:1.45}
+      .rp-member-summary{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:15px 16px;border:1px solid rgba(67,232,255,.22);border-radius:17px;background:linear-gradient(145deg,rgba(5,23,36,.98),rgba(2,9,16,.98))}
+      .rp-member-summary small{display:block;color:#6f8ca3;font-size:.5rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase}
+      .rp-member-summary strong{display:block;margin-top:4px;color:#fff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.25rem;font-style:italic;font-weight:950}
+      .rp-member-summary-count{text-align:right}
+      .rp-member-summary-count b{display:block;color:#5cecff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.55rem;font-style:italic;line-height:.9}
+      .rp-member-summary-count span{display:block;margin-top:5px;color:#7692aa;font-size:.48rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+      .rp-member-summary.full{border-color:rgba(255,108,132,.28)}
+      .rp-member-summary.full .rp-member-summary-count b{color:#ff8398}
+      .rp-member-tools{display:grid;gap:9px}
+      .rp-member-search{width:100%;min-height:45px;box-sizing:border-box;padding:0 13px;border:1px solid rgba(126,173,232,.16);border-radius:12px;outline:0;color:#fff;background:#050d17;font:700 .75rem var(--rp-body,Arial,sans-serif)}
+      .rp-member-search:focus{border-color:rgba(67,232,255,.45);box-shadow:0 0 0 3px rgba(67,232,255,.05)}
+      .rp-member-filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+      .rp-member-filters::-webkit-scrollbar{display:none}
+      .rp-member-filter{flex:0 0 auto;min-height:34px;padding:0 10px;border:1px solid rgba(126,173,232,.13);border-radius:999px;background:#07111d;color:#71869c;font:900 .51rem var(--rp-display,Arial,sans-serif);letter-spacing:.06em;white-space:nowrap}
+      .rp-member-filter.active{border-color:rgba(67,232,255,.38);background:rgba(23,117,155,.16);color:#64eaff}
+      .rp-member-list{display:grid;gap:8px}
+      .rp-member-row{padding:13px;border:1px solid rgba(126,173,232,.12);border-radius:15px;background:#07111d}
+      .rp-member-row-top{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:10px}
+      .rp-member-number{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:#10243c;color:#fff;font-family:var(--rp-display,Arial,sans-serif);font-size:.9rem;font-weight:950}
+      .rp-member-identity{min-width:0}
+      .rp-member-identity strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font-family:var(--rp-display,Arial,sans-serif);font-size:.88rem;font-weight:950}
+      .rp-member-identity small{display:block;margin-top:4px;color:#6e849a;font-size:.5rem;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
+      .rp-member-status{align-self:start;padding:6px 8px;border:1px solid rgba(126,173,232,.15);border-radius:999px;background:rgba(255,255,255,.02);color:#8297aa;font-size:.46rem;font-weight:950;letter-spacing:.07em}
+      .rp-member-status.active{border-color:rgba(72,234,255,.28);background:rgba(38,211,236,.07);color:#5cecff}
+      .rp-member-status.expiring{border-color:rgba(255,197,79,.3);background:rgba(255,197,79,.07);color:#ffd36b}
+      .rp-member-status.pending{border-color:rgba(143,175,255,.25);background:rgba(96,126,255,.08);color:#9fb8ff}
+      .rp-member-status.expired,.rp-member-status.suspended{border-color:rgba(255,107,132,.22);background:rgba(255,75,106,.06);color:#ff9aad}
+      .rp-member-dates{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px;padding-top:10px;border-top:1px solid rgba(126,173,232,.09)}
+      .rp-member-date{min-width:0}
+      .rp-member-date small{display:block;color:#5f7489;font-size:.46rem;font-weight:950;letter-spacing:.09em;text-transform:uppercase}
+      .rp-member-date strong{display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cfe0ee;font-size:.61rem;font-weight:850}
+      .rp-member-empty{padding:26px 16px;border:1px dashed rgba(126,173,232,.16);border-radius:16px;color:#71879b;text-align:center;font-size:.66rem;line-height:1.45}
+      .rp-member-empty strong{display:block;margin-bottom:5px;color:#dceaf5;font-family:var(--rp-display,Arial,sans-serif);font-size:.85rem;font-style:italic}
+      .rp-member-loading{padding:28px 16px;border:1px solid rgba(126,173,232,.1);border-radius:16px;background:#050c15;color:#7790a6;text-align:center;font-size:.65rem;font-weight:800;letter-spacing:.07em}
+      .rp-member-refresh{width:100%;min-height:42px;border:1px solid rgba(67,232,255,.22);border-radius:11px;background:#071723;color:#69eaff;font:900 .57rem var(--rp-display,Arial,sans-serif);letter-spacing:.08em}
+      .rp-member-error{padding:11px 13px;border:1px solid rgba(255,80,107,.22);border-radius:12px;background:rgba(255,56,92,.07);color:#ff9bac;font-size:.65rem;line-height:1.4}
+      @media(min-width:620px){.rp-member-list{grid-template-columns:1fr 1fr}.rp-member-tools{grid-template-columns:minmax(220px,1fr) auto;align-items:center}.rp-member-filters{justify-content:flex-end}}
     `;
     document.head.appendChild(style);
   }
 
-  function mergedSeasonPlayers() {
-    const byId = new Map(profiles.map((player) => [Number(player.userId), player]));
-    return registered.map((entry) => ({
-      ...entry,
-      ...(byId.get(Number(entry.userId)) || {}),
-      preferredClub: byId.get(Number(entry.userId))?.preferredClub ?? entry.preferredClub ?? null,
-      assignedClub: byId.get(Number(entry.userId))?.assignedClub ?? entry.assignedClub ?? null,
-    }));
+  function playerMarkup(player) {
+    const membership = membershipOf(player);
+    const status = displayStatus(player);
+    const number = player.playerNumber === null || player.playerNumber === undefined
+      ? '--'
+      : player.playerNumber;
+    return `
+      <article class="rp-member-row" data-member-player="${Number(player.userId)}">
+        <div class="rp-member-row-top">
+          <div class="rp-member-number">${esc(number)}</div>
+          <div class="rp-member-identity">
+            <strong>${esc(player.playerName || 'REAL PLAY PLAYER')}</strong>
+            <small>${esc(memberLabel(player))}</small>
+          </div>
+          <span class="rp-member-status ${esc(status)}">${esc(statusLabel(status))}</span>
+        </div>
+        <div class="rp-member-dates">
+          <div class="rp-member-date"><small>Started</small><strong>${esc(formatDate(membership.startedAt))}</strong></div>
+          <div class="rp-member-date"><small>Ends</small><strong>${esc(formatDate(membership.endsAt))}</strong></div>
+        </div>
+      </article>`;
   }
 
-  function markup() {
-    if (!season) {
-      return `
-        <section class="rp-admin-season-roster" data-rp-admin-season-roster>
-          <div class="rp-admin-season-roster-head">
-            <div><small>SEASON ROSTER</small><strong>TEAM ASSIGNMENTS</strong></div>
-            <span class="rp-admin-season-roster-count">NO SEASON</span>
-          </div>
-          <div class="rp-admin-season-roster-empty">Create and open a 3V3 season from SETUP first.</div>
-        </section>`;
-    }
+  function directoryMarkup() {
+    const c = counts();
+    const visible = filteredPlayers();
+    const full = activeMembers >= slotCap;
+    const slotText = full
+      ? 'MONTHLY GROUP FULL'
+      : `${availableSlots} SLOT${availableSlots === 1 ? '' : 'S'} OPEN`;
 
-    const players = mergedSeasonPlayers();
-    const cards = players.length ? players.map((player) => {
-      const preferred = clubName(player.preferredClub);
-      const assigned = clubName(player.assignedClub);
-      const busy = assigningUserId === Number(player.userId);
-      const canApprove = Boolean(player.preferredClub && player.preferredClub !== player.assignedClub);
-      return `
-        <article class="rp-admin-season-player" data-season-player="${Number(player.userId)}">
-          <div class="rp-admin-season-player-top">
-            <div class="rp-admin-season-player-name">
-              <strong>${esc(player.playerName || 'REAL PLAY PLAYER')}</strong>
-              <span>${esc(player.email || 'SEASON REGISTRATION')}</span>
-            </div>
-            <span class="rp-admin-season-assigned">${esc(assigned)}</span>
-          </div>
-          <div class="rp-admin-season-pref">PREFERRED TEAM: <b>${esc(preferred)}</b></div>
-          ${canApprove ? `<button type="button" class="rp-admin-season-preferred" data-season-assign="${esc(player.preferredClub)}" ${busy ? 'disabled' : ''}>APPROVE PREFERRED · ${esc(preferred)}</button>` : ''}
-          <div class="rp-admin-season-clubs">
-            ${CLUBS.map((club) => `<button type="button" class="${player.assignedClub === club.id ? 'active' : ''}" data-season-assign="${club.id}" ${busy ? 'disabled' : ''}>${club.name}${player.assignedClub === club.id ? ' ✓' : ''}</button>`).join('')}
-          </div>
-          ${player.assignedClub ? `<button type="button" class="rp-admin-season-unassign" data-season-assign="" ${busy ? 'disabled' : ''}>RETURN TO UNASSIGNED</button>` : ''}
-        </article>`;
-    }).join('') : '<div class="rp-admin-season-roster-empty">No players have reserved a season spot yet.</div>';
+    const listMarkup = visible.length
+      ? visible.map(playerMarkup).join('')
+      : `<div class="rp-member-empty"><strong>NO PLAYERS FOUND</strong>Try another filter or player search.</div>`;
 
     return `
-      <section class="rp-admin-season-roster" data-rp-admin-season-roster>
-        <div class="rp-admin-season-roster-head">
-          <div><small>SEASON ROSTER</small><strong>TEAM ASSIGNMENTS</strong></div>
-          <span class="rp-admin-season-roster-count">${players.length} / ${Number(season.targetPlayers ?? season.target_players ?? 0)}</span>
+      <section class="rp-member-directory" data-rp-member-directory>
+        <header class="rp-member-directory-head">
+          <span class="rp-member-directory-kicker">MEMBERSHIP DIRECTORY</span>
+          <h1>PLAYERS</h1>
+          <p>Track who has a protected monthly membership and exactly when each membership starts and ends.</p>
+        </header>
+
+        <div class="rp-member-summary${full ? ' full' : ''}">
+          <div>
+            <small>Protected monthly rotation</small>
+            <strong>${full ? 'MEMBERSHIP FULL' : 'MONTHLY MEMBERS'}</strong>
+          </div>
+          <div class="rp-member-summary-count">
+            <b>${activeMembers} / ${slotCap}</b>
+            <span>${esc(slotText)}</span>
+          </div>
         </div>
-        <p class="rp-admin-season-roster-note">Approve a player’s preferred team or move them to another club. Final team assignment stays under Real Play admin control.</p>
-        <div class="rp-admin-season-player-list">${cards}</div>
-        ${notice ? `<p class="rp-admin-season-roster-message${noticeType === 'success' ? ' success' : ''}">${esc(notice)}</p>` : ''}
+
+        <div class="rp-member-tools">
+          <input class="rp-member-search" data-member-search type="search" autocomplete="off" placeholder="Search player or jersey #" value="${esc(searchQuery)}" aria-label="Search players">
+          <div class="rp-member-filters" aria-label="Membership filters">
+            <button type="button" class="rp-member-filter${activeFilter === 'all' ? ' active' : ''}" data-member-filter="all">ALL · ${c.all}</button>
+            <button type="button" class="rp-member-filter${activeFilter === 'active' ? ' active' : ''}" data-member-filter="active">ACTIVE · ${c.active}</button>
+            <button type="button" class="rp-member-filter${activeFilter === 'free' ? ' active' : ''}" data-member-filter="free">FREE · ${c.free}</button>
+            <button type="button" class="rp-member-filter${activeFilter === 'expiring' ? ' active' : ''}" data-member-filter="expiring">EXPIRING · ${c.expiring}</button>
+            <button type="button" class="rp-member-filter${activeFilter === 'expired' ? ' active' : ''}" data-member-filter="expired">EXPIRED · ${c.expired}</button>
+          </div>
+        </div>
+
+        ${errorMessage ? `<div class="rp-member-error">${esc(errorMessage)}</div>` : ''}
+        <div class="rp-member-list" data-member-list>${listMarkup}</div>
+        <button type="button" class="rp-member-refresh" data-member-refresh>${loading ? 'REFRESHING…' : 'REFRESH MEMBERSHIP LIST'}</button>
       </section>`;
   }
 
-  function apply() {
-    ensureStyles();
+  function render({ preserveSearchFocus = false } = {}) {
     if (!isPlayersTab()) return;
+    ensureStyles();
     const adminBody = body();
     if (!adminBody) return;
 
-    let wrap = adminBody.querySelector('[data-rp-admin-season-roster]');
-    const html = markup();
+    const hadFocus = preserveSearchFocus && document.activeElement?.matches?.('[data-member-search]');
+    const selection = hadFocus ? document.activeElement.selectionStart : null;
 
-    if (wrap) {
-      const holder = document.createElement('div');
-      holder.innerHTML = html;
-      wrap.replaceWith(holder.firstElementChild);
+    if (!loaded && loading) {
+      adminBody.innerHTML = `
+        <section class="rp-member-directory" data-rp-member-directory>
+          <header class="rp-member-directory-head"><span class="rp-member-directory-kicker">MEMBERSHIP DIRECTORY</span><h1>PLAYERS</h1></header>
+          <div class="rp-member-loading">LOADING PLAYER MEMBERSHIPS…</div>
+        </section>`;
       return;
     }
 
-    const first = adminBody.firstElementChild;
-    const holder = document.createElement('div');
-    holder.innerHTML = html;
-    const node = holder.firstElementChild;
-    if (first) first.before(node);
-    else adminBody.appendChild(node);
-  }
+    adminBody.innerHTML = directoryMarkup();
 
-  async function refresh({ quiet = true } = {}) {
-    if (loading || !token() || !isPlayersTab()) return;
-    loading = true;
-    try {
-      const [seasonData, playersData] = await Promise.all([
-        api('/api/real-play/admin/3v3/season'),
-        api('/api/real-play/admin/3v3/players'),
-      ]);
-      season = seasonData?.season || null;
-      registered = Array.isArray(seasonData?.registeredPlayers) ? seasonData.registeredPlayers : [];
-      profiles = Array.isArray(playersData?.players) ? playersData.players : [];
-      if (!quiet) {
-        notice = '';
-        noticeType = '';
-      }
-      apply();
-    } catch (error) {
-      if (!quiet) {
-        notice = error.message || 'Could not load season team assignments.';
-        noticeType = 'error';
-        apply();
-      }
-    } finally {
-      loading = false;
+    if (hadFocus) {
+      const input = adminBody.querySelector('[data-member-search]');
+      input?.focus({ preventScroll: true });
+      if (selection !== null && input?.setSelectionRange) input.setSelectionRange(selection, selection);
     }
   }
 
-  async function assign(button) {
-    const card = button.closest('[data-season-player]');
-    const userId = Number(card?.dataset.seasonPlayer);
-    const player = mergedSeasonPlayers().find((item) => Number(item.userId) === userId);
-    if (!player || assigningUserId) return;
-
-    const club = button.dataset.seasonAssign || null;
-    const destination = club ? clubName(club) : 'UNASSIGNED';
-    const actionText = club
-      ? `Assign ${player.playerName} to ${destination}?`
-      : `Return ${player.playerName} to Unassigned?`;
-
-    if (!window.confirm(actionText)) return;
-
-    assigningUserId = userId;
-    notice = '';
-    noticeType = '';
-    apply();
+  async function refresh({ quiet = false } = {}) {
+    if (loading || !token() || !isPlayersTab()) return;
+    loading = true;
+    if (!quiet) errorMessage = '';
+    render();
 
     try {
-      const result = await api('/api/real-play/admin/3v3/assignment', {
-        method: 'PUT',
-        body: { userId, club },
+      const data = await api('/api/real-play/admin/player', {
+        method: 'POST',
+        body: { action: 'membership_directory' },
       });
-
-      const profile = profiles.find((item) => Number(item.userId) === userId);
-      if (profile) profile.assignedClub = result.assignedClub || null;
-      const reg = registered.find((item) => Number(item.userId) === userId);
-      if (reg) reg.assignedClub = result.assignedClub || null;
-
-      notice = result.assignedClub
-        ? `${player.playerName} is now assigned to ${clubName(result.assignedClub)}.`
-        : `${player.playerName} is now unassigned.`;
-      noticeType = 'success';
-
-      window.dispatchEvent(new CustomEvent('realplay:3v3-assignment', {
-        detail: { userId, assignedClub: result.assignedClub || null },
-      }));
+      players = Array.isArray(data?.players) ? data.players : [];
+      slotCap = Number.isFinite(Number(data?.membershipSlotCap)) ? Number(data.membershipSlotCap) : 16;
+      activeMembers = Number.isFinite(Number(data?.activeMembers))
+        ? Number(data.activeMembers)
+        : players.filter((player) => membershipOf(player).active).length;
+      availableSlots = Number.isFinite(Number(data?.availableMembershipSlots))
+        ? Number(data.availableMembershipSlots)
+        : Math.max(0, slotCap - activeMembers);
+      loaded = true;
+      errorMessage = '';
     } catch (error) {
-      notice = error.message || 'Team assignment failed.';
-      noticeType = 'error';
+      loaded = true;
+      errorMessage = error.message || 'Unable to load the membership directory.';
     } finally {
-      assigningUserId = null;
-      apply();
+      loading = false;
+      render();
     }
   }
 
   document.addEventListener('click', (event) => {
-    const button = event.target.closest?.('[data-season-assign]');
-    if (!button || !isPlayersTab()) return;
-    assign(button);
+    if (!isPlayersTab()) return;
+
+    const filter = event.target.closest?.('[data-member-filter]');
+    if (filter) {
+      activeFilter = String(filter.dataset.memberFilter || 'all');
+      render();
+      return;
+    }
+
+    const refreshButton = event.target.closest?.('[data-member-refresh]');
+    if (refreshButton) {
+      refresh();
+    }
+  });
+
+  document.addEventListener('input', (event) => {
+    if (!isPlayersTab() || !event.target.matches?.('[data-member-search]')) return;
+    searchQuery = event.target.value || '';
+    render({ preserveSearchFocus: true });
   });
 
   window.addEventListener('realplay:admin-render', () => {
     if (!isPlayersTab()) return;
     window.requestAnimationFrame(() => {
-      apply();
-      refresh();
+      render();
+      if (!loaded && !loading) refresh();
     });
   });
 
-  window.addEventListener('realplay:3v3-season-changed', () => refresh({ quiet: false }));
-  window.addEventListener('realplay:3v3-assignment', () => refresh());
+  window.addEventListener('focus', () => {
+    if (isPlayersTab() && loaded) refresh({ quiet: true });
+  });
 
   window.setInterval(() => {
-    if (isPlayersTab()) refresh();
-  }, 10000);
+    if (isPlayersTab() && loaded) refresh({ quiet: true });
+  }, 30000);
 })();
