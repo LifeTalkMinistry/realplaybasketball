@@ -302,3 +302,97 @@ body.rp-home-coming-open{
     width:22%!important;
   }
 }
+
+/* HOME VISUAL CENTERLINE
+ * Home has one optical axis. Decorative icons stay out of the centering math so
+ * the visible labels, masthead, session copy and founder signature all read on
+ * the same vertical line as the center navigation item.
+ */
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center{
+  --rp-home-optical-nudge:-1px;
+}
+
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup{
+  align-items:center!important;
+  text-align:center!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup>strong,
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup>span,
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup>small{
+  width:100%!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  text-align:center!important;
+}
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup>strong{
+  transform:translateX(var(--rp-home-optical-nudge))!important;
+}
+
+body.rp-simple-navigation-active .rp-home-session-copy{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+}
+body.rp-simple-navigation-active .rp-home-session-copy>strong,
+body.rp-simple-navigation-active .rp-home-session-copy>p{
+  width:100%!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  text-align:center!important;
+}
+body.rp-simple-navigation-active .rp-home-session-copy>strong{
+  transform:translateX(var(--rp-home-optical-nudge))!important;
+}
+body.rp-simple-navigation-active .rp-home-save-slot{
+  text-align:center!important;
+}
+
+/* Center the actual WHAT'S COMING label; the arrow is decorative and therefore
+   absolutely positioned so it cannot pull the words off the page axis. */
+body.rp-simple-navigation-active .rp-home-whats-coming{
+  position:relative!important;
+  gap:0!important;
+  text-align:center!important;
+}
+body.rp-simple-navigation-active .rp-home-whats-coming>span{
+  position:absolute!important;
+  left:calc(50% + 54px)!important;
+  top:50%!important;
+  margin:0!important;
+  transform:translate(-50%,-50%)!important;
+}
+
+body.rp-simple-navigation-active .rp-home-project-credit{
+  justify-self:center!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  align-items:center!important;
+  text-align:center!important;
+}
+body.rp-simple-navigation-active .rp-home-project-credit>span,
+body.rp-simple-navigation-active .rp-home-project-credit>strong{
+  width:100%!important;
+  text-align:center!important;
+}
+body.rp-simple-navigation-active .rp-home-project-credit>strong{
+  transform:translateX(var(--rp-home-optical-nudge))!important;
+}
+
+/* WHY REAL PLAY already sits at left:50%. Give the label its own centered lane
+   and keep the info icon on the right so the icon no longer shifts the wording. */
+html body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-why-real-play{
+  width:108px!important;
+  box-sizing:border-box!important;
+  padding:3px 20px 3px 8px!important;
+  gap:0!important;
+  text-align:center!important;
+}
+html body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-why-real-play>span{
+  position:absolute!important;
+  right:6px!important;
+  top:50%!important;
+  margin:0!important;
+  transform:translateY(-50%)!important;
+}
