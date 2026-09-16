@@ -3,12 +3,12 @@
   window.__realPlayReplayFullscreenBackInstalled = true;
 
   const BUTTON_ATTR = 'data-rp-career-replay-fullscreen-back';
-  const TIMESTAMP_ATTR = 'data-rp-career-replay-fullscreen-timestamp';
-  const TIMESTAMP_VALUE_ATTR = 'data-rp-career-replay-fullscreen-timestamp-value';
+  const MARKER_RAIL_ATTR = 'data-rp-career-replay-fullscreen-marker-rail';
+  const FULLSCREEN_MARKER_ATTR = 'data-rp-career-replay-fullscreen-marker';
   const PSEUDO_FULLSCREEN_CLASS = 'rp-career-replay-pseudo-fullscreen';
   const PSEUDO_OPEN_CLASS = 'rp-career-replay-pseudo-fullscreen-open';
   const FULLSCREEN_TRIGGER_SELECTOR = '[data-rp-career-replay-fullscreen],[data-rp-career-replay-expand-fixed]';
-  let timestampTimer = null;
+  let markerSyncTimer = null;
   let pseudoFullscreenStage = null;
 
   const style = document.createElement('style');
@@ -48,50 +48,67 @@
       display:flex;
     }
 
-    .rp-career-replay-fullscreen-timestamp{
+    /* Fullscreen uses the SAME made-basket skip system as the normal replay.
+       Each ball is a real jump target with the existing seven-second lead-in. */
+    .rp-career-replay-fullscreen-marker-rail{
       position:absolute;
-      z-index:12;
+      z-index:13;
       left:50%;
-      bottom:max(14px,env(safe-area-inset-bottom));
+      bottom:max(16px,env(safe-area-inset-bottom));
       display:none;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      min-height:42px;
-      padding:0 16px;
-      border:1px solid rgba(122,221,241,.34);
-      border-radius:999px;
-      background:rgba(2,12,19,.82);
-      color:#f4fbff;
-      box-shadow:0 8px 24px rgba(0,0,0,.32);
-      backdrop-filter:blur(10px);
-      -webkit-backdrop-filter:blur(10px);
+      width:min(56vw,720px);
+      height:44px;
       transform:translateX(-50%);
       pointer-events:none;
-      font-family:var(--rp-body,Arial,sans-serif);
-      white-space:nowrap;
-      font-variant-numeric:tabular-nums;
     }
-    .rp-career-replay-fullscreen-timestamp .rp-fs-ball-icon{
-      font-size:1rem;
-      line-height:1;
+    .rp-career-replay-fullscreen-marker-track{
+      position:absolute;
+      inset:0 10px;
+      pointer-events:none;
     }
-    .rp-career-replay-fullscreen-timestamp .rp-fs-ball-label{
-      color:#a8c8d3;
-      font-size:.58rem;
-      font-weight:900;
-      letter-spacing:.1em;
+    .rp-career-replay-fullscreen-marker-track::before{
+      content:'';
+      position:absolute;
+      left:0;
+      right:0;
+      top:50%;
+      height:3px;
+      border-radius:999px;
+      background:rgba(215,236,244,.28);
+      box-shadow:0 1px 8px rgba(0,0,0,.28);
+      transform:translateY(-50%);
     }
-    .rp-career-replay-fullscreen-timestamp strong{
+    .rp-career-replay-fullscreen-marker{
+      position:absolute;
+      z-index:2;
+      top:50%;
+      width:32px;
+      height:32px;
+      padding:0;
+      display:grid;
+      place-items:center;
+      border:1px solid rgba(122,221,241,.24);
+      border-radius:50%;
+      background:rgba(2,12,19,.76);
       color:#fff;
-      font-size:.82rem;
-      font-weight:950;
-      letter-spacing:.04em;
+      box-shadow:0 6px 16px rgba(0,0,0,.3);
+      transform:translate(-50%,-50%);
+      font-size:20px;
+      line-height:1;
+      cursor:pointer;
+      pointer-events:auto;
+      touch-action:manipulation;
+      transition:transform .14s ease,filter .14s ease,border-color .14s ease;
     }
-    .rp-career-replay-stage:fullscreen .rp-career-replay-fullscreen-timestamp,
-    .rp-career-replay-stage:-webkit-full-screen .rp-career-replay-fullscreen-timestamp,
-    .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} .rp-career-replay-fullscreen-timestamp{
-      display:flex;
+    .rp-career-replay-fullscreen-marker.active{
+      transform:translate(-50%,-50%) scale(1.22);
+      filter:drop-shadow(0 0 6px rgba(47,213,238,.9));
+      border-color:rgba(122,221,241,.72);
+    }
+    .rp-career-replay-stage:fullscreen .rp-career-replay-fullscreen-marker-rail,
+    .rp-career-replay-stage:-webkit-full-screen .rp-career-replay-fullscreen-marker-rail,
+    .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} .rp-career-replay-fullscreen-marker-rail{
+      display:block;
     }
 
     html.${PSEUDO_OPEN_CLASS},
@@ -132,7 +149,7 @@
       background:#000!important;
     }
 
-    /* Keep the live playback timestamp directly beneath the official score. */
+    /* Keep the regular replay clock beneath the official score outside fullscreen. */
     .rp-career-replay-gamehead{
       gap:4px!important;
     }
@@ -152,16 +169,15 @@
         padding:0 12px 0 10px;
         font-size:.62rem;
       }
-      .rp-career-replay-fullscreen-timestamp{
-        min-height:40px;
-        padding:0 12px;
-        gap:6px;
+      .rp-career-replay-fullscreen-marker-rail{
+        width:min(52vw,520px);
+        height:40px;
+        bottom:max(12px,env(safe-area-inset-bottom));
       }
-      .rp-career-replay-fullscreen-timestamp .rp-fs-ball-label{
-        font-size:.52rem;
-      }
-      .rp-career-replay-fullscreen-timestamp strong{
-        font-size:.75rem;
+      .rp-career-replay-fullscreen-marker{
+        width:30px;
+        height:30px;
+        font-size:18px;
       }
       .rp-career-replay-controls{
         grid-template-columns:38px minmax(0,1fr) 38px 38px!important;
@@ -170,6 +186,9 @@
         grid-column:1/-1;
         grid-row:2;
       }
+    }
+    @media(prefers-reduced-motion:reduce){
+      .rp-career-replay-fullscreen-marker{transition:none}
     }
   `;
   document.head.appendChild(style);
@@ -191,58 +210,8 @@
     return undefined;
   }
 
-  function currentPlaybackText(stage) {
-    const replayRoot = stage?.closest?.('.rp-career-replay');
-    const clock = replayRoot?.querySelector('[data-rp-career-replay-clock]');
-    const raw = String(clock?.textContent || '').trim();
-    if (!raw) return '0:00';
-    return raw.split('/')[0].trim() || '0:00';
-  }
-
-  function syncFullscreenTimestamp(stage) {
-    if (!stage) return;
-    const value = stage.querySelector(`[${TIMESTAMP_VALUE_ATTR}]`);
-    if (!value) return;
-    const next = currentPlaybackText(stage);
-    if (value.textContent !== next) value.textContent = next;
-  }
-
-  function ensureFullscreenTimestamp(stage) {
-    if (!stage) return null;
-    let timestamp = stage.querySelector(`[${TIMESTAMP_ATTR}]`);
-    if (!timestamp) {
-      timestamp = document.createElement('div');
-      timestamp.className = 'rp-career-replay-fullscreen-timestamp';
-      timestamp.setAttribute(TIMESTAMP_ATTR, '1');
-      timestamp.setAttribute('aria-live', 'off');
-      timestamp.innerHTML = `<span class="rp-fs-ball-icon" aria-hidden="true">🏀</span><span class="rp-fs-ball-label">BALL TIMESTAMP</span><strong ${TIMESTAMP_VALUE_ATTR}>0:00</strong>`;
-      stage.appendChild(timestamp);
-    }
-    syncFullscreenTimestamp(stage);
-    return timestamp;
-  }
-
-  function stopTimestampSync() {
-    if (!timestampTimer) return;
-    clearInterval(timestampTimer);
-    timestampTimer = null;
-  }
-
   function stageIsFullscreen(stage) {
     return getFullscreenElement() === stage || stage?.classList?.contains(PSEUDO_FULLSCREEN_CLASS);
-  }
-
-  function startTimestampSync(stage) {
-    stopTimestampSync();
-    if (!stage) return;
-    ensureFullscreenTimestamp(stage);
-    timestampTimer = setInterval(() => {
-      if (!stageIsFullscreen(stage)) {
-        stopTimestampSync();
-        return;
-      }
-      syncFullscreenTimestamp(stage);
-    }, 100);
   }
 
   function ensureBackButton(stage) {
@@ -256,17 +225,114 @@
     stage.appendChild(button);
   }
 
+  function sourceMarkers(stage) {
+    const replayRoot = stage?.closest?.('.rp-career-replay');
+    if (!replayRoot) return [];
+    return [...replayRoot.querySelectorAll('[data-rp-career-replay-timeline-markers] [data-rp-career-replay-marker]')];
+  }
+
+  function ensureMarkerRail(stage) {
+    if (!stage) return null;
+    const sources = sourceMarkers(stage);
+    let rail = stage.querySelector(`[${MARKER_RAIL_ATTR}]`);
+
+    if (!sources.length) {
+      rail?.remove();
+      return null;
+    }
+
+    if (!rail) {
+      rail = document.createElement('div');
+      rail.className = 'rp-career-replay-fullscreen-marker-rail';
+      rail.setAttribute(MARKER_RAIL_ATTR, '1');
+      rail.setAttribute('aria-label', 'Made basket skip markers');
+      rail.innerHTML = '<div class="rp-career-replay-fullscreen-marker-track"></div>';
+      stage.appendChild(rail);
+    }
+
+    const track = rail.querySelector('.rp-career-replay-fullscreen-marker-track');
+    if (!track) return rail;
+
+    const wanted = new Set();
+    sources.forEach((source, index) => {
+      const replayStart = String(source.dataset.rpCareerReplayMarker || '0');
+      const stamp = String(source.dataset.rpCareerMarkerStamp || '0');
+      const key = `${replayStart}:${stamp}:${index}`;
+      wanted.add(key);
+
+      let button = [...track.querySelectorAll(`[${FULLSCREEN_MARKER_ATTR}]`)]
+        .find((node) => node.dataset.rpFullscreenMarkerKey === key);
+      if (!button) {
+        button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'rp-career-replay-fullscreen-marker';
+        button.setAttribute(FULLSCREEN_MARKER_ATTR, '1');
+        button.dataset.rpFullscreenMarkerKey = key;
+        button.dataset.rpCareerReplayMarker = replayStart;
+        button.dataset.rpCareerMarkerStamp = stamp;
+        button.textContent = '🏀';
+        button.setAttribute('aria-label', source.getAttribute('aria-label') || 'Jump to made basket');
+        button.title = source.title || 'Jump to made basket';
+        track.appendChild(button);
+      }
+    });
+
+    [...track.querySelectorAll(`[${FULLSCREEN_MARKER_ATTR}]`)].forEach((button) => {
+      if (!wanted.has(button.dataset.rpFullscreenMarkerKey || '')) button.remove();
+    });
+
+    syncMarkerRail(stage);
+    return rail;
+  }
+
+  function syncMarkerRail(stage) {
+    if (!stage) return;
+    const sources = sourceMarkers(stage);
+    const rail = stage.querySelector(`[${MARKER_RAIL_ATTR}]`);
+    const track = rail?.querySelector('.rp-career-replay-fullscreen-marker-track');
+    if (!track || !sources.length) return;
+
+    const clones = [...track.querySelectorAll(`[${FULLSCREEN_MARKER_ATTR}]`)];
+    sources.forEach((source, index) => {
+      const clone = clones[index];
+      if (!clone) return;
+      if (source.style.left) clone.style.left = source.style.left;
+      clone.classList.toggle('active', source.classList.contains('active'));
+    });
+  }
+
+  function stopMarkerSync() {
+    if (!markerSyncTimer) return;
+    clearInterval(markerSyncTimer);
+    markerSyncTimer = null;
+  }
+
+  function startMarkerSync(stage) {
+    stopMarkerSync();
+    if (!stage) return;
+    ensureMarkerRail(stage);
+    syncMarkerRail(stage);
+    markerSyncTimer = setInterval(() => {
+      if (!stageIsFullscreen(stage)) {
+        stopMarkerSync();
+        return;
+      }
+      ensureMarkerRail(stage);
+      syncMarkerRail(stage);
+    }, 120);
+  }
+
   function enterPseudoFullscreen(stage) {
     if (!stage) return;
     if (pseudoFullscreenStage && pseudoFullscreenStage !== stage) exitPseudoFullscreen();
     pseudoFullscreenStage = stage;
     ensureBackButton(stage);
-    ensureFullscreenTimestamp(stage);
+    ensureMarkerRail(stage);
     stage.classList.add(PSEUDO_FULLSCREEN_CLASS);
     stage.setAttribute('data-rp-career-replay-pseudo-fullscreen', '1');
     document.documentElement.classList.add(PSEUDO_OPEN_CLASS);
     document.body.classList.add(PSEUDO_OPEN_CLASS);
-    startTimestampSync(stage);
+    startMarkerSync(stage);
   }
 
   function exitPseudoFullscreen() {
@@ -278,7 +344,7 @@
     pseudoFullscreenStage = null;
     document.documentElement.classList.remove(PSEUDO_OPEN_CLASS);
     document.body.classList.remove(PSEUDO_OPEN_CLASS);
-    stopTimestampSync();
+    stopMarkerSync();
   }
 
   function shouldUsePseudoFullscreen(stage) {
@@ -314,6 +380,26 @@
   }, true);
 
   document.addEventListener('click', (event) => {
+    const marker = event.target?.closest?.(`[${FULLSCREEN_MARKER_ATTR}]`);
+    if (!marker) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const stage = marker.closest('[data-rp-career-replay-stage]');
+    const replayRoot = stage?.closest?.('.rp-career-replay');
+    if (!replayRoot) return;
+
+    const replayStart = String(marker.dataset.rpCareerReplayMarker || '0');
+    const stamp = String(marker.dataset.rpCareerMarkerStamp || '0');
+    const original = [...replayRoot.querySelectorAll('[data-rp-career-replay-timeline-markers] [data-rp-career-replay-marker]')]
+      .find((node) => String(node.dataset.rpCareerReplayMarker || '0') === replayStart
+        && String(node.dataset.rpCareerMarkerStamp || '0') === stamp)
+      || replayRoot.querySelector(`[data-rp-career-replay-timeline-markers] [data-rp-career-replay-marker="${replayStart}"]`);
+
+    original?.click();
+  }, true);
+
+  document.addEventListener('click', (event) => {
     const button = event.target?.closest?.(`[${BUTTON_ATTR}]`);
     if (!button) return;
     event.preventDefault();
@@ -334,9 +420,10 @@
     const full = getFullscreenElement();
     if (full?.matches?.('[data-rp-career-replay-stage]')) {
       ensureBackButton(full);
-      startTimestampSync(full);
+      ensureMarkerRail(full);
+      startMarkerSync(full);
     } else if (!pseudoFullscreenStage) {
-      stopTimestampSync();
+      stopMarkerSync();
       enhance();
     }
   };
