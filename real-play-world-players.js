@@ -328,6 +328,23 @@
     node.classList.toggle('error', type === 'error');
   }
 
+  function publicPassLabel(player) {
+    const rawTokens = pick(
+      player?.playTokensAvailable,
+      player?.play_tokens_available,
+      player?.publicPass?.playTokensAvailable,
+      player?.public_pass?.play_tokens_available
+    );
+    const parsedTokens = Number(rawTokens);
+    const tokenCount = Number.isFinite(parsedTokens) ? Math.max(0, parsedTokens) : 0;
+    const passHolder = player?.passHolder === true
+      || player?.pass_holder === true
+      || player?.publicPass?.passHolder === true
+      || player?.public_pass?.pass_holder === true
+      || tokenCount > 0;
+    return passHolder ? `PASS HOLDER - TOKEN: ${tokenCount}` : 'PLAYER PROFILE';
+  }
+
   function renderPublicProfile(player) {
     const root = publicProfilePanel?.querySelector('[data-rp-public-profile-content]');
     if (!root) return;
@@ -347,11 +364,12 @@
     const rebounds = number(pick(stats.reb, stats.rebounds));
     const turnovers = number(pick(stats.to, stats.tov, stats.turnovers));
     const recentGames = Array.isArray(player?.recentGames) ? player.recentGames.slice(0, 4) : [];
+    const passLabel = publicPassLabel(player);
 
     root.innerHTML = `
       <section class="rp-profile-hero">
         <div class="rp-profile-hero-glow" aria-hidden="true"></div>
-        <div class="rp-profile-identity-line"><span>REAL PLAY PLAYER</span><b>PLAYER PROFILE</b></div>
+        <div class="rp-profile-identity-line"><span>REAL PLAY PLAYER</span><b>${esc(passLabel)}</b></div>
         <div class="rp-profile-player">
           <div class="rp-profile-number"><small>PLAYER</small><strong>${jersey === null ? '#—' : `#${jersey}`}</strong></div>
           <div class="rp-profile-name"><small>REAL PLAY PROFILE</small><h1>${esc(player?.playerName || 'REAL PLAY PLAYER')}</h1><p>LESS SCREEN. REAL POINTS.</p></div>
@@ -381,7 +399,7 @@
       </section>`;
 
     window.dispatchEvent(new CustomEvent('realplay:public-profile-loaded', {
-      detail: { playerId: Number(player?.playerId || 0) || null },
+      detail: { playerId: Number(player?.playerId || 0) || null, player },
     }));
   }
 
