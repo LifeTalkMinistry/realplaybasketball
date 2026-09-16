@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260916-safari-pseudo-fullscreen-cover-v73';
+  const version = '20260916-public-pass-profile-v74';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
