@@ -298,3 +298,19 @@ body.rp-simple-navigation-active [data-world-view="world"] [data-world-post-form
     letter-spacing:.14em!important;
   }
 }
+
+/* World results reuses the Updates surface, but World is still a primary tab.
+ * Keep the permanent nav visible only for this special Results mode and reserve
+ * enough bottom space so the final result card never sits behind the nav.
+ */
+body.rp-simple-navigation-active.rp-updates-open:has(.rp-updates.rp-world-results-entry.open) .rp-simple-nav{
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+body.rp-simple-navigation-active.rp-updates-open:has(.rp-updates.rp-world-results-entry.open) .rp-updates{
+  padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom))!important;
+}
+body.rp-simple-navigation-active.rp-updates-open:has(.rp-updates.rp-world-results-entry.open) .rp-updates-shell{
+  padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom) + 18px)!important;
+}
