@@ -29,28 +29,6 @@
     return 'VERIFIED PLAYER';
   }
 
-  function syncPublicPassBadge(panel) {
-    const player = panel?.__realPlayPublicPlayer || null;
-    const node = panel?.querySelector('.rp-profile-identity-line > b');
-    if (!player || !node) return;
-
-    const rawTokens = player.playTokensAvailable
-      ?? player.play_tokens_available
-      ?? player.publicPass?.playTokensAvailable
-      ?? player.public_pass?.play_tokens_available;
-    const parsedTokens = Number(rawTokens);
-    const tokenCount = Number.isFinite(parsedTokens) ? Math.max(0, parsedTokens) : 0;
-    const passHolder = player.passHolder === true
-      || player.pass_holder === true
-      || player.publicPass?.passHolder === true
-      || player.public_pass?.pass_holder === true
-      || tokenCount > 0;
-
-    if (!passHolder) return;
-    node.textContent = `PASS HOLDER - TOKEN: ${tokenCount}`;
-    node.dataset.rpPublicPassHolder = '1';
-  }
-
   function identityFromPublicPanel(panel) {
     const player = panel?.__realPlayPublicPlayer;
     if (player) {
@@ -190,7 +168,6 @@
     document.querySelectorAll('[data-rp-public-profile].open, [data-rp-visitor-public-profile].open').forEach((panel) => {
       badge(panel);
       apply(panel, identityFromPublicPanel(panel));
-      syncPublicPassBadge(panel);
     });
     syncWinRates();
   }
