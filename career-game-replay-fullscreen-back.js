@@ -5,7 +5,11 @@
   const BUTTON_ATTR = 'data-rp-career-replay-fullscreen-back';
   const TIMESTAMP_ATTR = 'data-rp-career-replay-fullscreen-timestamp';
   const TIMESTAMP_VALUE_ATTR = 'data-rp-career-replay-fullscreen-timestamp-value';
+  const PSEUDO_FULLSCREEN_CLASS = 'rp-career-replay-pseudo-fullscreen';
+  const PSEUDO_OPEN_CLASS = 'rp-career-replay-pseudo-fullscreen-open';
+  const FULLSCREEN_TRIGGER_SELECTOR = '[data-rp-career-replay-fullscreen],[data-rp-career-replay-expand-fixed]';
   let timestampTimer = null;
+  let pseudoFullscreenStage = null;
 
   const style = document.createElement('style');
   style.textContent = `
@@ -39,7 +43,8 @@
       transform:translateY(-1px);
     }
     .rp-career-replay-stage:fullscreen .rp-career-replay-fullscreen-back,
-    .rp-career-replay-stage:-webkit-full-screen .rp-career-replay-fullscreen-back{
+    .rp-career-replay-stage:-webkit-full-screen .rp-career-replay-fullscreen-back,
+    .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} .rp-career-replay-fullscreen-back{
       display:flex;
     }
 
@@ -84,8 +89,47 @@
       letter-spacing:.04em;
     }
     .rp-career-replay-stage:fullscreen .rp-career-replay-fullscreen-timestamp,
-    .rp-career-replay-stage:-webkit-full-screen .rp-career-replay-fullscreen-timestamp{
+    .rp-career-replay-stage:-webkit-full-screen .rp-career-replay-fullscreen-timestamp,
+    .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} .rp-career-replay-fullscreen-timestamp{
       display:flex;
+    }
+
+    html.${PSEUDO_OPEN_CLASS},
+    body.${PSEUDO_OPEN_CLASS}{
+      overflow:hidden!important;
+      overscroll-behavior:none!important;
+      touch-action:none!important;
+    }
+    .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS}{
+      position:fixed!important;
+      inset:0!important;
+      z-index:2147483646!important;
+      width:100vw!important;
+      max-width:none!important;
+      height:100vh!important;
+      height:100dvh!important;
+      max-height:none!important;
+      margin:0!important;
+      border:0!important;
+      border-radius:0!important;
+      aspect-ratio:auto!important;
+      transform:none!important;
+      background:#000!important;
+      box-shadow:none!important;
+      overflow:hidden!important;
+    }
+    .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} [data-rp-career-replay-media],
+    .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} [data-rp-career-replay-media] > div,
+    .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} iframe,
+    .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} video{
+      width:100%!important;
+      height:100%!important;
+      max-width:none!important;
+      max-height:none!important;
+    }
+    .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} video{
+      object-fit:contain!important;
+      background:#000!important;
     }
 
     /* Keep the live playback timestamp directly beneath the official score. */
@@ -134,6 +178,11 @@
     return document.fullscreenElement || document.webkitFullscreenElement || null;
   }
 
+  function isIPhoneBrowser() {
+    const ua = String(navigator.userAgent || '');
+    return /iPhone|iPod/i.test(ua);
+  }
+
   function exitFullscreen() {
     if (document.exitFullscreen) return document.exitFullscreen().catch?.(() => {});
     if (document.webkitExitFullscreen) {
@@ -176,14 +225,17 @@
     timestampTimer = null;
   }
 
+  function stageIsFullscreen(stage) {
+    return getFullscreenElement() === stage || stage?.classList?.contains(PSEUDO_FULLSCREEN_CLASS);
+  }
+
   function startTimestampSync(stage) {
     stopTimestampSync();
     if (!stage) return;
     ensureFullscreenTimestamp(stage);
     syncFullscreenTimestamp(stage);
     timestampTimer = setInterval(() => {
-      const full = getFullscreenElement();
-      if (full !== stage) {
+      if (!stageIsFullscreen(stage)) {
         stopTimestampSync();
         return;
       }
@@ -202,6 +254,36 @@
     stage.appendChild(button);
   }
 
+  function enterPseudoFullscreen(stage) {
+    if (!stage) return;
+    if (pseudoFullscreenStage && pseudoFullscreenStage !== stage) exitPseudoFullscreen();
+    pseudoFullscreenStage = stage;
+    ensureBackButton(stage);
+    ensureFullscreenTimestamp(stage);
+    stage.classList.add(PSEUDO_FULLSCREEN_CLASS);
+    stage.setAttribute('data-rp-career-replay-pseudo-fullscreen', '1');
+    document.documentElement.classList.add(PSEUDO_OPEN_CLASS);
+    document.body.classList.add(PSEUDO_OPEN_CLASS);
+    startTimestampSync(stage);
+  }
+
+  function exitPseudoFullscreen() {
+    const stage = pseudoFullscreenStage || document.querySelector(`.${PSEUDO_FULLSCREEN_CLASS}`);
+    if (stage) {
+      stage.classList.remove(PSEUDO_FULLSCREEN_CLASS);
+      stage.removeAttribute('data-rp-career-replay-pseudo-fullscreen');
+    }
+    pseudoFullscreenStage = null;
+    document.documentElement.classList.remove(PSEUDO_OPEN_CLASS);
+    document.body.classList.remove(PSEUDO_OPEN_CLASS);
+    stopTimestampSync();
+  }
+
+  function shouldUsePseudoFullscreen(stage) {
+    if (isIPhoneBrowser()) return true;
+    return !(stage?.requestFullscreen || stage?.webkitRequestFullscreen);
+  }
+
   function placeReplayClock() {
     document.querySelectorAll('.rp-career-replay-gamehead').forEach((gamehead) => {
       const score = gamehead.querySelector('.rp-career-replay-score');
@@ -213,6 +295,7 @@
   }
 
   function enhance() {
+    if (pseudoFullscreenStage && !pseudoFullscreenStage.isConnected) exitPseudoFullscreen();
     document.querySelectorAll('[data-rp-career-replay-stage]').forEach((stage) => {
       ensureBackButton(stage);
       ensureFullscreenTimestamp(stage);
@@ -221,19 +304,39 @@
   }
 
   document.addEventListener('click', (event) => {
-    const button = event.target.closest(`[${BUTTON_ATTR}]`);
+    const trigger = event.target?.closest?.(FULLSCREEN_TRIGGER_SELECTOR);
+    if (!trigger) return;
+    const stage = trigger.closest('[data-rp-career-replay-stage]');
+    if (!stage || !shouldUsePseudoFullscreen(stage)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (stage.classList.contains(PSEUDO_FULLSCREEN_CLASS)) exitPseudoFullscreen();
+    else enterPseudoFullscreen(stage);
+  }, true);
+
+  document.addEventListener('click', (event) => {
+    const button = event.target?.closest?.(`[${BUTTON_ATTR}]`);
     if (!button) return;
     event.preventDefault();
     event.stopPropagation();
+    const stage = button.closest('[data-rp-career-replay-stage]');
+    if (stage?.classList?.contains(PSEUDO_FULLSCREEN_CLASS)) {
+      exitPseudoFullscreen();
+      return;
+    }
     exitFullscreen();
   }, true);
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && pseudoFullscreenStage) exitPseudoFullscreen();
+  });
 
   const onFullscreenChange = () => {
     const full = getFullscreenElement();
     if (full?.matches?.('[data-rp-career-replay-stage]')) {
       ensureBackButton(full);
       startTimestampSync(full);
-    } else {
+    } else if (!pseudoFullscreenStage) {
       stopTimestampSync();
       enhance();
     }
