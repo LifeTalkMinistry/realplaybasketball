@@ -45,6 +45,7 @@
     if (!response.ok) {
       const error = new Error(data?.message || data?.error || `Request failed (${response.status}).`);
       error.code = data?.code || null;
+      error.status = response.status;
       throw error;
     }
     return data;
@@ -120,10 +121,6 @@
   }
 
   function requestDraftActivation() {
-    // The draft scorer listens for this event. A transient API/CORS outage can
-    // leave an already-rendered scoring screen inactive; explicitly asking for
-    // another admin render makes it retry activation without requiring the
-    // scorer to be closed and reopened by hand.
     try { window.dispatchEvent(new Event('realplay:admin-render')); } catch (_) {}
   }
 
@@ -234,10 +231,6 @@
     let recoveredFromServer = false;
 
     if (events === null) {
-      // If draft activation previously failed (for example during a temporary
-      // CORS/API outage), the old server event feed may still contain every
-      // event already entered. Rebuild the local v2 draft from that feed rather
-      // than trapping Review Complete behind a missing localStorage record.
       events = (Array.isArray(state?.events) ? state.events : [])
         .map(normalizeServerEvent)
         .filter(Boolean);
@@ -260,6 +253,26 @@
       fallbackBusy = false;
       window.alert(error?.message || 'Could not recover the draft score sheet.');
     }
+  }
+
+  async function continueToFinalizeAfterVerified(key = '') {
+    if (key) {
+      try { localStorage.removeItem(key); } catch (_) {}
+    }
+    window.__realPlayRecordedScoringDraftActive = false;
+    fallbackBusy = false;
+    fallbackContext = null;
+
+    try {
+      await window.__realPlayRefreshAdminGameControl?.();
+    } catch (_) {}
+
+    const finalize = root()?.querySelector('[data-admin-tab="finalize"]');
+    if (finalize) {
+      finalize.click();
+      return;
+    }
+    window.alert('This Audit is already verified. Open FINALIZE to confirm the final result.');
   }
 
   async function submitFallbackDraft() {
@@ -295,6 +308,13 @@
       if (finalize) finalize.click();
       else window.alert(`Recorded score sheet verified: WEST ${Number(result?.westScore || 0)} – ${Number(result?.eastScore || 0)} EAST.`);
     } catch (error) {
+      const alreadyVerified = error?.code === 'VIDEO_REVIEW_COMPLETE'
+        || (Number(error?.status) === 409 && /already verified and locked/i.test(String(error?.message || '')));
+      if (alreadyVerified) {
+        const key = fallbackContext?.key || '';
+        await continueToFinalizeAfterVerified(key);
+        return;
+      }
       fallbackBusy = false;
       renderFallbackReview(error?.message || 'Could not submit the recorded score sheet.', true);
     }
@@ -305,9 +325,6 @@
     retrying = true;
     let attempts = 0;
 
-    // A failed first activation used to stay failed forever on the same screen.
-    // Force the draft scorer's existing detector to retry now that the API may
-    // be healthy again.
     requestDraftActivation();
 
     const timer = window.setInterval(() => {
@@ -352,8 +369,6 @@
     const target = event.target.closest(selector);
     if (!target || !scoringScreen() || window.__realPlayRecordedScoringDraftActive) return;
 
-    // Fail closed while the local draft scorer is booting. Never let a click
-    // fall through to the retired per-event/complete-review scorer.
     event.preventDefault();
     event.stopImmediatePropagation();
 
