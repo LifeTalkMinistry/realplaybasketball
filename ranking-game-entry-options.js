@@ -54,44 +54,15 @@
       .rp-entry-options-grab{
         width:52px;
         height:4px;
-        margin:2px auto 15px;
+        margin:2px auto 8px;
         border-radius:999px;
         background:rgba(255,255,255,.18);
       }
       .rp-entry-options-head{
         display:flex;
-        align-items:flex-start;
-        justify-content:space-between;
-        gap:14px;
-        margin-bottom:15px;
-      }
-      .rp-entry-options-head small{
-        display:block;
-        margin-bottom:5px;
-        color:#38d5ff;
-        font-size:.54rem;
-        font-weight:900;
-        letter-spacing:.18em;
-        text-transform:uppercase;
-      }
-      .rp-entry-options-head h2{
-        margin:0;
-        color:#fff;
-        font-family:var(--rp-display,Impact,"Arial Narrow",sans-serif);
-        font-size:1.45rem;
-        font-style:italic;
-        font-weight:950;
-        letter-spacing:.025em;
-        line-height:1;
-        text-transform:uppercase;
-      }
-      .rp-entry-options-head p{
-        margin:7px 0 0;
-        max-width:270px;
-        color:#8190a4;
-        font-size:.72rem;
-        font-weight:650;
-        line-height:1.45;
+        align-items:center;
+        justify-content:flex-end;
+        margin-bottom:8px;
       }
       .rp-entry-options-close{
         flex:0 0 auto;
@@ -278,14 +249,9 @@
     overlay.setAttribute(SHEET_ATTR, 'true');
     overlay.setAttribute('aria-hidden', 'true');
     overlay.innerHTML = `
-      <section class="rp-entry-options-sheet" role="dialog" aria-modal="true" aria-labelledby="rp-entry-options-title">
+      <section class="rp-entry-options-sheet" role="dialog" aria-modal="true" aria-label="Real Play access options">
         <div class="rp-entry-options-grab" aria-hidden="true"></div>
         <div class="rp-entry-options-head">
-          <div>
-            <small>JOIN RANKING GAME</small>
-            <h2 id="rp-entry-options-title">CHOOSE HOW TO PLAY</h2>
-            <p>Choose how you want to secure this Ranking Game.</p>
-          </div>
           <button class="rp-entry-options-close" type="button" aria-label="Close entry options" data-rp-entry-close>×</button>
         </div>
 
