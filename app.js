@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260915-ranking-secured-profile-links-v62';
+  const version = '20260915-home-why-real-play-v63';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -201,6 +201,7 @@
     'simple-navigation.css',
     'home-main-announcement-art.css',
     'home-open-rank-art.css',
+    'home-why-real-play.css',
     'world-results.css',
   ].forEach(addStylesheet);
 
@@ -247,6 +248,7 @@
     // A slow or failed optional file can no longer trap the user on LOADING.
     const enhancements = [
       'public-landing.js',
+      'home-why-real-play.js',
       'visitor-mode.js',
       'public-founder-credit.js',
       'home-future-4v4-preview.js',
