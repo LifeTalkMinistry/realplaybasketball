@@ -4,7 +4,8 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
-  const DRAFT_PREFIX = 'rp-recorded-score-sheet:v2:';
+  const DRAFT_VERSION = 2;
+  const DRAFT_PREFIX = `rp-recorded-score-sheet:v${DRAFT_VERSION}:`;
   const selector = '[data-rp-video-shot], [data-rp-video-stat], [data-rp-video-undo], [data-rp-video-finish]';
 
   let retrying = false;
@@ -86,6 +87,46 @@
     }
   }
 
+  function normalizeServerEvent(event) {
+    const eventType = String(event?.eventType || '').toLowerCase();
+    if (!['shot', 'stat'].includes(eventType)) return null;
+    return {
+      localId: `server-${Number(event?.id || 0)}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      playerId: Number(event?.playerId),
+      eventType,
+      statKey: eventType === 'stat' ? String(event?.statKey || '').toLowerCase() : null,
+      shotValue: eventType === 'shot' ? Number(event?.shotValue) : null,
+      shotResult: eventType === 'shot' ? String(event?.shotResult || '').toLowerCase() : null,
+      videoTimestampMs: Number(event?.videoTimestampMs || 0),
+      replayStartMs: eventType === 'shot' && String(event?.shotResult || '').toLowerCase() === 'make'
+        ? Number(event?.replayStartMs ?? Math.max(0, Number(event?.videoTimestampMs || 0) - 7000))
+        : null,
+    };
+  }
+
+  function writeDraft(key, sessionId, recording, events) {
+    try {
+      localStorage.setItem(key, JSON.stringify({
+        version: DRAFT_VERSION,
+        sessionId: Number(sessionId),
+        uploadedAt: recording?.uploadedAt || null,
+        updatedAt: new Date().toISOString(),
+        events,
+      }));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function requestDraftActivation() {
+    // The draft scorer listens for this event. A transient API/CORS outage can
+    // leave an already-rendered scoring screen inactive; explicitly asking for
+    // another admin render makes it retry activation without requiring the
+    // scorer to be closed and reopened by hand.
+    try { window.dispatchEvent(new Event('realplay:admin-render')); } catch (_) {}
+  }
+
   function emptyStats() {
     return {
       pts: 0, ast: 0, reb: 0, tov: 0, stl: 0, blk: 0, foul: 0,
@@ -155,19 +196,19 @@
     if (!fallbackContext) return;
     const adminBody = body();
     if (!adminBody) return;
-    const { control, events } = fallbackContext;
+    const { control, events, recoveredFromServer } = fallbackContext;
     const west = teamScore(control, events, 'west');
     const east = teamScore(control, events, 'east');
     const made = events.filter((event) => String(event?.eventType || '').toLowerCase() === 'shot' && String(event?.shotResult || '').toLowerCase() === 'make').length;
     const statEvents = events.filter((event) => String(event?.eventType || '').toLowerCase() === 'stat').length;
 
     adminBody.innerHTML = `<div class="rp-video-screen rp-video-sheet-review">
-      <div class="rp-admin-title"><span class="rp-admin-kicker">DRAFT RECOVERY</span><h1>REVIEW BEFORE SUBMIT</h1><p>Your local score sheet was recovered. Nothing becomes official until you verify and submit it.</p></div>
+      <div class="rp-admin-title"><span class="rp-admin-kicker">DRAFT RECOVERY</span><h1>REVIEW BEFORE SUBMIT</h1><p>${recoveredFromServer ? 'The score sheet was rebuilt from the current recorded-game event feed after the local draft was unavailable.' : 'Your local score sheet was recovered.'} Nothing becomes official until you verify and submit it.</p></div>
       ${message ? `<div class="rp-video-notice ${isError ? 'error' : 'success'}">${esc(message)}</div>` : ''}
       <div class="rp-video-scoreboard"><div><small>WEST</small><strong>${west}</strong></div><span>—</span><div><small>EAST</small><strong>${east}</strong></div></div>
       <div class="rp-video-sheet-meta"><span>${events.length}<small>TOTAL EVENTS</small></span><span>${made}<small>SCORING MARKERS</small></span><span>${statEvents}<small>STAT EVENTS</small></span></div>
       <div class="rp-video-sheet-teams">${teamSection(control, events, 'west')}${teamSection(control, events, 'east')}</div>
-      <div class="rp-video-auto-note"><strong>RECOVERED LOCAL DRAFT</strong><span>VERIFY &amp; SUBMIT sends this full recovered score sheet to Real Play in one official write. The old FINISH SCORING path is blocked.</span></div>
+      <div class="rp-video-auto-note"><strong>RECOVERED DRAFT</strong><span>VERIFY &amp; SUBMIT sends this complete recovered score sheet to Real Play in one official write. The retired FINISH SCORING path remains blocked.</span></div>
       <div class="rp-video-sheet-actions">
         <button type="button" data-rp-fallback-back ${fallbackBusy ? 'disabled' : ''}>BACK TO SCORING</button>
         <button type="button" data-rp-fallback-submit ${fallbackBusy ? 'disabled' : ''}>${fallbackBusy ? 'SUBMITTING…' : 'VERIFY & SUBMIT'}</button>
@@ -189,12 +230,22 @@
     if (!recording) throw new Error('The recorded game could not be loaded.');
 
     const key = draftStorageKey(sessionId, recording.uploadedAt);
-    const events = readDraft(key, sessionId);
+    let events = readDraft(key, sessionId);
+    let recoveredFromServer = false;
+
     if (events === null) {
-      throw new Error('The draft score sheet is still loading or is not available on this device. Re-open VIDEO and try again. No official stats were changed.');
+      // If draft activation previously failed (for example during a temporary
+      // CORS/API outage), the old server event feed may still contain every
+      // event already entered. Rebuild the local v2 draft from that feed rather
+      // than trapping Review Complete behind a missing localStorage record.
+      events = (Array.isArray(state?.events) ? state.events : [])
+        .map(normalizeServerEvent)
+        .filter(Boolean);
+      writeDraft(key, sessionId, recording, events);
+      recoveredFromServer = true;
     }
 
-    fallbackContext = { control, recording, events, key, sessionId };
+    fallbackContext = { control, recording, events, key, sessionId, recoveredFromServer };
     return fallbackContext;
   }
 
@@ -253,6 +304,12 @@
     if (retrying) return;
     retrying = true;
     let attempts = 0;
+
+    // A failed first activation used to stay failed forever on the same screen.
+    // Force the draft scorer's existing detector to retry now that the API may
+    // be healthy again.
+    requestDraftActivation();
+
     const timer = window.setInterval(() => {
       attempts += 1;
       if (window.__realPlayRecordedScoringDraftActive) {
@@ -262,7 +319,8 @@
         next?.click();
         return;
       }
-      if (attempts >= 30 || !scoringScreen()) {
+      if (attempts === 12) requestDraftActivation();
+      if (attempts >= 40 || !scoringScreen()) {
         window.clearInterval(timer);
         retrying = false;
         if (typeof onTimeout === 'function') onTimeout();
@@ -305,7 +363,7 @@
     }
 
     retryUntilDraftReady(target, () => {
-      window.alert('The draft score sheet is still loading. Your tap was not sent to the old scorer. Please try again in a moment.');
+      window.alert('The draft score sheet could not reactivate automatically. Re-open VIDEO once and retry. Your tap was not sent to the retired scorer.');
     });
   }, true);
 })();
