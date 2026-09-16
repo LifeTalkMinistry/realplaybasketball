@@ -40,6 +40,39 @@
     });
   }
 
+  // Submitting a GCash screenshot is the player's action; securing the spot is
+  // the queue result. Keep those two ideas separate so the CTA never promises
+  // a secured spot before the server has evaluated session capacity.
+  function enforcePayToPlayGcashCopy() {
+    document.querySelectorAll('[data-rp-entry-gcash-submit="pay-to-play"]').forEach((button) => {
+      if (String(button.textContent || '').trim().toUpperCase() === 'SUBMIT & SECURE') {
+        button.textContent = 'SUBMIT PAYMENT PROOF';
+      }
+    });
+
+    document.querySelectorAll('.rp-entry-action-flow').forEach((flow) => {
+      const heading = flow.querySelector('h2');
+      const description = flow.querySelector('h2 + p');
+      const accessValue = flow.querySelector('.rp-entry-action-card strong');
+      const accessText = String(accessValue?.textContent || '').trim().toUpperCase();
+      if (accessText !== 'GCASH PREPAID' && accessText !== 'GCASH · ₱50') return;
+
+      if (accessValue && accessValue.textContent !== 'GCASH · ₱50') {
+        accessValue.textContent = 'GCASH · ₱50';
+      }
+
+      const headingText = String(heading?.textContent || '').trim().toUpperCase();
+      if (heading && headingText === 'STANDBY') {
+        heading.textContent = 'PAYMENT SUBMITTED · STANDBY';
+        if (description) {
+          description.textContent = 'Your GCash payment proof was submitted. Your entry is currently in the priority queue.';
+        }
+      } else if (heading && headingText === 'SPOT SECURED' && description) {
+        description.textContent = 'GCash · ₱50 · Your payment proof was submitted and your spot is inside the secured capacity.';
+      }
+    });
+  }
+
   function loadMembershipExperience() {
     if (membershipLoaded || document.querySelector('script[data-rp-membership-script]')) return;
     membershipLoaded = true;
@@ -71,6 +104,7 @@
     actions.dataset.rpEntryActions = 'true';
     actions.onload = () => {
       enforceGcashOnlyMembership();
+      enforcePayToPlayGcashCopy();
       if (document.querySelector('script[data-rp-entry-open-state]')) {
         loadTokenCancellationFlow();
         return;
@@ -119,6 +153,7 @@
   const observer = new MutationObserver(() => {
     relabelFreePlayerEntry();
     enforceGcashOnlyMembership();
+    enforcePayToPlayGcashCopy();
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
@@ -147,4 +182,5 @@
   loadRankingEntryActions();
   relabelFreePlayerEntry();
   enforceGcashOnlyMembership();
+  enforcePayToPlayGcashCopy();
 })();
