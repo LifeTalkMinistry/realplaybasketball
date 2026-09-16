@@ -160,10 +160,6 @@
     style.dataset.rpMembershipDirectoryStyles = '1';
     style.textContent = `
       .rp-member-directory{display:grid;gap:12px;padding-bottom:24px}
-      .rp-member-directory-head{margin:10px 0 0}
-      .rp-member-directory-kicker{display:block;color:#43e8ff;font-size:.52rem;font-weight:950;letter-spacing:.14em;text-transform:uppercase}
-      .rp-member-directory-head h1{margin:5px 0 0;color:#fff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.72rem;font-style:italic;font-weight:950;line-height:.95;text-transform:uppercase}
-      .rp-member-directory-head p{margin:8px 0 0;color:#7f91a6;font-size:.7rem;line-height:1.45}
       .rp-member-summary{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:15px 16px;border:1px solid rgba(67,232,255,.22);border-radius:17px;background:linear-gradient(145deg,rgba(5,23,36,.98),rgba(2,9,16,.98))}
       .rp-member-summary small{display:block;color:#6f8ca3;font-size:.5rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase}
       .rp-member-summary strong{display:block;margin-top:4px;color:#fff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.25rem;font-style:italic;font-weight:950}
@@ -242,12 +238,6 @@
 
     return `
       <section class="rp-member-directory" data-rp-member-directory>
-        <header class="rp-member-directory-head">
-          <span class="rp-member-directory-kicker">MEMBERSHIP DIRECTORY</span>
-          <h1>PLAYERS</h1>
-          <p>Track who has a protected monthly membership and exactly when each membership starts and ends.</p>
-        </header>
-
         <div class="rp-member-summary${full ? ' full' : ''}">
           <div>
             <small>Protected monthly rotation</small>
@@ -288,7 +278,6 @@
     if (!loaded && loading) {
       adminBody.innerHTML = `
         <section class="rp-member-directory" data-rp-member-directory>
-          <header class="rp-member-directory-head"><span class="rp-member-directory-kicker">MEMBERSHIP DIRECTORY</span><h1>PLAYERS</h1></header>
           <div class="rp-member-loading">LOADING PLAYER MEMBERSHIPS…</div>
         </section>`;
       return;
