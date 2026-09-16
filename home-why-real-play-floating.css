@@ -1,0 +1,116 @@
+/* REAL PLAY HOME — FLOATING WHY REAL PLAY TEASER
+ * Keep the hero tagline clean. The doctrine entry now lives above the bottom
+ * navigation as a compact information control that briefly expands every 3s.
+ */
+
+html body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center button.rp-home-why-real-play[data-rp-home-why-real-play]{
+  position:fixed!important;
+  z-index:585!important;
+  left:auto!important;
+  right:max(14px,calc((100vw - 620px)/2 + 14px))!important;
+  top:auto!important;
+  bottom:calc(var(--rp-simple-nav-height,74px) + env(safe-area-inset-bottom) + 18px)!important;
+  width:142px!important;
+  min-width:142px!important;
+  height:42px!important;
+  min-height:42px!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+  padding:0 42px 0 12px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:0!important;
+  overflow:hidden!important;
+  border:1px solid rgba(79,220,255,.42)!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,rgba(7,24,36,.94),rgba(2,10,17,.96))!important;
+  color:#dff8ff!important;
+  box-shadow:0 9px 26px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.05),0 0 18px rgba(56,210,255,.07)!important;
+  font-family:var(--rp-display,Arial,sans-serif)!important;
+  font-size:.46rem!important;
+  font-style:normal!important;
+  font-weight:950!important;
+  letter-spacing:.12em!important;
+  line-height:1!important;
+  text-align:center!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+  cursor:pointer!important;
+  pointer-events:auto!important;
+  transform:none!important;
+  clip-path:inset(0 0 0 100px round 999px);
+  animation:rpWhyRealPlayTease 3s cubic-bezier(.4,0,.2,1) infinite;
+  -webkit-tap-highlight-color:transparent!important;
+  will-change:clip-path;
+}
+
+/* The existing span is the permanent info symbol. Keep it visibly circular
+   even while the surrounding control stretches into the WHY REAL PLAY label. */
+html body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center button.rp-home-why-real-play[data-rp-home-why-real-play]>span{
+  position:absolute!important;
+  z-index:2!important;
+  right:4px!important;
+  left:auto!important;
+  top:4px!important;
+  width:32px!important;
+  height:32px!important;
+  min-width:32px!important;
+  margin:0!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  border:1px solid rgba(111,231,255,.62)!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle at 40% 32%,rgba(76,222,255,.15),rgba(3,13,21,.94) 68%)!important;
+  color:#c8f5ff!important;
+  box-shadow:inset 0 0 10px rgba(70,215,255,.08),0 0 10px rgba(70,215,255,.10)!important;
+  font-family:Georgia,'Times New Roman',serif!important;
+  font-size:.88rem!important;
+  font-style:normal!important;
+  font-weight:900!important;
+  letter-spacing:0!important;
+  line-height:1!important;
+  transform:none!important;
+}
+
+/* Hold the information circle quietly, then expose the label from right to
+   left and close it again. One complete cue happens every three seconds. */
+@keyframes rpWhyRealPlayTease{
+  0%,55%{clip-path:inset(0 0 0 100px round 999px)}
+  67%,86%{clip-path:inset(0 0 0 0 round 999px)}
+  100%{clip-path:inset(0 0 0 100px round 999px)}
+}
+
+html body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center button.rp-home-why-real-play[data-rp-home-why-real-play]:hover,
+html body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center button.rp-home-why-real-play[data-rp-home-why-real-play]:focus-visible{
+  clip-path:inset(0 0 0 0 round 999px)!important;
+  animation-play-state:paused!important;
+  border-color:rgba(98,228,255,.70)!important;
+  background:linear-gradient(180deg,rgba(10,35,50,.98),rgba(3,15,24,.98))!important;
+  color:#f1fcff!important;
+}
+
+html body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center button.rp-home-why-real-play[data-rp-home-why-real-play]:active{
+  transform:scale(.975)!important;
+}
+
+/* Do not leave this Home-only control floating over WORLD / PLAYERS / CHATS / ME. */
+html body.rp-simple-navigation-active:not(:has(.rp-simple-nav-item[data-rp-simple-nav-item="home"].active)) .rp-simple-home.rp-home-command-center button.rp-home-why-real-play[data-rp-home-why-real-play]{
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+@media(max-width:420px){
+  html body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center button.rp-home-why-real-play[data-rp-home-why-real-play]{
+    right:12px!important;
+    bottom:calc(var(--rp-simple-nav-height,74px) + env(safe-area-inset-bottom) + 16px)!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  html body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center button.rp-home-why-real-play[data-rp-home-why-real-play]{
+    animation:none!important;
+    clip-path:inset(0 0 0 100px round 999px);
+  }
+}
