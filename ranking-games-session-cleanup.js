@@ -84,3 +84,60 @@
 
   sync();
 })();
+
+/*
+ * A secured-player profile is a navigation destination, not another modal
+ * stacked on top of Open Rank. Close Open Rank before its player-card click
+ * handler opens the profile so the permanent app navigation remains visible.
+ */
+(() => {
+  if (window.__realPlayRankingProfileNavigationInstalled) return;
+  window.__realPlayRankingProfileNavigationInstalled = true;
+
+  const style = document.createElement('style');
+  style.dataset.rpRankingProfileNavigation = 'true';
+  style.textContent = `
+    body.rp-simple-navigation-active .rp-public-player-profile{
+      padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom));
+    }
+    body.rp-simple-navigation-active .rp-public-player-profile .rp-profile-body{
+      padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom) + 18px)!important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  function closeOpenRank() {
+    if (!view.classList.contains('open')) return;
+
+    if (window.RealPlayRankingGames?.close) {
+      window.RealPlayRankingGames.close();
+      return;
+    }
+
+    // Defensive fallback if the Open Rank controller is still initializing.
+    view.classList.remove('open');
+    view.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('rp-ranking-open');
+  }
+
+  document.addEventListener('click', (event) => {
+    const card = event.target.closest?.('[data-rp-ranking-secured] .rp-ranking-secured-player');
+    if (!card || !view.classList.contains('open')) return;
+
+    const isYou = card.classList.contains('is-you')
+      || Boolean(card.querySelector('.rp-ranking-secured-you'));
+
+    closeOpenRank();
+
+    // For the logged-in player's own card, use the permanent ME navigation
+    // route so its active state and profile lifecycle stay in sync.
+    if (isYou) {
+      const meButton = document.querySelector('[data-rp-simple-nav-item="me"]');
+      if (meButton) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        window.setTimeout(() => meButton.click(), 0);
+      }
+    }
+  }, true);
+})();
