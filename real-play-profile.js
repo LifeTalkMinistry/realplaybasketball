@@ -7,6 +7,7 @@
   let panel = null;
   let state = null;
   let teamState = null;
+  let membershipState = null;
   let loading = false;
 
   const esc = (value) => String(value ?? '')
@@ -305,6 +306,9 @@
     const rebounds = number(pick(stats.reb, stats.rebounds));
     const turnovers = number(pick(stats.to, stats.tov, stats.turnovers));
     const supportTier = String(state?.supportTier || '').trim();
+    const membership = membershipState?.membership || {};
+    const tokenCount = Math.max(0, number(pick(membership.playTokensAvailable, membership.tokens?.available), 0));
+    const passHolder = Boolean(membership.active || tokenCount > 0);
     const recentGames = Array.isArray(state?.recentGames) ? state.recentGames.slice(0, 4) : [];
     const rankingState = state?.ranking || {};
     const rankingRequired = Math.max(1, number(pick(
@@ -349,7 +353,7 @@
         <div class="rp-profile-hero-glow" aria-hidden="true"></div>
         <div class="rp-profile-identity-line">
           <span>REAL PLAY PLAYER</span>
-          <b>${supportTier ? esc(supportTier.toUpperCase()) : 'BETA SEASON'}</b>
+          <b>${passHolder ? `PASS HOLDER - TOKEN: ${tokenCount}` : supportTier ? esc(supportTier.toUpperCase()) : 'BETA SEASON'}</b>
         </div>
         <div class="rp-profile-player">
           <div class="rp-profile-number"><small>PLAYER</small><strong>${jersey === null ? '#—' : `#${jersey}`}</strong></div>
@@ -401,13 +405,15 @@
     loading = true;
     setStatus('LOADING PLAYER PROFILE...');
     try {
-      const [profileResult, teamResult] = await Promise.allSettled([
+      const [profileResult, teamResult, membershipResult] = await Promise.allSettled([
         api('/api/real-play/me'),
         api('/api/real-play/3v3/me'),
+        api('/api/real-play/membership'),
       ]);
       if (profileResult.status === 'rejected') throw profileResult.reason;
       state = profileResult.value;
       teamState = teamResult.status === 'fulfilled' ? teamResult.value : null;
+      membershipState = membershipResult.status === 'fulfilled' ? membershipResult.value : null;
       renderProfile();
       setStatus('');
     } catch (error) {
