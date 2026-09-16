@@ -7,6 +7,19 @@
   if (window.__realPlayHomeCommandRoutingFixInstalled) return;
   window.__realPlayHomeCommandRoutingFixInstalled = true;
 
+  function loadHomePaymentAdmin() {
+    if (window.__realPlayHomePaymentAdminInstalled) return;
+    if (document.querySelector('script[data-rp-home-payment-admin-loader]')) return;
+
+    const script = document.createElement('script');
+    script.src = 'home-payment-admin.js?v=20260916-payment-admin-v1';
+    script.async = true;
+    script.dataset.rpHomePaymentAdminLoader = '1';
+    document.head.appendChild(script);
+  }
+
+  loadHomePaymentAdmin();
+
   function routeLegacy(action) {
     const button = document.querySelector(`[data-rp-main-action="${action}"]`);
     if (!button) return false;
