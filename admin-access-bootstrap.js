@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260916-admin-warmup-v21';
+  const ADMIN_ASSET_VERSION = '20260916-membership-directory-v22';
   const REPLAY_ADMIN_ROOT_VERSION = '20260915-replay-editor-root-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
@@ -248,8 +248,6 @@
     }
   }
 
-  // Official shared admin-runtime API. Replay editing and any future admin entry
-  // can prepare Game Control directly instead of simulating Settings clicks.
   window.__realPlayVerifyAdminAccess = verifyAdmin;
   window.__realPlayEnsureAdminLoaded = async () => {
     if (!verifiedAdmin && !(await verifyAdmin())) {
