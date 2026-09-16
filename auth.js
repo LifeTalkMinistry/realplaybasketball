@@ -21,6 +21,10 @@
     document.head.appendChild(link);
   }
 
+  // Independent Open Rank enhancement. It waits for the ranking view to mount,
+  // so loading it here keeps the guide available without extending app.js boot.
+  loadScript('ranking-spot-priority.js?v=20260916-spot-priority-v1');
+
   const supportGrid = document.querySelector('#support .support-grid');
   if (supportGrid) {
     supportGrid.classList.add('support-grid-live');
