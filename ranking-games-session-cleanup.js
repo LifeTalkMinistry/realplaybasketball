@@ -164,3 +164,125 @@
     }
   }, true);
 })();
+
+/*
+ * NEXT RANKING GAME capacity badge.
+ * Reuse the secured-player roster as the single source of truth so the compact
+ * header count always matches the player list below (for example 02/16).
+ */
+(() => {
+  if (window.__realPlayRankingCapacityBadgeInstalled) return;
+  window.__realPlayRankingCapacityBadgeInstalled = true;
+
+  const view = document.querySelector('[data-rp-ranking-games]');
+  const head = view?.querySelector('.rp-ranking-next .rp-ranking-section-head');
+  if (!view || !head) return;
+
+  const style = document.createElement('style');
+  style.dataset.rpRankingCapacityBadge = 'true';
+  style.textContent = `
+    .rp-ranking-next .rp-ranking-capacity-badge{
+      position:absolute;
+      left:0;
+      top:50%;
+      z-index:2;
+      min-width:50px;
+      height:38px;
+      padding:5px 8px 4px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      box-sizing:border-box;
+      border:1px solid rgba(66,217,255,.30);
+      border-radius:12px;
+      background:linear-gradient(180deg,rgba(6,24,36,.96),rgba(3,12,20,.96));
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 7px 18px rgba(0,0,0,.22);
+      transform:translateY(-50%);
+      pointer-events:none;
+    }
+    .rp-ranking-next .rp-ranking-capacity-badge[hidden]{display:none!important}
+    .rp-ranking-next .rp-ranking-capacity-badge small{
+      margin:0 0 3px!important;
+      color:#667f95!important;
+      font-family:var(--rp-display,Arial,sans-serif)!important;
+      font-size:.31rem!important;
+      font-style:normal!important;
+      font-weight:950!important;
+      letter-spacing:.13em!important;
+      line-height:1!important;
+      text-transform:uppercase!important;
+    }
+    .rp-ranking-next .rp-ranking-capacity-badge strong{
+      margin:0!important;
+      color:#61e3ff!important;
+      font-family:var(--rp-display,Arial,sans-serif)!important;
+      font-size:.68rem!important;
+      font-style:italic!important;
+      font-weight:950!important;
+      letter-spacing:.035em!important;
+      line-height:1!important;
+      white-space:nowrap!important;
+    }
+    .rp-ranking-next .rp-ranking-session.joined ~ * .rp-ranking-capacity-badge strong{
+      color:#72efc4!important;
+    }
+    @media(max-width:390px){
+      .rp-ranking-next .rp-ranking-capacity-badge{
+        min-width:46px;
+        height:36px;
+        padding-left:6px;
+        padding-right:6px;
+      }
+      .rp-ranking-next .rp-ranking-capacity-badge small{font-size:.29rem!important}
+      .rp-ranking-next .rp-ranking-capacity-badge strong{font-size:.62rem!important}
+    }
+  `;
+  document.head.appendChild(style);
+
+  const badge = document.createElement('div');
+  badge.className = 'rp-ranking-capacity-badge';
+  badge.dataset.rpRankingCapacityBadge = 'true';
+  badge.hidden = true;
+  badge.innerHTML = '<small>PLAYERS</small><strong data-rp-ranking-capacity-value>00/00</strong>';
+  head.appendChild(badge);
+
+  const value = badge.querySelector('[data-rp-ranking-capacity-value]');
+
+  function pad(number) {
+    return String(Math.max(0, Math.trunc(Number(number) || 0))).padStart(2, '0');
+  }
+
+  function syncCapacity() {
+    const roster = view.querySelector('[data-rp-ranking-secured]');
+    const countNode = view.querySelector('[data-rp-ranking-secured-count]');
+    const text = String(countNode?.textContent || '').trim();
+    const match = text.match(/(\d+)\s*\/\s*(\d+)/);
+
+    if (!roster || roster.hidden || !match) {
+      badge.hidden = true;
+      return;
+    }
+
+    const joined = Number(match[1]);
+    const capacity = Number(match[2]);
+    if (!Number.isFinite(capacity) || capacity <= 0) {
+      badge.hidden = true;
+      return;
+    }
+
+    if (value) value.textContent = `${pad(joined)}/${pad(capacity)}`;
+    badge.hidden = false;
+  }
+
+  const observer = new MutationObserver(syncCapacity);
+  observer.observe(view, {
+    childList: true,
+    characterData: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['hidden'],
+  });
+
+  syncCapacity();
+})();
