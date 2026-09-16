@@ -5,6 +5,7 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
   let starting = false;
+  let unlockFrame = 0;
 
   function root() {
     return document.querySelector('.rp-admin-control');
@@ -78,15 +79,37 @@
     return { rulesetFamily: 'race_to', targetScore: target, playerFormat: format };
   }
 
-  async function commitVisibleRules(control) {
-    const selection = visibleRaceSelection();
-    const saved = control?.session?.rules || null;
-    if (!selection) return control;
+  // The main Audit renderer historically disabled START until rules were already
+  // saved. That made the preflight below unreachable because disabled buttons do
+  // not dispatch click events. Keep START actionable and let the authoritative
+  // preflight explain exactly what is missing instead of leaving a dead button.
+  function unlockStartButton() {
+    unlockFrame = 0;
+    if (starting) return;
+    const button = body()?.querySelector('[data-rp-video-start]');
+    if (!button) return;
+    button.disabled = false;
+    button.removeAttribute('aria-disabled');
+    button.title = 'Real Play will validate the selected rules, exact roster, and uploaded video before the audit starts.';
+  }
 
-    const same = saved?.rulesetFamily === 'race_to'
-      && Number(saved.targetScore) === selection.targetScore
-      && String(saved.playerFormat || '').toLowerCase() === selection.playerFormat;
-    if (same) return control;
+  function scheduleStartUnlock() {
+    if (unlockFrame) return;
+    unlockFrame = window.requestAnimationFrame(unlockStartButton);
+  }
+
+  async function commitVisibleRules(control) {
+    // Never replace rules that were already explicitly saved. In particular,
+    // STANDARD 3V3 must not be silently overwritten by the Race To form's
+    // default values when START is pressed.
+    const saved = control?.session?.rules || null;
+    if (saved) return control;
+
+    // When no rule snapshot exists yet, START may safely commit the currently
+    // visible Race To choice. This gives Audit the intended one-step start flow
+    // while the server still remains the final rules authority.
+    const selection = visibleRaceSelection();
+    if (!selection) return control;
 
     const data = await api('/api/real-play/admin/career/control', {
       method: 'POST',
@@ -156,6 +179,7 @@
       button.textContent = originalText;
     } finally {
       starting = false;
+      scheduleStartUnlock();
     }
   }
 
@@ -166,4 +190,22 @@
     event.stopImmediatePropagation();
     startRecordedScoring(button);
   }, true);
+
+  document.addEventListener('change', (event) => {
+    if (!event.target.closest?.('[data-rp-video-race-form] select')) return;
+    scheduleStartUnlock();
+  }, true);
+
+  window.addEventListener('realplay:admin-render', scheduleStartUnlock);
+
+  const observer = new MutationObserver(() => {
+    if (body()?.querySelector('[data-rp-video-start]')) scheduleStartUnlock();
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', scheduleStartUnlock, { once: true });
+  } else {
+    scheduleStartUnlock();
+  }
 })();
