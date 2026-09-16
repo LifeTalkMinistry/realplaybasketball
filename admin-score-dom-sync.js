@@ -137,10 +137,8 @@
   window.__realPlayAuditOneStepSubmitInstalled = true;
 
   const API_BASE_URL = 'https://api.clarapmc.com';
-  const SUBMIT_PATHS = [
-    '/api/real-play/admin/recorded-scoring/submit-draft',
-    '/api/real-play/admin/audit/submit-draft',
-  ];
+  const RECORDED_SUBMIT_PATH = '/api/real-play/admin/recorded-scoring/submit-draft';
+  const AUDIT_SUBMIT_PATH = '/api/real-play/admin/audit/submit-draft';
   const nativeFetch = window.fetch.bind(window);
 
   function requestUrl(input) {
@@ -149,12 +147,23 @@
     return String(input?.url || '');
   }
 
+  function auditWorkspaceActive() {
+    const activeTab = document.querySelector('.rp-admin-control [data-admin-tab].active');
+    const label = String(activeTab?.textContent || '').trim().toLowerCase();
+    return label === 'audit'
+      || activeTab?.matches('[data-admin-tab="audit"]')
+      || Boolean(document.querySelector('.rp-admin-control [data-admin-tab="audit"].active'));
+  }
+
   function isAuditSubmit(url) {
     try {
-      const parsed = new URL(url, window.location.href);
-      return SUBMIT_PATHS.includes(parsed.pathname);
+      const pathname = new URL(url, window.location.href).pathname;
+      if (pathname === AUDIT_SUBMIT_PATH) return true;
+      return pathname === RECORDED_SUBMIT_PATH && auditWorkspaceActive();
     } catch (_) {
-      return SUBMIT_PATHS.some((path) => String(url || '').includes(path));
+      const raw = String(url || '');
+      if (raw.includes(AUDIT_SUBMIT_PATH)) return true;
+      return raw.includes(RECORDED_SUBMIT_PATH) && auditWorkspaceActive();
     }
   }
 
@@ -240,7 +249,7 @@
   function removeFinalizeStep() {
     document.querySelectorAll('[data-admin-tab="finalize"]').forEach((tab) => {
       if (tab.classList.contains('active')) {
-        const fallback = document.querySelector('[data-admin-tab="live"], [data-admin-tab="audit"], [data-admin-tab="session"]');
+        const fallback = document.querySelector('[data-admin-tab="audit"], [data-admin-tab="live"], [data-admin-tab="session"]');
         fallback?.click();
       }
       tab.remove();
