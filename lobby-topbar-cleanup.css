@@ -1,2 +1,4 @@
+@import url('home-why-real-play-floating.css?v=20260916-why-real-play-float-v1');
+
 .rp-topbar{display:none!important}
 .rp-player-strip{margin-top:max(14px,env(safe-area-inset-top))}
