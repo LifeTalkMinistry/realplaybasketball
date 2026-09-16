@@ -52,6 +52,21 @@
       <p class="rp-entry-options-foot">PRIORITY · PLAY TOKEN → GCASH → CASH → FREE STANDBY</p>`;
   }
 
+  function confirmationMarkup(available, header) {
+    const count = Math.max(0, Number(available || 0));
+    return `
+      <div class="rp-entry-options-grab" aria-hidden="true"></div>
+      ${header}
+      <button class="rp-entry-action-back" type="button" data-rp-entry-back aria-label="Back">←</button>
+      <div class="rp-entry-action-flow">
+        <h2>CONFIRM ATTENDANCE</h2>
+        <p>You have ${count} Play Token${count === 1 ? '' : 's'}. Confirming commits 1 token to this Ranking Game.</p>
+        <div class="rp-entry-action-card"><span>1 PLAY TOKEN</span><strong>NO-SHOW = TOKEN USED · CANCEL BEFORE THE GAME STARTS TO RELEASE IT</strong></div>
+        <button class="rp-entry-action-primary" type="button" data-rp-use-token>CONFIRM · USE 1 TOKEN</button>
+        <p class="rp-entry-action-status" data-rp-entry-status></p>
+      </div>`;
+  }
+
   async function syncOpenState() {
     const overlay = observedOverlay || document.querySelector('[data-rp-ranking-entry-options]');
     if (!overlay?.classList.contains('is-open')) return;
@@ -67,6 +82,17 @@
       return;
     }
 
+    const header = sheet.querySelector('.rp-entry-options-head')?.outerHTML || '<div class="rp-entry-options-head"><button class="rp-entry-options-close" type="button" data-rp-entry-close>×</button></div>';
+
+    // Logged-in players should not briefly see purchase choices while we already
+    // know the next step depends on their current token balance.
+    sheet.innerHTML = `
+      <div class="rp-entry-options-grab" aria-hidden="true"></div>
+      ${header}
+      <div class="rp-entry-action-flow" style="padding:12px 2px 18px;text-align:center">
+        <p class="rp-entry-action-status" style="margin:0">CHECKING PLAY TOKENS…</p>
+      </div>`;
+
     try {
       const controller = new AbortController();
       const timer = window.setTimeout(() => controller.abort(), 10000);
@@ -76,11 +102,23 @@
       }).finally(() => window.clearTimeout(timer));
       if (!response.ok || !overlay.classList.contains('is-open')) return;
       const state = await response.json();
-      const content = baseOptions(Number(state?.tokens?.available || 0), state?.entry || null);
-      const header = sheet.querySelector('.rp-entry-options-head')?.outerHTML || '<div class="rp-entry-options-head"><button class="rp-entry-options-close" type="button" data-rp-entry-close>×</button></div>';
+      const available = Number(state?.tokens?.available || 0);
+      const activeEntry = state?.entry && state.entry.status !== 'cancelled' ? state.entry : null;
+
+      // A player who already owns a Play Token has nothing to buy. Go straight
+      // to the token commitment screen instead of showing Membership/Pay/Free.
+      if (!activeEntry && available > 0) {
+        sheet.innerHTML = confirmationMarkup(available, header);
+        return;
+      }
+
+      const content = baseOptions(available, activeEntry);
       sheet.innerHTML = `<div class="rp-entry-options-grab" aria-hidden="true"></div>${header}${content}`;
     } catch (_error) {
-      // Never block the booking sheet if state refresh fails.
+      // If state refresh fails, restore the normal choices instead of trapping
+      // the player on the temporary checking state.
+      const content = baseOptions(null, null);
+      sheet.innerHTML = `<div class="rp-entry-options-grab" aria-hidden="true"></div>${header}${content}`;
     }
   }
 
