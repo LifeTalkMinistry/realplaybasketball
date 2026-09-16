@@ -131,3 +131,124 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 })();
+
+(() => {
+  if (window.__realPlayAuditOneStepSubmitInstalled) return;
+  window.__realPlayAuditOneStepSubmitInstalled = true;
+
+  const API_BASE_URL = 'https://api.clarapmc.com';
+  const SUBMIT_PATHS = [
+    '/api/real-play/admin/recorded-scoring/submit-draft',
+    '/api/real-play/admin/audit/submit-draft',
+  ];
+  const nativeFetch = window.fetch.bind(window);
+
+  function requestUrl(input) {
+    if (typeof input === 'string') return input;
+    if (input instanceof URL) return input.href;
+    return String(input?.url || '');
+  }
+
+  function isAuditSubmit(url) {
+    try {
+      const parsed = new URL(url, window.location.href);
+      return SUBMIT_PATHS.includes(parsed.pathname);
+    } catch (_) {
+      return SUBMIT_PATHS.some((path) => String(url || '').includes(path));
+    }
+  }
+
+  function parseRequestBody(options) {
+    try {
+      if (!options?.body || typeof options.body !== 'string') return {};
+      return JSON.parse(options.body) || {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function authHeader(options) {
+    const headers = new Headers(options?.headers || {});
+    return headers.get('Authorization') || '';
+  }
+
+  async function readJson(response) {
+    return response.clone().json().catch(() => ({}));
+  }
+
+  function jsonResponse(payload, status = 200) {
+    return new Response(JSON.stringify(payload), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  async function finalizeAudit(options, sessionId) {
+    const authorization = authHeader(options);
+    const response = await nativeFetch(`${API_BASE_URL}/api/real-play/admin/audit/control`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(authorization ? { Authorization: authorization } : {}),
+      },
+      body: JSON.stringify({ action: 'finalize', sessionId: Number(sessionId) || undefined }),
+      cache: 'no-store',
+    });
+    const data = await readJson(response);
+    if (!response.ok) {
+      return {
+        ok: false,
+        response: jsonResponse({
+          code: data?.code || 'AUDIT_FINALIZE_FAILED',
+          message: data?.message || data?.error || `Could not complete Audit (${response.status}).`,
+        }, response.status),
+      };
+    }
+    return { ok: true, data };
+  }
+
+  window.fetch = async function realPlayAuditOneStepFetch(input, options = {}) {
+    const url = requestUrl(input);
+    if (!isAuditSubmit(url)) return nativeFetch(input, options);
+
+    const body = parseRequestBody(options);
+    const submitResponse = await nativeFetch(input, options);
+    const submitData = await readJson(submitResponse);
+    const alreadyVerified = submitResponse.status === 409 && (
+      submitData?.code === 'VIDEO_REVIEW_COMPLETE'
+      || /already verified and locked/i.test(String(submitData?.message || submitData?.error || ''))
+    );
+
+    if (!submitResponse.ok && !alreadyVerified) return submitResponse;
+
+    const sessionId = Number(body.session_id ?? body.sessionId ?? 0);
+    const finalized = await finalizeAudit(options, sessionId);
+    if (!finalized.ok) return finalized.response;
+
+    const finalResult = finalized.data?.finalized || {};
+    return jsonResponse({
+      ok: true,
+      finalized: true,
+      alreadyVerified,
+      submittedEvents: Number(submitData?.submittedEvents || 0),
+      westScore: Number(finalResult?.westScore ?? submitData?.westScore ?? 0),
+      eastScore: Number(finalResult?.eastScore ?? submitData?.eastScore ?? 0),
+    });
+  };
+
+  function removeFinalizeStep() {
+    document.querySelectorAll('[data-admin-tab="finalize"]').forEach((tab) => {
+      if (tab.classList.contains('active')) {
+        const fallback = document.querySelector('[data-admin-tab="live"], [data-admin-tab="audit"], [data-admin-tab="session"]');
+        fallback?.click();
+      }
+      tab.remove();
+    });
+  }
+
+  const observer = new MutationObserver(removeFinalizeStep);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  window.addEventListener('realplay:admin-render', removeFinalizeStep);
+  removeFinalizeStep();
+})();
