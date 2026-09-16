@@ -202,11 +202,13 @@
   function syncFullscreenTimestamp(stage) {
     if (!stage) return;
     const value = stage.querySelector(`[${TIMESTAMP_VALUE_ATTR}]`);
-    if (value) value.textContent = currentPlaybackText(stage);
+    if (!value) return;
+    const next = currentPlaybackText(stage);
+    if (value.textContent !== next) value.textContent = next;
   }
 
   function ensureFullscreenTimestamp(stage) {
-    if (!stage) return;
+    if (!stage) return null;
     let timestamp = stage.querySelector(`[${TIMESTAMP_ATTR}]`);
     if (!timestamp) {
       timestamp = document.createElement('div');
@@ -217,6 +219,7 @@
       stage.appendChild(timestamp);
     }
     syncFullscreenTimestamp(stage);
+    return timestamp;
   }
 
   function stopTimestampSync() {
@@ -233,7 +236,6 @@
     stopTimestampSync();
     if (!stage) return;
     ensureFullscreenTimestamp(stage);
-    syncFullscreenTimestamp(stage);
     timestampTimer = setInterval(() => {
       if (!stageIsFullscreen(stage)) {
         stopTimestampSync();
@@ -296,10 +298,7 @@
 
   function enhance() {
     if (pseudoFullscreenStage && !pseudoFullscreenStage.isConnected) exitPseudoFullscreen();
-    document.querySelectorAll('[data-rp-career-replay-stage]').forEach((stage) => {
-      ensureBackButton(stage);
-      ensureFullscreenTimestamp(stage);
-    });
+    document.querySelectorAll('[data-rp-career-replay-stage]').forEach(ensureBackButton);
     placeReplayClock();
   }
 
