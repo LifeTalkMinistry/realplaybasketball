@@ -135,6 +135,23 @@
     document.body.classList.remove('rp-profile-open');
   }
 
+  function publicPassLabel(player) {
+    const rawTokens = pick(
+      player?.playTokensAvailable,
+      player?.play_tokens_available,
+      player?.publicPass?.playTokensAvailable,
+      player?.public_pass?.play_tokens_available
+    );
+    const parsedTokens = Number(rawTokens);
+    const tokenCount = Number.isFinite(parsedTokens) ? Math.max(0, parsedTokens) : 0;
+    const passHolder = player?.passHolder === true
+      || player?.pass_holder === true
+      || player?.publicPass?.passHolder === true
+      || player?.public_pass?.pass_holder === true
+      || tokenCount > 0;
+    return passHolder ? `PASS HOLDER - TOKEN: ${tokenCount}` : 'PLAYER PROFILE';
+  }
+
   function renderProfile(player) {
     const root = profilePanel?.querySelector('[data-visitor-profile-content]');
     if (!root) return;
@@ -146,11 +163,12 @@
     const wins = number(stats.wins);
     const losses = number(stats.losses);
     const recent = Array.isArray(player?.recentGames) ? player.recentGames.slice(0, 4) : [];
+    const passLabel = publicPassLabel(player);
 
     root.innerHTML = `
       <section class="rp-profile-hero">
         <div class="rp-profile-hero-glow" aria-hidden="true"></div>
-        <div class="rp-profile-identity-line"><span>REAL PLAY PLAYER</span><b>${esc(player?.publicPlayerId || 'PLAYER PROFILE')}</b></div>
+        <div class="rp-profile-identity-line"><span>REAL PLAY PLAYER</span><b>${esc(passLabel)}</b></div>
         <div class="rp-profile-player"><div class="rp-profile-number"><small>PLAYER</small><strong>${jersey === null ? '#—' : `#${jersey}`}</strong></div><div class="rp-profile-name"><small>PUBLIC PROFILE</small><h1>${esc(player?.playerName || 'REAL PLAY PLAYER')}</h1><p>LESS SCREEN. REAL POINTS.</p></div></div>
         <div class="rp-profile-rating-row"><div class="rp-profile-ovr"><span>OVR</span><strong>${rating === null ? '—' : rating}</strong><small>${rating === null ? 'UNRANKED' : 'BETA RATING'}</small></div><div class="rp-profile-rank"><span>RANK</span><strong>${rank === null ? '—' : `#${rank}`}</strong><small>REAL PLAY</small></div><div class="rp-profile-record"><span>RECORD</span><strong>${wins}-${losses}</strong><small>${games} GAME${games === 1 ? '' : 'S'}</small></div></div>
       </section>
