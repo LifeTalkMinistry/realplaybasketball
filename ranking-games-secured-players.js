@@ -26,7 +26,7 @@
       align-items:center;
       justify-content:space-between;
       gap:12px;
-      margin-bottom:9px;
+      margin-bottom:10px;
     }
     .rp-ranking-secured-head span,
     .rp-ranking-secured-head strong{
@@ -39,125 +39,193 @@
     .rp-ranking-secured-head span{color:#74889f}
     .rp-ranking-secured-head strong{color:#50dcff;text-align:right}
     .rp-ranking-session.joined .rp-ranking-secured-head strong{color:#72efc4}
+
     .rp-ranking-secured-list{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:7px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
     }
     .rp-ranking-secured-player{
+      position:relative;
       width:100%;
       min-width:0;
-      display:flex;
-      align-items:center;
-      gap:9px;
-      min-height:46px;
-      padding:8px 10px;
-      border:1px solid rgba(120,160,199,.10);
-      border-radius:10px;
+      display:block;
+      overflow:hidden;
+      padding:0;
+      border:1px solid rgba(93,151,191,.16);
+      border-radius:13px;
       box-sizing:border-box;
-      background:rgba(4,12,21,.72);
+      background:
+        linear-gradient(105deg,rgba(7,20,31,.96),rgba(3,12,20,.96) 58%,rgba(6,21,30,.94));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.018),
+        0 8px 24px rgba(0,0,0,.14);
       color:inherit;
       font:inherit;
       text-align:left;
+    }
+    .rp-ranking-secured-player::before{
+      content:"";
+      position:absolute;
+      inset:0 auto 0 0;
+      width:2px;
+      background:linear-gradient(180deg,rgba(70,218,255,.9),rgba(70,218,255,.05));
+      opacity:.58;
     }
     .rp-ranking-secured-player.is-clickable{
       cursor:pointer;
       appearance:none;
       -webkit-appearance:none;
-      transition:border-color .16s ease,background .16s ease,transform .16s ease;
+      transition:border-color .16s ease,background .16s ease,transform .16s ease,box-shadow .16s ease;
     }
     .rp-ranking-secured-player.is-clickable:hover{
       border-color:rgba(80,220,255,.30);
-      background:rgba(6,24,36,.88);
+      background:
+        linear-gradient(105deg,rgba(8,25,38,.98),rgba(4,15,24,.98) 58%,rgba(7,25,34,.96));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.025),
+        0 10px 28px rgba(0,0,0,.18);
     }
-    .rp-ranking-secured-player.is-clickable:active{transform:scale(.992)}
+    .rp-ranking-secured-player.is-clickable:active{transform:scale(.995)}
     .rp-ranking-secured-player.is-clickable:focus-visible{
       outline:2px solid rgba(80,220,255,.62);
       outline-offset:2px;
     }
-    .rp-ranking-secured-player> b{
-      flex:0 0 auto;
-      color:#54718e;
-      font-family:var(--rp-display,Arial,sans-serif);
-      font-size:.44rem;
-      font-weight:950;
-      letter-spacing:.04em;
+    .rp-ranking-secured-player.is-you{
+      border-color:rgba(74,237,191,.24);
+      background:
+        linear-gradient(105deg,rgba(7,30,30,.96),rgba(3,16,22,.97) 58%,rgba(5,27,30,.94));
     }
-    .rp-ranking-secured-info{
+    .rp-ranking-secured-player.is-you::before{
+      background:linear-gradient(180deg,rgba(89,239,198,.96),rgba(70,218,255,.08));
+      opacity:.8;
+    }
+
+    .rp-ranking-secured-identity{
       min-width:0;
-      flex:1 1 auto;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      align-items:stretch;
+      border-bottom:1px solid rgba(108,151,190,.10);
+    }
+    .rp-ranking-secured-name-cell,
+    .rp-ranking-secured-rank-cell{
+      min-width:0;
+      padding:10px 11px 9px;
+    }
+    .rp-ranking-secured-name-cell{
+      padding-left:13px;
+    }
+    .rp-ranking-secured-rank-cell{
+      min-width:64px;
+      border-left:1px solid rgba(108,151,190,.10);
+      text-align:center;
+    }
+    .rp-ranking-secured-label{
+      display:block;
+      margin-bottom:4px;
+      color:#607a91;
+      font-family:var(--rp-display,Arial,sans-serif);
+      font-size:.36rem;
+      font-weight:950;
+      letter-spacing:.13em;
+      line-height:1;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+    .rp-ranking-secured-name-line{
+      min-width:0;
       display:flex;
-      flex-direction:column;
-      justify-content:center;
-      gap:3px;
+      align-items:center;
+      gap:7px;
     }
     .rp-ranking-secured-name{
       min-width:0;
       overflow:hidden;
-      color:#d9e5ef;
+      color:#eef7ff;
+      font-family:var(--rp-display,Arial,sans-serif);
+      font-size:.68rem;
+      font-weight:950;
+      letter-spacing:.035em;
+      line-height:1.08;
+      text-overflow:ellipsis;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+    .rp-ranking-secured-you{
+      flex:0 0 auto;
+      padding:3px 5px;
+      border:1px solid rgba(89,239,198,.16);
+      border-radius:999px;
+      background:rgba(58,218,172,.08);
+      color:#72efc4;
+      font-family:var(--rp-display,Arial,sans-serif);
+      font-size:.31rem;
+      font-style:normal;
+      font-weight:950;
+      letter-spacing:.09em;
+      line-height:1;
+      text-transform:uppercase;
+    }
+    .rp-ranking-secured-rank{
+      display:block;
+      color:#55ddff;
+      font-family:var(--rp-display,Arial,sans-serif);
+      font-size:.72rem;
+      font-weight:950;
+      letter-spacing:.02em;
+      line-height:1;
+      white-space:nowrap;
+    }
+    .rp-ranking-secured-rank.is-unranked{
+      color:#8397aa;
+      font-size:.45rem;
+      letter-spacing:.06em;
+    }
+
+    .rp-ranking-secured-performance{
+      min-width:0;
+      display:grid;
+      grid-template-columns:56px 68px 76px minmax(0,1fr);
+      align-items:stretch;
+    }
+    .rp-ranking-secured-stat{
+      min-width:0;
+      padding:9px 8px 10px;
+      border-right:1px solid rgba(108,151,190,.09);
+    }
+    .rp-ranking-secured-stat:first-child{padding-left:13px}
+    .rp-ranking-secured-stat:last-child{
+      padding-right:11px;
+      border-right:0;
+    }
+    .rp-ranking-secured-value{
+      display:block;
+      min-width:0;
+      overflow:hidden;
+      color:#c8d8e5;
       font-family:var(--rp-display,Arial,sans-serif);
       font-size:.56rem;
-      font-weight:900;
-      letter-spacing:.035em;
+      font-weight:950;
+      letter-spacing:.025em;
       line-height:1.1;
       text-overflow:ellipsis;
       text-transform:uppercase;
       white-space:nowrap;
     }
-    .rp-ranking-secured-meta{
-      min-width:0;
-      display:flex;
-      align-items:center;
-      flex-wrap:wrap;
-      gap:4px;
-      line-height:1;
+    .rp-ranking-secured-stat.is-ovr .rp-ranking-secured-value{
+      color:#f2f8fc;
+      font-size:.64rem;
     }
-    .rp-ranking-secured-metric{
-      display:inline-flex;
-      align-items:center;
-      min-height:15px;
-      padding:2px 5px;
-      border:1px solid rgba(81,196,236,.13);
-      border-radius:999px;
-      background:rgba(17,49,70,.28);
-      color:#86a7bf;
-      font-family:var(--rp-display,Arial,sans-serif);
-      font-size:.36rem;
-      font-weight:950;
-      letter-spacing:.075em;
-      text-transform:uppercase;
-      white-space:nowrap;
-    }
-    .rp-ranking-secured-metric.is-rank{
-      color:#57dbff;
-      border-color:rgba(71,211,250,.20);
-    }
-    .rp-ranking-secured-metric.is-unranked{
-      color:#72869a;
-      border-color:rgba(114,134,154,.14);
-      background:rgba(14,24,34,.34);
-    }
-    .rp-ranking-secured-player> em{
-      flex:0 0 auto;
-      margin-left:auto;
-      padding:3px 5px;
-      border-radius:999px;
-      background:rgba(58,218,172,.10);
-      color:#72efc4;
-      font-family:var(--rp-display,Arial,sans-serif);
-      font-size:.36rem;
-      font-style:normal;
-      font-weight:950;
-      letter-spacing:.08em;
-    }
-    .rp-ranking-secured-player.is-you{
-      border-color:rgba(74,237,191,.22);
-      background:rgba(11,40,35,.52);
+    .rp-ranking-secured-stat.is-winrate .rp-ranking-secured-value{color:#72efc4}
+    .rp-ranking-secured-stat.is-top-stats .rp-ranking-secured-value{
+      color:#8fdcf3;
+      font-size:.49rem;
+      letter-spacing:.015em;
     }
     .rp-ranking-secured-empty{
-      grid-column:1/-1;
       margin:0;
-      padding:8px 2px 1px;
+      padding:10px 2px 2px;
       color:#60758c;
       font-size:.58rem;
       font-weight:700;
@@ -165,8 +233,20 @@
       text-align:center;
       text-transform:uppercase;
     }
-    @media(max-width:560px){
-      .rp-ranking-secured-list{grid-template-columns:1fr}
+
+    @media(max-width:390px){
+      .rp-ranking-secured-performance{
+        grid-template-columns:52px 62px 70px minmax(0,1fr);
+      }
+      .rp-ranking-secured-stat{
+        padding-left:6px;
+        padding-right:6px;
+      }
+      .rp-ranking-secured-stat:first-child{padding-left:10px}
+      .rp-ranking-secured-stat:last-child{padding-right:8px}
+      .rp-ranking-secured-label{font-size:.33rem}
+      .rp-ranking-secured-value{font-size:.51rem}
+      .rp-ranking-secured-stat.is-top-stats .rp-ranking-secured-value{font-size:.44rem}
     }
   `;
   document.head.appendChild(style);
@@ -179,6 +259,59 @@
     if (value === null || value === undefined || value === '') return null;
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function displayNumber(value, digits = 1) {
+    const number = finiteNumber(value);
+    if (number === null) return '—';
+    if (Number.isInteger(number)) return String(number);
+    return number.toFixed(digits).replace(/\.0$/, '');
+  }
+
+  function recordLabel(record) {
+    const wins = finiteNumber(record?.wins);
+    const losses = finiteNumber(record?.losses);
+    const games = finiteNumber(record?.games);
+    if (wins === null || losses === null || games === null || games <= 0) return '—';
+    return `${Math.max(0, Math.trunc(wins))}-${Math.max(0, Math.trunc(losses))}`;
+  }
+
+  function winRateLabel(value) {
+    const winRate = finiteNumber(value);
+    if (winRate === null) return '—';
+    return `${displayNumber(winRate)}%`;
+  }
+
+  function topStatsLabel(topStats) {
+    if (!Array.isArray(topStats) || !topStats.length) return '—';
+    const labels = topStats
+      .slice(0, 2)
+      .map((stat) => {
+        if (typeof stat === 'string') return stat.trim().toUpperCase();
+        const key = String(stat?.key || stat?.label || '').trim().toUpperCase();
+        if (!key) return '';
+        const value = finiteNumber(stat?.value);
+        return value === null ? key : `${key} ${displayNumber(value)}`;
+      })
+      .filter(Boolean);
+    return labels.length ? labels.join(' · ') : '—';
+  }
+
+  function createStatCell(labelText, valueText, className = '') {
+    const cell = document.createElement('div');
+    cell.className = `rp-ranking-secured-stat${className ? ` ${className}` : ''}`;
+
+    const label = document.createElement('span');
+    label.className = 'rp-ranking-secured-label';
+    label.textContent = labelText;
+
+    const value = document.createElement('strong');
+    value.className = 'rp-ranking-secured-value';
+    value.textContent = valueText;
+    value.title = valueText;
+
+    cell.append(label, value);
+    return cell;
   }
 
   function openPlayerProfile(player) {
@@ -253,7 +386,7 @@
       return;
     }
 
-    players.forEach((player, index) => {
+    players.forEach((player) => {
       const profileId = finiteNumber(player?.playerId);
       const canOpenProfile = Number.isSafeInteger(profileId) && profileId > 0;
       const item = document.createElement(canOpenProfile ? 'button' : 'div');
@@ -267,55 +400,65 @@
         item.addEventListener('click', () => openPlayerProfile(player));
       }
 
-      const number = document.createElement('b');
-      number.textContent = String(index + 1).padStart(2, '0');
+      const identity = document.createElement('div');
+      identity.className = 'rp-ranking-secured-identity';
 
-      const info = document.createElement('div');
-      info.className = 'rp-ranking-secured-info';
+      const nameCell = document.createElement('div');
+      nameCell.className = 'rp-ranking-secured-name-cell';
 
-      const name = document.createElement('div');
+      const nameLabel = document.createElement('span');
+      nameLabel.className = 'rp-ranking-secured-label';
+      nameLabel.textContent = 'NAME';
+
+      const nameLine = document.createElement('div');
+      nameLine.className = 'rp-ranking-secured-name-line';
+
+      const name = document.createElement('strong');
       name.className = 'rp-ranking-secured-name';
       name.textContent = String(player?.playerName || 'REAL PLAY PLAYER');
       name.title = name.textContent;
-      info.appendChild(name);
-
-      // Older production backends return only the secured name. Do not pretend
-      // that a missing metric means UNRANKED; show the mini layer only when the
-      // canonical Rank/OVR fields are actually supplied by the server.
-      const hasCanonicalMetrics = Object.prototype.hasOwnProperty.call(player || {}, 'rank')
-        || Object.prototype.hasOwnProperty.call(player || {}, 'ovr');
-
-      if (hasCanonicalMetrics) {
-        const meta = document.createElement('div');
-        meta.className = 'rp-ranking-secured-meta';
-
-        const rank = finiteNumber(player?.rank);
-        const rankMetric = document.createElement('span');
-        rankMetric.className = rank && Number.isSafeInteger(rank) && rank > 0
-          ? 'rp-ranking-secured-metric is-rank'
-          : 'rp-ranking-secured-metric is-unranked';
-        rankMetric.textContent = rank && Number.isSafeInteger(rank) && rank > 0
-          ? `RANK #${rank}`
-          : 'UNRANKED';
-        meta.appendChild(rankMetric);
-
-        const ovr = finiteNumber(player?.ovr);
-        const ovrMetric = document.createElement('span');
-        ovrMetric.className = 'rp-ranking-secured-metric';
-        ovrMetric.textContent = ovr === null ? 'OVR —' : `OVR ${Math.round(ovr)}`;
-        meta.appendChild(ovrMetric);
-
-        info.appendChild(meta);
-      }
-
-      item.append(number, info);
+      nameLine.appendChild(name);
 
       if (player?.isYou) {
         const you = document.createElement('em');
+        you.className = 'rp-ranking-secured-you';
         you.textContent = 'YOU';
-        item.appendChild(you);
+        nameLine.appendChild(you);
       }
 
+      nameCell.append(nameLabel, nameLine);
+
+      const rankCell = document.createElement('div');
+      rankCell.className = 'rp-ranking-secured-rank-cell';
+
+      const rankLabel = document.createElement('span');
+      rankLabel.className = 'rp-ranking-secured-label';
+      rankLabel.textContent = 'RANK';
+
+      const rank = finiteNumber(player?.rank);
+      const rankValue = document.createElement('strong');
+      rankValue.className = 'rp-ranking-secured-rank';
+      if (rank !== null && Number.isSafeInteger(rank) && rank > 0) {
+        rankValue.textContent = `#${rank}`;
+      } else {
+        rankValue.textContent = 'UNRANKED';
+        rankValue.classList.add('is-unranked');
+      }
+      rankCell.append(rankLabel, rankValue);
+      identity.append(nameCell, rankCell);
+
+      const performance = document.createElement('div');
+      performance.className = 'rp-ranking-secured-performance';
+
+      const ovr = finiteNumber(player?.ovr);
+      performance.append(
+        createStatCell('OVR', ovr === null ? '—' : String(Math.round(ovr)), 'is-ovr'),
+        createStatCell('RECORD', recordLabel(player?.record), 'is-record'),
+        createStatCell('WINRATE', winRateLabel(player?.winRate), 'is-winrate'),
+        createStatCell('TOP STATS', topStatsLabel(player?.topStats), 'is-top-stats')
+      );
+
+      item.append(identity, performance);
       list.appendChild(item);
     });
   }
