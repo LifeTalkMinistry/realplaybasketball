@@ -40,7 +40,7 @@ html body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center but
   pointer-events:auto!important;
   transform:none!important;
   clip-path:inset(0 0 0 100px round 999px);
-  animation:rpWhyRealPlayTease 3s cubic-bezier(.4,0,.2,1) infinite;
+  animation:rpWhyRealPlayTease 3s cubic-bezier(.4,0,.2,1) 3s infinite;
   -webkit-tap-highlight-color:transparent!important;
   will-change:clip-path;
 }
@@ -74,12 +74,12 @@ html body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center but
   transform:none!important;
 }
 
-/* Hold the information circle quietly, then expose the label from right to
-   left and close it again. One complete cue happens every three seconds. */
+/* Stay collapsed for the first three seconds, then briefly expand. The start
+   of every subsequent cycle repeats the same cue at 3-second intervals. */
 @keyframes rpWhyRealPlayTease{
-  0%,55%{clip-path:inset(0 0 0 100px round 999px)}
-  67%,86%{clip-path:inset(0 0 0 0 round 999px)}
-  100%{clip-path:inset(0 0 0 100px round 999px)}
+  0%{clip-path:inset(0 0 0 100px round 999px)}
+  12%,36%{clip-path:inset(0 0 0 0 round 999px)}
+  50%,100%{clip-path:inset(0 0 0 100px round 999px)}
 }
 
 html body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center button.rp-home-why-real-play[data-rp-home-why-real-play]:hover,
