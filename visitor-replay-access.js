@@ -11,6 +11,7 @@
   let bridgeExpiresAt = 0;
   let cleanupTimer = null;
   let currentPublicPlayerId = null;
+  let replayRedirectsRemaining = 0;
 
   function realToken() {
     const value = localStorage.getItem(TOKEN_KEY) || '';
@@ -29,6 +30,7 @@
 
   function clearBridge() {
     bridgeExpiresAt = 0;
+    replayRedirectsRemaining = 0;
     if (cleanupTimer) {
       clearTimeout(cleanupTimer);
       cleanupTimer = null;
@@ -42,6 +44,10 @@
     if (!visitorActive()) return false;
     localStorage.setItem(TOKEN_KEY, VISITOR_REPLAY_TOKEN);
     bridgeExpiresAt = Date.now() + 15000;
+    // The canonical replay viewer and the separate stats renderer each request
+    // the same replay payload. Keep the temporary visitor bridge alive for both
+    // reads, then remove it immediately after the second redirected replay call.
+    replayRedirectsRemaining = 2;
     if (cleanupTimer) clearTimeout(cleanupTimer);
     cleanupTimer = setTimeout(clearBridge, 15050);
     return true;
@@ -75,7 +81,8 @@
         if (replayMatch) {
           const publicUrl = `${API_BASE_URL}/api/real-play/public/career/games/${encodeURIComponent(replayMatch[1])}/replay`;
           const request = originalFetch(publicUrl, { ...init, headers: strippedHeaders(input, init) });
-          clearBridge();
+          replayRedirectsRemaining = Math.max(0, replayRedirectsRemaining - 1);
+          if (replayRedirectsRemaining === 0) clearBridge();
           return request;
         }
 
@@ -121,7 +128,7 @@
   // Keep track of the public player selected before visitor-world-players stops
   // propagation on the row click. This listener is installed earlier, so it
   // records the identity without changing the visitor UI behavior. Any replay
-  // trigger also arms the one-request public replay bridge before the canonical
+  // trigger also arms the temporary public replay bridge before the canonical
   // authenticated replay viewer handles the same click.
   document.addEventListener('click', (event) => {
     if (!visitorActive()) return;
