@@ -74,6 +74,8 @@ body.rp-simple-navigation-active [data-rp-home-open-rank]::after{
 
 body.rp-simple-navigation-active .rp-home-session-copy{
   min-width:0;
+  width:100%;
+  text-align:center!important;
 }
 body.rp-simple-navigation-active .rp-home-session-copy>small{
   display:block!important;
