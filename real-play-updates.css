@@ -67,3 +67,16 @@ body.rp-updates-open{overflow:hidden}
 
 @media(min-width:700px){.rp-updates-shell{padding-inline:20px}.rp-updates-topbar{margin-inline:-20px;padding-inline:20px}.rp-update-card{padding:17px 16px}.rp-updates-head{padding-top:28px}}
 @media(max-width:380px){.rp-updates-shell{padding-inline:12px}.rp-updates-topbar{margin-inline:-12px;padding-inline:12px}.rp-updates-official{display:none}.rp-updates-topbar{grid-template-columns:42px 1fr}.rp-updates-admin-grid{grid-template-columns:1fr}.rp-update-card h2{font-size:1rem}}
+
+/* Updates is a focused secondary page. Never let the permanent app nav leak above it. */
+body.rp-simple-navigation-active.rp-updates-open .rp-simple-nav{
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+body.rp-simple-navigation-active.rp-updates-open .rp-updates{
+  padding-bottom:0!important;
+}
+body.rp-simple-navigation-active.rp-updates-open .rp-updates-shell{
+  padding-bottom:max(34px,env(safe-area-inset-bottom))!important;
+}
