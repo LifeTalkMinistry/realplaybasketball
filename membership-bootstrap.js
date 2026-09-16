@@ -33,18 +33,35 @@
     document.head.appendChild(script);
   }
 
+  function loadTokenCancellationFlow() {
+    if (document.querySelector('script[data-rp-token-cancellation-flow]')) return;
+    const script = document.createElement('script');
+    script.src = 'ranking-token-cancellation-flow.js?v=20260916-token-cutoff-v1';
+    script.async = true;
+    script.dataset.rpTokenCancellationFlow = 'true';
+    document.head.appendChild(script);
+  }
+
   function loadRankingEntryActions() {
-    if (document.querySelector('script[data-rp-entry-actions]')) return;
+    if (document.querySelector('script[data-rp-entry-actions]')) {
+      loadTokenCancellationFlow();
+      return;
+    }
     const actions = document.createElement('script');
-    actions.src = 'ranking-game-entry-actions.js?v=20260916-functional-entry-v1';
+    actions.src = 'ranking-game-entry-actions.js?v=20260916-token-cutoff-v2';
     actions.async = true;
     actions.dataset.rpEntryActions = 'true';
     actions.onload = () => {
-      if (document.querySelector('script[data-rp-entry-open-state]')) return;
+      if (document.querySelector('script[data-rp-entry-open-state]')) {
+        loadTokenCancellationFlow();
+        return;
+      }
       const state = document.createElement('script');
-      state.src = 'ranking-game-entry-open-state.js?v=20260916-functional-entry-v1';
+      state.src = 'ranking-game-entry-open-state.js?v=20260916-token-cutoff-v2';
       state.async = true;
       state.dataset.rpEntryOpenState = 'true';
+      state.onload = loadTokenCancellationFlow;
+      state.onerror = loadTokenCancellationFlow;
       document.head.appendChild(state);
     };
     document.head.appendChild(actions);
