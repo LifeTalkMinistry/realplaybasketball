@@ -1,18 +1,14 @@
 /* REAL PLAY HOME — WHY REAL PLAY ENTRY
  * Keeps LESS SCREEN. REAL POINTS. as the only hero slogan.
- * Adds one quiet, tappable doorway into the existing Real Play story carousel.
- * The control is anchored to the bottom of the brand lockup so it cannot overlap the wordmark.
+ * The control is positioned by JS from the rendered tagline, so it cannot
+ * overlap the wordmark or drift onto the Sunday session card.
  */
-
-body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup{
-  overflow:visible!important;
-}
 
 body.rp-simple-navigation-active .rp-home-why-real-play{
   position:absolute!important;
   z-index:6!important;
-  top:calc(100% + 7px)!important;
   left:50%!important;
+  top:0;
   min-height:22px!important;
   margin:0!important;
   padding:3px 9px!important;
@@ -114,7 +110,6 @@ body.rp-home-story-open .rp-simple-nav{
 
 @media(max-width:420px){
   body.rp-simple-navigation-active .rp-home-why-real-play{
-    top:calc(100% + 6px)!important;
     min-height:21px!important;
     padding:3px 8px!important;
     font-size:.39rem!important;
