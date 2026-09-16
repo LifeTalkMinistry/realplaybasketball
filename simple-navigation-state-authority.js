@@ -170,10 +170,8 @@
 
       <section data-rp-home-open-rank aria-label="Current Sunday Open Ranking session">
         <div class="rp-home-session-copy">
-          <small>CURRENT REAL PLAY</small>
           <strong data-rp-home-open-rank-title>SUNDAY OPEN RANKING</strong>
           <p data-rp-home-open-rank-meta>EVERY SUNDAY · 8:00 PM – 11:00 PM</p>
-          <span data-rp-home-open-rank-capacity>16 PLAYER CAP</span>
         </div>
         <button class="rp-home-save-slot" type="button" data-rp-home-save-slot>SAVE MY SLOT</button>
       </section>
