@@ -20,6 +20,29 @@
     return document.querySelector('[data-rp-world]');
   }
 
+  function ensureVisitorProfileStyles() {
+    if (document.querySelector('[data-rp-visitor-profile-nav-fix]')) return;
+    const style = document.createElement('style');
+    style.dataset.rpVisitorProfileNavFix = 'true';
+    style.textContent = `
+      body.rp-simple-navigation-active [data-rp-visitor-public-profile] .rp-profile-topbar{display:none!important}
+      body.rp-simple-navigation-active [data-rp-visitor-public-profile] .rp-profile-shell{
+        padding-top:0!important;
+        padding-bottom:calc(var(--rp-simple-nav-height,68px) + env(safe-area-inset-bottom) + 24px)!important;
+      }
+      body.rp-simple-navigation-active [data-rp-visitor-public-profile] .rp-profile-body{
+        padding-top:14px!important;
+        padding-bottom:calc(var(--rp-simple-nav-height,68px) + env(safe-area-inset-bottom) + 18px)!important;
+      }
+      body.rp-simple-navigation-active:has([data-rp-visitor-public-profile].open) [data-rp-simple-nav]{
+        visibility:visible!important;
+        pointer-events:auto!important;
+        z-index:700!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function activatePlayersView() {
     const panel = world();
     if (!panel) return false;
@@ -30,6 +53,16 @@
       view.hidden = view.dataset.worldView !== 'players';
     });
     return true;
+  }
+
+  function syncBottomNavToPlayers() {
+    const nav = document.querySelector('[data-rp-simple-nav]');
+    if (!nav) return;
+    nav.querySelectorAll('[data-rp-simple-nav-item]').forEach((button) => {
+      const selected = button.dataset.rpSimpleNavItem === 'players';
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-current', selected ? 'page' : 'false');
+    });
   }
 
   function setStatus(message = '', type = '') {
@@ -75,18 +108,24 @@
 
   function createProfilePanel() {
     if (profilePanel) return profilePanel;
+    ensureVisitorProfileStyles();
     profilePanel = document.createElement('section');
     profilePanel.className = 'rp-profile rp-public-player-profile';
     profilePanel.dataset.rpVisitorPublicProfile = 'true';
     profilePanel.setAttribute('aria-hidden', 'true');
-    profilePanel.innerHTML = `<div class="rp-profile-shell"><header class="rp-profile-topbar"><button type="button" class="rp-profile-back" data-visitor-profile-close aria-label="Back to players">←</button><div><strong>PROFILE</strong><span>REAL PLAY BASKETBALL</span></div><b>PLAYER ID</b></header><main class="rp-profile-body"><p class="rp-profile-status" data-visitor-profile-status aria-live="polite"></p><div data-visitor-profile-content></div></main></div>`;
+    // Public player profiles are a bottom-navigation drill-down. The permanent
+    // app navigation is the chrome, so do not duplicate it with a PROFILE header.
+    profilePanel.innerHTML = `<div class="rp-profile-shell"><main class="rp-profile-body"><p class="rp-profile-status" data-visitor-profile-status aria-live="polite"></p><div data-visitor-profile-content></div></main></div>`;
     document.body.appendChild(profilePanel);
-    profilePanel.querySelector('[data-visitor-profile-close]')?.addEventListener('click', closeProfile);
     return profilePanel;
   }
 
   function closeProfile() {
     if (!profilePanel) return;
+    const focused = document.activeElement;
+    if (focused && profilePanel.contains(focused)) {
+      try { focused.blur?.(); } catch (_error) {}
+    }
     profilePanel.classList.remove('open');
     profilePanel.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-profile-open');
@@ -118,6 +157,7 @@
   async function openProfile(playerId) {
     if (loadingProfile || !isVisitor()) return;
     createProfilePanel();
+    syncBottomNavToPlayers();
     profilePanel.classList.add('open');
     profilePanel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-profile-open');
@@ -138,7 +178,16 @@
     }
   }
 
+  // Keep the public profile subordinate to the permanent bottom navigation.
+  // A nav tap closes the drill-down first, then the normal navigation handler
+  // continues and opens HOME / WORLD / PLAYERS / CHATS / ME as requested.
   document.addEventListener('click', (event) => {
+    const navItem = event.target.closest?.('[data-rp-simple-nav-item]');
+    if (navItem && profilePanel?.classList.contains('open')) {
+      closeProfile();
+      return;
+    }
+
     if (!isVisitor()) return;
     const playersTab = event.target.closest('[data-world-tab="players"]');
     if (playersTab) {
@@ -164,4 +213,9 @@
       closeProfile();
     }
   }, true);
+
+  window.RealPlayVisitorPublicProfile = {
+    close: closeProfile,
+    isOpen: () => Boolean(profilePanel?.classList.contains('open')),
+  };
 })();
