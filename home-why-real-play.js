@@ -191,13 +191,14 @@
     overlay.className = 'rp-doctrine-overlay';
     overlay.setAttribute(OVERLAY_ATTR, 'true');
     overlay.setAttribute('aria-hidden', 'true');
-    overlay.setAttribute('aria-label', 'Real Play doctrine');
+    overlay.setAttribute('aria-label', 'Real Play Basketball');
     overlay.hidden = true;
     overlay.innerHTML = `
       <div class="rp-doctrine-shell">
+        <style>.rp-doctrine-list::before{content:'REAL PLAY CHAPTERS'!important}</style>
         <header class="rp-doctrine-topbar">
           <button class="rp-doctrine-home" type="button" data-rp-doctrine-home>← HOME</button>
-          <div class="rp-doctrine-brand"><strong>REAL PLAY</strong><span>DOCTRINE</span></div>
+          <div class="rp-doctrine-brand"><strong>REAL PLAY</strong><span>REAL PLAY BASKETBALL</span></div>
           <span class="rp-doctrine-count">12 CHAPTERS</span>
         </header>
 
@@ -207,7 +208,7 @@
             <h1>UNDERSTAND THE<br><span>SYSTEM BEHIND THE GAME.</span></h1>
             <p>Real Play is more than a schedule or a League. Explore the mission, philosophy, competitive system, culture and beliefs that define how it works.</p>
           </section>
-          <nav class="rp-doctrine-list" aria-label="Real Play doctrine chapters">
+          <nav class="rp-doctrine-list" aria-label="Real Play Basketball chapters">
             ${CHAPTERS.map(chapterCard).join('')}
           </nav>
         </main>
@@ -344,7 +345,7 @@
       trigger.type = 'button';
       trigger.className = 'rp-home-why-real-play';
       trigger.setAttribute(TRIGGER_ATTR, 'true');
-      trigger.setAttribute('aria-label', 'Why Real Play? Open the Real Play doctrine');
+      trigger.setAttribute('aria-label', 'Why Real Play? Open Real Play Basketball');
       trigger.innerHTML = 'WHY REAL PLAY? <span aria-hidden="true">i</span>';
       trigger.addEventListener('click', () => open(trigger));
     }
