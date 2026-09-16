@@ -233,3 +233,87 @@
     isUnavailable: () => backendUnavailable,
   };
 })();
+
+/*
+ * Open Rank secured-player -> profile bridge.
+ * Ranking Games sits at z-index 2050 while profile surfaces normally sit near
+ * z-index 550. Without this bridge, profile.open() can succeed but render
+ * underneath Open Rank, making a click look like it did nothing.
+ */
+(() => {
+  if (window.__realPlayRankingProfileBridgeInstalled) return;
+  window.__realPlayRankingProfileBridgeInstalled = true;
+
+  const API_BASE_URL = 'https://api.clarapmc.com';
+  const TOKEN_KEY = 'real_play_access_token';
+
+  const style = document.createElement('style');
+  style.dataset.rpRankingProfileBridge = 'true';
+  style.textContent = `
+    body.rp-ranking-open .rp-profile.open,
+    body.rp-ranking-open .rp-public-player-profile.open,
+    body.rp-ranking-open [data-rp-public-profile].open{
+      z-index:2300!important;
+    }
+    [data-rp-ranking-secured] .rp-ranking-secured-player:not(.is-clickable).is-you{
+      cursor:pointer;
+    }
+  `;
+  document.head.appendChild(style);
+
+  function normalizeName(value) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  async function resolveProfileByName(card) {
+    const playerName = normalizeName(card?.querySelector('.rp-ranking-secured-name')?.textContent);
+    const auth = localStorage.getItem(TOKEN_KEY) || '';
+    if (!playerName || !auth) return null;
+
+    const response = await fetch(`${API_BASE_URL}/api/real-play/community`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${auth}`,
+      },
+      body: JSON.stringify({ action: 'players' }),
+      cache: 'no-store',
+    });
+    if (!response.ok) return null;
+    const data = await response.json().catch(() => ({}));
+    const players = Array.isArray(data?.players) ? data.players : [];
+    return players.find((player) => normalizeName(player?.playerName) === playerName) || null;
+  }
+
+  document.addEventListener('click', async (event) => {
+    const card = event.target.closest?.('[data-rp-ranking-secured] .rp-ranking-secured-player');
+    if (!card) return;
+
+    const isYou = card.classList.contains('is-you') || Boolean(card.querySelector('.rp-ranking-secured-you'));
+
+    // The secured-player script already handles normal clickable buttons. The
+    // bridge only supplies the missing path for cards that were rendered without
+    // a profile id, most importantly the logged-in player's own card.
+    if (card.classList.contains('is-clickable')) return;
+
+    if (isYou && window.RealPlayProfile?.open) {
+      event.preventDefault();
+      window.RealPlayProfile.open();
+      return;
+    }
+
+    try {
+      const player = await resolveProfileByName(card);
+      const userId = Number(player?.userId || 0);
+      if (!Number.isSafeInteger(userId) || userId <= 0) return;
+
+      event.preventDefault();
+      if (window.RealPlayPlayers?.openProfile) {
+        await window.RealPlayPlayers.openProfile(userId);
+      }
+    } catch (error) {
+      console.warn('[Real Play] Could not resolve secured player profile.', error);
+    }
+  });
+})();
