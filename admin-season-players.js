@@ -4,12 +4,13 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
+  const SLOT_CAP = 16;
   const EXPIRING_SOON_DAYS = 7;
 
   let players = [];
-  let slotCap = 16;
+  let slotCap = SLOT_CAP;
   let activeMembers = 0;
-  let availableSlots = 16;
+  let availableSlots = SLOT_CAP;
   let loading = false;
   let loaded = false;
   let errorMessage = '';
@@ -45,9 +46,41 @@
   }
 
   function membershipOf(player) {
-    return player?.membership && typeof player.membership === 'object'
+    const raw = player?.membership && typeof player.membership === 'object'
       ? player.membership
-      : { status: 'free', active: false, startedAt: null, endsAt: null };
+      : null;
+
+    if (!raw) {
+      return {
+        status: 'free',
+        active: false,
+        amountPhp: null,
+        startedAt: null,
+        endsAt: null,
+      };
+    }
+
+    const status = String(raw.status || 'free').toLowerCase();
+    const endsAt = raw.endsAt || raw.validUntil || raw.valid_until || null;
+    const startedAt = raw.startedAt || raw.validFrom || raw.valid_from || null;
+    const end = endsAt ? new Date(endsAt) : null;
+    const expiredByDate = end && !Number.isNaN(end.getTime()) && end.getTime() <= Date.now();
+    const active = Boolean(raw.active ?? status === 'active') && !expiredByDate;
+
+    return {
+      status: expiredByDate && status === 'active' ? 'expired' : status,
+      active,
+      amountPhp: raw.amountPhp ?? raw.amount_php ?? null,
+      startedAt,
+      endsAt,
+    };
+  }
+
+  function normalizePlayer(player) {
+    return {
+      ...player,
+      membership: membershipOf(player),
+    };
   }
 
   function dateValue(value) {
@@ -103,11 +136,23 @@
     return 'FREE PLAYER';
   }
 
+  function counts() {
+    return players.reduce((result, player) => {
+      const status = displayStatus(player);
+      result.all += 1;
+      if (membershipOf(player).active) result.active += 1;
+      if (status === 'free') result.free += 1;
+      if (status === 'expiring') result.expiring += 1;
+      if (status === 'expired') result.expired += 1;
+      return result;
+    }, { all: 0, active: 0, free: 0, expiring: 0, expired: 0 });
+  }
+
   function filteredPlayers() {
     const query = searchQuery.trim().toLowerCase();
     return players.filter((player) => {
-      const status = displayStatus(player);
       const membership = membershipOf(player);
+      const status = displayStatus(player);
       const filterMatch = activeFilter === 'all'
         || (activeFilter === 'active' && membership.active)
         || (activeFilter === 'free' && status === 'free')
@@ -124,18 +169,6 @@
     });
   }
 
-  function counts() {
-    return players.reduce((result, player) => {
-      const status = displayStatus(player);
-      result.all += 1;
-      if (membershipOf(player).active) result.active += 1;
-      if (status === 'free') result.free += 1;
-      if (status === 'expiring') result.expiring += 1;
-      if (status === 'expired') result.expired += 1;
-      return result;
-    }, { all: 0, active: 0, free: 0, expiring: 0, expired: 0 });
-  }
-
   async function api(path, options = {}) {
     const auth = token();
     if (!auth) throw new Error('Admin session is not available.');
@@ -150,8 +183,50 @@
       cache: 'no-store',
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data?.message || data?.error || `Request failed (${response.status}).`);
+    if (!response.ok) {
+      const error = new Error(data?.message || data?.error || `Request failed (${response.status}).`);
+      error.code = data?.code || '';
+      error.status = response.status;
+      throw error;
+    }
     return data;
+  }
+
+  async function loadDirectoryData() {
+    try {
+      return await api('/api/real-play/admin/player', {
+        method: 'POST',
+        body: { action: 'membership_directory' },
+      });
+    } catch (error) {
+      const unknownAction = error?.code === 'UNKNOWN_PLAYER_ADMIN_ACTION'
+        || /unknown player admin action/i.test(String(error?.message || ''));
+      if (!unknownAction) throw error;
+
+      // Compatibility fallback for an API instance that has not yet deployed the
+      // membership-directory action. The existing player list is authoritative
+      // for who currently exists; without a membership record every player is FREE.
+      const fallback = await api('/api/real-play/admin/player', {
+        method: 'POST',
+        body: { action: 'list' },
+      });
+      return {
+        ...fallback,
+        membershipSlotCap: SLOT_CAP,
+        activeMembers: 0,
+        availableMembershipSlots: SLOT_CAP,
+        players: (Array.isArray(fallback?.players) ? fallback.players : []).map((player) => ({
+          ...player,
+          membership: {
+            status: 'free',
+            active: false,
+            amountPhp: null,
+            startedAt: null,
+            endsAt: null,
+          },
+        })),
+      };
+    }
   }
 
   function ensureStyles() {
@@ -159,7 +234,7 @@
     const style = document.createElement('style');
     style.dataset.rpMembershipDirectoryStyles = '1';
     style.textContent = `
-      .rp-member-directory{display:grid;gap:12px;padding-bottom:24px}
+      .rp-member-directory{display:grid;gap:12px;padding:10px 0 24px}
       .rp-member-summary{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:15px 16px;border:1px solid rgba(67,232,255,.22);border-radius:17px;background:linear-gradient(145deg,rgba(5,23,36,.98),rgba(2,9,16,.98))}
       .rp-member-summary small{display:block;color:#6f8ca3;font-size:.5rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase}
       .rp-member-summary strong{display:block;margin-top:4px;color:#fff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.25rem;font-style:italic;font-weight:950}
@@ -188,7 +263,6 @@
       .rp-member-status.pending{border-color:rgba(143,175,255,.25);background:rgba(96,126,255,.08);color:#9fb8ff}
       .rp-member-status.expired,.rp-member-status.suspended{border-color:rgba(255,107,132,.22);background:rgba(255,75,106,.06);color:#ff9aad}
       .rp-member-dates{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px;padding-top:10px;border-top:1px solid rgba(126,173,232,.09)}
-      .rp-member-date{min-width:0}
       .rp-member-date small{display:block;color:#5f7489;font-size:.46rem;font-weight:950;letter-spacing:.09em;text-transform:uppercase}
       .rp-member-date strong{display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cfe0ee;font-size:.61rem;font-weight:850}
       .rp-member-empty{padding:26px 16px;border:1px dashed rgba(126,173,232,.16);border-radius:16px;color:#71879b;text-align:center;font-size:.66rem;line-height:1.45}
@@ -204,9 +278,7 @@
   function playerMarkup(player) {
     const membership = membershipOf(player);
     const status = displayStatus(player);
-    const number = player.playerNumber === null || player.playerNumber === undefined
-      ? '--'
-      : player.playerNumber;
+    const number = player.playerNumber === null || player.playerNumber === undefined ? '--' : player.playerNumber;
     return `
       <article class="rp-member-row" data-member-player="${Number(player.userId)}">
         <div class="rp-member-row-top">
@@ -228,10 +300,7 @@
     const c = counts();
     const visible = filteredPlayers();
     const full = activeMembers >= slotCap;
-    const slotText = full
-      ? 'MONTHLY GROUP FULL'
-      : `${availableSlots} SLOT${availableSlots === 1 ? '' : 'S'} OPEN`;
-
+    const slotText = full ? 'MONTHLY GROUP FULL' : `${availableSlots} SLOT${availableSlots === 1 ? '' : 'S'} OPEN`;
     const listMarkup = visible.length
       ? visible.map(playerMarkup).join('')
       : `<div class="rp-member-empty"><strong>NO PLAYERS FOUND</strong>Try another filter or player search.</div>`;
@@ -239,16 +308,9 @@
     return `
       <section class="rp-member-directory" data-rp-member-directory>
         <div class="rp-member-summary${full ? ' full' : ''}">
-          <div>
-            <small>Protected monthly rotation</small>
-            <strong>${full ? 'MEMBERSHIP FULL' : 'MONTHLY MEMBERS'}</strong>
-          </div>
-          <div class="rp-member-summary-count">
-            <b>${activeMembers} / ${slotCap}</b>
-            <span>${esc(slotText)}</span>
-          </div>
+          <div><small>Protected monthly rotation</small><strong>${full ? 'MEMBERSHIP FULL' : 'MONTHLY MEMBERS'}</strong></div>
+          <div class="rp-member-summary-count"><b>${activeMembers} / ${slotCap}</b><span>${esc(slotText)}</span></div>
         </div>
-
         <div class="rp-member-tools">
           <input class="rp-member-search" data-member-search type="search" autocomplete="off" placeholder="Search player or jersey #" value="${esc(searchQuery)}" aria-label="Search players">
           <div class="rp-member-filters" aria-label="Membership filters">
@@ -259,7 +321,6 @@
             <button type="button" class="rp-member-filter${activeFilter === 'expired' ? ' active' : ''}" data-member-filter="expired">EXPIRED · ${c.expired}</button>
           </div>
         </div>
-
         ${errorMessage ? `<div class="rp-member-error">${esc(errorMessage)}</div>` : ''}
         <div class="rp-member-list" data-member-list>${listMarkup}</div>
         <button type="button" class="rp-member-refresh" data-member-refresh>${loading ? 'REFRESHING…' : 'REFRESH MEMBERSHIP LIST'}</button>
@@ -276,15 +337,11 @@
     const selection = hadFocus ? document.activeElement.selectionStart : null;
 
     if (!loaded && loading) {
-      adminBody.innerHTML = `
-        <section class="rp-member-directory" data-rp-member-directory>
-          <div class="rp-member-loading">LOADING PLAYER MEMBERSHIPS…</div>
-        </section>`;
+      adminBody.innerHTML = '<section class="rp-member-directory"><div class="rp-member-loading">LOADING PLAYERS…</div></section>';
       return;
     }
 
     adminBody.innerHTML = directoryMarkup();
-
     if (hadFocus) {
       const input = adminBody.querySelector('[data-member-search]');
       input?.focus({ preventScroll: true });
@@ -299,23 +356,16 @@
     render();
 
     try {
-      const data = await api('/api/real-play/admin/player', {
-        method: 'POST',
-        body: { action: 'membership_directory' },
-      });
-      players = Array.isArray(data?.players) ? data.players : [];
-      slotCap = Number.isFinite(Number(data?.membershipSlotCap)) ? Number(data.membershipSlotCap) : 16;
-      activeMembers = Number.isFinite(Number(data?.activeMembers))
-        ? Number(data.activeMembers)
-        : players.filter((player) => membershipOf(player).active).length;
-      availableSlots = Number.isFinite(Number(data?.availableMembershipSlots))
-        ? Number(data.availableMembershipSlots)
-        : Math.max(0, slotCap - activeMembers);
+      const data = await loadDirectoryData();
+      players = (Array.isArray(data?.players) ? data.players : []).map(normalizePlayer);
+      slotCap = Number.isFinite(Number(data?.membershipSlotCap)) ? Number(data.membershipSlotCap) : SLOT_CAP;
+      activeMembers = players.filter((player) => membershipOf(player).active).length;
+      availableSlots = Math.max(0, slotCap - activeMembers);
       loaded = true;
       errorMessage = '';
     } catch (error) {
       loaded = true;
-      errorMessage = error.message || 'Unable to load the membership directory.';
+      errorMessage = error.message || 'Unable to load players.';
     } finally {
       loading = false;
       render();
@@ -324,18 +374,13 @@
 
   document.addEventListener('click', (event) => {
     if (!isPlayersTab()) return;
-
     const filter = event.target.closest?.('[data-member-filter]');
     if (filter) {
       activeFilter = String(filter.dataset.memberFilter || 'all');
       render();
       return;
     }
-
-    const refreshButton = event.target.closest?.('[data-member-refresh]');
-    if (refreshButton) {
-      refresh();
-    }
+    if (event.target.closest?.('[data-member-refresh]')) refresh();
   });
 
   document.addEventListener('input', (event) => {
