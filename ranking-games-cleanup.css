@@ -32,3 +32,53 @@
 .rp-ranking-session button[data-rp-ranking-session-action]:not(:disabled):active{transform:translateY(1px) scale(.995);box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 4px 12px rgba(0,0,0,.27)!important}
 .rp-ranking-session button[data-rp-ranking-session-action]:focus-visible{outline:2px solid rgba(70,175,230,.45);outline-offset:3px}
 @media(max-width:390px){.rp-ranking-session button[data-rp-ranking-session-action]{min-height:46px;border-radius:13px;font-size:.59rem;letter-spacing:.065em}}
+
+/* Session access summary — these numbers drive the user's decision to secure a
+ * spot, so give them stronger hierarchy without turning the block into a loud CTA.
+ */
+.rp-ranking-session .rp-ranking-access-summary{
+  margin-bottom:13px!important;
+  padding-bottom:13px!important;
+}
+.rp-ranking-session .rp-ranking-access-summary-head{
+  margin-bottom:11px!important;
+}
+.rp-ranking-session .rp-ranking-access-summary-head span{
+  font-size:.52rem!important;
+  letter-spacing:.12em!important;
+}
+.rp-ranking-session .rp-ranking-access-summary-head strong{
+  color:#f7fbff!important;
+  font-size:.82rem!important;
+  letter-spacing:.035em!important;
+}
+.rp-ranking-session .rp-ranking-access-breakdown{
+  border-radius:12px!important;
+  border-color:rgba(83,145,181,.18)!important;
+}
+.rp-ranking-session .rp-ranking-access-breakdown div{
+  padding:11px 6px 10px!important;
+}
+.rp-ranking-session .rp-ranking-access-breakdown span{
+  margin-bottom:6px!important;
+  font-size:.38rem!important;
+  letter-spacing:.09em!important;
+}
+.rp-ranking-session .rp-ranking-access-breakdown strong{
+  font-size:.82rem!important;
+  line-height:1!important;
+}
+.rp-ranking-session .rp-ranking-access-breakdown .is-token strong{
+  color:#75e9c5!important;
+  text-shadow:0 0 12px rgba(117,233,197,.14);
+}
+.rp-ranking-session .rp-ranking-access-breakdown .is-standby strong{
+  color:#c4b48d!important;
+}
+@media(max-width:390px){
+  .rp-ranking-session .rp-ranking-access-summary-head span{font-size:.47rem!important}
+  .rp-ranking-session .rp-ranking-access-summary-head strong{font-size:.74rem!important}
+  .rp-ranking-session .rp-ranking-access-breakdown div{padding:10px 4px 9px!important}
+  .rp-ranking-session .rp-ranking-access-breakdown span{font-size:.34rem!important}
+  .rp-ranking-session .rp-ranking-access-breakdown strong{font-size:.74rem!important}
+}
