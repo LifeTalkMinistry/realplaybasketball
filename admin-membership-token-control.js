@@ -11,6 +11,8 @@
   let tokenReady = false;
   let tokenManageable = false;
   let loadSequence = 0;
+  let directoryPlayersById = new Map();
+  let decorateTimer = null;
 
   function authToken() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -18,6 +20,31 @@
 
   function resultingBalance() {
     return Math.max(0, currentTokenBalance + tokenAdjustment);
+  }
+
+  function playerIdOf(player) {
+    const id = Number(player?.playerId ?? player?.userId ?? player?.manualPlayerId);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+  }
+
+  function availableTokensOf(player) {
+    const value = player?.playTokensAvailable
+      ?? player?.membership?.playTokensAvailable
+      ?? player?.tokens?.available
+      ?? 0;
+    const count = Number(value);
+    return Number.isFinite(count) ? Math.max(0, count) : 0;
+  }
+
+  function isMonthlyPlayer(player) {
+    const accessType = String(
+      player?.access?.type
+      ?? player?.membership?.accessType
+      ?? player?.membership?.access_type
+      ?? ''
+    ).trim().toLowerCase();
+    const status = String(player?.membership?.status || '').trim().toLowerCase();
+    return accessType === 'monthly' || ['active', 'pending', 'expired', 'suspended'].includes(status);
   }
 
   function ensureStyles() {
@@ -37,8 +64,57 @@
       .rp-member-token-help{margin:0;color:#71889c;font-size:10px;line-height:1.45}
       .rp-member-token-help strong{color:#a9f3ff}
       .rp-member-token-control.is-loading .rp-member-token-current,.rp-member-token-control.is-loading .rp-member-token-stepper{opacity:.65}
+      .rp-member-dates.has-token-summary{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(66px,.65fr)}
+      .rp-member-token-left{text-align:right}
+      .rp-member-token-left strong{color:#62eaff;font-family:var(--rp-display,Arial,sans-serif);font-size:.72rem;font-weight:950}
+      .rp-member-token-left strong span{color:#7890a4;font-family:var(--rp-body,Arial,sans-serif);font-size:.46rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+      @media(max-width:390px){.rp-member-dates.has-token-summary{grid-template-columns:1fr 1fr auto}.rp-member-token-left strong span{display:none}}
     `;
     document.head.appendChild(style);
+  }
+
+  function decorateMemberCards() {
+    decorateTimer = null;
+    if (!directoryPlayersById.size) return;
+    ensureStyles();
+
+    document.querySelectorAll('[data-member-player]').forEach((card) => {
+      const playerId = Number(card.dataset.memberPlayer);
+      const player = directoryPlayersById.get(playerId);
+      const dates = card.querySelector('.rp-member-dates');
+      if (!player || !dates) return;
+
+      const existing = dates.querySelector('[data-member-token-left]');
+      if (!isMonthlyPlayer(player)) {
+        existing?.remove();
+        dates.classList.remove('has-token-summary');
+        return;
+      }
+
+      const count = availableTokensOf(player);
+      const tokenNode = existing || document.createElement('div');
+      tokenNode.className = 'rp-member-date rp-member-token-left';
+      tokenNode.dataset.memberTokenLeft = '1';
+      tokenNode.innerHTML = `<small>Tokens left</small><strong>${count} <span>PLAY</span></strong>`;
+      if (!existing) dates.appendChild(tokenNode);
+      dates.classList.add('has-token-summary');
+    });
+  }
+
+  function scheduleCardDecoration(delay = 0) {
+    if (decorateTimer !== null) window.clearTimeout(decorateTimer);
+    decorateTimer = window.setTimeout(decorateMemberCards, delay);
+  }
+
+  function cacheDirectoryPlayers(data) {
+    const next = new Map();
+    (Array.isArray(data?.players) ? data.players : []).forEach((player) => {
+      const id = playerIdOf(player);
+      if (id) next.set(id, player);
+    });
+    directoryPlayersById = next;
+    scheduleCardDecoration(0);
+    scheduleCardDecoration(80);
   }
 
   function ensureControl() {
@@ -148,6 +224,7 @@
         body: JSON.stringify({ action: 'membership_directory' }),
       });
       const data = await response.json().catch(() => ({}));
+      cacheDirectoryPlayers(data);
       if (sequence !== loadSequence || Number(playerId) !== Number(activePlayerId)) return;
       if (!response.ok) throw new Error(data?.message || 'Unable to load Play Tokens.');
       const player = Array.isArray(data?.players)
@@ -156,7 +233,7 @@
       if (!player) throw new Error('Player token record was not found.');
 
       const manageable = player.tokenManagementAvailable !== false && Number.isSafeInteger(Number(player.accountUserId || player.userId));
-      const available = player.playTokensAvailable ?? player.membership?.playTokensAvailable ?? player.tokens?.available ?? 0;
+      const available = availableTokensOf(player);
       setTokenState(available, manageable);
     } catch (error) {
       setTokenState(0, false, error?.message || 'Unable to load Play Tokens.');
@@ -173,10 +250,12 @@
   }
 
   window.fetch = function realPlayAdminTokenFetch(input, init = {}) {
+    let requestAction = '';
     try {
       const url = typeof input === 'string' ? input : String(input?.url || '');
       if (url.includes('/api/real-play/admin/player') && typeof init?.body === 'string') {
         const body = JSON.parse(init.body);
+        requestAction = String(body?.action || '');
         const requestPlayerId = Number(body?.playerId ?? body?.player_id);
         if (
           body?.action === 'membership_access_update'
@@ -194,7 +273,17 @@
     } catch (_error) {
       // Leave unrelated requests untouched.
     }
-    return nativeFetch(input, init);
+
+    const request = nativeFetch(input, init);
+    if (requestAction === 'membership_directory') {
+      return request.then((response) => {
+        response.clone().json().then((data) => {
+          if (response.ok) cacheDirectoryPlayers(data);
+        }).catch(() => {});
+        return response;
+      });
+    }
+    return request;
   };
 
   document.addEventListener('click', (event) => {
@@ -220,4 +309,11 @@
       changeToken(1);
     }
   }, true);
+
+  const cardObserver = new MutationObserver(() => {
+    if (directoryPlayersById.size && document.querySelector('[data-member-player]')) {
+      scheduleCardDecoration(0);
+    }
+  });
+  cardObserver.observe(document.documentElement, { childList: true, subtree: true });
 })();
