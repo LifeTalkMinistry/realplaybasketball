@@ -3,6 +3,9 @@
   window.__realPlayReplayFullscreenBackInstalled = true;
 
   const BUTTON_ATTR = 'data-rp-career-replay-fullscreen-back';
+  const TIMESTAMP_ATTR = 'data-rp-career-replay-fullscreen-timestamp';
+  const TIMESTAMP_VALUE_ATTR = 'data-rp-career-replay-fullscreen-timestamp-value';
+  let timestampTimer = null;
 
   const style = document.createElement('style');
   style.textContent = `
@@ -40,6 +43,51 @@
       display:flex;
     }
 
+    .rp-career-replay-fullscreen-timestamp{
+      position:absolute;
+      z-index:12;
+      left:50%;
+      bottom:max(14px,env(safe-area-inset-bottom));
+      display:none;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      min-height:42px;
+      padding:0 16px;
+      border:1px solid rgba(122,221,241,.34);
+      border-radius:999px;
+      background:rgba(2,12,19,.82);
+      color:#f4fbff;
+      box-shadow:0 8px 24px rgba(0,0,0,.32);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      transform:translateX(-50%);
+      pointer-events:none;
+      font-family:var(--rp-body,Arial,sans-serif);
+      white-space:nowrap;
+      font-variant-numeric:tabular-nums;
+    }
+    .rp-career-replay-fullscreen-timestamp .rp-fs-ball-icon{
+      font-size:1rem;
+      line-height:1;
+    }
+    .rp-career-replay-fullscreen-timestamp .rp-fs-ball-label{
+      color:#a8c8d3;
+      font-size:.58rem;
+      font-weight:900;
+      letter-spacing:.1em;
+    }
+    .rp-career-replay-fullscreen-timestamp strong{
+      color:#fff;
+      font-size:.82rem;
+      font-weight:950;
+      letter-spacing:.04em;
+    }
+    .rp-career-replay-stage:fullscreen .rp-career-replay-fullscreen-timestamp,
+    .rp-career-replay-stage:-webkit-full-screen .rp-career-replay-fullscreen-timestamp{
+      display:flex;
+    }
+
     /* Keep the live playback timestamp directly beneath the official score. */
     .rp-career-replay-gamehead{
       gap:4px!important;
@@ -59,6 +107,17 @@
         min-height:40px;
         padding:0 12px 0 10px;
         font-size:.62rem;
+      }
+      .rp-career-replay-fullscreen-timestamp{
+        min-height:40px;
+        padding:0 12px;
+        gap:6px;
+      }
+      .rp-career-replay-fullscreen-timestamp .rp-fs-ball-label{
+        font-size:.52rem;
+      }
+      .rp-career-replay-fullscreen-timestamp strong{
+        font-size:.75rem;
       }
       .rp-career-replay-controls{
         grid-template-columns:38px minmax(0,1fr) 38px 38px!important;
@@ -83,6 +142,55 @@
     return undefined;
   }
 
+  function currentPlaybackText(stage) {
+    const replayRoot = stage?.closest?.('.rp-career-replay');
+    const clock = replayRoot?.querySelector('[data-rp-career-replay-clock]');
+    const raw = String(clock?.textContent || '').trim();
+    if (!raw) return '0:00';
+    return raw.split('/')[0].trim() || '0:00';
+  }
+
+  function syncFullscreenTimestamp(stage) {
+    if (!stage) return;
+    const value = stage.querySelector(`[${TIMESTAMP_VALUE_ATTR}]`);
+    if (value) value.textContent = currentPlaybackText(stage);
+  }
+
+  function ensureFullscreenTimestamp(stage) {
+    if (!stage) return;
+    let timestamp = stage.querySelector(`[${TIMESTAMP_ATTR}]`);
+    if (!timestamp) {
+      timestamp = document.createElement('div');
+      timestamp.className = 'rp-career-replay-fullscreen-timestamp';
+      timestamp.setAttribute(TIMESTAMP_ATTR, '1');
+      timestamp.setAttribute('aria-live', 'off');
+      timestamp.innerHTML = `<span class="rp-fs-ball-icon" aria-hidden="true">🏀</span><span class="rp-fs-ball-label">BALL TIMESTAMP</span><strong ${TIMESTAMP_VALUE_ATTR}>0:00</strong>`;
+      stage.appendChild(timestamp);
+    }
+    syncFullscreenTimestamp(stage);
+  }
+
+  function stopTimestampSync() {
+    if (!timestampTimer) return;
+    clearInterval(timestampTimer);
+    timestampTimer = null;
+  }
+
+  function startTimestampSync(stage) {
+    stopTimestampSync();
+    if (!stage) return;
+    ensureFullscreenTimestamp(stage);
+    syncFullscreenTimestamp(stage);
+    timestampTimer = setInterval(() => {
+      const full = getFullscreenElement();
+      if (full !== stage) {
+        stopTimestampSync();
+        return;
+      }
+      syncFullscreenTimestamp(stage);
+    }, 100);
+  }
+
   function ensureBackButton(stage) {
     if (!stage || stage.querySelector(`[${BUTTON_ATTR}]`)) return;
     const button = document.createElement('button');
@@ -105,7 +213,10 @@
   }
 
   function enhance() {
-    document.querySelectorAll('[data-rp-career-replay-stage]').forEach(ensureBackButton);
+    document.querySelectorAll('[data-rp-career-replay-stage]').forEach((stage) => {
+      ensureBackButton(stage);
+      ensureFullscreenTimestamp(stage);
+    });
     placeReplayClock();
   }
 
@@ -119,8 +230,13 @@
 
   const onFullscreenChange = () => {
     const full = getFullscreenElement();
-    if (full?.matches?.('[data-rp-career-replay-stage]')) ensureBackButton(full);
-    else enhance();
+    if (full?.matches?.('[data-rp-career-replay-stage]')) {
+      ensureBackButton(full);
+      startTimestampSync(full);
+    } else {
+      stopTimestampSync();
+      enhance();
+    }
   };
 
   document.addEventListener('fullscreenchange', onFullscreenChange);
