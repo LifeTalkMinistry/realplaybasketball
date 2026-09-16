@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260915-home-doctrine-hub-v66';
+  const version = '20260915-home-doctrine-brand-v67';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
