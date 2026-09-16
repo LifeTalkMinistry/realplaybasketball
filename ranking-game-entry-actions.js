@@ -163,12 +163,32 @@
       </div>`, false);
   }
 
+  function renderTokenConfirmation(available) {
+    const count = Math.max(0, Number(available || 0));
+    frame(`
+      <div class="rp-entry-action-flow">
+        <h2>CONFIRM ATTENDANCE</h2>
+        <p>You have ${count} Play Token${count === 1 ? '' : 's'}. Confirming commits 1 token to this Ranking Game.</p>
+        <div class="rp-entry-action-card"><span>1 PLAY TOKEN</span><strong>NO-SHOW = TOKEN USED · CANCEL BEFORE THE GAME STARTS TO RELEASE IT</strong></div>
+        <button class="rp-entry-action-primary" type="button" data-rp-use-token>CONFIRM · USE 1 TOKEN</button>
+        <p class="rp-entry-action-status" data-rp-entry-status></p>
+      </div>`, true);
+  }
+
   async function refreshOpenSheet() {
     if (!token() || !overlay()?.classList.contains('is-open')) return;
     try {
       const state = await api('/api/real-play/career/access');
-      if (state?.entry && state.entry.status !== 'cancelled') renderExisting(state);
-      else renderOptions(Number(state?.tokens?.available || 0));
+      if (state?.entry && state.entry.status !== 'cancelled') {
+        renderExisting(state);
+        return;
+      }
+      const available = Number(state?.tokens?.available || 0);
+      if (available > 0) {
+        renderTokenConfirmation(available);
+        return;
+      }
+      renderOptions(available);
     } catch (_error) {
       // Leave the basic choices usable if the access service is temporarily unavailable.
     }
@@ -181,14 +201,7 @@
       const state = await api('/api/real-play/career/access');
       const available = Number(state?.tokens?.available || 0);
       if (available > 0) {
-        frame(`
-          <div class="rp-entry-action-flow">
-            <h2>CONFIRM ATTENDANCE</h2>
-            <p>You have ${available} Play Token${available === 1 ? '' : 's'}. Confirming commits 1 token to this Ranking Game.</p>
-            <div class="rp-entry-action-card"><span>1 PLAY TOKEN</span><strong>NO-SHOW = TOKEN USED · CANCEL BEFORE THE GAME STARTS TO RELEASE IT</strong></div>
-            <button class="rp-entry-action-primary" type="button" data-rp-use-token>CONFIRM · USE 1 TOKEN</button>
-            <p class="rp-entry-action-status" data-rp-entry-status></p>
-          </div>`, true);
+        renderTokenConfirmation(available);
       } else {
         renderMembershipMethods();
       }
