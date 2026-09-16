@@ -140,6 +140,41 @@
     return numeric(text, null);
   }
 
+  function unrankedProgress(player, profile) {
+    const state = ranking(player);
+    const stats = player?.careerStats || player?.careerRecord || player?.career || {};
+    const required = Math.max(1, Math.floor(numeric(
+      state?.requiredGames
+      ?? state?.required_games
+      ?? player?.officialRankingGamesRequired
+      ?? player?.official_ranking_games_required
+      ?? player?.rankingGamesRequired
+      ?? player?.ranking_games_required,
+      5
+    )));
+
+    let completed = numeric(
+      state?.completedGames
+      ?? state?.completed_games
+      ?? player?.rankingGamesCompleted
+      ?? player?.ranking_games_completed
+      ?? stats?.games
+      ?? stats?.gamesPlayed
+      ?? player?.games
+      ?? player?.gamesPlayed,
+      null
+    );
+
+    if (completed === null) {
+      const recordText = String(profile?.querySelector('.rp-profile-record small')?.textContent || '');
+      const match = recordText.match(/(\d+)\s*GAMES?/i);
+      if (match) completed = numeric(match[1], 0);
+    }
+
+    completed = Math.max(0, Math.min(required, Math.floor(numeric(completed, 0))));
+    return { required, completed, remaining: Math.max(0, required - completed) };
+  }
+
   function sameId(left, right) {
     const a = numeric(left, null);
     const b = numeric(right, null);
@@ -227,13 +262,22 @@
     modal.setAttribute('aria-hidden', 'true');
   }
 
-  function renderUnranked(body, name) {
+  function renderUnranked(body, { name, player, profile }) {
+    const progress = unrankedProgress(player, profile);
+    const gameWord = progress.remaining === 1 ? 'game' : 'games';
+    const explanation = progress.remaining > 0
+      ? `You’ve played <strong>${progress.completed} of ${progress.required} required games.</strong> Play <strong>${progress.remaining} more verified Open Ranking ${gameWord}</strong> to unlock your official Real Play Rank.`
+      : 'You’ve completed the required verified games. Your official Real Play Rank will appear once ranking eligibility is confirmed.';
+
     body.innerHTML = `
       <p class="rp-rank-explainer-kicker">OFFICIAL RANKING</p>
-      <h2 id="rp-rank-explainer-title">WHY THIS RANK?</h2>
+      <h2 id="rp-rank-explainer-title">WHY UNRANKED?</h2>
       <p class="rp-rank-explainer-player">${esc(name)}</p>
-      <p class="rp-rank-explainer-copy">This player does not currently have an authoritative official ordinal rank. Real Play requires the official eligibility gate and verified competitive evidence before a player enters the ranked population.</p>
-      <p class="rp-rank-note">Career averages and recognition badges do not create an official rank by themselves.</p>`;
+      <p class="rp-rank-explainer-copy">${explanation}</p>
+      <div class="rp-rank-receipt">
+        <div><strong>${progress.completed}/${progress.required}</strong><small>GAMES COMPLETED</small></div>
+        <div><strong>${progress.remaining}</strong><small>GAMES TO GO</small></div>
+      </div>`;
   }
 
   function renderRankWithoutRawReceipt(body, { rank, name, publicOvr }) {
@@ -275,7 +319,7 @@
     // Rank eligibility and receipt precision are different questions. A missing
     // raw rating must never turn an already-canonical #rank into "not ranked".
     if (rank === null) {
-      renderUnranked(body, name);
+      renderUnranked(body, { name, player, profile });
       return;
     }
 
