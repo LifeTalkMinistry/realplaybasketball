@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260916-session-guide-v75';
+  const version = '20260916-standby-roster-v76';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -303,6 +303,7 @@
       'player-number-recovery.js',
       'ranking-games.js',
       'ranking-games-secured-players.js',
+      'ranking-games-standby-players.js',
       'ranking-games-info-toggle.js',
       'ranking-games-session-cleanup.js',
       'ranking-spot-priority.js',
