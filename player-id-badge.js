@@ -29,6 +29,28 @@
     return 'VERIFIED PLAYER';
   }
 
+  function syncPublicPassBadge(panel) {
+    const player = panel?.__realPlayPublicPlayer || null;
+    const node = panel?.querySelector('.rp-profile-identity-line > b');
+    if (!player || !node) return;
+
+    const rawTokens = player.playTokensAvailable
+      ?? player.play_tokens_available
+      ?? player.publicPass?.playTokensAvailable
+      ?? player.public_pass?.play_tokens_available;
+    const parsedTokens = Number(rawTokens);
+    const tokenCount = Number.isFinite(parsedTokens) ? Math.max(0, parsedTokens) : 0;
+    const passHolder = player.passHolder === true
+      || player.pass_holder === true
+      || player.publicPass?.passHolder === true
+      || player.public_pass?.pass_holder === true
+      || tokenCount > 0;
+
+    if (!passHolder) return;
+    node.textContent = `PASS HOLDER - TOKEN: ${tokenCount}`;
+    node.dataset.rpPublicPassHolder = '1';
+  }
+
   function identityFromPublicPanel(panel) {
     const player = panel?.__realPlayPublicPlayer;
     if (player) {
@@ -168,6 +190,7 @@
     document.querySelectorAll('[data-rp-public-profile].open, [data-rp-visitor-public-profile].open').forEach((panel) => {
       badge(panel);
       apply(panel, identityFromPublicPanel(panel));
+      syncPublicPassBadge(panel);
     });
     syncWinRates();
   }
@@ -216,4 +239,5 @@
   style.textContent = `.rp-profile-topbar>[data-rp-player-id-badge]{cursor:pointer;white-space:nowrap}.rp-profile-topbar>[data-rp-player-id-badge]:focus-visible{outline:2px solid #48d7ff;outline-offset:2px}.rp-profile-record{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto auto;column-gap:10px;align-items:end}.rp-profile-record>span:not(.rp-profile-win-rate-label){grid-column:1;grid-row:1}.rp-profile-record>.rp-profile-win-rate-label{grid-column:2;grid-row:1;justify-self:end;color:#65758a;font-size:.44rem;font-weight:900;letter-spacing:.11em;white-space:nowrap}.rp-profile-record>strong:not(.rp-profile-win-rate){grid-column:1;grid-row:2}.rp-profile-record>.rp-profile-win-rate{grid-column:2;grid-row:2;margin-top:5px;color:#48d7ff;justify-self:end}.rp-profile-record>small{grid-column:1/-1;grid-row:3}.rp-player-id-sheet{position:fixed;z-index:590;inset:0;display:none;align-items:flex-end;justify-content:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(8px)}.rp-player-id-sheet.open{display:flex}.rp-player-id-card{position:relative;width:min(100%,390px);padding:24px 20px;border:1px solid rgba(72,215,255,.22);border-radius:24px;background:linear-gradient(145deg,#07111d,#04070d 66%,#10070b);text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.55)}.rp-player-id-card button{position:absolute;top:12px;right:12px;width:34px;height:34px;border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;background:#080d15;font-size:1rem}.rp-player-id-card small{display:block;color:#5fdcff;font-size:.48rem;font-weight:950;letter-spacing:.14em}.rp-player-id-card>strong{display:block;margin:12px 0 6px;font-family:var(--rp-display,Arial,sans-serif);font-size:2rem;font-style:italic;font-weight:950;letter-spacing:.04em}.rp-player-id-card h3{margin:0;font-family:var(--rp-display,Arial,sans-serif);font-size:1rem;font-style:italic;font-weight:950}.rp-player-id-card span{display:inline-block;margin-top:10px;padding:6px 9px;border:1px solid rgba(255,255,255,.08);border-radius:999px;color:#8294a8;font-size:.45rem;font-weight:950;letter-spacing:.09em}.rp-player-id-card p{margin:14px auto 0;max-width:285px;color:#65778c;font-size:.54rem;line-height:1.55}`;
   document.head.appendChild(style);
   syncWinRates();
+  syncPublicProfiles();
 })();
