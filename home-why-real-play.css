@@ -1,4 +1,8 @@
-/* REAL PLAY HOME — WHY REAL PLAY ENTRY + DOCTRINE HUB */
+/* REAL PLAY HOME — WHY REAL PLAY ENTRY + DOCTRINE HUB
+ * Doctrine is intentionally styled as part of the Real Play world, not as a
+ * generic help center: court-night darkness, cold blue / hot red tension,
+ * athletic type, hard-edged modules and the same basketball artwork as Home.
+ */
 
 body.rp-simple-navigation-active .rp-home-why-real-play{
   position:absolute!important;
@@ -64,262 +68,468 @@ body.rp-simple-navigation-active .rp-home-why-real-play:focus-visible,
   outline-offset:3px!important;
 }
 
-body.rp-home-story-open{
-  overflow:hidden!important;
-}
+body.rp-home-story-open{overflow:hidden!important}
+body.rp-home-story-open .rp-simple-nav{visibility:hidden!important;pointer-events:none!important}
 
-body.rp-home-story-open .rp-simple-nav{
-  visibility:hidden!important;
-  pointer-events:none!important;
-}
-
+/* --------------------------------------------------------------------------
+   DOCTRINE WORLD
+   -------------------------------------------------------------------------- */
 .rp-doctrine-overlay{
+  --rp-doctrine-blue:#54ddff;
+  --rp-doctrine-blue-hi:#8cecff;
+  --rp-doctrine-red:#ff4059;
+  --rp-doctrine-red-hi:#ff7b8e;
+  --rp-doctrine-ink:#02050a;
   position:fixed!important;
   inset:0!important;
   z-index:1200!important;
   width:100%!important;
   height:100dvh!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+  color:#eef7ff;
   background:
-    radial-gradient(70% 42% at 0% 0%,rgba(12,126,207,.16),transparent 72%),
-    radial-gradient(72% 44% at 100% 18%,rgba(218,42,61,.10),transparent 74%),
-    linear-gradient(180deg,#040912 0%,#03070d 50%,#020306 100%)!important;
-  color:#eef6ff;
+    radial-gradient(72% 44% at -8% 18%,rgba(0,126,255,.24),transparent 72%),
+    radial-gradient(68% 42% at 108% 28%,rgba(255,35,64,.18),transparent 74%),
+    linear-gradient(180deg,#02070e 0%,#020409 46%,#040207 100%)!important;
 }
-
 .rp-doctrine-overlay[hidden]{display:none!important}
 
+/* Reuse the actual Real Play basketball atmosphere instead of generic gradients. */
+.rp-doctrine-overlay::before{
+  content:'';
+  position:fixed;
+  z-index:-2;
+  top:-105px;
+  left:50%;
+  width:min(154vw,820px);
+  aspect-ratio:1.48/1;
+  pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(2,5,10,.22) 0%,rgba(2,5,10,.10) 35%,rgba(2,5,10,.88) 88%,#02050a 100%),
+    url('assets/main-menu/main-menu-basketball-bg.png') center 40% / cover no-repeat;
+  opacity:.44;
+  filter:brightness(.82) contrast(1.22) saturate(1.18);
+  transform:translateX(-50%);
+  -webkit-mask-image:linear-gradient(180deg,#000 0 64%,transparent 100%);
+  mask-image:linear-gradient(180deg,#000 0 64%,transparent 100%);
+}
+.rp-doctrine-overlay::after{
+  content:'';
+  position:fixed;
+  z-index:-1;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(52,211,255,.035) 0 1px,transparent 1px) 50% 0/25% 100%,
+    linear-gradient(180deg,rgba(255,255,255,.018) 0 1px,transparent 1px) 0 0/100% 88px;
+  opacity:.52;
+}
+
 .rp-doctrine-shell{
-  width:min(100%,720px);
+  width:min(100%,760px);
   height:100%;
   margin:0 auto;
   overflow:auto;
   overscroll-behavior:contain;
   scrollbar-width:thin;
-  scrollbar-color:rgba(86,218,255,.26) transparent;
-  padding-bottom:max(26px,env(safe-area-inset-bottom));
+  scrollbar-color:rgba(86,218,255,.32) transparent;
+  padding-bottom:max(30px,env(safe-area-inset-bottom));
 }
 
+/* --------------------------------------------------------------------------
+   TOPBAR — broadcast/command-center, with the blue/red brand split
+   -------------------------------------------------------------------------- */
 .rp-doctrine-topbar{
   position:sticky;
   top:0;
-  z-index:8;
-  min-height:68px;
+  z-index:20;
+  min-height:70px;
   display:grid;
   grid-template-columns:1fr auto 1fr;
   align-items:center;
   gap:10px;
   padding:max(12px,env(safe-area-inset-top)) 16px 10px;
-  border-bottom:1px solid rgba(255,255,255,.07);
-  background:rgba(3,8,14,.90);
+  border-bottom:1px solid rgba(255,255,255,.065);
+  background:rgba(1,5,10,.90);
+  box-shadow:0 10px 30px rgba(0,0,0,.26);
   -webkit-backdrop-filter:blur(18px);
   backdrop-filter:blur(18px);
 }
+.rp-doctrine-topbar::before,
+.rp-doctrine-topbar::after{
+  content:'';
+  position:absolute;
+  bottom:-1px;
+  width:34%;
+  height:1px;
+  pointer-events:none;
+}
+.rp-doctrine-topbar::before{left:0;background:linear-gradient(90deg,var(--rp-doctrine-blue),transparent)}
+.rp-doctrine-topbar::after{right:0;background:linear-gradient(270deg,var(--rp-doctrine-red),transparent)}
 
 .rp-doctrine-home,
 .rp-doctrine-back{
   min-height:38px;
   border:0;
   background:transparent;
-  color:#8fa3b6;
+  color:#7890a4;
   font-family:var(--rp-display,Arial,sans-serif);
-  font-size:.55rem;
-  font-weight:950;
+  font-size:.54rem;
+  font-style:italic;
+  font-weight:1000;
   letter-spacing:.10em;
   text-align:left;
   cursor:pointer;
+  text-transform:uppercase;
 }
+.rp-doctrine-home:hover,.rp-doctrine-back:hover{color:var(--rp-doctrine-blue-hi)}
 
 .rp-doctrine-brand{
+  position:relative;
   display:flex;
   flex-direction:column;
   align-items:center;
-  line-height:.92;
+  line-height:.88;
 }
 .rp-doctrine-brand strong{
-  color:#f7fbff;
+  color:#fff;
   font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
-  font-size:1.02rem;
+  font-size:1.1rem;
   font-style:italic;
-  font-weight:950;
-  letter-spacing:.02em;
+  font-weight:1000;
+  letter-spacing:.025em;
+  text-shadow:-1px 0 12px rgba(64,216,255,.12),1px 0 12px rgba(255,55,82,.10);
 }
 .rp-doctrine-brand span{
-  margin-top:5px;
-  color:#57ddff;
-  font-size:.42rem;
-  font-weight:950;
-  letter-spacing:.20em;
+  margin-top:6px;
+  color:var(--rp-doctrine-blue);
+  font-size:.43rem;
+  font-weight:1000;
+  letter-spacing:.22em;
 }
 .rp-doctrine-count{
   justify-self:end;
-  color:#607487;
+  color:#5f7182;
+  font-family:var(--rp-display,Arial,sans-serif);
   font-size:.42rem;
-  font-weight:950;
-  letter-spacing:.11em;
+  font-style:italic;
+  font-weight:1000;
+  letter-spacing:.10em;
 }
 
-.rp-doctrine-index,
-.rp-doctrine-detail{
-  padding:24px 16px 32px;
-}
-.rp-doctrine-index[hidden],
-.rp-doctrine-detail[hidden]{display:none!important}
+.rp-doctrine-index,.rp-doctrine-detail{padding:22px 16px 38px}
+.rp-doctrine-index[hidden],.rp-doctrine-detail[hidden]{display:none!important}
 
+/* --------------------------------------------------------------------------
+   MANIFESTO HERO
+   -------------------------------------------------------------------------- */
 .rp-doctrine-intro{
-  padding:10px 4px 24px;
+  position:relative;
+  overflow:hidden;
+  margin:2px 0 24px;
+  padding:30px 18px 30px;
   text-align:center;
 }
-.rp-doctrine-intro>small{
+.rp-doctrine-intro::before{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:6px;
+  width:min(88%,560px);
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--rp-doctrine-blue) 28%,rgba(255,255,255,.16) 50%,var(--rp-doctrine-red) 72%,transparent);
+  transform:translateX(-50%);
+  opacity:.72;
+}
+.rp-doctrine-intro::after{
+  content:'LESS SCREEN.  REAL POINTS.';
   display:block;
-  color:#58dcff;
-  font-size:.46rem;
-  font-weight:950;
+  width:max-content;
+  max-width:100%;
+  margin:20px auto 0;
+  padding:7px 12px;
+  border-left:1px solid rgba(84,221,255,.52);
+  border-right:1px solid rgba(255,64,89,.45);
+  color:#7f94a7;
+  background:linear-gradient(90deg,rgba(84,221,255,.045),rgba(255,64,89,.035));
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.42rem;
+  font-style:italic;
+  font-weight:1000;
+  letter-spacing:.16em;
+  line-height:1;
+}
+.rp-doctrine-intro>small{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  color:var(--rp-doctrine-blue-hi);
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.48rem;
+  font-style:italic;
+  font-weight:1000;
   letter-spacing:.18em;
 }
-.rp-doctrine-intro h1{
-  margin:12px auto 0;
-  max-width:620px;
-  color:#f6f9fc;
-  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
-  font-size:clamp(2.1rem,8.5vw,3.8rem);
-  font-style:italic;
-  font-weight:950;
-  letter-spacing:-.02em;
-  line-height:.93;
+.rp-doctrine-intro>small::before,.rp-doctrine-intro>small::after{
+  content:'';
+  width:18px;
+  height:1px;
+  background:currentColor;
+  opacity:.55;
 }
-.rp-doctrine-intro h1 span{color:#72e3ff}
+.rp-doctrine-intro h1{
+  margin:13px auto 0;
+  max-width:650px;
+  color:#fff;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
+  font-size:clamp(2.25rem,8.7vw,4.35rem);
+  font-style:italic;
+  font-weight:1000;
+  letter-spacing:-.026em;
+  line-height:.88;
+  text-transform:uppercase;
+  text-shadow:0 6px 30px rgba(0,0,0,.72);
+}
+.rp-doctrine-intro h1 span{
+  color:var(--rp-doctrine-blue);
+  text-shadow:0 0 26px rgba(67,214,255,.16),2px 2px 0 rgba(255,45,75,.18);
+}
 .rp-doctrine-intro p{
   max-width:560px;
-  margin:17px auto 0;
-  color:#8ea0b1;
-  font-size:.77rem;
-  font-weight:700;
-  line-height:1.6;
+  margin:18px auto 0;
+  color:#a1b2c1;
+  font-size:.76rem;
+  font-weight:720;
+  line-height:1.62;
 }
 
+/* --------------------------------------------------------------------------
+   CHAPTER INDEX — hard-edged Real Play modules instead of SaaS cards
+   -------------------------------------------------------------------------- */
 .rp-doctrine-list{
   display:grid;
-  gap:10px;
+  gap:11px;
+}
+.rp-doctrine-list::before{
+  content:'DOCTRINE CHAPTERS';
+  display:block;
+  margin:0 3px 2px;
+  color:#526b80;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.45rem;
+  font-style:italic;
+  font-weight:1000;
+  letter-spacing:.18em;
 }
 
 .rp-doctrine-chapter{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
   width:100%;
-  min-height:112px;
+  min-height:116px;
   display:grid;
-  grid-template-columns:42px minmax(0,1fr) 24px;
+  grid-template-columns:50px minmax(0,1fr) 30px;
   align-items:center;
-  gap:12px;
-  padding:15px 14px;
-  border:1px solid rgba(255,255,255,.075);
-  border-radius:18px;
+  gap:13px;
+  padding:16px 15px 16px 18px;
+  border:1px solid rgba(113,223,255,.12);
+  border-radius:10px 20px 10px 20px;
   background:
-    linear-gradient(100deg,rgba(42,182,231,.055),transparent 38%,rgba(195,47,64,.035)),
-    rgba(5,11,18,.90);
+    linear-gradient(104deg,rgba(0,121,178,.14) 0%,rgba(4,10,17,.94) 28%,rgba(4,8,14,.97) 70%,rgba(116,14,31,.12) 100%);
   color:inherit;
   text-align:left;
   cursor:pointer;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 10px 26px rgba(0,0,0,.16);
-  transition:transform .15s ease,border-color .15s ease,background .15s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.035),
+    inset 4px 0 18px rgba(51,213,255,.035),
+    inset -4px 0 18px rgba(255,54,82,.025),
+    0 12px 28px rgba(0,0,0,.20);
+  transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease;
+}
+.rp-doctrine-chapter::before{
+  content:'';
+  position:absolute;
+  z-index:-1;
+  left:0;
+  top:0;
+  bottom:0;
+  width:3px;
+  background:linear-gradient(180deg,var(--rp-doctrine-blue),rgba(84,221,255,.08));
+  box-shadow:0 0 18px rgba(84,221,255,.22);
+}
+.rp-doctrine-chapter::after{
+  content:'';
+  position:absolute;
+  z-index:-1;
+  right:0;
+  top:0;
+  width:54px;
+  height:1px;
+  background:linear-gradient(270deg,var(--rp-doctrine-red),transparent);
+  box-shadow:0 0 16px rgba(255,64,89,.18);
+}
+.rp-doctrine-chapter:nth-child(even)::before{
+  background:linear-gradient(180deg,var(--rp-doctrine-red),rgba(255,64,89,.08));
+  box-shadow:0 0 18px rgba(255,64,89,.17);
+}
+.rp-doctrine-chapter:nth-child(even)::after{
+  background:linear-gradient(270deg,var(--rp-doctrine-blue),transparent);
 }
 .rp-doctrine-chapter:hover{
-  border-color:rgba(77,216,255,.20);
+  transform:translateY(-2px);
+  border-color:rgba(108,226,255,.30);
   background:
-    linear-gradient(100deg,rgba(42,182,231,.08),transparent 42%,rgba(195,47,64,.05)),
-    rgba(7,14,22,.96);
+    linear-gradient(104deg,rgba(0,142,205,.18) 0%,rgba(5,14,23,.98) 32%,rgba(5,9,16,.98) 68%,rgba(145,20,40,.16) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 16px 36px rgba(0,0,0,.28);
 }
-.rp-doctrine-chapter:active{transform:scale(.993)}
+.rp-doctrine-chapter:active{transform:scale(.992)}
+
 .rp-doctrine-chapter-number{
-  align-self:start;
-  margin-top:2px;
-  color:#4edbff;
-  font-family:var(--rp-display,Arial,sans-serif);
-  font-size:.62rem;
+  align-self:stretch;
+  min-width:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-right:1px solid rgba(255,255,255,.07);
+  color:var(--rp-doctrine-blue);
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
+  font-size:1.26rem;
   font-style:italic;
-  font-weight:950;
+  font-weight:1000;
+  line-height:1;
+  text-shadow:0 0 18px rgba(84,221,255,.18);
+}
+.rp-doctrine-chapter:nth-child(even) .rp-doctrine-chapter-number{
+  color:var(--rp-doctrine-red-hi);
+  text-shadow:0 0 18px rgba(255,64,89,.14);
 }
 .rp-doctrine-chapter-copy{min-width:0;display:block}
 .rp-doctrine-chapter-copy small{
   display:block;
-  color:#64788b;
+  color:#668097;
   font-size:.40rem;
-  font-weight:950;
-  letter-spacing:.12em;
+  font-weight:1000;
+  letter-spacing:.14em;
+  text-transform:uppercase;
 }
 .rp-doctrine-chapter-copy strong{
   display:block;
-  margin-top:5px;
-  color:#eff6fb;
-  font-family:var(--rp-display,Arial,sans-serif);
-  font-size:.82rem;
+  margin-top:6px;
+  color:#f7fbff;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
+  font-size:.96rem;
   font-style:italic;
   font-weight:1000;
-  letter-spacing:.02em;
+  letter-spacing:.015em;
+  line-height:1.05;
+  text-transform:uppercase;
 }
 .rp-doctrine-chapter-copy em{
   display:block;
-  margin-top:7px;
-  color:#8293a3;
-  font-size:.57rem;
+  margin-top:8px;
+  color:#8ca1b3;
+  font-size:.58rem;
   font-style:normal;
-  font-weight:700;
+  font-weight:720;
   line-height:1.46;
 }
 .rp-doctrine-chapter>b{
-  color:#4edbff;
-  font-size:.95rem;
-  font-weight:700;
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(84,221,255,.18);
+  border-radius:50%;
+  color:var(--rp-doctrine-blue);
+  background:rgba(84,221,255,.035);
+  font-size:.86rem;
+  font-weight:800;
+}
+.rp-doctrine-chapter:nth-child(even)>b{
+  border-color:rgba(255,64,89,.16);
+  color:var(--rp-doctrine-red-hi);
+  background:rgba(255,64,89,.03);
 }
 
+/* --------------------------------------------------------------------------
+   CHAPTER DETAIL
+   -------------------------------------------------------------------------- */
 .rp-doctrine-back{
   display:inline-flex;
   align-items:center;
   min-height:36px;
   padding:0;
-  margin-bottom:18px;
-  color:#72dff8;
+  margin-bottom:15px;
+  color:var(--rp-doctrine-blue-hi);
 }
 
 .rp-doctrine-detail-hero{
   position:relative;
   overflow:hidden;
-  padding:24px 19px 22px;
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:22px;
+  padding:27px 20px 24px;
+  border:1px solid rgba(112,221,255,.13);
+  border-radius:12px 24px 12px 24px;
   background:
-    radial-gradient(90% 120% at 0% 0%,rgba(43,177,231,.11),transparent 62%),
-    radial-gradient(80% 120% at 100% 100%,rgba(195,45,63,.07),transparent 66%),
-    #050b12;
+    radial-gradient(95% 140% at 0% 0%,rgba(0,138,213,.18),transparent 62%),
+    radial-gradient(82% 120% at 100% 100%,rgba(185,22,47,.12),transparent 65%),
+    rgba(3,9,15,.93);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 16px 38px rgba(0,0,0,.24);
 }
 .rp-doctrine-detail-hero::before{
   content:'';
   position:absolute;
   inset:0 auto auto 0;
   width:100%;
-  height:1px;
-  background:linear-gradient(90deg,#4ddcff,rgba(255,255,255,.08) 50%,#ff5b6d);
+  height:2px;
+  background:linear-gradient(90deg,var(--rp-doctrine-blue),rgba(255,255,255,.12) 48%,var(--rp-doctrine-red));
+}
+.rp-doctrine-detail-hero::after{
+  content:'REAL PLAY';
+  position:absolute;
+  right:-4px;
+  bottom:-8px;
+  color:rgba(255,255,255,.022);
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
+  font-size:4.5rem;
+  font-style:italic;
+  font-weight:1000;
+  letter-spacing:-.03em;
+  pointer-events:none;
 }
 .rp-doctrine-detail-hero small{
   display:block;
-  color:#64dfff;
-  font-size:.44rem;
-  font-weight:950;
-  letter-spacing:.14em;
+  color:var(--rp-doctrine-blue-hi);
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.46rem;
+  font-style:italic;
+  font-weight:1000;
+  letter-spacing:.15em;
 }
 .rp-doctrine-detail-hero h1{
-  margin:10px 0 0;
-  color:#f5f9fc;
+  position:relative;
+  z-index:1;
+  margin:11px 0 0;
+  max-width:620px;
+  color:#fff;
   font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
-  font-size:clamp(2rem,9vw,3.35rem);
+  font-size:clamp(2.2rem,9vw,3.75rem);
   font-style:italic;
-  font-weight:950;
-  line-height:.94;
+  font-weight:1000;
+  letter-spacing:-.02em;
+  line-height:.90;
+  text-transform:uppercase;
 }
 .rp-doctrine-detail-hero p{
-  margin:15px 0 0;
-  color:#95a7b7;
+  position:relative;
+  z-index:1;
+  max-width:580px;
+  margin:17px 0 0;
+  color:#a0b1bf;
   font-size:.70rem;
-  font-weight:700;
-  line-height:1.58;
+  font-weight:720;
+  line-height:1.6;
 }
 
 .rp-doctrine-points{
@@ -328,51 +538,88 @@ body.rp-home-story-open .rp-simple-nav{
   margin-top:14px;
 }
 .rp-doctrine-point{
+  position:relative;
+  overflow:hidden;
   display:grid;
-  grid-template-columns:34px minmax(0,1fr);
-  gap:12px;
-  align-items:start;
-  padding:14px 15px;
+  grid-template-columns:42px minmax(0,1fr);
+  gap:13px;
+  align-items:center;
+  min-height:72px;
+  padding:14px 15px 14px 17px;
   border:1px solid rgba(255,255,255,.065);
-  border-radius:15px;
-  background:rgba(5,10,16,.82);
+  border-radius:9px 16px 9px 16px;
+  background:linear-gradient(96deg,rgba(19,93,125,.08),rgba(4,9,15,.88) 28%,rgba(4,8,14,.92));
 }
+.rp-doctrine-point::before{
+  content:'';
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:2px;
+  background:var(--rp-doctrine-blue);
+  opacity:.72;
+}
+.rp-doctrine-point:nth-child(even)::before{background:var(--rp-doctrine-red)}
 .rp-doctrine-point span{
-  color:#527086;
-  font-family:var(--rp-display,Arial,sans-serif);
-  font-size:.48rem;
+  align-self:stretch;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-right:1px solid rgba(255,255,255,.06);
+  color:#5edfff;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
+  font-size:.78rem;
   font-style:italic;
-  font-weight:950;
+  font-weight:1000;
 }
+.rp-doctrine-point:nth-child(even) span{color:#ff7184}
 .rp-doctrine-point p{
   margin:0;
-  color:#a5b4c1;
-  font-size:.64rem;
+  color:#afbeca;
+  font-size:.65rem;
   font-weight:730;
-  line-height:1.52;
+  line-height:1.54;
 }
 
 .rp-doctrine-detail-foot{
-  margin-top:20px;
-  padding:18px 4px 4px;
+  position:relative;
+  margin-top:24px;
+  padding:20px 4px 6px;
   text-align:center;
+}
+.rp-doctrine-detail-foot::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:50%;
+  width:120px;
+  height:1px;
+  background:linear-gradient(90deg,var(--rp-doctrine-blue),rgba(255,255,255,.12),var(--rp-doctrine-red));
+  transform:translateX(-50%);
 }
 .rp-doctrine-detail-foot span{
   display:block;
-  color:#566b7f;
+  color:#5f7488;
   font-size:.39rem;
-  font-weight:950;
-  letter-spacing:.15em;
+  font-weight:1000;
+  letter-spacing:.17em;
 }
 .rp-doctrine-detail-foot strong{
   display:block;
-  margin-top:6px;
-  color:#7f91a2;
+  margin-top:7px;
+  color:#8da0b1;
   font-family:var(--rp-display,Arial,sans-serif);
   font-size:.50rem;
   font-style:italic;
-  font-weight:950;
-  letter-spacing:.10em;
+  font-weight:1000;
+  letter-spacing:.11em;
+}
+
+@media(min-width:680px){
+  .rp-doctrine-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .rp-doctrine-list::before{grid-column:1/-1}
+  .rp-doctrine-chapter{min-height:142px;grid-template-columns:52px minmax(0,1fr) 30px}
 }
 
 @media(max-width:420px){
@@ -383,9 +630,17 @@ body.rp-home-story-open .rp-simple-nav{
   }
   .rp-doctrine-topbar{padding-left:12px;padding-right:12px}
   .rp-doctrine-index,.rp-doctrine-detail{padding-left:12px;padding-right:12px}
-  .rp-doctrine-chapter{grid-template-columns:35px minmax(0,1fr) 20px;padding:14px 12px;gap:10px}
-  .rp-doctrine-chapter-copy strong{font-size:.78rem}
+  .rp-doctrine-intro{padding-left:8px;padding-right:8px}
+  .rp-doctrine-chapter{
+    grid-template-columns:44px minmax(0,1fr) 28px;
+    min-height:112px;
+    padding:14px 12px 14px 15px;
+    gap:10px;
+  }
+  .rp-doctrine-chapter-number{min-width:39px;font-size:1.12rem}
+  .rp-doctrine-chapter-copy strong{font-size:.88rem}
   .rp-doctrine-chapter-copy em{font-size:.55rem}
+  .rp-doctrine-chapter>b{width:26px;height:26px}
 }
 
 @media(prefers-reduced-motion:reduce){
