@@ -94,6 +94,9 @@
   if (window.__realPlayRankingProfileNavigationInstalled) return;
   window.__realPlayRankingProfileNavigationInstalled = true;
 
+  const view = document.querySelector('[data-rp-ranking-games]');
+  if (!view) return;
+
   const style = document.createElement('style');
   style.dataset.rpRankingProfileNavigation = 'true';
   style.textContent = `
@@ -105,6 +108,25 @@
     }
   `;
   document.head.appendChild(style);
+
+  // The permanent nav was originally mounted inside [data-rp-app]. That app
+  // creates its own visual/stacking context, so full-screen profile surfaces can
+  // cover the nav even when the nav itself has a higher z-index. Promote the nav
+  // to <body> so it is a true viewport-level sibling of profiles and can remain
+  // permanently visible everywhere the simple navigation system allows it.
+  function promotePermanentNav() {
+    const bar = document.querySelector('[data-rp-simple-nav]');
+    if (!bar) return false;
+    if (bar.parentElement !== document.body) document.body.appendChild(bar);
+    return true;
+  }
+
+  if (!promotePermanentNav()) {
+    const navObserver = new MutationObserver(() => {
+      if (promotePermanentNav()) navObserver.disconnect();
+    });
+    navObserver.observe(document.documentElement, { childList: true, subtree: true });
+  }
 
   function closeOpenRank() {
     if (!view.classList.contains('open')) return;
@@ -127,6 +149,7 @@
     const isYou = card.classList.contains('is-you')
       || Boolean(card.querySelector('.rp-ranking-secured-you'));
 
+    promotePermanentNav();
     closeOpenRank();
 
     // For the logged-in player's own card, use the permanent ME navigation
