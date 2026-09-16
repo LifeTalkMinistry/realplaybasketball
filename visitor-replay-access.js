@@ -43,14 +43,23 @@
   function armBridge() {
     if (!visitorActive()) return false;
     localStorage.setItem(TOKEN_KEY, VISITOR_REPLAY_TOKEN);
-    bridgeExpiresAt = Date.now() + 15000;
-    // The canonical replay viewer and the separate stats renderer each request
-    // the same replay payload. Keep the temporary visitor bridge alive for both
-    // reads, then remove it immediately after the second redirected replay call.
-    replayRedirectsRemaining = 2;
+    bridgeExpiresAt = Date.now() + 8000;
+    // Replay opening can cause more than one consumer to request the same game
+    // payload (viewer, marker layer, stats renderer). Keep enough redirects
+    // available for the whole opening sequence, then clean up automatically.
+    replayRedirectsRemaining = 4;
     if (cleanupTimer) clearTimeout(cleanupTimer);
-    cleanupTimer = setTimeout(clearBridge, 15050);
+    cleanupTimer = setTimeout(clearBridge, 8050);
     return true;
+  }
+
+  function replayTriggerFromEvent(event) {
+    return event.target?.closest?.('[data-rp-career-replay-session], .rp-profile-history .rp-profile-game') || null;
+  }
+
+  function primeReplayBridge(event) {
+    if (!visitorActive()) return;
+    if (replayTriggerFromEvent(event)) armBridge();
   }
 
   function strippedHeaders(input, init) {
@@ -125,11 +134,21 @@
     return originalFetch(input, init);
   };
 
+  // Prime the temporary visitor token on the input event BEFORE click handlers
+  // run. The stats renderer checks localStorage at the very start of its click
+  // handler; arming only on click was too late when its listener ran first.
+  document.addEventListener('pointerdown', primeReplayBridge, true);
+  document.addEventListener('mousedown', primeReplayBridge, true);
+  document.addEventListener('touchstart', primeReplayBridge, { capture: true, passive: true });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    primeReplayBridge(event);
+  }, true);
+
   // Keep track of the public player selected before visitor-world-players stops
-  // propagation on the row click. This listener is installed earlier, so it
-  // records the identity without changing the visitor UI behavior. Any replay
-  // trigger also arms the temporary public replay bridge before the canonical
-  // authenticated replay viewer handles the same click.
+  // propagation on the row click. Click remains as a fallback for synthetic
+  // activation, while pointer/key priming makes the bridge visible to every
+  // replay consumer before its own click handler executes.
   document.addEventListener('click', (event) => {
     if (!visitorActive()) return;
 
@@ -140,8 +159,7 @@
       return;
     }
 
-    const replayTrigger = event.target?.closest?.('[data-rp-career-replay-session], .rp-profile-history .rp-profile-game');
-    if (replayTrigger) armBridge();
+    if (replayTriggerFromEvent(event)) armBridge();
   }, true);
 
   window.addEventListener('realplay:visitorchange', (event) => {
