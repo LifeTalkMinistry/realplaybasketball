@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260917-player-connections-v81';
+  const version = '20260917-profile-badges-v82';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
