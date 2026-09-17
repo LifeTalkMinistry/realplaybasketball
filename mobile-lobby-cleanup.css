@@ -7,11 +7,15 @@
 .rp-world-player-sort{
   justify-content:flex-start!important;
   gap:8px!important;
-  padding:7px!important;
+  padding:7px 12px!important;
+  margin:7px -16px 5px!important;
   overflow-x:auto!important;
   overflow-y:hidden!important;
+  border-left:0!important;
+  border-right:0!important;
+  border-radius:0!important;
   scroll-snap-type:x proximity!important;
-  scroll-padding-inline:7px!important;
+  scroll-padding-inline:12px!important;
   -webkit-overflow-scrolling:touch;
   touch-action:pan-x;
 }
@@ -33,4 +37,12 @@
 .rp-world-player-sort b{
   font-size:.68rem!important;
   margin-left:3px!important;
+}
+
+/* Match the World shell's responsive side padding so the rail always touches the app viewport edges. */
+@media(max-width:380px){
+  .rp-world-player-sort{margin-left:-12px!important;margin-right:-12px!important}
+}
+@media(min-width:700px){
+  .rp-world-player-sort{margin-left:-20px!important;margin-right:-20px!important}
 }
