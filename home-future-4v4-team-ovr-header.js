@@ -178,7 +178,7 @@
       }
       .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{
         display:block;margin:0;color:#f5f9ff;font-family:var(--rp-display,Arial,sans-serif);
-        font-size:.82rem;font-weight:1000;letter-spacing:.12em;line-height:1;text-transform:uppercase;white-space:nowrap;
+        font-size:1.05rem;font-weight:1000;letter-spacing:.09em;line-height:1;text-transform:uppercase;white-space:nowrap;
       }
       .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand span{display:none!important}
 
@@ -245,7 +245,7 @@
       .rp-4v4-static-view .rp-4v4-player-card.is-profile-link:focus-visible{outline:2px solid rgba(80,220,255,.68);outline-offset:2px}
 
       @media(max-width:380px){
-        .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{font-size:.76rem;letter-spacing:.1em}
+        .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{font-size:.94rem;letter-spacing:.075em}
         .rp-4v4-static-view .rp-4v4-team-ovr-plaque{width:196px;height:64px;margin-bottom:-18px}
         .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core{height:54px;min-width:110px;padding-inline:20px}
         .rp-4v4-static-view .rp-4v4-team-ovr-value{font-size:1.9rem}
