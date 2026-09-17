@@ -387,6 +387,27 @@
         <button type="button" class="rp-profile-settings-placeholder" aria-label="Settings">SETTINGS</button>
       </section>`;
 
+    panel.__realPlayProfileState = state;
+    const profilePlayerId = Number(pick(
+      state?.playerId,
+      state?.userId,
+      state?.profile?.playerId,
+      state?.profile?.player_id,
+      state?.profile?.userId,
+      state?.profile?.user_id,
+      state?.profile?.id
+    ));
+    if (Number.isSafeInteger(profilePlayerId) && profilePlayerId > 0) {
+      panel.dataset.rpProfilePlayerId = String(profilePlayerId);
+    } else {
+      delete panel.dataset.rpProfilePlayerId;
+    }
+    try {
+      window.dispatchEvent(new CustomEvent('realplay:profile-loaded', {
+        detail: { playerId: Number.isSafeInteger(profilePlayerId) && profilePlayerId > 0 ? profilePlayerId : null, state },
+      }));
+    } catch (_error) {}
+
     root.querySelector('[data-rp-profile-manage-number]')?.addEventListener('click', () => {
       closeProfile();
       setTimeout(() => document.querySelector('[data-auth-open]')?.click(), 30);
