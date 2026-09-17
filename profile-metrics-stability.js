@@ -103,4 +103,20 @@
 
     return inFlight.then((response) => response.clone());
   };
+
+  function loadPlayerConnections() {
+    if (window.__realPlayPlayerConnectionsInstalled) return;
+    if (document.querySelector('script[data-rp-player-connections-loader]')) return;
+
+    const script = document.createElement('script');
+    script.dataset.rpPlayerConnectionsLoader = 'true';
+    script.src = 'profile-player-connections.js?v=20260917-player-connections-v1';
+    script.async = false;
+    script.addEventListener('error', () => {
+      console.warn('[Real Play] Player Connections failed to load.');
+    }, { once: true });
+    document.head.appendChild(script);
+  }
+
+  loadPlayerConnections();
 })();
