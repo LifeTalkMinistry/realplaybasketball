@@ -5,6 +5,22 @@
   // loaders cannot install a second fetch/DOM authority.
   window.__realPlayReplayOfficialMvpInstalled = true;
 
+  // Recorded Game Audit should behave as one continuous scroll surface.
+  // The replay page itself already owns vertical scrolling; remove the sticky
+  // header behavior so the back/title/admin row scrolls away with the score,
+  // video, timeline, stats, and comments instead of remaining pinned above them.
+  if (!document.getElementById('rp-career-replay-scrollable-header-fix')) {
+    const scrollableHeaderStyle = document.createElement('style');
+    scrollableHeaderStyle.id = 'rp-career-replay-scrollable-header-fix';
+    scrollableHeaderStyle.textContent = `
+      .rp-career-replay-topbar{
+        position:relative!important;
+        top:auto!important;
+      }
+    `;
+    document.head.appendChild(scrollableHeaderStyle);
+  }
+
   // iPhone replay coverage refinement.
   // IMPORTANT: this layer does NOT own, replace, or intercept the fullscreen
   // button. The existing fullscreen-back layer remains the sole click authority.
