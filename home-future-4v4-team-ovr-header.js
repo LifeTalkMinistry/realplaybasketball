@@ -66,9 +66,6 @@
     });
   }
 
-  // This is intentionally a preview only. Real Play's official Team OVR formula,
-  // floor and cap are competitive-authority values and are not invented here.
-  // The preview uses authoritative player OVR values returned by the 4v4 API.
   function previewAverage(players) {
     const values = players
       .map((player) => finite(player?.ovr))
@@ -105,16 +102,11 @@
         min-width:0;text-align:center;
       }
       .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{
-        display:block;color:#f5f9ff;font-size:.72rem;font-weight:1000;letter-spacing:.075em;line-height:1.05;white-space:nowrap;
+        display:block;color:#f5f9ff;font-size:.84rem;font-weight:1000;letter-spacing:.075em;line-height:1;white-space:nowrap;
       }
       .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand span{
-        display:block;margin-top:3px;color:#55ddff;font-size:.46rem;font-weight:1000;letter-spacing:.085em;line-height:1.05;white-space:nowrap;
+        display:none!important;
       }
-      .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand[data-ovr-state="official-ok"] span{color:#71f0b0}
-      .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand[data-ovr-state="official-warning"] span{color:#ffc56b}
-      .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand[data-ovr-state="official-over"] span{color:#ff8493}
-      .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand[data-ovr-state="empty"] span,
-      .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand[data-ovr-state="signed-out"] span{color:#70869a}
       .rp-4v4-static-view .rp-4v4-player-card.is-profile-link{
         cursor:pointer;touch-action:manipulation;
         transition:border-color .16s ease,background .16s ease,transform .16s ease,box-shadow .16s ease;
@@ -129,8 +121,7 @@
         outline:2px solid rgba(80,220,255,.68);outline-offset:2px;
       }
       @media(max-width:380px){
-        .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{font-size:.66rem;letter-spacing:.055em}
-        .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand span{font-size:.41rem;letter-spacing:.055em}
+        .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{font-size:.78rem;letter-spacing:.055em}
       }
     `;
     document.head.appendChild(style);
@@ -148,14 +139,12 @@
     brand.classList.add('rp-4v4-team-ovr-brand');
 
     const clubId = activeClub(view);
-    const clubName = CLUB_NAMES[clubId] || 'TEAM';
     const players = clubPlayers(clubId);
     const official = officialState(data, clubId);
-
-    strong.textContent = 'CURRENT TEAM OVR';
+    span.textContent = '';
 
     if (!token()) {
-      span.textContent = `${clubName} · SIGN IN TO VIEW`;
+      strong.textContent = 'TEAM OVR —';
       brand.dataset.ovrState = 'signed-out';
       return;
     }
@@ -167,18 +156,18 @@
       if (!atOrBelowCap || normalized.includes('ABOVE')) brand.dataset.ovrState = 'official-over';
       else if (!atOrAboveFloor || normalized.includes('BELOW')) brand.dataset.ovrState = 'official-warning';
       else brand.dataset.ovrState = 'official-ok';
-      span.textContent = `${clubName} · ${official.teamOvr.toFixed(1)} / ${official.cap.toFixed(1)} CAP`;
+      strong.textContent = `TEAM OVR ${Math.round(official.teamOvr)}`;
       return;
     }
 
     const preview = previewAverage(players);
     if (preview === null) {
-      span.textContent = `${clubName} · — · CAP PENDING`;
+      strong.textContent = 'TEAM OVR —';
       brand.dataset.ovrState = 'empty';
       return;
     }
 
-    span.textContent = `${clubName} · ${preview.toFixed(1)} PREVIEW · CAP PENDING`;
+    strong.textContent = `TEAM OVR ${Math.round(preview)}`;
     brand.dataset.ovrState = 'preview';
   }
 
