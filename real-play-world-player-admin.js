@@ -89,13 +89,14 @@
       .rp-player-admin-status.error{color:#ff7f8e}.rp-player-admin-status.success{color:#53dfad}
       .rp-player-admin-actions{display:grid;gap:8px;margin-top:11px}
       .rp-player-admin-action{min-height:45px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 13px;border:1px solid rgba(255,255,255,.075);border-radius:13px;color:#dbe5ef;background:#070c13;text-align:left;font-family:var(--rp-display,Arial,sans-serif);font-size:.58rem;font-weight:950;letter-spacing:.055em}
-      .rp-player-admin-action span{color:#53657a;font-size:.8rem}.rp-player-admin-action.warn{color:#ffd17a;border-color:rgba(255,190,78,.14);background:rgba(115,70,7,.06)}.rp-player-admin-action.danger{color:#ff8794;border-color:rgba(255,73,94,.18);background:rgba(120,14,27,.08)}
+      .rp-player-admin-action span{color:#53657a;font-size:.8rem}.rp-player-admin-action.attach{color:#66ddff;border-color:rgba(72,215,255,.22);background:rgba(20,112,153,.08)}.rp-player-admin-action.warn{color:#ffd17a;border-color:rgba(255,190,78,.14);background:rgba(115,70,7,.06)}.rp-player-admin-action.danger{color:#ff8794;border-color:rgba(255,73,94,.18);background:rgba(120,14,27,.08)}
       .rp-player-admin-action:disabled{opacity:.42}
       .rp-player-admin-form{display:grid;gap:10px;margin-top:12px}
       .rp-player-admin-form label{display:grid;gap:6px;color:#748397;font-size:.48rem;font-weight:900;letter-spacing:.08em}
       .rp-player-admin-form input{width:100%;min-height:44px;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:0 12px;outline:0;color:#eef6ff;background:#050910;font:700 16px var(--rp-body,Arial,sans-serif)}
       .rp-player-admin-form input:focus{border-color:rgba(71,215,255,.38)}
       .rp-player-admin-warning{margin:11px 0 0;padding:12px 13px;border:1px solid rgba(255,187,67,.13);border-radius:13px;color:#b9a789;background:rgba(100,61,8,.06);font-size:.6rem;line-height:1.5}
+      .rp-player-admin-warning.info{border-color:rgba(72,215,255,.16);color:#9fc7d4;background:rgba(15,94,128,.07)}
       .rp-player-admin-warning.danger{border-color:rgba(255,73,94,.17);color:#c99aa1;background:rgba(115,12,25,.08)}
       .rp-player-admin-form-actions{display:grid;grid-template-columns:1fr 1.25fr;gap:8px;margin-top:3px}
       .rp-player-admin-form-actions button{min-height:43px;border:1px solid rgba(255,255,255,.08);border-radius:12px;color:#8d9bad;background:#070c13;font-family:var(--rp-display,Arial,sans-serif);font-size:.55rem;font-weight:950;letter-spacing:.06em}
@@ -141,6 +142,11 @@
     return player?.ovr === null || player?.ovr === undefined ? 'UNRANKED' : `${player.ovr} OVR`;
   }
 
+  function isUnclaimedPlayer(player) {
+    const ownership = String(player?.ownershipStatus || '').trim().toLowerCase();
+    return Boolean(player?.unclaimed) || (ownership === 'unclaimed' && !Number(player?.accountUserId || 0));
+  }
+
   function identityMarkup(player) {
     return `
       <div class="rp-player-admin-identity">
@@ -162,18 +168,21 @@
     if (!body || !selectedPlayer) return;
     const status = playerStatus(selectedPlayer);
     const suspended = status === 'suspended' || status === 'inactive';
+    const unclaimed = isUnclaimedPlayer(selectedPlayer);
     body.innerHTML = `
       ${identityMarkup(selectedPlayer)}
       <p class="rp-player-admin-status" data-rp-player-admin-status></p>
       <div class="rp-player-admin-actions">
         <button type="button" class="rp-player-admin-action" data-admin-menu-action="view" ${suspended ? 'disabled' : ''}>VIEW PLAYER PROFILE <span>›</span></button>
         <button type="button" class="rp-player-admin-action" data-admin-menu-action="edit_name">EDIT PLAYER NAME <span>›</span></button>
+        ${unclaimed ? '<button type="button" class="rp-player-admin-action attach" data-admin-menu-action="attach_account">ATTACH TO ACCOUNT <span>›</span></button>' : ''}
         <button type="button" class="rp-player-admin-action" data-admin-menu-action="change_jersey">CHANGE JERSEY NUMBER <span>›</span></button>
         <button type="button" class="rp-player-admin-action warn" data-admin-menu-action="reset_competitive">RESET COMPETITIVE RECORD <span>›</span></button>
         <button type="button" class="rp-player-admin-action ${suspended ? '' : 'warn'}" data-admin-menu-action="${suspended ? 'reactivate' : 'suspend'}">${suspended ? 'REACTIVATE PLAYER' : 'SUSPEND PLAYER'} <span>›</span></button>
         <button type="button" class="rp-player-admin-action danger" data-admin-menu-action="delete_account">DELETE ACCOUNT PERMANENTLY <span>›</span></button>
       </div>`;
-    if (suspended) setSheetStatus('This player is hidden from the normal player directory until reactivated.');
+    if (unclaimed) setSheetStatus('UNCLAIMED PLAYER · You can attach this basketball identity to an existing Real Play account.');
+    else if (suspended) setSheetStatus('This player is hidden from the normal player directory until reactivated.');
   }
 
   function renderEditName() {
@@ -184,6 +193,19 @@
       <form class="rp-player-admin-form" data-admin-form="edit_name">
         <label>PLAYER NAME<input name="playerName" type="text" minlength="2" maxlength="60" value="${esc(selectedPlayer.playerName || '')}" required /></label>
         <div class="rp-player-admin-form-actions"><button type="button" data-admin-back>BACK</button><button class="primary" type="submit">SAVE NAME</button></div>
+      </form>`;
+    body.querySelector('input')?.focus();
+  }
+
+  function renderAttachAccount() {
+    const body = sheet.querySelector('[data-rp-player-admin-body]');
+    body.innerHTML = `
+      ${identityMarkup(selectedPlayer)}
+      <p class="rp-player-admin-status" data-rp-player-admin-status></p>
+      <form class="rp-player-admin-form" data-admin-form="attach_account">
+        <p class="rp-player-admin-warning info">Attach this unclaimed basketball identity to an existing Real Play account. The player's verified games, stats, OVR, rank and history stay with this player. An empty account-created profile can be replaced automatically, but an account that already has official game history will be blocked.</p>
+        <label>REAL PLAY ACCOUNT EMAIL<input name="accountEmail" type="email" autocomplete="email" placeholder="player@email.com" required /></label>
+        <div class="rp-player-admin-form-actions"><button type="button" data-admin-back>BACK</button><button class="primary" type="submit">ATTACH PLAYER</button></div>
       </form>`;
     body.querySelector('input')?.focus();
   }
@@ -279,6 +301,7 @@
       const payload = { playerId: selectedPlayer.userId };
       const data = new FormData(form);
       if (action === 'edit_name') payload.playerName = String(data.get('playerName') || '').trim();
+      if (action === 'attach_account') payload.accountEmail = String(data.get('accountEmail') || '').trim().toLowerCase();
       if (action === 'change_jersey') payload.playerNumber = Number(data.get('playerNumber'));
       if (action === 'reset_competitive' || action === 'delete_account') {
         payload.confirmation = String(data.get('confirmation') || '').trim();
@@ -318,6 +341,7 @@
         closeSheet();
         if (playerId) window.RealPlayPlayers?.openProfile?.(playerId);
       } else if (action === 'edit_name') renderEditName();
+      else if (action === 'attach_account') renderAttachAccount();
       else if (action === 'change_jersey') renderChangeJersey();
       else if (action === 'reset_competitive') renderReset();
       else if (action === 'suspend') renderSuspension(false);
