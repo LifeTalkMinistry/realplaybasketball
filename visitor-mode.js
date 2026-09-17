@@ -200,4 +200,15 @@
     requireAccount,
     openAuth,
   };
+
+  // Visitor-only ownership entry: holding an unclaimed player row opens a
+  // focused account + claim flow. Keep it separate from Admin's long-hold player
+  // controls so the two gestures can coexist without sharing authority.
+  if (!document.querySelector('script[data-rp-visitor-player-claim-loader]')) {
+    const script = document.createElement('script');
+    script.dataset.rpVisitorPlayerClaimLoader = '1';
+    script.src = 'visitor-player-claim.js?v=20260917-visitor-claim-v1';
+    script.async = false;
+    document.head.appendChild(script);
+  }
 })();
