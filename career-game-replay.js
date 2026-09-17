@@ -39,6 +39,11 @@
     return localStorage.getItem(TOKEN_KEY) || '';
   }
 
+  function isIPhoneBrowser() {
+    const ua = String(navigator.userAgent || '');
+    return /iPhone|iPod/i.test(ua);
+  }
+
   function formatTime(ms) {
     const total = Math.max(0, Math.floor(Number(ms || 0) / 1000));
     const hours = Math.floor(total / 3600);
@@ -455,7 +460,7 @@
           autoplay: 0,
           controls: 0,
           disablekb: 1,
-          playsinline: 1,
+          playsinline: isIPhoneBrowser() ? 0 : 1,
           rel: 0,
           iv_load_policy: 3,
           enablejsapi: 1,
@@ -468,6 +473,11 @@
               if (iframe) {
                 iframe.setAttribute('tabindex', '-1');
                 iframe.setAttribute('aria-hidden', 'true');
+                iframe.setAttribute('allowfullscreen', '');
+                const currentAllow = String(iframe.getAttribute('allow') || '');
+                if (!/fullscreen/i.test(currentAllow)) {
+                  iframe.setAttribute('allow', `${currentAllow}${currentAllow ? '; ' : ''}autoplay; fullscreen; encrypted-media; picture-in-picture`);
+                }
                 iframe.style.pointerEvents = 'none';
               }
             } catch (_) {}
@@ -703,6 +713,30 @@
 
   async function enterReplayFullscreen(stage) {
     if (!stage) return;
+
+    // iPhone does not reliably fullscreen the Real Play HTML stage. Use the
+    // native media fullscreen path instead, matching YouTube's own behavior.
+    if (isIPhoneBrowser()) {
+      if (directVideo) {
+        try {
+          if (typeof directVideo.webkitEnterFullscreen === 'function') {
+            directVideo.webkitEnterFullscreen();
+            return;
+          }
+          if (typeof directVideo.webkitEnterFullScreen === 'function') {
+            directVideo.webkitEnterFullScreen();
+            return;
+          }
+        } catch (_) {}
+      }
+
+      if (youtubePlayer) {
+        try {
+          youtubePlayer.playVideo();
+          return;
+        } catch (_) {}
+      }
+    }
 
     try {
       if (stage.requestFullscreen) {
