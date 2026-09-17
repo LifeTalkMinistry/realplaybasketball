@@ -253,14 +253,18 @@
     const topbar = view.querySelector('.rp-3v3-topbar');
     if (!topbar) return null;
 
-    let button = topbar.querySelector('[data-rp-4v4-info-button]');
-    if (button) return button;
+    let button = topbar.querySelector('[data-rp-4v4-info-button], [data-rp4v4-info-button]');
+    if (button) {
+      button.setAttribute('data-rp-4v4-info-button', '1');
+      button.removeAttribute('data-rp4v4-info-button');
+      return button;
+    }
 
     const oldTopmark = topbar.querySelector('.rp-3v3-topmark');
     button = document.createElement('button');
     button.type = 'button';
     button.className = 'rp-3v3-topmark rp-4v4-info-button';
-    button.dataset.rp4v4InfoButton = '1';
+    button.setAttribute('data-rp-4v4-info-button', '1');
     button.setAttribute('aria-label', '4V4 information');
     button.setAttribute('aria-haspopup', 'dialog');
     button.textContent = 'i';
@@ -286,12 +290,16 @@
 
   function ensureInfoModal(view) {
     if (!view) return null;
-    let backdrop = document.querySelector('[data-rp-4v4-info-backdrop]');
-    if (backdrop) return backdrop;
+    let backdrop = document.querySelector('[data-rp-4v4-info-backdrop], [data-rp4v4-info-backdrop], .rp-4v4-info-backdrop');
+    if (backdrop) {
+      backdrop.setAttribute('data-rp-4v4-info-backdrop', '1');
+      backdrop.removeAttribute('data-rp4v4-info-backdrop');
+      return backdrop;
+    }
 
     backdrop = document.createElement('div');
     backdrop.className = 'rp-4v4-info-backdrop';
-    backdrop.dataset.rp4v4InfoBackdrop = '1';
+    backdrop.setAttribute('data-rp-4v4-info-backdrop', '1');
     backdrop.setAttribute('aria-hidden', 'true');
     backdrop.innerHTML = `
       <section class="rp-4v4-info-sheet" role="dialog" aria-modal="true" aria-labelledby="rp-4v4-info-title">
@@ -376,7 +384,7 @@
   }
 
   function selectInfoTab(name) {
-    const modal = document.querySelector('[data-rp-4v4-info-backdrop]');
+    const modal = document.querySelector('[data-rp-4v4-info-backdrop], .rp-4v4-info-backdrop');
     if (!modal) return;
     modal.querySelectorAll('[data-rp-4v4-info-tab]').forEach((tab) => {
       const active = tab.dataset.rp4v4InfoTab === name;
@@ -400,12 +408,12 @@
   }
 
   function closeInfo() {
-    const modal = document.querySelector('[data-rp-4v4-info-backdrop]');
+    const modal = document.querySelector('[data-rp-4v4-info-backdrop], .rp-4v4-info-backdrop');
     if (!modal?.classList.contains('open')) return;
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-4v4-info-open');
-    activeView()?.querySelector('[data-rp-4v4-info-button]')?.focus({ preventScroll: true });
+    activeView()?.querySelector('[data-rp-4v4-info-button], .rp-4v4-info-button')?.focus({ preventScroll: true });
   }
 
   function ensurePlaque(view) {
@@ -615,7 +623,7 @@
   ensureStyle();
 
   document.addEventListener('click', (event) => {
-    const infoButton = event.target.closest?.('[data-rp-4v4-info-button]');
+    const infoButton = event.target.closest?.('[data-rp-4v4-info-button], .rp-4v4-info-button');
     if (infoButton) {
       event.preventDefault();
       event.stopPropagation();
@@ -634,7 +642,7 @@
       return;
     }
 
-    const backdrop = event.target.closest?.('[data-rp-4v4-info-backdrop]');
+    const backdrop = event.target.closest?.('[data-rp-4v4-info-backdrop], .rp-4v4-info-backdrop');
     if (backdrop && event.target === backdrop) {
       closeInfo();
       return;
@@ -662,7 +670,7 @@
   });
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && document.querySelector('[data-rp-4v4-info-backdrop].open')) {
+    if (event.key === 'Escape' && document.querySelector('[data-rp-4v4-info-backdrop].open, .rp-4v4-info-backdrop.open')) {
       event.preventDefault();
       closeInfo();
       return;
