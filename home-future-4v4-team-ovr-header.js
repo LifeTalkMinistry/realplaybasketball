@@ -4,6 +4,7 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
+  const STYLE_ID = 'rp-4v4-team-ovr-header-style';
   const CLUB_NAMES = Object.freeze({
     lions: 'LIONS',
     valiant: 'VALIANT',
@@ -16,6 +17,7 @@
   let lastLoadedAt = 0;
   let loadPromise = null;
   let refreshTimer = null;
+  let lastData = null;
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -56,12 +58,15 @@
       if (leftRank && rightRank) return leftRank - rightRank;
       if (leftRank) return -1;
       if (rightRank) return 1;
+
       const leftOvr = finite(left?.ovr) ?? -Infinity;
       const rightOvr = finite(right?.ovr) ?? -Infinity;
       if (leftOvr !== rightOvr) return rightOvr - leftOvr;
+
       const gamesDiff = (Number(right?.verifiedGames ?? right?.games ?? 0) || 0)
         - (Number(left?.verifiedGames ?? left?.games ?? 0) || 0);
       if (gamesDiff) return gamesDiff;
+
       return String(left?.playerName || '').localeCompare(String(right?.playerName || ''));
     });
   }
@@ -70,6 +75,7 @@
     const values = players
       .map((player) => finite(player?.ovr))
       .filter((value) => value !== null && value > 0);
+
     if (!values.length) return null;
     return values.reduce((sum, value) => sum + value, 0) / values.length;
   }
@@ -80,6 +86,7 @@
       data?.teamOvrAuthority?.clubs?.[clubId],
       data?.teamOvrAuthority?.[clubId],
     ].filter(Boolean);
+
     const state = sources[0] || null;
     if (!state || typeof state !== 'object') return null;
 
@@ -87,20 +94,24 @@
     const floor = finite(state.minimumFloor ?? state.floor ?? state.min);
     const cap = finite(state.maximumCap ?? state.cap ?? state.max);
     const validation = String(state.validationResult ?? state.status ?? '').trim().toUpperCase();
-    const formulaVersion = String(state.formulaVersion ?? '').trim();
 
     if (teamOvr === null || cap === null || !validation) return null;
-    return { teamOvr, floor, cap, validation, formulaVersion };
+    return { teamOvr, floor, cap, validation };
   }
 
   function ensureStyle() {
-    if (document.querySelector('[data-rp-4v4-team-ovr-header-style]')) return;
+    const existing = document.getElementById(STYLE_ID);
+    if (existing) return;
+
+    document
+      .querySelectorAll('style[data-rp4v4-team-ovr-header-style],style[data-rp-4v4-team-ovr-header-style]')
+      .forEach((style) => style.remove());
+
     const style = document.createElement('style');
-    style.dataset.rp4v4TeamOvrHeaderStyle = '1';
+    style.id = STYLE_ID;
     style.textContent = `
-      .rp-4v4-static-view .rp-3v3-select-head{
-        display:none!important;
-      }
+      .rp-4v4-static-view .rp-3v3-select-head{display:none!important}
+
       .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand{
         min-width:0;display:flex;align-items:center;justify-content:center;text-align:center;
       }
@@ -108,9 +119,7 @@
         display:block;margin:0;color:#f5f9ff;font-family:var(--rp-display,Arial,sans-serif);
         font-size:.54rem;font-weight:1000;letter-spacing:.16em;line-height:1;text-transform:uppercase;white-space:nowrap;
       }
-      .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand span{
-        display:none!important;
-      }
+      .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand span{display:none!important}
 
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque{
         position:relative;z-index:7;width:214px;height:68px;margin:1px auto -19px;
@@ -126,9 +135,7 @@
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque::after{
         content:"";position:absolute;inset:5px 9px 6px;
         clip-path:polygon(10% 0,90% 0,100% 23%,95% 78%,78% 100%,22% 100%,5% 78%,0 23%);
-        background:
-          linear-gradient(90deg,rgba(255,45,56,.22),transparent 19%,transparent 81%,rgba(255,45,56,.22)),
-          linear-gradient(180deg,#161d25 0%,#080b10 42%,#020305 100%);
+        background:linear-gradient(90deg,rgba(255,45,56,.22),transparent 19%,transparent 81%,rgba(255,45,56,.22)),linear-gradient(180deg,#161d25 0%,#080b10 42%,#020305 100%);
         border-top:1px solid rgba(255,255,255,.17);
       }
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core{
@@ -170,9 +177,8 @@
         box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 10px 28px rgba(0,0,0,.2);
       }
       .rp-4v4-static-view .rp-4v4-player-card.is-profile-link:active{transform:scale(.995)}
-      .rp-4v4-static-view .rp-4v4-player-card.is-profile-link:focus-visible{
-        outline:2px solid rgba(80,220,255,.68);outline-offset:2px;
-      }
+      .rp-4v4-static-view .rp-4v4-player-card.is-profile-link:focus-visible{outline:2px solid rgba(80,220,255,.68);outline-offset:2px}
+
       @media(max-width:380px){
         .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{font-size:.49rem;letter-spacing:.13em}
         .rp-4v4-static-view .rp-4v4-team-ovr-plaque{width:196px;height:64px;margin-bottom:-18px}
@@ -184,15 +190,25 @@
   }
 
   function ensurePlaque(view) {
-    let plaque = view?.querySelector?.('[data-rp-4v4-team-ovr-plaque]');
-    if (plaque) return plaque;
+    if (!view) return null;
 
-    const topbar = view?.querySelector?.('.rp-3v3-topbar');
+    const plaques = [...view.querySelectorAll('.rp-4v4-team-ovr-plaque')];
+    let plaque = plaques[0] || null;
+
+    plaques.slice(1).forEach((duplicate) => duplicate.remove());
+
+    if (plaque) {
+      plaque.setAttribute('data-rp-4v4-team-ovr-plaque', '1');
+      plaque.removeAttribute('data-rp4v4-team-ovr-plaque');
+      return plaque;
+    }
+
+    const topbar = view.querySelector('.rp-3v3-topbar');
     if (!topbar) return null;
 
     plaque = document.createElement('div');
     plaque.className = 'rp-4v4-team-ovr-plaque';
-    plaque.dataset.rp4v4TeamOvrPlaque = '1';
+    plaque.setAttribute('data-rp-4v4-team-ovr-plaque', '1');
     plaque.dataset.ovrEmpty = 'true';
     plaque.setAttribute('aria-label', 'Team OVR unavailable');
     plaque.innerHTML = `
@@ -200,6 +216,7 @@
         <small class="rp-4v4-team-ovr-label">TEAM OVR</small>
         <strong class="rp-4v4-team-ovr-value" data-rp-4v4-team-ovr-value>—</strong>
       </div>`;
+
     topbar.insertAdjacentElement('afterend', plaque);
     return plaque;
   }
@@ -212,28 +229,29 @@
     const number = finite(value);
     const hasValue = number !== null && number > 0;
     const display = hasValue ? String(Math.round(number)) : '—';
+
     target.textContent = display;
     plaque.dataset.ovrEmpty = hasValue ? 'false' : 'true';
     plaque.dataset.ovrState = state || (hasValue ? 'preview' : 'empty');
     plaque.setAttribute('aria-label', hasValue ? `Team OVR ${display}` : 'Team OVR unavailable');
   }
 
-  function render(data = null) {
+  function render(data = lastData) {
     const view = activeView();
     if (!view) return;
 
     view.querySelector('.rp-3v3-select-head')?.remove();
+    ensureStyle();
+    ensurePlaque(view);
 
     const brand = view.querySelector('.rp-3v3-brand');
     const strong = brand?.querySelector('strong');
     const span = brand?.querySelector('span');
     if (!brand || !strong || !span) return;
 
-    ensureStyle();
     brand.classList.add('rp-4v4-team-ovr-brand');
     strong.textContent = 'SELECT YOUR TEAM';
     span.textContent = '';
-    ensurePlaque(view);
 
     const clubId = activeClub(view);
     const players = clubPlayers(clubId);
@@ -249,9 +267,11 @@
       const normalized = official.validation.replace(/[^A-Z0-9]+/g, '_');
       const atOrBelowCap = official.teamOvr <= official.cap;
       const atOrAboveFloor = official.floor === null || official.teamOvr >= official.floor;
+
       if (!atOrBelowCap || normalized.includes('ABOVE')) brand.dataset.ovrState = 'official-over';
       else if (!atOrAboveFloor || normalized.includes('BELOW')) brand.dataset.ovrState = 'official-warning';
       else brand.dataset.ovrState = 'official-ok';
+
       setPlaqueValue(view, official.teamOvr, brand.dataset.ovrState);
       return;
     }
@@ -270,10 +290,10 @@
   function bindPreferenceCards() {
     const view = activeView();
     if (!view) return;
-    ensureStyle();
 
     const list = view.querySelector('[data-rp-4v4-preference-list]');
     if (!list) return;
+
     const cards = [...list.querySelectorAll('.rp-4v4-player-card')];
     if (!cards.length) return;
 
@@ -286,6 +306,7 @@
       const clickable = isSelf || Boolean(playerId);
 
       card.classList.toggle('is-profile-link', clickable);
+
       if (!clickable) {
         card.removeAttribute('role');
         card.removeAttribute('tabindex');
@@ -308,6 +329,7 @@
   function closeFourVFourView() {
     const view = activeView();
     if (!view) return;
+
     view.classList.remove('open');
     view.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-4v4-static-open');
@@ -315,6 +337,7 @@
 
   function openPreferencePlayer(card) {
     if (!card?.classList?.contains('is-profile-link')) return;
+
     const isSelf = card.dataset.rp4v4ProfileSelf === 'true';
     const playerId = positiveId(card.dataset.rp4v4ProfilePlayerId);
 
@@ -332,19 +355,23 @@
 
   async function load({ force = false } = {}) {
     const accessToken = token();
+
     if (!accessToken) {
       preferencePlayers = [];
       viewerAccountUserId = null;
-      render();
+      lastData = null;
+      render(null);
       bindPreferenceCards();
       return;
     }
+
     const now = Date.now();
     if (!force && preferencePlayers.length && now - lastLoadedAt < 15_000) {
-      render();
+      render(lastData);
       bindPreferenceCards();
       return;
     }
+
     if (loadPromise) return loadPromise;
 
     loadPromise = (async () => {
@@ -353,25 +380,31 @@
           headers: { Accept: 'application/json', Authorization: `Bearer ${accessToken}` },
           cache: 'no-store',
         });
+
         if (!response.ok) throw new Error('Could not load 4v4 OVR preview.');
+
         const data = await response.json().catch(() => ({}));
+        lastData = data;
         preferencePlayers = Array.isArray(data?.preferencePlayers) ? data.preferencePlayers : [];
         viewerAccountUserId = positiveId(data?.userId);
         lastLoadedAt = Date.now();
+
         render(data);
         bindPreferenceCards();
       } catch (_error) {
-        render();
+        render(lastData);
         bindPreferenceCards();
       } finally {
         loadPromise = null;
       }
     })();
+
     return loadPromise;
   }
 
   function scheduleRefresh(delay = 0, force = false) {
     if (refreshTimer) window.clearTimeout(refreshTimer);
+
     refreshTimer = window.setTimeout(() => {
       refreshTimer = null;
       load({ force });
@@ -390,12 +423,13 @@
     }
 
     if (event.target.closest?.('[data-rp-4v4-prev],[data-rp-4v4-next],[data-rp-4v4-card]')) {
-      requestAnimationFrame(() => {
-        render();
+      window.requestAnimationFrame(() => {
+        render(lastData);
         bindPreferenceCards();
       });
       return;
     }
+
     if (event.target.closest?.('[data-rp-4v4-preference-action],[data-rp-4v4-preference-cancel]')) {
       scheduleRefresh(650, true);
     }
@@ -403,8 +437,10 @@
 
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
+
     const profileCard = event.target.closest?.('.rp-4v4-player-card.is-profile-link');
     if (!profileCard) return;
+
     event.preventDefault();
     openPreferencePlayer(profileCard);
   });
@@ -413,18 +449,35 @@
     let mounted = false;
     let clubChanged = false;
     let preferenceChanged = false;
+
     for (const mutation of mutations) {
-      if (mutation.type === 'childList' && [...mutation.addedNodes].some((node) => node instanceof HTMLElement && (node.matches?.('[data-rp-4v4-static-view]') || node.querySelector?.('[data-rp-4v4-static-view]')))) {
+      if (
+        mutation.type === 'childList'
+        && [...mutation.addedNodes].some((node) => node instanceof HTMLElement && (
+          node.matches?.('[data-rp-4v4-static-view]')
+          || node.querySelector?.('[data-rp-4v4-static-view]')
+        ))
+      ) {
         mounted = true;
       }
-      if (mutation.type === 'childList' && mutation.target instanceof HTMLElement && mutation.target.closest?.('[data-rp-4v4-preference-list]')) {
+
+      if (
+        mutation.type === 'childList'
+        && mutation.target instanceof HTMLElement
+        && mutation.target.closest?.('[data-rp-4v4-preference-list]')
+      ) {
         preferenceChanged = true;
       }
-      if (mutation.type === 'attributes' && mutation.attributeName === 'data-rp-active-club') clubChanged = true;
+
+      if (mutation.type === 'attributes' && mutation.attributeName === 'data-rp-active-club') {
+        clubChanged = true;
+      }
     }
-    if (mounted) scheduleRefresh(0, true);
-    else if (clubChanged) {
-      render();
+
+    if (mounted) {
+      scheduleRefresh(0, true);
+    } else if (clubChanged) {
+      render(lastData);
       bindPreferenceCards();
     } else if (preferenceChanged) {
       bindPreferenceCards();
