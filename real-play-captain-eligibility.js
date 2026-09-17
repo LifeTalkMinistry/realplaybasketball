@@ -288,21 +288,21 @@
          identity header and the player's name. Every currently owned verified
          badge stays visible instead of collapsing to only the featured badge. */
       .rp-profile-badges{
-        position:relative;z-index:3;display:flex;align-items:center;justify-content:center;gap:10px;
-        min-height:72px;margin:8px 12px 0;padding:3px 4px;overflow-x:auto;overflow-y:hidden;
+        position:relative;z-index:3;display:flex;align-items:center;justify-content:center;gap:12px;
+        min-height:88px;margin:8px 12px 0;padding:4px 4px;overflow-x:auto;overflow-y:hidden;
         scrollbar-width:none;-webkit-overflow-scrolling:touch;
       }
       .rp-profile-badges::-webkit-scrollbar{display:none}
       .rp-profile-badge{
-        position:relative;flex:0 0 auto;width:104px;height:62px;padding:0;border:0;border-radius:12px;
-        color:inherit;background:transparent;cursor:pointer;filter:drop-shadow(0 6px 10px rgba(0,0,0,.62));
+        position:relative;flex:0 0 auto;width:132px;height:78px;padding:0;border:0;border-radius:13px;
+        color:inherit;background:transparent;cursor:pointer;filter:drop-shadow(0 7px 12px rgba(0,0,0,.64));
         transition:transform .16s ease,filter .16s ease;touch-action:manipulation;
       }
-      .rp-profile-badge:hover{transform:translateY(-1px) scale(1.04);filter:drop-shadow(0 8px 14px rgba(0,0,0,.68)) brightness(1.08)}
+      .rp-profile-badge:hover{transform:translateY(-1px) scale(1.035);filter:drop-shadow(0 9px 15px rgba(0,0,0,.70)) brightness(1.08)}
       .rp-profile-badge:active{transform:scale(.97)}
       .rp-profile-badge:focus-visible{outline:2px solid #72e6ff;outline-offset:2px}
       .rp-profile-badge img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
-      .rp-profile.has-rp-profile-badges .rp-profile-player{margin-top:2px!important;padding-top:0!important}
+      .rp-profile.has-rp-profile-badges .rp-profile-player{margin-top:0!important;padding-top:0!important}
 
       @media(max-width:420px){
         .rp-world-player-row.rp-recognition-themed .rp-world-player-name{padding-right:88px}
@@ -310,15 +310,15 @@
         .rp-player-featured-count{right:-3px;bottom:0;min-width:18px;height:18px;font-size:.43rem}
         .rp-recognition-card{padding:19px 16px;border-radius:20px}
         .rp-recognition-hero img{height:100px;width:min(84%,260px)}
-        .rp-profile-badges{gap:8px;min-height:66px;margin-inline:8px;padding-inline:3px}
-        .rp-profile-badge{width:92px;height:56px}
+        .rp-profile-badges{gap:10px;min-height:82px;margin-inline:7px;padding-inline:3px}
+        .rp-profile-badge{width:120px;height:72px}
       }
       @media(max-width:355px){
         .rp-world-player-row.rp-recognition-themed .rp-world-player-name{padding-right:66px}
         .rp-player-featured-badge{right:51px;width:68px;height:38px}
         .rp-recognition-grid{grid-template-columns:1fr}
-        .rp-profile-badges{justify-content:flex-start;gap:7px;min-height:60px;padding-inline:4px}
-        .rp-profile-badge{width:84px;height:52px}
+        .rp-profile-badges{justify-content:flex-start;gap:8px;min-height:74px;padding-inline:4px}
+        .rp-profile-badge{width:108px;height:66px}
       }
     `;
     document.head.appendChild(style);
