@@ -40,6 +40,7 @@ body.rp-settings-open{overflow:hidden}
 }
 .rp-settings-head small{display:block;color:#46b6ff;font-family:var(--rp-display,Impact,sans-serif);font-size:.72rem;font-weight:900;letter-spacing:.13em}
 .rp-settings-head h2{margin:3px 0 0;color:#fff;font-family:var(--rp-display,Impact,sans-serif);font-size:2rem;font-style:italic;font-weight:900;line-height:.9;letter-spacing:-.025em}
+.rp-settings-head-danger small{color:#ff5d6b}
 .rp-settings-identity{padding:20px 2px 18px;display:grid;gap:5px}
 .rp-settings-identity strong{font-family:var(--rp-display,Impact,sans-serif);font-size:1.28rem;font-style:italic;font-weight:900;letter-spacing:.01em}
 .rp-settings-identity span{color:#8994a3;font-size:.78rem;overflow-wrap:anywhere}
@@ -86,4 +87,100 @@ body.rp-settings-open{overflow:hidden}
 .rp-settings-rule{padding:14px;border:1px solid rgba(201,206,214,.10);border-radius:13px;background:#07090d;display:grid;gap:5px}
 .rp-settings-rule strong{color:#fff;font-family:var(--rp-display,Impact,sans-serif);font-size:.88rem;font-style:italic;letter-spacing:.035em}
 .rp-settings-rule span{color:#8d98a6;font-size:.78rem;line-height:1.45}
+
+.rp-settings-danger-zone{
+  margin-top:22px;
+  padding-top:18px;
+  border-top:1px solid rgba(255,77,89,.14);
+}
+.rp-settings-danger-zone>small{
+  display:block;
+  color:#ff6672;
+  font-family:var(--rp-display,Impact,sans-serif);
+  font-size:.62rem;
+  font-style:italic;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+.rp-settings-danger-zone>p{
+  margin:6px 0 12px;
+  color:#7f8995;
+  font-size:.7rem;
+  line-height:1.45;
+}
+.rp-settings-delete-entry{
+  width:100%;
+  min-height:50px;
+  border:1px solid rgba(255,49,64,.42);
+  border-radius:13px;
+  color:#ff737e;
+  background:rgba(127,8,20,.13);
+  font-family:var(--rp-display,Impact,sans-serif);
+  font-size:.86rem;
+  font-style:italic;
+  font-weight:900;
+  letter-spacing:.08em;
+  cursor:pointer;
+}
+.rp-settings-delete-entry:focus-visible,.rp-settings-delete-entry:active{outline:none;border-color:#ff5361;background:rgba(157,13,28,.22)}
+.rp-settings-delete-copy{padding:20px 2px 2px;display:grid;gap:12px}
+.rp-settings-delete-copy>p{margin:0;color:#a3adb9;font-size:.84rem;line-height:1.55}
+.rp-settings-delete-kicker{
+  color:#ff6975!important;
+  font-family:var(--rp-display,Impact,sans-serif);
+  font-size:1.02rem!important;
+  font-style:italic;
+  font-weight:900;
+  letter-spacing:.045em;
+}
+.rp-settings-delete-rule{
+  display:grid;
+  gap:6px;
+  padding:14px;
+  border:1px solid rgba(201,206,214,.10);
+  border-radius:13px;
+  background:#07090d;
+}
+.rp-settings-delete-rule.warning{border-color:rgba(255,72,85,.22);background:rgba(116,8,19,.10)}
+.rp-settings-delete-rule strong{color:#fff;font-family:var(--rp-display,Impact,sans-serif);font-size:.87rem;font-style:italic;letter-spacing:.035em}
+.rp-settings-delete-rule.warning strong{color:#ff7c86}
+.rp-settings-delete-rule span{color:#8d98a6;font-size:.76rem;line-height:1.48}
+.rp-settings-delete-rule span b{color:#fff;letter-spacing:.06em}
+.rp-settings-delete-form{display:grid;gap:8px;margin-top:3px}
+.rp-settings-delete-form label{color:#838e9c;font-size:.64rem;font-weight:900;letter-spacing:.08em}
+.rp-settings-delete-form input{
+  width:100%;
+  box-sizing:border-box;
+  min-height:48px;
+  padding:0 13px;
+  border:1px solid rgba(255,72,85,.24);
+  border-radius:12px;
+  outline:none;
+  color:#fff;
+  background:#06080c;
+  font:800 16px var(--rp-body,Inter,system-ui,sans-serif);
+  letter-spacing:.08em;
+}
+.rp-settings-delete-form input:focus{border-color:rgba(255,83,97,.64);box-shadow:0 0 0 3px rgba(255,54,70,.07)}
+.rp-settings-delete-status{min-height:18px;margin:0!important;color:#737f8d!important;font-size:.68rem!important;line-height:1.4!important;text-align:center}
+.rp-settings-delete-status.error{color:#ff7b86!important}
+.rp-settings-delete-status.success{color:#58dbab!important}
+.rp-settings-delete-submit{
+  width:100%;
+  min-height:52px;
+  margin-top:2px;
+  border:1px solid #d92d3d;
+  border-radius:13px;
+  color:#fff;
+  background:#b21f30;
+  font-family:var(--rp-display,Impact,sans-serif);
+  font-size:.9rem;
+  font-style:italic;
+  font-weight:900;
+  letter-spacing:.075em;
+  cursor:pointer;
+}
+.rp-settings-delete-submit:disabled{cursor:not-allowed;opacity:.32;filter:saturate(.55)}
+.rp-settings-delete-submit:not(:disabled):active{transform:scale(.99)}
+
 @media(min-width:700px){.rp-settings-overlay{align-items:center}}
