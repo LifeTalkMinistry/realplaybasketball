@@ -159,10 +159,10 @@
 
       const leaderboardPosition = index + 1;
       const officialRank = Number(row.dataset.officialRank);
-      const displayNumber = filterKey === 'ranked' && Number.isSafeInteger(officialRank) && officialRank > 0
-        ? officialRank
-        : leaderboardPosition;
-      const displayText = `#${displayNumber}`;
+      const hasOfficialRank = Number.isSafeInteger(officialRank) && officialRank > 0;
+      const displayText = filterKey === 'ranked'
+        ? (hasOfficialRank ? `#${officialRank}` : '—')
+        : `#${leaderboardPosition}`;
 
       if (badge.textContent !== displayText) badge.textContent = displayText;
       badge.classList.add('is-visible');
