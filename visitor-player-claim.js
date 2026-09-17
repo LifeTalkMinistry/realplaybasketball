@@ -15,6 +15,7 @@
   let consumedPlayerId = null;
   let consumedUntil = 0;
   let selectedPlayer = null;
+  let replacementCredentials = null;
   let modal = null;
   let busy = false;
 
@@ -45,10 +46,7 @@
     const style = document.createElement('style');
     style.dataset.rpVisitorPlayerClaimStyles = '1';
     style.textContent = `
-      .rp-world-player-row.rp-visitor-claim-holding{
-        border-color:rgba(66,216,255,.45)!important;
-        box-shadow:inset 0 0 0 1px rgba(66,216,255,.12),0 0 22px rgba(40,190,235,.08)!important;
-      }
+      .rp-world-player-row.rp-visitor-claim-holding{border-color:rgba(66,216,255,.45)!important;box-shadow:inset 0 0 0 1px rgba(66,216,255,.12),0 0 22px rgba(40,190,235,.08)!important}
       .rp-visitor-claim-modal{position:fixed;inset:0;z-index:2147483500;display:none;place-items:center;padding:18px;background:rgba(0,3,8,.88);backdrop-filter:blur(12px)}
       .rp-visitor-claim-modal.open{display:grid}
       .rp-visitor-claim-card{position:relative;width:min(100%,430px);max-height:min(90dvh,760px);overflow:auto;padding:22px 18px 20px;border:1px solid rgba(71,215,255,.2);border-radius:22px;color:#eff9ff;background:radial-gradient(circle at 50% 0%,rgba(45,198,244,.12),transparent 34%),linear-gradient(180deg,#07121c,#03070d 74%);box-shadow:0 30px 90px rgba(0,0,0,.75)}
@@ -59,34 +57,22 @@
       .rp-visitor-claim-copy{margin:0 0 15px;color:#9eb1c1;font-size:.68rem;font-weight:650;line-height:1.55}
       .rp-visitor-claim-player{display:flex;align-items:center;gap:11px;margin:0 0 15px;padding:11px 12px;border:1px solid rgba(75,215,255,.13);border-radius:13px;background:rgba(5,15,23,.82)}
       .rp-visitor-claim-player span{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:11px;color:#071018;background:#4bdbff;font-family:var(--rp-display,Arial,sans-serif);font-size:.62rem;font-weight:1000}
-      .rp-visitor-claim-player div{min-width:0}
-      .rp-visitor-claim-player strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--rp-display,Arial,sans-serif);font-size:.8rem;font-style:italic;font-weight:1000;text-transform:uppercase}
+      .rp-visitor-claim-player div{min-width:0}.rp-visitor-claim-player strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--rp-display,Arial,sans-serif);font-size:.8rem;font-style:italic;font-weight:1000;text-transform:uppercase}
       .rp-visitor-claim-player small{display:block;margin-top:3px;color:#70869a;font-size:.47rem;font-weight:900;letter-spacing:.07em}
-      .rp-visitor-claim-form{display:grid;gap:10px}
-      .rp-visitor-claim-field{display:grid;gap:5px}
-      .rp-visitor-claim-field label{color:#8195a7;font-size:.48rem;font-weight:950;letter-spacing:.075em;text-transform:uppercase}
+      .rp-visitor-claim-form{display:grid;gap:10px}.rp-visitor-claim-field{display:grid;gap:5px}.rp-visitor-claim-field label{color:#8195a7;font-size:.48rem;font-weight:950;letter-spacing:.075em;text-transform:uppercase}
       .rp-visitor-claim-field input{width:100%;box-sizing:border-box;padding:12px 11px;border:1px solid rgba(255,255,255,.1);border-radius:11px;outline:none;color:#eef8ff;background:#08121c;font-size:.76rem;font-weight:700}
       .rp-visitor-claim-field input:focus{border-color:rgba(72,215,255,.55);box-shadow:0 0 0 2px rgba(72,215,255,.08)}
-      .rp-visitor-claim-field input.rp-visitor-claim-name-locked,
-      .rp-visitor-claim-field input.rp-visitor-claim-name-locked:focus{
-        color:#738292!important;
-        background:#04090e!important;
-        border-color:rgba(255,255,255,.055)!important;
-        box-shadow:none!important;
-        cursor:not-allowed!important;
-        opacity:.72;
-      }
+      .rp-visitor-claim-field input.rp-visitor-claim-name-locked,.rp-visitor-claim-field input.rp-visitor-claim-name-locked:focus{color:#738292!important;background:#04090e!important;border-color:rgba(255,255,255,.055)!important;box-shadow:none!important;cursor:not-allowed!important;opacity:.72}
       .rp-visitor-claim-field-lock{display:block;margin:0 2px;color:#756f65;font-size:.43rem;font-weight:850;letter-spacing:.045em;line-height:1.35;text-transform:uppercase}
-      .rp-visitor-claim-submit,.rp-visitor-claim-done{width:100%;margin-top:3px;padding:13px;border:0;border-radius:12px;color:#031018;background:linear-gradient(180deg,#5de4ff,#2bc6ef);font-family:var(--rp-display,Arial,sans-serif);font-size:.66rem;font-weight:1000;letter-spacing:.055em;cursor:pointer}
-      .rp-visitor-claim-submit:disabled{opacity:.55;cursor:wait}
+      .rp-visitor-claim-submit,.rp-visitor-claim-done,.rp-visitor-replace-submit{width:100%;margin-top:3px;padding:13px;border:0;border-radius:12px;color:#031018;background:linear-gradient(180deg,#5de4ff,#2bc6ef);font-family:var(--rp-display,Arial,sans-serif);font-size:.66rem;font-weight:1000;letter-spacing:.055em;cursor:pointer}
+      .rp-visitor-claim-submit:disabled,.rp-visitor-replace-submit:disabled{opacity:.55;cursor:wait}
       .rp-visitor-claim-note{margin:11px 0 0;color:#667b8f;font-size:.55rem;font-weight:700;line-height:1.5;text-align:center}
-      .rp-visitor-claim-status{min-height:18px;margin:8px 0 0;color:#ff8291;font-size:.58rem;font-weight:850;line-height:1.45;text-align:center}
-      .rp-visitor-claim-status.success{color:#61e3a7}
-      .rp-visitor-claim-success{display:grid;justify-items:center;gap:10px;padding:10px 2px 2px;text-align:center}
-      .rp-visitor-claim-success-icon{display:grid;place-items:center;width:54px;height:54px;border:1px solid rgba(86,224,168,.32);border-radius:50%;color:#62e0a7;background:rgba(53,197,139,.08);font-size:1.45rem;font-weight:1000}
-      .rp-visitor-claim-success h3{margin:2px 0 0;font-family:var(--rp-display,Arial,sans-serif);font-size:1.08rem;font-style:italic;font-weight:1000;text-transform:uppercase}
-      .rp-visitor-claim-success p{margin:0;max-width:340px;color:#9eb1c1;font-size:.67rem;font-weight:650;line-height:1.55}
-      .rp-visitor-claim-success b{color:#eefaff}
+      .rp-visitor-claim-status{min-height:18px;margin:8px 0 0;color:#ff8291;font-size:.58rem;font-weight:850;line-height:1.45;text-align:center}.rp-visitor-claim-status.success{color:#61e3a7}
+      .rp-visitor-claim-success{display:grid;justify-items:center;gap:10px;padding:10px 2px 2px;text-align:center}.rp-visitor-claim-success-icon{display:grid;place-items:center;width:54px;height:54px;border:1px solid rgba(86,224,168,.32);border-radius:50%;color:#62e0a7;background:rgba(53,197,139,.08);font-size:1.45rem;font-weight:1000}
+      .rp-visitor-claim-success h3{margin:2px 0 0;font-family:var(--rp-display,Arial,sans-serif);font-size:1.08rem;font-style:italic;font-weight:1000;text-transform:uppercase}.rp-visitor-claim-success p{margin:0;max-width:340px;color:#9eb1c1;font-size:.67rem;font-weight:650;line-height:1.55}.rp-visitor-claim-success b{color:#eefaff}
+      .rp-visitor-replace-box{margin:14px 0;padding:14px;border:1px solid rgba(255,104,112,.2);border-radius:14px;background:rgba(87,8,16,.13)}
+      .rp-visitor-replace-box strong{display:block;margin-bottom:7px;color:#ff7c86;font-family:var(--rp-display,Arial,sans-serif);font-size:.76rem;font-style:italic;font-weight:1000;text-transform:uppercase}
+      .rp-visitor-replace-box p{margin:0;color:#aab7c3;font-size:.66rem;font-weight:650;line-height:1.55}.rp-visitor-replace-box p+p{margin-top:8px}.rp-visitor-replace-box b{color:#fff}
       @media(max-width:420px){.rp-visitor-claim-card{padding:20px 15px 17px;border-radius:19px}}
     `;
     document.head.appendChild(style);
@@ -110,6 +96,7 @@
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
     selectedPlayer = null;
+    replacementCredentials = null;
   }
 
   function setStatus(message = '', success = false) {
@@ -152,6 +139,7 @@
     const publicPlayerId = String(player?.publicPlayerId || `RP-${String(playerId || 0).padStart(5, '0')}`);
     const playerName = String(player?.playerName || 'REAL PLAY PLAYER').trim();
     selectedPlayer = { ...player, playerId, publicPlayerId, playerName };
+    replacementCredentials = null;
 
     dialog.innerHTML = `
       <section class="rp-visitor-claim-card" role="dialog" aria-modal="true" aria-labelledby="rp-visitor-claim-title">
@@ -161,18 +149,13 @@
         <p class="rp-visitor-claim-copy">Create the account that will be associated with this Real Play player. The profile will <b>not</b> become permanently yours yet — the claim still requires Admin review.</p>
         <div class="rp-visitor-claim-player"><span>#</span><div><strong>${esc(playerName)}</strong><small>${esc(publicPlayerId)} · EXISTING REAL PLAY PROFILE</small></div></div>
         <form class="rp-visitor-claim-form" data-rp-visitor-claim-form>
-          <div class="rp-visitor-claim-field">
-            <label for="rp-visitor-claim-name">Account Name · Locked</label>
-            <input class="rp-visitor-claim-name-locked" id="rp-visitor-claim-name" name="name" type="text" value="${esc(playerName)}" readonly aria-readonly="true" tabindex="-1" required />
-            <small class="rp-visitor-claim-field-lock">Locked to this existing player until Admin fully validates ownership.</small>
-          </div>
+          <div class="rp-visitor-claim-field"><label for="rp-visitor-claim-name">Account Name · Locked</label><input class="rp-visitor-claim-name-locked" id="rp-visitor-claim-name" name="name" type="text" value="${esc(playerName)}" readonly aria-readonly="true" tabindex="-1" required /><small class="rp-visitor-claim-field-lock">Locked to this existing player until Admin fully validates ownership.</small></div>
           <div class="rp-visitor-claim-field"><label for="rp-visitor-claim-email">Email</label><input id="rp-visitor-claim-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required /></div>
-          <div class="rp-visitor-claim-field"><label for="rp-visitor-claim-password">Password</label><input id="rp-visitor-claim-password" name="password" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required /></div>
-          <div class="rp-visitor-claim-field"><label for="rp-visitor-claim-confirm">Confirm Password</label><input id="rp-visitor-claim-confirm" name="confirm_password" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat your password" required /></div>
+          <div class="rp-visitor-claim-field"><label for="rp-visitor-claim-password">Password</label><input id="rp-visitor-claim-password" name="password" type="password" minlength="8" autocomplete="current-password" placeholder="At least 8 characters" required /></div>
+          <div class="rp-visitor-claim-field"><label for="rp-visitor-claim-confirm">Confirm Password</label><input id="rp-visitor-claim-confirm" name="confirm_password" type="password" minlength="8" autocomplete="current-password" placeholder="Repeat your password" required /></div>
           <button class="rp-visitor-claim-submit" type="submit">CREATE ACCOUNT & SUBMIT CLAIM</button>
           <p class="rp-visitor-claim-status" data-rp-visitor-claim-status aria-live="polite"></p>
         </form>
-        <p class="rp-visitor-claim-note">Your stats, rank, games and history remain unchanged while ownership is under review.</p>
       </section>`;
 
     dialog.querySelector('[data-rp-visitor-claim-form]')?.addEventListener('submit', submitClaim);
@@ -181,16 +164,38 @@
     window.setTimeout(() => dialog.querySelector('#rp-visitor-claim-email')?.focus(), 30);
   }
 
-  function renderSuccess(player, email) {
+  function renderReplacementNotice(player, email, password) {
+    const dialog = ensureModal();
+    replacementCredentials = { email, password };
+    dialog.innerHTML = `
+      <section class="rp-visitor-claim-card" role="dialog" aria-modal="true" aria-labelledby="rp-visitor-replace-title">
+        <button type="button" class="rp-visitor-claim-close" data-rp-visitor-claim-close aria-label="Close">×</button>
+        <p class="rp-visitor-claim-kicker">EMAIL ALREADY REGISTERED</p>
+        <h2 id="rp-visitor-replace-title">OFFICIAL PROFILE TRANSFER</h2>
+        <div class="rp-visitor-claim-player"><span>#</span><div><strong>${esc(player.playerName)}</strong><small>${esc(player.publicPlayerId)} · ADMIN-CREATED OFFICIAL PROFILE</small></div></div>
+        <div class="rp-visitor-replace-box">
+          <strong>THIS WILL REPLACE THE TEMPORARY ACCOUNT.</strong>
+          <p><b>${esc(email)}</b> is already connected to a temporary Real Play account.</p>
+          <p>Continuing will permanently delete that account and use this email for your official Admin-created player profile moving forward.</p>
+          <p>For security, the password you entered must match the existing account connected to this email.</p>
+        </div>
+        <button type="button" class="rp-visitor-replace-submit" data-rp-visitor-replace-submit>CONTINUE WITH OFFICIAL PROFILE</button>
+        <p class="rp-visitor-claim-status" data-rp-visitor-claim-status aria-live="polite"></p>
+      </section>`;
+    dialog.querySelector('[data-rp-visitor-replace-submit]')?.addEventListener('click', performReplacement);
+    dialog.classList.add('open');
+    dialog.setAttribute('aria-hidden', 'false');
+  }
+
+  function renderSuccess(player, email, replaced = false) {
     const dialog = ensureModal();
     dialog.innerHTML = `
       <section class="rp-visitor-claim-card" role="dialog" aria-modal="true" aria-labelledby="rp-visitor-claim-success-title">
         <div class="rp-visitor-claim-success">
           <div class="rp-visitor-claim-success-icon">✓</div>
-          <p class="rp-visitor-claim-kicker">ACCOUNT CREATED</p>
+          <p class="rp-visitor-claim-kicker">${replaced ? 'OFFICIAL PROFILE CONNECTED' : 'ACCOUNT CREATED'}</p>
           <h3 id="rp-visitor-claim-success-title">PLAYER CLAIM PENDING ADMIN REVIEW</h3>
-          <p><b>${esc(player.playerName)}</b> is now temporarily associated with <b>${esc(email)}</b>.</p>
-          <p>Your Real Play history is protected. Full ownership and profile control become permanent only after an Admin approves this claim.</p>
+          <p><b>${esc(player.playerName)}</b> is now associated with <b>${esc(email)}</b> for Admin review.</p>
           <button type="button" class="rp-visitor-claim-done" data-rp-visitor-claim-done>CONTINUE TO REAL PLAY</button>
         </div>
       </section>`;
@@ -199,15 +204,56 @@
     dialog.setAttribute('aria-hidden', 'false');
   }
 
+  async function performReplacement() {
+    if (busy || !selectedPlayer?.playerId || !replacementCredentials) return;
+    const button = modal?.querySelector('[data-rp-visitor-replace-submit]');
+    busy = true;
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'CONNECTING OFFICIAL PROFILE...';
+    }
+    setStatus('');
+
+    try {
+      const result = await api('/api/real-play/public/profile-claim/replace-account', {
+        method: 'POST',
+        body: {
+          playerId: selectedPlayer.playerId,
+          email: replacementCredentials.email,
+          password: replacementCredentials.password,
+        },
+      });
+      const token = String(result?.token || '');
+      if (!token) throw new Error('Official profile was connected but no session token was returned.');
+      localStorage.setItem(TOKEN_KEY, token);
+      try { window.RealPlayVisitor?.exit?.(); } catch (_error) {}
+      window.dispatchEvent(new CustomEvent('realplay:player-claim-submitted', {
+        detail: { playerId: selectedPlayer.playerId, publicPlayerId: selectedPlayer.publicPlayerId, playerName: selectedPlayer.playerName },
+      }));
+      renderSuccess(selectedPlayer, replacementCredentials.email, true);
+    } catch (error) {
+      const message = error.code === 'EXISTING_ACCOUNT_PASSWORD_MISMATCH'
+        ? 'The password does not match the existing account for this email. Use that account password, then continue again.'
+        : error.code === 'ACCOUNT_HAS_OFFICIAL_HISTORY'
+          ? 'This account cannot be replaced automatically. Contact Real Play Admin.'
+          : error.code === 'PROFILE_NOT_CLAIMABLE'
+            ? 'This official player profile is no longer available.'
+            : (error.message || 'Could not connect the official profile.');
+      setStatus(message);
+      if (button?.isConnected) {
+        button.disabled = false;
+        button.textContent = 'CONTINUE WITH OFFICIAL PROFILE';
+      }
+    } finally {
+      busy = false;
+    }
+  }
+
   async function submitClaim(event) {
     event.preventDefault();
     if (busy || !selectedPlayer?.playerId) return;
     const form = event.currentTarget;
     const data = new FormData(form);
-
-    // The existing Real Play player owns the identity during a visitor claim.
-    // Never trust an editable/form-supplied account name here; the registration
-    // name is always forced to the selected existing player's canonical name.
     const name = String(selectedPlayer?.playerName || '').trim();
     const email = String(data.get('email') || '').trim();
     const password = String(data.get('password') || '');
@@ -221,42 +267,22 @@
     busy = true;
     const submit = form.querySelector('button[type="submit"]');
     const original = submit?.textContent || '';
-    if (submit) {
-      submit.disabled = true;
-      submit.textContent = 'CREATING ACCOUNT...';
-    }
+    if (submit) { submit.disabled = true; submit.textContent = 'CREATING ACCOUNT...'; }
     setStatus('');
 
     try {
-      const registration = await api('/api/real-play/auth/register', {
-        method: 'POST',
-        body: { name, email, password },
-      });
+      const registration = await api('/api/real-play/auth/register', { method: 'POST', body: { name, email, password } });
       const token = String(registration?.token || '');
       if (!token) throw new Error('Account was created but no session token was returned. Please log in and try claiming again.');
-
       localStorage.setItem(TOKEN_KEY, token);
       if (submit) submit.textContent = 'SUBMITTING CLAIM...';
-
-      await api('/api/real-play/profile-ownership/claim', {
-        method: 'POST',
-        auth: true,
-        token,
-        body: { playerId: selectedPlayer.playerId },
-      });
-
+      await api('/api/real-play/profile-ownership/claim', { method: 'POST', auth: true, token, body: { playerId: selectedPlayer.playerId } });
       try { window.RealPlayVisitor?.exit?.(); } catch (_error) {}
-      window.dispatchEvent(new CustomEvent('realplay:player-claim-submitted', {
-        detail: {
-          playerId: selectedPlayer.playerId,
-          publicPlayerId: selectedPlayer.publicPlayerId,
-          playerName: selectedPlayer.playerName,
-        },
-      }));
-      renderSuccess(selectedPlayer, email);
+      window.dispatchEvent(new CustomEvent('realplay:player-claim-submitted', { detail: { playerId: selectedPlayer.playerId, publicPlayerId: selectedPlayer.publicPlayerId, playerName: selectedPlayer.playerName } }));
+      renderSuccess(selectedPlayer, email, false);
     } catch (error) {
       if (error.code === 'EMAIL_ALREADY_REGISTERED') {
-        setStatus('That email already has a Real Play account. Log in first, then use CLAIM EXISTING PLAYER PROFILE.');
+        renderReplacementNotice(selectedPlayer, email, password);
       } else if (error.code === 'PROFILE_NOT_CLAIMABLE') {
         setStatus('This player profile is no longer available to claim.');
       } else {
@@ -264,10 +290,7 @@
       }
     } finally {
       busy = false;
-      if (submit?.isConnected) {
-        submit.disabled = false;
-        submit.textContent = original;
-      }
+      if (submit?.isConnected) { submit.disabled = false; submit.textContent = original; }
     }
   }
 
@@ -276,13 +299,10 @@
     consumedPlayerId = playerId;
     consumedUntil = Date.now() + 1200;
     row?.classList.remove('rp-visitor-claim-holding');
-
     try {
       const player = await resolvePlayer(playerId);
       if (!player) return;
-      if (player.unclaimed !== true || String(player.ownershipStatus || '').toLowerCase() !== 'unclaimed') {
-        return;
-      }
+      if (player.unclaimed !== true || String(player.ownershipStatus || '').toLowerCase() !== 'unclaimed') return;
       renderClaimForm(player);
     } catch (error) {
       console.warn('[Real Play] Visitor player claim could not start.', error);
@@ -295,7 +315,6 @@
     if (!row) return;
     const playerId = positiveId(row.dataset.worldPlayerId);
     if (!playerId) return;
-
     clearHold();
     holdRow = row;
     holdPlayerId = playerId;
@@ -320,17 +339,10 @@
   ['pointerup', 'pointercancel'].forEach((type) => {
     document.addEventListener(type, () => {
       if (holdTimer) clearHold();
-      else {
-        holdRow?.classList.remove('rp-visitor-claim-holding');
-        holdRow = null;
-        holdPlayerId = null;
-      }
+      else { holdRow?.classList.remove('rp-visitor-claim-holding'); holdRow = null; holdPlayerId = null; }
     }, true);
   });
 
-  // A completed hold must not also execute the normal row click that opens the
-  // public profile. This listener is installed from visitor-mode before the
-  // visitor player directory listener, so it owns the consumed click.
   document.addEventListener('click', (event) => {
     if (!consumedPlayerId || Date.now() > consumedUntil) return;
     const row = event.target.closest?.('.rp-world-player-row[data-world-player-id]');
