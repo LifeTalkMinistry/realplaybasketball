@@ -31,4 +31,17 @@
     }, { once: true });
     document.head.appendChild(profileFix);
   }
+
+  // Head Admin ownership migration lets a newly created real account adopt an
+  // older admin-created canonical career without rewriting audited games.
+  if (!window.__realPlayAdminOwnershipMigrationInstalled && !document.querySelector('script[data-rp-ownership-migration-loader]')) {
+    const migrationScript = document.createElement('script');
+    migrationScript.dataset.rpOwnershipMigrationLoader = '1';
+    migrationScript.src = 'admin-player-ownership-migration.js?v=20260917-ownership-migration-v1';
+    migrationScript.async = false;
+    migrationScript.addEventListener('error', () => {
+      console.warn('[Real Play] Player ownership migration UI failed to load.');
+    }, { once: true });
+    document.head.appendChild(migrationScript);
+  }
 })();
