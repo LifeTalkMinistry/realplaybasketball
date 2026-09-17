@@ -1,11 +1,11 @@
 (() => {
-  const version = '20260916-standby-roster-v76';
+  const version = '20260916-stable-boot-v77';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
-  // The legacy lobby/main-menu must never paint while the new public-first shell
-  // is still assembling. Startup now has only two visible states:
-  // loading -> new shell, or loading -> explicit failure. Never legacy fallback.
+  // Startup has only three visible states:
+  // loading -> fully initialized shell, loading -> explicit failure, or loading stays up.
+  // Never expose a partially initialized/clickable shell.
   const bootStyle = document.createElement('style');
   bootStyle.id = 'rp-shell-boot-style';
   bootStyle.textContent = `
@@ -14,9 +14,12 @@
       min-height:100dvh!important;
       overflow:hidden!important;
       background:#020306!important;
+      pointer-events:none!important;
+      user-select:none!important;
     }
     html.rp-shell-booting body>*{
       visibility:hidden!important;
+      pointer-events:none!important;
     }
     html.rp-shell-booting body::before,
     html.rp-shell-booting body::after{
@@ -67,6 +70,7 @@
   document.head.appendChild(bootStyle);
 
   let shellReady = false;
+  let bootResourcesReady = false;
   let shellReadyObserver = null;
 
   function clearStaticBootFallback() {
@@ -76,21 +80,32 @@
     }
   }
 
-  // Neutralize any older inline HTML fallback as soon as app.js starts. This
-  // prevents cached index.html from uncovering the legacy carousel after 8s.
+  // Neutralize the older inline HTML fallback as soon as app.js starts. The
+  // loader must never uncover a partially initialized interface after 8s.
   clearStaticBootFallback();
+
+  function hasNewShell() {
+    return Boolean(
+      document.querySelector('[data-rp-simple-nav]') &&
+      document.querySelector('[data-rp-simple-home]')
+    );
+  }
 
   function revealNewShell() {
     if (shellReady) return true;
-    const nav = document.querySelector('[data-rp-simple-nav]');
-    const home = document.querySelector('[data-rp-simple-home]');
-    if (!nav || !home) return false;
+    if (!bootResourcesReady || !hasNewShell()) return false;
+
     shellReady = true;
     clearStaticBootFallback();
     html.classList.remove('rp-shell-booting', 'rp-shell-failed');
     html.classList.add('rp-shell-ready');
     shellReadyObserver?.disconnect();
     shellReadyObserver = null;
+
+    try {
+      window.dispatchEvent(new CustomEvent('realplay:app-ready'));
+    } catch (_error) {}
+
     return true;
   }
 
@@ -106,16 +121,33 @@
     console.error(`[Real Play] ${message || 'New shell failed to initialize.'}`, error || '');
   }
 
-  function addStylesheet(href) {
-    const css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = `${href}?v=${version}`;
-    document.head.appendChild(css);
+  function addStylesheet(href, timeoutMs = 6500) {
+    return new Promise((resolve) => {
+      const css = document.createElement('link');
+      let settled = false;
+      let timer = 0;
+
+      const finish = (loaded) => {
+        if (settled) return;
+        settled = true;
+        if (timer) window.clearTimeout(timer);
+        resolve(Boolean(loaded));
+      };
+
+      css.rel = 'stylesheet';
+      css.href = `${href}?v=${version}`;
+      css.addEventListener('load', () => finish(true), { once: true });
+      css.addEventListener('error', () => finish(false), { once: true });
+      timer = window.setTimeout(() => {
+        console.warn(`[Real Play] Stylesheet load timed out: ${href}`);
+        finish(false);
+      }, Math.max(1500, Number(timeoutMs) || 6500));
+      document.head.appendChild(css);
+    });
   }
 
-  // Every script request must settle. Previously one stalled optional request
-  // could hold the sequential loader forever, meaning main-menu.js and
-  // simple-navigation.js were never reached and the loading screen never left.
+  // Every script request must settle so one optional network request cannot
+  // permanently trap the app on the loading screen.
   function loadScript(href, timeoutMs = 6000) {
     return new Promise((resolve) => {
       const script = document.createElement('script');
@@ -142,7 +174,45 @@
     });
   }
 
-  [
+  function nextPaint() {
+    return new Promise((resolve) => {
+      window.requestAnimationFrame(() => window.requestAnimationFrame(resolve));
+    });
+  }
+
+  async function waitForVisualStability() {
+    const fontReady = document.fonts?.ready
+      ? Promise.resolve(document.fonts.ready).catch(() => undefined)
+      : Promise.resolve();
+
+    await Promise.race([
+      fontReady,
+      new Promise((resolve) => window.setTimeout(resolve, 1500)),
+    ]);
+
+    const images = Array.from(document.images || []);
+    if (images.length) {
+      const imageReady = Promise.all(images.map((image) => {
+        if (image.complete) {
+          if (typeof image.decode === 'function') return image.decode().catch(() => undefined);
+          return Promise.resolve();
+        }
+        return new Promise((resolve) => {
+          image.addEventListener('load', resolve, { once: true });
+          image.addEventListener('error', resolve, { once: true });
+        });
+      }));
+
+      await Promise.race([
+        imageReady,
+        new Promise((resolve) => window.setTimeout(resolve, 3000)),
+      ]);
+    }
+
+    await nextPaint();
+  }
+
+  const stylesheetLoads = [
     'mobile-lobby.css',
     'lobby-topbar-cleanup.css',
     'mobile-entry.css',
@@ -203,7 +273,7 @@
     'home-open-rank-art.css',
     'home-why-real-play.css',
     'world-results.css',
-  ].forEach(addStylesheet);
+  ].map((href) => addStylesheet(href));
 
   (async () => {
     const guardLoaded = await loadScript('auth-session-guard.js', 5000);
@@ -221,8 +291,7 @@
 
     await loadScript('legacy-bottom-nav-removal.js', 3500);
 
-    // Build the visible shell BEFORE optional product layers. These four files
-    // are the actual dependency chain for [data-rp-main-menu], Home and bottom nav.
+    // Build the shell while it is still fully hidden and non-interactive.
     await loadScript('main-menu-fast-snap-bootstrap.js', 3500);
     const mainMenuLoaded = await loadScript('main-menu.js', 6500);
     const simpleNavLoaded = await loadScript('simple-navigation.js', 6500);
@@ -236,16 +305,17 @@
       console.warn('[Real Play] Navigation authority layer did not load; base navigation remains available.');
     }
 
-    if (!revealNewShell()) {
+    if (!hasNewShell()) {
       await new Promise((resolve) => window.setTimeout(resolve, 120));
-      if (!revealNewShell()) {
+      if (!hasNewShell()) {
         showBootFailure('New shell did not initialize.');
         return;
       }
     }
 
-    // Everything below enhances an already-visible, already-usable shell.
-    // A slow or failed optional file can no longer trap the user on LOADING.
+    // These layers used to load AFTER the shell was exposed. That allowed users
+    // to tap controls while later scripts were still moving/replacing UI. Keep
+    // the existing loading screen up until every startup layer has settled.
     const enhancements = [
       'public-landing.js',
       'home-why-real-play.js',
@@ -329,6 +399,22 @@
     for (const href of enhancements) {
       const loaded = await loadScript(href, 4500);
       if (!loaded) console.warn(`[Real Play] Optional layer failed to load: ${href}`);
+    }
+
+    // Dynamic CSS loads in parallel, but it must also settle before interaction
+    // is enabled. Failed optional CSS is logged without trapping the whole app.
+    const stylesheetResults = await Promise.all(stylesheetLoads);
+    stylesheetResults.forEach((loaded, index) => {
+      if (!loaded) console.warn(`[Real Play] Optional stylesheet failed to settle at index ${index}.`);
+    });
+
+    // Give fonts/images and two paint frames a chance to settle so the first
+    // tappable frame is already the final layout, not an intermediate layout.
+    await waitForVisualStability();
+
+    bootResourcesReady = true;
+    if (!revealNewShell()) {
+      showBootFailure('Real Play finished loading but the final shell is unavailable.');
     }
   })().catch((error) => {
     showBootFailure('Startup stopped on an unexpected error.', error);
