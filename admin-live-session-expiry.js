@@ -37,7 +37,7 @@
   if (!window.__realPlayAdminOwnershipMigrationInstalled && !document.querySelector('script[data-rp-ownership-migration-loader]')) {
     const migrationScript = document.createElement('script');
     migrationScript.dataset.rpOwnershipMigrationLoader = '1';
-    migrationScript.src = 'admin-player-ownership-migration.js?v=20260917-ownership-migration-v1';
+    migrationScript.src = 'admin-player-ownership-migration.js?v=20260917-ownership-migration-v2';
     migrationScript.async = false;
     migrationScript.addEventListener('error', () => {
       console.warn('[Real Play] Player ownership migration UI failed to load.');
