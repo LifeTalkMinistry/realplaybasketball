@@ -128,7 +128,7 @@
           <section class="rp-4v4-info-panel" data-rp-4v4-info-panel="ovr">
             <p class="rp-4v4-info-kicker">WHY IT EXISTS</p><h3 class="rp-4v4-info-title">TEAM STRENGTH AT A GLANCE</h3>
             <p class="rp-4v4-info-copy">Team OVR gives players a quick picture of a club's overall strength. Real Play uses it to help compare team balance and prevent one club from becoming disproportionately stacked.</p>
-            <div class="rp-4v4-info-formula"><small data-rp-4v4-info-formula-label>PREVIEW CALCULATION</small><div class="rp-4v4-info-formula-line" data-rp-4v4-info-formula-line>TEAM OVR NOT AVAILABLE YET</div><p class="rp-4v4-info-formula-help" data-rp-4v4-info-formula-help>No players with a valid OVR are currently associated with this team.</p></div>
+            <div class="rp-4v4-info-formula"><small data-rp-4v4-info-formula-label>SAMPLE CALCULATION</small><div class="rp-4v4-info-formula-line" data-rp-4v4-info-formula-line><span class="rp-4v4-info-formula-step">72 + 70 + 71 + 71 = 284</span><span class="rp-4v4-info-formula-step final">284 ÷ 4 = TEAM OVR 71</span></div><p class="rp-4v4-info-formula-help" data-rp-4v4-info-formula-help>Example only — actual Team OVR uses the valid player OVRs associated with the team.</p></div>
             <div class="rp-4v4-info-card"><strong>HOW TEAM OVR IS CALCULATED</strong><p>Team OVR is the average OVR of the valid players currently associated with that team. During team selection, this number is only a preview. Once official rosters are finalized, the official roster determines the Team OVR.</p></div>
             <div class="rp-4v4-info-card"><strong>INDIVIDUAL RATINGS STAY SEPARATE</strong><p>Team OVR does not change an individual player's OVR or World Rank.</p></div>
           </section>
@@ -155,12 +155,16 @@
       if (help) help.hidden = true;
       return;
     }
-    label.textContent = 'PREVIEW CALCULATION';
     if (!values.length || finite(teamOvr) === null) {
-      line.textContent = 'TEAM OVR NOT AVAILABLE YET';
-      if (help) help.hidden = false;
+      label.textContent = 'SAMPLE CALCULATION';
+      line.innerHTML = '<span class="rp-4v4-info-formula-step">72 + 70 + 71 + 71 = 284</span><span class="rp-4v4-info-formula-step final">284 ÷ 4 = TEAM OVR 71</span>';
+      if (help) {
+        help.hidden = false;
+        help.textContent = 'Example only — actual Team OVR uses the valid player OVRs associated with the team.';
+      }
       return;
     }
+    label.textContent = 'PREVIEW CALCULATION';
     if (help) help.hidden = true;
     const sum = values.reduce((s,v) => s + v, 0);
     line.innerHTML = `<span class="rp-4v4-info-formula-step">${values.join(' + ')} = ${sum}</span><span class="rp-4v4-info-formula-step final">${sum} ÷ ${values.length} = TEAM OVR ${Math.round(teamOvr)}</span>`;
