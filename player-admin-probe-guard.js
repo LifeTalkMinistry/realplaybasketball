@@ -7,13 +7,19 @@
 
   function adminContextRequested() {
     try {
+      const rememberedAdmin = window.RealPlayServerGate?.isAdminBypass?.() === true;
+      return Boolean(
+        window.__realPlayAdminVerified ||
+        rememberedAdmin ||
+        window.__realPlayAdminAccessProbe ||
+        new URLSearchParams(window.location.search).get('admin') === '1'
+      );
+    } catch (_error) {
       return Boolean(
         window.__realPlayAdminVerified ||
         window.__realPlayAdminAccessProbe ||
         new URLSearchParams(window.location.search).get('admin') === '1'
       );
-    } catch (_error) {
-      return Boolean(window.__realPlayAdminVerified || window.__realPlayAdminAccessProbe);
     }
   }
 
@@ -21,8 +27,9 @@
     const url = typeof input === 'string' ? input : input?.url || '';
 
     // Normal player sessions should not touch admin-only endpoints just to
-    // discover that they are not admins. Admin access still works through the
-    // explicit ?admin=1 flow used by admin.html.
+    // discover that they are not admins. A previously server-verified admin is
+    // also accepted through RealPlayServerGate so Players long-hold management
+    // is not accidentally downgraded while the admin bootstrap is refreshing.
     if (url.startsWith(ADMIN_API_PREFIX) && !adminContextRequested()) {
       return Promise.resolve(new Response(JSON.stringify({
         admin: false,
