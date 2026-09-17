@@ -158,12 +158,12 @@
     return null;
   }
 
-  function showRoutingError(message) {
+  function showRoutingError(message = '') {
     const node = document.querySelector('[data-rp-ranking-message]');
-    if (node) {
-      node.textContent = message || 'Could not open that player profile safely.';
-      node.classList.add('error');
-    }
+    if (!node) return;
+    const text = String(message || '');
+    node.textContent = text;
+    node.classList.toggle('error', Boolean(text));
   }
 
   function closeCurrentProfile() {
