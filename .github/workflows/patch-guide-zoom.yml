@@ -1,4 +1,4 @@
-name: Patch priority guide zoom
+name: Hide priority guide zoom UI
 
 on:
   push:
@@ -13,16 +13,47 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch zoom support
-        run: python scripts/patch-guide-zoom.py
+
+      - name: Hide zoom controls but keep pinch zoom
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('ranking-spot-priority.js')
+          text = path.read_text(encoding='utf-8')
+          marker = '__realPlayPriorityGuideZoomUiHidden'
+
+          if marker not in text:
+              text += r'''
+
+(() => {
+  if (window.__realPlayPriorityGuideZoomUiHidden) return;
+  window.__realPlayPriorityGuideZoomUiHidden = true;
+
+  const style = document.createElement('style');
+  style.id = 'rp-priority-guide-zoom-ui-hidden';
+  style.textContent = `
+    .rp-priority-guide-zoom-controls,
+    .rp-priority-guide-zoom-hint{
+      display:none!important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+'''
+              path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Commit patch
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add ranking-spot-priority.js
           if git diff --cached --quiet; then
-            echo "Zoom patch already present."
+            echo "Zoom UI is already hidden."
             exit 0
           fi
-          git commit -m "Add pinch zoom to priority guide"
+          git commit -m "Hide priority guide zoom controls"
           git push
