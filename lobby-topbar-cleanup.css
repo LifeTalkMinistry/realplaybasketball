@@ -2,3 +2,25 @@
 
 .rp-topbar{display:none!important}
 .rp-player-strip{margin-top:max(14px,env(safe-area-inset-top))}
+
+/* Open Rank player-card drill-downs are secondary profile views. Keep the
+   ranking screen alive underneath, but always place the selected profile above
+   it and restore a real Back control so the player can return to the exact
+   Open Rank screen/state they came from. This also covers tapping your own
+   roster card, whose normal ME topbar is intentionally hidden at top level. */
+body.rp-ranking-open .rp-public-player-profile.rp-profile,
+body.rp-ranking-open [data-rp-profile].rp-profile{
+  z-index:2070!important;
+}
+
+body.rp-ranking-open .rp-public-player-profile .rp-profile-topbar,
+body.rp-ranking-open [data-rp-profile] .rp-profile-topbar{
+  display:grid!important;
+}
+
+body.rp-ranking-open .rp-public-player-profile .rp-profile-back,
+body.rp-ranking-open [data-rp-profile] .rp-profile-back{
+  display:block!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
