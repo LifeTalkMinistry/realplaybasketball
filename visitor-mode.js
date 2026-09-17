@@ -207,7 +207,7 @@
   if (!document.querySelector('script[data-rp-visitor-player-claim-loader]')) {
     const script = document.createElement('script');
     script.dataset.rpVisitorPlayerClaimLoader = '1';
-    script.src = 'visitor-player-claim.js?v=20260917-visitor-claim-v1';
+    script.src = 'visitor-player-claim.js?v=20260917-visitor-claim-v2';
     script.async = false;
     document.head.appendChild(script);
   }
