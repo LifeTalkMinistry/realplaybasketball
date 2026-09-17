@@ -5,14 +5,14 @@
   // loaders cannot install a second fetch/DOM authority.
   window.__realPlayReplayOfficialMvpInstalled = true;
 
-  // Safari/iPad/iPhone replay coverage refinement.
-  // IMPORTANT: this layer does NOT own or intercept the fullscreen button.
-  // It only resizes the replay media after the existing fullscreen system has
-  // already entered native or pseudo fullscreen, preserving the working click.
-  if (!window.__realPlayReplaySafariCoverV2Requested) {
-    window.__realPlayReplaySafariCoverV2Requested = true;
+  // iPhone replay coverage refinement.
+  // IMPORTANT: this layer does NOT own, replace, or intercept the fullscreen
+  // button. The existing fullscreen-back layer remains the sole click authority.
+  // This script only resizes the media after pseudo-fullscreen is already active.
+  if (!window.__realPlayReplaySafariCoverV3Requested) {
+    window.__realPlayReplaySafariCoverV3Requested = true;
     const safariCover = document.createElement('script');
-    safariCover.src = 'career-game-replay-safari-cover-v2.js?v=20260917-safari-cover-v2';
+    safariCover.src = 'career-game-replay-safari-cover-v3.js?v=20260917-safari-cover-v3';
     safariCover.async = false;
     document.head.appendChild(safariCover);
   }
