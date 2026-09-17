@@ -94,6 +94,10 @@
         gap:12px;
         padding:5px 1px 11px;
       }
+      .rp-spot-priority-head > div:first-child{
+        min-width:0;
+        flex:1 1 auto;
+      }
       .rp-spot-priority-head small{
         display:block;
         margin-bottom:4px;
@@ -112,6 +116,34 @@
         letter-spacing:.025em;
         line-height:1;
         text-transform:uppercase;
+      }
+      .rp-spot-priority-head-actions{
+        flex:0 0 auto;
+        display:flex;
+        align-items:center;
+        gap:8px;
+      }
+      .rp-spot-priority-more{
+        min-width:78px;
+        height:34px;
+        padding:0 13px;
+        border:1px solid rgba(73,216,249,.34);
+        border-radius:11px;
+        background:linear-gradient(180deg,rgba(11,55,73,.72),rgba(5,26,38,.82));
+        color:#72e4fb;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 6px 18px rgba(0,0,0,.18);
+        font:900 .58rem/1 Arial,sans-serif;
+        letter-spacing:.035em;
+        cursor:pointer;
+        appearance:none;
+        -webkit-appearance:none;
+      }
+      .rp-spot-priority-more:hover,
+      .rp-spot-priority-more:focus-visible{
+        border-color:rgba(73,216,249,.62);
+        background:linear-gradient(180deg,rgba(14,73,96,.82),rgba(6,34,49,.9));
+        color:#b8f3ff;
+        outline:none;
       }
       .rp-spot-priority-close{
         flex:0 0 auto;
@@ -253,7 +285,11 @@
       @media(max-width:390px){
         .rp-ranking-next .rp-spot-priority-trigger{width:32px;height:32px;border-radius:10px}
         .rp-spot-priority-sheet{padding-left:12px;padding-right:12px}
+        .rp-spot-priority-head{gap:8px}
         .rp-spot-priority-head h2{font-size:1.2rem}
+        .rp-spot-priority-head-actions{gap:6px}
+        .rp-spot-priority-more{min-width:68px;height:32px;padding:0 10px;font-size:.53rem}
+        .rp-spot-priority-close{width:34px;height:34px}
         .rp-session-guide-tab{font-size:.50rem;letter-spacing:.04em}
       }
     `;
@@ -302,7 +338,10 @@
         <div class="rp-spot-priority-grab" aria-hidden="true"></div>
         <header class="rp-spot-priority-head">
           <div><small>HOW REAL PLAY WORKS</small><h2 id="rp-session-guide-title">SESSION GUIDE</h2></div>
-          <button class="rp-spot-priority-close" type="button" aria-label="Close session guide">×</button>
+          <div class="rp-spot-priority-head-actions">
+            <button class="rp-spot-priority-more" type="button" data-rp-spot-priority-more aria-label="Open full spot priority explanation">Click Me</button>
+            <button class="rp-spot-priority-close" type="button" aria-label="Close session guide">×</button>
+          </div>
         </header>
 
         <div class="rp-session-guide-tabs" role="tablist" aria-label="Session guide sections">
