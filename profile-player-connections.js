@@ -83,10 +83,16 @@
       .rp-connections-empty strong{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-style:italic;font-size:1.1rem;color:#edf8ff}
       .rp-connections-empty span{display:block;margin-top:7px;font-size:.56rem;font-weight:800;line-height:1.5;letter-spacing:.04em;color:#708397}
       body.rp-player-connections-open{overflow:hidden!important}
+      .rp-player-connections-section{padding-block:18px!important}
+      .rp-player-connections-section::after{display:none!important}
+      .rp-player-connections-section .rp-player-connections-preview{position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:22px!important;align-items:center!important;padding:0 4px!important}
+      .rp-player-connections-section .rp-player-connections-preview::after{content:'|'!important;position:absolute!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;color:#5f7185!important;font:900 .72rem/1 Arial,sans-serif!important;pointer-events:none!important}
+      .rp-player-connections-section .rp-player-connection-preview{min-height:0!important;width:100%!important;padding:2px 0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;display:block!important;text-align:center!important;overflow:visible!important;opacity:1!important}
+      .rp-player-connections-section .rp-player-connection-preview::before{display:none!important}
+      .rp-player-connections-section .rp-player-connection-preview>small{display:block!important;margin:0!important;color:#f2f7fb!important;font-family:Impact,'Arial Narrow',Arial,sans-serif!important;font-size:.72rem!important;font-style:italic!important;font-weight:900!important;letter-spacing:.035em!important;line-height:1.15!important;white-space:nowrap!important}
       @media(max-width:360px){
-        .rp-player-connections-preview{gap:7px}
-        .rp-player-connection-preview{padding:12px 9px;min-height:112px}
-        .rp-player-connection-preview>small{font-size:.47rem;letter-spacing:.055em}
+        .rp-player-connections-section .rp-player-connections-preview{gap:18px!important}
+        .rp-player-connections-section .rp-player-connection-preview>small{font-size:.62rem!important;letter-spacing:.02em!important}
         .rp-connection-row{grid-template-columns:42px minmax(0,1fr);gap:9px}
         .rp-connection-avatar{width:42px;height:42px}
         .rp-connection-numbers{grid-column:2;justify-content:start;text-align:left;grid-template-columns:repeat(4,auto);gap:4px 7px}
@@ -130,57 +136,29 @@
     ).trim();
   }
 
-  function previewMarkup(mode, item, loading = false) {
+  function previewMarkup(mode) {
     const withPlayer = mode === 'with';
     const label = withPlayer ? 'MOST PLAYED WITH' : 'MOST PLAYED AGAINST';
     const className = withPlayer ? '' : ' against';
-    if (loading) {
-      return `<button type="button" class="rp-player-connection-preview${className}" disabled><small>${label}</small><strong>LOADING...</strong><span>FINALIZED GAMES</span></button>`;
-    }
-    if (!item) {
-      return `<button type="button" class="rp-player-connection-preview${className}" data-rp-connections-open="${mode}"><small>${label}</small><strong>NO HISTORY YET</strong><span>0 FINALIZED GAMES</span><b class="rp-connection-arrow">›</b></button>`;
-    }
-    const gamesLabel = `${item.games} GAME${Number(item.games) === 1 ? '' : 'S'}`;
-    const rate = item.winRate === null || item.winRate === undefined ? '—' : `${Math.round(Number(item.winRate) || 0)}%`;
-    return `<button type="button" class="rp-player-connection-preview${className}" data-rp-connections-open="${mode}"><small>${label}</small><strong>${esc(item.playerName || 'REAL PLAY PLAYER')}</strong><span>${esc(gamesLabel)} · ${esc(rate)} WIN RATE</span><b class="rp-connection-arrow">›</b></button>`;
+    return `<button type="button" class="rp-player-connection-preview${className}" data-rp-connections-open="${mode}"><small>${label}</small></button>`;
   }
 
-  function renderSection(section, connections, name) {
-    const withList = Array.isArray(connections?.mostPlayedWith) ? connections.mostPlayedWith : [];
-    const againstList = Array.isArray(connections?.mostPlayedAgainst) ? connections.mostPlayedAgainst : [];
+  function renderSection(section, playerId, name) {
     const data = {
-      playerId: positiveId(connections?.playerId),
-      playerName: connections?.playerName || name || 'REAL PLAY PLAYER',
-      mostPlayedWith: withList,
-      mostPlayedAgainst: againstList,
+      playerId: positiveId(playerId),
+      playerName: name || 'REAL PLAY PLAYER',
+      mostPlayedWith: [],
+      mostPlayedAgainst: [],
     };
     section.__rpConnectionsData = data;
     section.innerHTML = `
-      <div class="rp-profile-section-head"><div><small>PLAYER CONNECTIONS</small><h2>WHO YOU SHARE THE COURT WITH.</h2></div><span>FINALIZED GAMES</span></div>
       <div class="rp-player-connections-preview">
-        ${previewMarkup('with', withList[0])}
-        ${previewMarkup('against', againstList[0])}
+        ${previewMarkup('with')}
+        ${previewMarkup('against')}
       </div>`;
     section.querySelectorAll('[data-rp-connections-open]').forEach((button) => {
       button.addEventListener('click', () => openPage(button.dataset.rpConnectionsOpen, data));
     });
-  }
-
-  function renderLoading(section) {
-    section.innerHTML = `
-      <div class="rp-profile-section-head"><div><small>PLAYER CONNECTIONS</small><h2>WHO YOU SHARE THE COURT WITH.</h2></div><span>FINALIZED GAMES</span></div>
-      <div class="rp-player-connections-preview">
-        ${previewMarkup('with', null, true)}
-        ${previewMarkup('against', null, true)}
-      </div>`;
-  }
-
-  function renderUnavailable(section, name) {
-    const data = { playerName: name || 'REAL PLAY PLAYER', mostPlayedWith: [], mostPlayedAgainst: [] };
-    section.__rpConnectionsData = data;
-    section.innerHTML = `
-      <div class="rp-profile-section-head"><div><small>PLAYER CONNECTIONS</small><h2>WHO YOU SHARE THE COURT WITH.</h2></div><span>FINALIZED GAMES</span></div>
-      <div class="rp-connections-empty"><strong>CONNECTION DATA UNAVAILABLE.</strong><span>YOUR PROFILE AND RECENT GAMES ARE STILL AVAILABLE.</span></div>`;
   }
 
   function createSection(profile) {
@@ -198,37 +176,17 @@
     return section;
   }
 
-  async function enhanceProfile(profile) {
+  function enhanceProfile(profile) {
     if (!profile?.classList?.contains('open')) return;
     const section = createSection(profile);
-    if (!section || section.dataset.rpConnectionsLoading === 'true' || section.dataset.rpConnectionsReady === 'true') return;
+    if (!section || section.dataset.rpConnectionsReady === 'true') return;
 
     const playerId = positiveId(profile.dataset.rpPublicPlayerId);
     const ownProfile = Boolean(profile.matches('[data-rp-profile]') && !profile.matches('.rp-public-player-profile'));
     if (!playerId && !ownProfile) return;
 
-    const key = playerId ? `player:${playerId}` : 'me';
-    const name = profileName(profile);
-    const cached = cache.get(key);
-    if (cached && Date.now() - cached.at < CACHE_MS) {
-      section.dataset.rpConnectionsReady = 'true';
-      renderSection(section, cached.data, name);
-      return;
-    }
-
-    section.dataset.rpConnectionsLoading = 'true';
-    renderLoading(section);
-    try {
-      const data = await requestConnections(playerId);
-      if (!section.isConnected || !profile.classList.contains('open')) return;
-      cache.set(key, { at: Date.now(), data });
-      section.dataset.rpConnectionsReady = 'true';
-      renderSection(section, data, name);
-    } catch (_error) {
-      if (section.isConnected) renderUnavailable(section, name);
-    } finally {
-      if (section.isConnected) delete section.dataset.rpConnectionsLoading;
-    }
+    section.dataset.rpConnectionsReady = 'true';
+    renderSection(section, playerId, profileName(profile));
   }
 
   function connectionInitials(item) {
@@ -306,7 +264,6 @@
     if (!pageState) return;
     const safeMode = mode === 'against' ? 'against' : 'with';
     pageState.mode = safeMode;
-    const list = safeMode === 'with' ? pageState.data.mostPlayedWith : pageState.data.mostPlayedAgainst;
     page.querySelectorAll('[data-rp-connections-mode]').forEach((button) => {
       const active = button.dataset.rpConnectionsMode === safeMode;
       button.classList.toggle('active', active);
@@ -317,20 +274,55 @@
     const heading = page.querySelector('[data-rp-connections-heading]');
     if (heading) heading.textContent = safeMode === 'with' ? 'TEAMMATES BY GAMES PLAYED' : 'OPPONENTS BY GAMES PLAYED';
     const root = page.querySelector('[data-rp-connections-list]');
-    if (root) {
-      root.classList.toggle('rp-connection-list-against', safeMode === 'against');
-      root.innerHTML = listMarkup(safeMode, pageState.data);
+    if (!root) return;
+
+    root.classList.toggle('rp-connection-list-against', safeMode === 'against');
+    if (pageState.loading) {
+      root.innerHTML = '<div class="rp-connections-empty"><strong>LOADING...</strong><span>CHECKING FINALIZED REAL PLAY GAMES.</span></div>';
+      return;
     }
+    if (pageState.error) {
+      root.innerHTML = '<div class="rp-connections-empty"><strong>CONNECTION DATA UNAVAILABLE.</strong><span>THE PAGE IS WORKING, BUT THE CONNECTION DATA SERVICE IS NOT AVAILABLE YET.</span></div>';
+      return;
+    }
+    root.innerHTML = listMarkup(safeMode, pageState.data);
   }
 
-  function openPage(mode, data) {
+  async function openPage(mode, data) {
     createPage();
-    pageState = { mode, data };
+    const key = positiveId(data?.playerId) ? `player:${positiveId(data.playerId)}` : 'me';
+    const cached = cache.get(key);
+    pageState = {
+      mode,
+      data: cached?.data || data || { playerName: 'REAL PLAY PLAYER', mostPlayedWith: [], mostPlayedAgainst: [] },
+      loading: !cached,
+      error: false,
+    };
     renderPage(mode);
     page.classList.add('open');
     page.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-player-connections-open');
     page.scrollTop = 0;
+
+    if (cached && Date.now() - cached.at < CACHE_MS) return;
+
+    try {
+      const loaded = await requestConnections(positiveId(data?.playerId));
+      cache.set(key, { at: Date.now(), data: loaded });
+      if (!page?.classList.contains('open') || !pageState) return;
+      pageState.data = {
+        ...loaded,
+        playerName: loaded?.playerName || data?.playerName || 'REAL PLAY PLAYER',
+      };
+      pageState.loading = false;
+      pageState.error = false;
+      renderPage(pageState.mode);
+    } catch (_error) {
+      if (!page?.classList.contains('open') || !pageState) return;
+      pageState.loading = false;
+      pageState.error = true;
+      renderPage(pageState.mode);
+    }
   }
 
   function closePage() {
@@ -379,11 +371,12 @@
   installStyles();
   createPage();
 
-  const observer = new MutationObserver(queueScan);
-  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'data-rp-public-player-id'] });
+  const observer = new MutationObserver((mutations) => {
+    if (mutations.some((mutation) => mutation.type === 'childList' && mutation.addedNodes.length)) queueScan();
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener('realplay:public-profile-loaded', queueScan);
   window.addEventListener('realplay:app-ready', queueScan);
-  window.addEventListener('focus', queueScan);
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && page?.classList.contains('open')) {
       event.stopImmediatePropagation();
