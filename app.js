@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260917-player-claim-v79';
+  const version = '20260917-guide-clean-v80';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
