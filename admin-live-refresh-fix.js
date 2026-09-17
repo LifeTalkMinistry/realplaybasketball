@@ -107,7 +107,7 @@
  * The commissioner-controlled PLAYER CAP on the Home Open Rank card is the
  * display authority for the secured-spots denominator. The access API can lag
  * behind that admin setting on an already-created session, so never degrade to
- * "04 SECURED" when the commissioner has explicitly set a cap such as 16.
+ * a count without context when the commissioner has explicitly set a cap.
  *
  * The first cap players share one capacity pool, regardless of whether their
  * entry is Token, GCash, Cash, or Free Standby. Only players beyond that cap are
@@ -127,10 +127,6 @@
   function number(value) {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : 0;
-  }
-
-  function pad(value) {
-    return String(number(value)).padStart(2, '0');
   }
 
   function parsePlayerCap(value) {
@@ -154,6 +150,17 @@
     return number(document.querySelector(selector)?.textContent);
   }
 
+  function spotsLabel(totalPlayers, capacity) {
+    const insideCap = Math.min(totalPlayers, capacity);
+    const spotsLeft = Math.max(capacity - insideCap, 0);
+    const overflowStandby = Math.max(totalPlayers - capacity, 0);
+
+    if (spotsLeft > 1) return `${insideCap} FILLED · ${spotsLeft} SPOTS LEFT`;
+    if (spotsLeft === 1) return `${insideCap} FILLED · 1 SPOT LEFT`;
+    if (overflowStandby > 0) return `${capacity}/${capacity} FULL · ${overflowStandby} STANDBY`;
+    return `${capacity}/${capacity} FULL`;
+  }
+
   function applyCapacityAuthority() {
     applyQueued = false;
 
@@ -167,9 +174,7 @@
     const cash = breakdownCount('[data-rp-ranking-access-cash]');
     const standby = breakdownCount('[data-rp-ranking-access-standby]');
     const totalPlayers = token + gcash + cash + standby;
-    const insideCap = Math.min(totalPlayers, capacity);
-    const overflowStandby = Math.max(totalPlayers - capacity, 0);
-    const next = `${pad(insideCap)}/${pad(capacity)} SECURED${overflowStandby > 0 ? ` · ${pad(overflowStandby)} STANDBY` : ''}`;
+    const next = spotsLabel(totalPlayers, capacity);
 
     if (totalNode.textContent !== next) totalNode.textContent = next;
   }
