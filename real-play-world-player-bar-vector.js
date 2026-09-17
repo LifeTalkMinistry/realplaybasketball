@@ -4,29 +4,28 @@
   if (window.__realPlayWorldPlayerBarAssetsRestored) return;
   window.__realPlayWorldPlayerBarAssetsRestored = true;
 
-  const CAPTAIN_BADGE_DOMINANT_BAR = 'assets/world/player-bars/badge-dominant/player-row-bar-captain-eligible.png';
+  // IMPORTANT: the uploaded badge-dominant Captain bar is the retired artwork.
+  // Keep it disconnected from the live Players leaderboard. The Captain Eligible
+  // row must use the original recognition bar instead.
+  const CAPTAIN_PLAYER_BAR = 'assets/recognitions/bars/bar-captain-eligible.png';
 
   const ORIGINAL_BARS = Object.freeze({
     most_overall_mvp: 'assets/recognitions/bars/bar-most-overall-team-mvp.png',
     most_team_mvp: 'assets/recognitions/bars/bar-most-team-mvp.png',
     best_shooting: 'assets/recognitions/bars/bar-best-shooting.png',
     best_rebounder: 'assets/recognitions/bars/bar-best-rebounder.png',
-    captain_eligible: CAPTAIN_BADGE_DOMINANT_BAR,
+    captain_eligible: CAPTAIN_PLAYER_BAR,
   });
 
-  // Remove styles injected by the retired vector implementation if this bundle is
-  // evaluated in an already-running page during development/hot reload.
-  document.querySelectorAll('[data-rp-world-player-bar-vector],[data-rp-captain-row-retired],[data-rp-captain-badge-dominant-route]').forEach((node) => node.remove());
+  // Remove any older routing styles that could force the retired Captain bar.
+  document.querySelectorAll('[data-rp-world-player-bar-vector],[data-rp-captain-row-retired],[data-rp-captain-badge-dominant-route],[data-rp-captain-player-bar-route]').forEach((node) => node.remove());
 
-  // The recognition system still has a legacy Captain Eligible bar path in its
-  // metadata. Force the visual route to the dedicated badge-dominant asset so
-  // that legacy artwork can never win on the Players leaderboard.
-  function installCaptainBadgeDominantRoute() {
+  function installCaptainPlayerBarRoute() {
     const style = document.createElement('style');
-    style.dataset.rpCaptainBadgeDominantRoute = '1';
+    style.dataset.rpCaptainPlayerBarRoute = '1';
     style.textContent = `
       .rp-world-player-row[data-recognition-type="captain_eligible"]{
-        --rp-recognition-bar:url("${CAPTAIN_BADGE_DOMINANT_BAR}")!important;
+        --rp-recognition-bar:url("${CAPTAIN_PLAYER_BAR}")!important;
       }
     `;
     document.head.appendChild(style);
@@ -51,7 +50,7 @@
     root.querySelectorAll?.('.rp-world-player-row[data-recognition-type]').forEach(restoreRow);
   }
 
-  installCaptainBadgeDominantRoute();
+  installCaptainPlayerBarRoute();
   restoreAll();
 
   const observer = new MutationObserver((mutations) => {
