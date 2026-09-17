@@ -2,10 +2,7 @@
   if (window.__realPlaySettingsPanelInstalled) return;
   window.__realPlaySettingsPanelInstalled = true;
 
-  const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
-  const VISITOR_KEY = 'real_play_visitor_mode';
-  const ADMIN_CACHE_KEY = 'real_play_admin_ui_bypass_v1';
 
   const menu = document.querySelector('[data-rp-main-menu]');
   const settingsChoice = document.querySelector('[data-rp-main-action="settings"]');
@@ -45,12 +42,6 @@
 
       <button class="rp-settings-logout" type="button" data-rp-settings-action="logout">LOG OUT</button>
       <p class="rp-settings-version">REAL PLAY BASKETBALL · BETA SEASON</p>
-
-      <div class="rp-settings-danger-zone">
-        <small>DANGER ZONE</small>
-        <p>Permanently remove this Real Play account and release its email.</p>
-        <button class="rp-settings-delete-entry" type="button" data-rp-settings-action="delete_account">DELETE ACCOUNT</button>
-      </div>
     </section>
 
     <section class="rp-settings-panel rp-settings-community" data-rp-settings-community hidden role="dialog" aria-modal="true" aria-labelledby="rp-community-title">
@@ -69,53 +60,23 @@
         <div class="rp-settings-rule"><strong>CUSSING GETS CALLED OUT.</strong><span>Respect the correction and move forward. Repeated disrespect can lead to removal, suspension or a community ban.</span></div>
       </div>
     </section>
-
-    <section class="rp-settings-panel rp-settings-delete" data-rp-settings-delete hidden role="dialog" aria-modal="true" aria-labelledby="rp-delete-account-title">
-      <header class="rp-settings-head rp-settings-head-danger">
-        <button class="rp-settings-back" type="button" data-rp-delete-back aria-label="Back to settings">←</button>
-        <div>
-          <small>DANGER ZONE</small>
-          <h2 id="rp-delete-account-title">DELETE ACCOUNT</h2>
-        </div>
-      </header>
-
-      <div class="rp-settings-delete-copy">
-        <p class="rp-settings-delete-kicker">PERMANENT ACCOUNT DELETION</p>
-        <p>This permanently deletes your Real Play login and releases the email so it can be used again.</p>
-        <div class="rp-settings-delete-rule">
-          <strong>YOUR COURT HISTORY IS PROTECTED.</strong>
-          <span>If this login was attached to a pre-existing Admin-created player, that player identity and its existing court history are released back to an unclaimed state instead of being erased.</span>
-        </div>
-        <div class="rp-settings-delete-rule warning">
-          <strong>THIS CANNOT BE UNDONE.</strong>
-          <span>Type <b>DELETE</b> exactly below to confirm permanent account deletion.</span>
-        </div>
-
-        <form class="rp-settings-delete-form" data-rp-delete-form>
-          <label for="rp-delete-account-confirm">TYPE DELETE TO CONFIRM</label>
-          <input id="rp-delete-account-confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DELETE" data-rp-delete-confirm />
-          <p class="rp-settings-delete-status" data-rp-delete-status aria-live="polite"></p>
-          <button class="rp-settings-delete-submit" type="submit" data-rp-delete-submit disabled>DELETE MY ACCOUNT</button>
-        </form>
-      </div>
-    </section>
   `;
   document.body.appendChild(panel);
 
   const mainPanel = panel.querySelector('[data-rp-settings-main]');
   const communityPanel = panel.querySelector('[data-rp-settings-community]');
-  const deletePanel = panel.querySelector('[data-rp-settings-delete]');
-  const deleteForm = panel.querySelector('[data-rp-delete-form]');
-  const deleteInput = panel.querySelector('[data-rp-delete-confirm]');
-  const deleteSubmit = panel.querySelector('[data-rp-delete-submit]');
-  const deleteStatus = panel.querySelector('[data-rp-delete-status]');
   const nameNode = panel.querySelector('[data-rp-settings-name]');
   const emailNode = panel.querySelector('[data-rp-settings-email]');
 
   function syncIdentity() {
     const lobby = document.querySelector('[data-rp-lobby]');
-    const playerName = String(lobby?.querySelector('[data-rp-name]')?.textContent || document.querySelector('[data-auth-account-name]')?.textContent || 'REAL PLAY PLAYER').trim();
+    const playerName = String(
+      lobby?.querySelector('[data-rp-name]')?.textContent ||
+      document.querySelector('[data-auth-account-name]')?.textContent ||
+      'REAL PLAY PLAYER'
+    ).trim();
     const email = String(document.querySelector('[data-auth-account-email]')?.textContent || '').trim();
+
     if (nameNode) nameNode.textContent = playerName || 'REAL PLAY PLAYER';
     if (emailNode) {
       emailNode.textContent = email;
@@ -123,33 +84,14 @@
     }
   }
 
-  function resetDeleteConfirmation() {
-    if (deleteInput) deleteInput.value = '';
-    if (deleteSubmit) {
-      deleteSubmit.disabled = true;
-      deleteSubmit.dataset.busy = 'false';
-      deleteSubmit.textContent = 'DELETE MY ACCOUNT';
-    }
-    if (deleteStatus) {
-      deleteStatus.textContent = '';
-      deleteStatus.classList.remove('error', 'success');
-    }
-  }
-
   function showMainSettings() {
     syncIdentity();
-    resetDeleteConfirmation();
     if (mainPanel) mainPanel.hidden = false;
     if (communityPanel) communityPanel.hidden = true;
-    if (deletePanel) deletePanel.hidden = true;
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-settings-open');
 
-    // Admin access is session-dependent. The login token can change inside this
-    // same browser tab, and the native "storage" event does not fire back into
-    // the tab that changed localStorage. Tell the admin bootstrap to re-check
-    // the current authenticated session whenever Settings is actually opened.
     window.dispatchEvent(new CustomEvent('realplay:settings-open'));
   }
 
@@ -167,8 +109,6 @@
     document.body.classList.remove('rp-settings-open');
     if (mainPanel) mainPanel.hidden = false;
     if (communityPanel) communityPanel.hidden = true;
-    if (deletePanel) deletePanel.hidden = true;
-    resetDeleteConfirmation();
 
     if (restoreFocus) {
       window.setTimeout(() => settingsChoice.focus({ preventScroll: true }), 30);
@@ -178,16 +118,7 @@
   function showCommunity() {
     if (mainPanel) mainPanel.hidden = true;
     if (communityPanel) communityPanel.hidden = false;
-    if (deletePanel) deletePanel.hidden = true;
     communityPanel?.querySelector('[data-rp-community-back]')?.focus();
-  }
-
-  function showDeleteAccount() {
-    resetDeleteConfirmation();
-    if (mainPanel) mainPanel.hidden = true;
-    if (communityPanel) communityPanel.hidden = true;
-    if (deletePanel) deletePanel.hidden = false;
-    window.setTimeout(() => deleteInput?.focus(), 30);
   }
 
   function openMembership() {
@@ -214,74 +145,6 @@
     window.location.reload();
   }
 
-  async function deleteAccount() {
-    if (!deleteInput || !deleteSubmit || deleteSubmit.dataset.busy === 'true') return;
-    if (deleteInput.value !== 'DELETE') return;
-
-    const accessToken = window.localStorage.getItem(TOKEN_KEY) || '';
-    if (!accessToken) {
-      if (deleteStatus) {
-        deleteStatus.textContent = 'Your session expired. Log in again before deleting the account.';
-        deleteStatus.classList.add('error');
-      }
-      return;
-    }
-
-    deleteSubmit.dataset.busy = 'true';
-    deleteSubmit.disabled = true;
-    deleteSubmit.textContent = 'DELETING ACCOUNT…';
-    if (deleteStatus) {
-      deleteStatus.textContent = 'Deleting your Real Play account…';
-      deleteStatus.classList.remove('error', 'success');
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/real-play/account/delete`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ confirmation: 'DELETE' }),
-        cache: 'no-store',
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const error = new Error(data?.message || 'Real Play could not delete this account.');
-        error.code = data?.code || '';
-        throw error;
-      }
-
-      if (deleteStatus) {
-        deleteStatus.textContent = data?.message || 'Account deleted. Returning you to Visitor mode…';
-        deleteStatus.classList.add('success');
-      }
-      deleteSubmit.textContent = 'ACCOUNT DELETED';
-
-      window.localStorage.removeItem(TOKEN_KEY);
-      window.localStorage.removeItem(ADMIN_CACHE_KEY);
-      window.localStorage.setItem(VISITOR_KEY, '1');
-      try {
-        window.dispatchEvent(new CustomEvent('realplay:visitorchange'));
-        window.dispatchEvent(new CustomEvent('realplay:session-expired'));
-      } catch (_error) {}
-
-      window.setTimeout(() => {
-        window.location.replace(`${window.location.origin}${window.location.pathname}`);
-      }, 700);
-    } catch (error) {
-      if (deleteStatus) {
-        deleteStatus.textContent = error?.message || 'Real Play could not delete this account.';
-        deleteStatus.classList.remove('success');
-        deleteStatus.classList.add('error');
-      }
-      deleteSubmit.dataset.busy = 'false';
-      deleteSubmit.disabled = deleteInput.value !== 'DELETE';
-      deleteSubmit.textContent = 'DELETE MY ACCOUNT';
-    }
-  }
-
   function interceptSettingsSelection(event) {
     if (!settingsChoice.classList.contains('slot-active')) return false;
     event.preventDefault();
@@ -306,12 +169,13 @@
   }, true);
 
   menuList?.addEventListener('keydown', (event) => {
-    if ((event.key === 'Enter' || event.key === ' ') && settingsChoice.classList.contains('slot-active')) interceptSettingsSelection(event);
+    if ((event.key === 'Enter' || event.key === ' ') && settingsChoice.classList.contains('slot-active')) {
+      interceptSettingsSelection(event);
+    }
   }, true);
 
   panel.querySelector('[data-rp-settings-back]')?.addEventListener('click', closeSettings);
   panel.querySelector('[data-rp-community-back]')?.addEventListener('click', showMainSettings);
-  panel.querySelector('[data-rp-delete-back]')?.addEventListener('click', showMainSettings);
 
   panel.querySelectorAll('[data-rp-settings-action]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -319,22 +183,7 @@
       if (action === 'membership') openMembership();
       else if (action === 'community') showCommunity();
       else if (action === 'logout') logout();
-      else if (action === 'delete_account') showDeleteAccount();
     });
-  });
-
-  deleteInput?.addEventListener('input', () => {
-    if (!deleteSubmit || deleteSubmit.dataset.busy === 'true') return;
-    deleteSubmit.disabled = deleteInput.value !== 'DELETE';
-    if (deleteStatus) {
-      deleteStatus.textContent = '';
-      deleteStatus.classList.remove('error', 'success');
-    }
-  });
-
-  deleteForm?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    deleteAccount();
   });
 
   panel.addEventListener('click', (event) => {
@@ -343,8 +192,7 @@
 
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !panel.classList.contains('open')) return;
-    if (deletePanel && !deletePanel.hidden) showMainSettings();
-    else if (communityPanel && !communityPanel.hidden) showMainSettings();
+    if (communityPanel && !communityPanel.hidden) showMainSettings();
     else closeSettings();
   });
 })();
