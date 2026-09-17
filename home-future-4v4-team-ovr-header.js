@@ -5,6 +5,7 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
   const STYLE_ID = 'rp-4v4-team-ovr-header-style';
+  const BALANCE_TOLERANCE = 2;
   const CLUB_NAMES = Object.freeze({ lions:'LIONS', valiant:'VALIANT', watchmen:'WATCHMEN', conquerors:'CONQUERORS' });
 
   let preferencePlayers = [];
@@ -47,6 +48,14 @@
     const validation = String(state.validationResult ?? state.status ?? '').trim().toUpperCase();
     return teamOvr === null || cap === null || !validation ? null : { teamOvr, floor, cap, validation };
   }
+  function balanceRangeState() {
+    const validByClub = Object.keys(CLUB_NAMES).map((clubId) => clubPlayers(clubId).map((p) => finite(p?.ovr)).filter((v) => v !== null && v > 0));
+    const rosterComplete = validByClub.every((values) => values.length === 5);
+    const values = validByClub.flat();
+    if (!rosterComplete || values.length !== 20) return { sample:true, playerCount:values.length, target:71, lower:69, upper:73 };
+    const target = Math.round(values.reduce((sum,value) => sum + value, 0) / values.length);
+    return { sample:false, playerCount:20, target, lower:target - BALANCE_TOLERANCE, upper:target + BALANCE_TOLERANCE };
+  }
 
   function ensureStyle() {
     if (document.getElementById(STYLE_ID)) return;
@@ -73,6 +82,7 @@
       .rp-4v4-info-body{overflow-y:auto;padding:16px 16px 20px;color:#b4c3d0}.rp-4v4-info-panel[hidden]{display:none!important}.rp-4v4-info-kicker{margin:0 0 7px;color:#6ce2ff;font-size:.47rem;font-weight:1000;letter-spacing:.12em;text-transform:uppercase}.rp-4v4-info-title{margin:0 0 8px;color:#fff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.08rem;font-style:italic;font-weight:1000;line-height:1.05;text-transform:uppercase}.rp-4v4-info-copy{margin:0;color:#97aabc;font-size:.72rem;line-height:1.55}.rp-4v4-info-card{margin-top:13px;padding:13px;border:1px solid rgba(126,173,232,.11);border-radius:16px;background:rgba(255,255,255,.025)}.rp-4v4-info-card strong{display:block;margin-bottom:6px;color:#e9f4fd;font-size:.62rem;font-weight:1000;letter-spacing:.05em;text-transform:uppercase}.rp-4v4-info-card p{margin:0;color:#879cad;font-size:.68rem;line-height:1.5}
       .rp-4v4-info-formula{margin-top:13px;padding:15px;border:1px solid rgba(78,202,255,.22);border-radius:18px;background:linear-gradient(180deg,rgba(78,202,255,.05),#04090f)}.rp-4v4-info-formula small{display:block;color:#88a6ba;font-size:.45rem;font-weight:1000;letter-spacing:.12em;text-transform:uppercase}.rp-4v4-info-formula-line{margin-top:8px;color:#fff;font-family:var(--rp-display,Arial,sans-serif);font-size:.94rem;font-weight:1000;text-align:center}.rp-4v4-info-formula-step{display:block;margin:4px 0}.rp-4v4-info-formula-step.final{color:var(--rp4v4-ovr-accent);font-size:1.08rem}.rp-4v4-info-formula-help{margin:7px 0 0;color:#6f8799;font-size:.62rem;line-height:1.45;text-align:center}.rp-4v4-info-formula-help[hidden]{display:none!important}
       .rp-4v4-info-panel[data-rp-4v4-info-panel="ovr"]{width:100%;margin:0;text-align:left}.rp-4v4-info-panel[data-rp-4v4-info-panel="ovr"] .rp-4v4-info-copy{max-width:none;margin:0}
+      .rp-4v4-balance-range{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:11px}.rp-4v4-balance-stat{padding:10px 6px;border:1px solid rgba(126,173,232,.1);border-radius:12px;background:rgba(255,255,255,.018);text-align:center}.rp-4v4-balance-stat small{display:block;color:#6f8799;font-size:.4rem;font-weight:1000;letter-spacing:.09em;text-transform:uppercase}.rp-4v4-balance-stat b{display:block;margin-top:4px;color:#eef8ff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.05rem;font-style:italic}.rp-4v4-balance-stat.target b{color:#62defd}.rp-4v4-balance-explain{margin-top:9px!important}.rp-4v4-balance-status{margin-top:7px!important;color:#6f8799!important;font-size:.61rem!important}
       .rp-4v4-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}.rp-4v4-info-stat{padding:12px;border:1px solid rgba(126,173,232,.1);border-radius:14px;background:rgba(255,255,255,.02)}.rp-4v4-info-stat small{display:block;color:#60768a;font-size:.4rem;font-weight:1000;letter-spacing:.1em;text-transform:uppercase}.rp-4v4-info-stat strong{display:block;margin-top:5px;color:#ecf6ff;font-size:.75rem;font-weight:1000;line-height:1.25;text-transform:uppercase}.rp-4v4-info-note{margin-top:13px;padding:11px 12px;border-left:2px solid #42d9ff;border-radius:0 12px 12px 0;background:rgba(66,217,255,.05);color:#7f9bb0;font-size:.64rem;line-height:1.48}
       .rp-4v4-static-view .rp-4v4-player-card.is-profile-link{cursor:pointer;touch-action:manipulation}.rp-4v4-static-view .rp-4v4-player-card.is-profile-link:focus-visible{outline:2px solid rgba(80,220,255,.68);outline-offset:2px}
       @media(max-width:380px){.rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{font-size:.94rem;letter-spacing:.075em}.rp-4v4-static-view .rp-4v4-team-ovr-plaque{width:196px;height:64px;margin-bottom:-18px}.rp-4v4-info-grid{grid-template-columns:1fr}}@media(min-width:700px){.rp-4v4-info-backdrop{align-items:center}}
@@ -130,6 +140,7 @@
             <p class="rp-4v4-info-kicker">WHY IT EXISTS</p><h3 class="rp-4v4-info-title">TEAM STRENGTH AT A GLANCE</h3>
             <p class="rp-4v4-info-copy">Team OVR summarizes a team's overall strength and helps Real Play keep teams balanced.</p>
             <div class="rp-4v4-info-formula"><small data-rp-4v4-info-formula-label>SAMPLE CALCULATION</small><div class="rp-4v4-info-formula-line" data-rp-4v4-info-formula-line><span class="rp-4v4-info-formula-step">72 + 70 + 71 + 71 = 284</span><span class="rp-4v4-info-formula-step final">284 ÷ 4 = TEAM OVR 71</span></div></div>
+            <div class="rp-4v4-info-card"><strong data-rp-4v4-balance-title>BALANCE RANGE</strong><p class="rp-4v4-balance-explain">When all four 5-player rosters are complete, Real Play averages all 20 valid player OVRs. That average becomes the Target OVR. The balanced range is Target ±2.</p><div class="rp-4v4-balance-range"><div class="rp-4v4-balance-stat"><small>LOWER</small><b data-rp-4v4-balance-lower>69</b></div><div class="rp-4v4-balance-stat target"><small>TARGET</small><b data-rp-4v4-balance-target>71</b></div><div class="rp-4v4-balance-stat"><small>UPPER</small><b data-rp-4v4-balance-upper>73</b></div></div><p class="rp-4v4-balance-status" data-rp-4v4-balance-status>Sample range until all four 5-player rosters are complete.</p></div>
             <div class="rp-4v4-info-card"><strong>INDIVIDUAL RATINGS STAY SEPARATE</strong><p>Team OVR does not change a player's OVR or World Rank.</p></div>
           </section>
           <section class="rp-4v4-info-panel" data-rp-4v4-info-panel="setup" hidden><p class="rp-4v4-info-kicker">CURRENT PLANNED FORMAT</p><h3 class="rp-4v4-info-title">FAST, ACTIVE 4V4 BASKETBALL</h3><div class="rp-4v4-info-grid"><div class="rp-4v4-info-stat"><small>FORMAT</small><strong>4 VS 4</strong></div><div class="rp-4v4-info-stat"><small>SET LENGTH</small><strong>15 MINUTES</strong></div><div class="rp-4v4-info-stat"><small>SHOT CLOCK</small><strong>12 SECONDS</strong></div><div class="rp-4v4-info-stat"><small>FRESH BALL</small><strong>OUTSIDE THE 3PT LINE</strong></div></div><p class="rp-4v4-info-note">Set allocation is tracked so playing time stays organized. Late arrivals can still enter the rotation, but completed sets remain counted toward their session total.</p></section>
@@ -141,9 +152,25 @@
     return backdrop;
   }
 
+  function updateBalanceRange(modal) {
+    if (!modal) return;
+    const range = balanceRangeState();
+    const title = modal.querySelector('[data-rp-4v4-balance-title]');
+    const lower = modal.querySelector('[data-rp-4v4-balance-lower]');
+    const target = modal.querySelector('[data-rp-4v4-balance-target]');
+    const upper = modal.querySelector('[data-rp-4v4-balance-upper]');
+    const status = modal.querySelector('[data-rp-4v4-balance-status]');
+    if (lower) lower.textContent = String(range.lower);
+    if (target) target.textContent = String(range.target);
+    if (upper) upper.textContent = String(range.upper);
+    if (title) title.textContent = range.sample ? 'SAMPLE BALANCE RANGE' : 'CURRENT BALANCE RANGE';
+    if (status) status.textContent = range.sample ? 'Sample range until all four 5-player rosters are complete.' : `Calculated from all ${range.playerCount} rostered players. Lower = Target − ${BALANCE_TOLERANCE}; Upper = Target + ${BALANCE_TOLERANCE}.`;
+  }
+
   function updateInfoOvr(view) {
     const modal = ensureInfoModal(view);
     if (!modal) return;
+    updateBalanceRange(modal);
     const { values, teamOvr, official } = currentOvrFormula(view);
     const line = modal.querySelector('[data-rp-4v4-info-formula-line]');
     const label = modal.querySelector('[data-rp-4v4-info-formula-label]');
@@ -158,10 +185,7 @@
     if (!values.length || finite(teamOvr) === null) {
       label.textContent = 'SAMPLE CALCULATION';
       line.innerHTML = '<span class="rp-4v4-info-formula-step">72 + 70 + 71 + 71 = 284</span><span class="rp-4v4-info-formula-step final">284 ÷ 4 = TEAM OVR 71</span>';
-      if (help) {
-        help.hidden = false;
-        help.textContent = 'Example only. During team selection, Team OVR is a preview based on valid player OVRs associated with the team. Once rosters are finalized, the official roster determines Team OVR.';
-      }
+      if (help) help.hidden = true;
       return;
     }
     label.textContent = 'PREVIEW CALCULATION';
