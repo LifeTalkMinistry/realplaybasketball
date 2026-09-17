@@ -147,6 +147,41 @@
     }
   }, true);
 
+  function routeLoggedOutUserHome() {
+    if (hasToken()) return;
+
+    // Logged-out users are public visitors now. Do not fall back to the retired
+    // entry/marketing screen; keep them inside the current Real Play Home.
+    enter();
+    closeGate();
+
+    const overlay = document.querySelector('[data-auth-overlay]');
+    if (overlay?.classList.contains('open')) {
+      const close = overlay.querySelector('[data-auth-close]');
+      if (close) close.click();
+      else {
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('auth-open');
+      }
+    }
+
+    if (window.RealPlaySimpleNavigation?.home) {
+      window.RealPlaySimpleNavigation.home();
+    } else {
+      document.querySelector('[data-rp-simple-nav-item="home"]')?.click();
+    }
+  }
+
+  // Every explicit logout path ultimately activates the same data-auth-logout
+  // control. Wait until the existing auth handler clears the token, then move
+  // the user directly into the public Home experience.
+  document.addEventListener('click', (event) => {
+    const logout = event.target.closest?.('[data-auth-logout]');
+    if (!logout) return;
+    window.setTimeout(routeLoggedOutUserHome, 0);
+  });
+
   function syncTokenState() {
     if (!hasToken()) return;
     if (localStorage.getItem(VISITOR_KEY) === '1') exit();
