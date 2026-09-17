@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 980" role="img" aria-labelledby="title desc">
+  <title id="title">Paano gumagana ang 16-player priority?</title>
+  <desc id="desc">Real Play Basketball 16-player priority system explanation.</desc>
+  <rect width="760" height="980" fill="#020306"/>
+  <rect x="18" y="18" width="724" height="944" rx="22" fill="#020306" stroke="#1b6f83" stroke-width="2"/>
+  <style>
+    .t{font-family:Arial,Helvetica,sans-serif;fill:#f7f9fb;font-size:18px}
+    .b{font-family:Arial,Helvetica,sans-serif;fill:#fff;font-size:18px;font-weight:700}
+    .h{font-family:Arial,Helvetica,sans-serif;fill:#fff;font-size:23px;font-weight:800}
+    .m{font-family:Arial,Helvetica,sans-serif;fill:#d8e0e6;font-size:17px}
+    .c{fill:#ff7a00}
+  </style>
+  <circle class="c" cx="42" cy="48" r="8"/>
+  <text class="h" x="60" y="56">PAANO GUMAGANA ANG 16-PLAYER PRIORITY?</text>
+
+  <text class="m" x="38" y="100">Layer by layer ang sistema natin para fair at malinaw sa lahat.</text>
+
+  <text class="b" x="38" y="145">Unang layer: 16-player list.</text>
+  <text class="t" x="38" y="174">Maximum tayo ng 16 players per session para maayos ang rotation at playing time.</text>
+  <text class="t" x="38" y="202">Paunahan muna sa registration. Kapag kasama ka sa first 16, nasa playing list ka.</text>
+
+  <text class="b" x="38" y="250">Pero paano kung puno na ang 16 at may late na gustong sumali?</text>
+  <text class="t" x="38" y="279">Puwede pa rin siyang pumasok sa mas mataas na priority gamit ang paid access.</text>
+  <text class="t" x="38" y="307">Kapag ginawa niya iyon, puwedeng ma-overtake ang player na nasa lowest priority sa</text>
+  <text class="t" x="38" y="335">loob ng 16, at yung na-overtake ang lilipat sa standby.</text>
+
+  <text class="b" x="38" y="383">Priority order:</text>
+  <text class="b" x="38" y="412">Play Token → Pay-to-Play → Free</text>
+
+  <text class="b" x="38" y="460">Play Token — highest priority.</text>
+  <text class="t" x="285" y="460">Ito yung kasama sa monthly pass/membership system.</text>
+  <text class="b" x="38" y="490">Pay-to-Play —</text>
+  <text class="t" x="176" y="490">bayad per session; halimbawa, magbabayad pagdating sa court.</text>
+  <text class="b" x="38" y="520">Free —</text>
+  <text class="t" x="101" y="520">puwedeng makapasok sa 16 habang may available spot, pero sila ang unang</text>
+  <text class="t" x="38" y="548">maaaring ma-move to standby kapag may higher-priority player na pumasok.</text>
+
+  <text class="b" x="38" y="596">Example:</text>
+  <text class="t" x="38" y="625">Puno na ang 16/16. Si Player A ang #16 at Free entry. Dumating si Player B at</text>
+  <text class="t" x="38" y="653">gumamit ng Play Token. Dahil mas mataas ang priority ni Player B, siya ang papasok sa</text>
+  <text class="t" x="38" y="681">16 at si Player A ang magiging #1 standby.</text>
+
+  <text class="t" x="38" y="731">Hindi ibig sabihin na bawal na maglaro si Player A. Kapag may hindi dumating, nag-</text>
+  <text class="t" x="38" y="759">cancel, o nagkaroon ng available spot, standby players ang unang papasok.</text>
+
+  <text class="t" x="38" y="812">Ang goal nito ay simple: may free way pa rin para makalaro, pero yung players na</text>
+  <text class="b" x="38" y="840">nag-secure ng spot through Token or Pay-to-Play ay may stronger guarantee.</text>
+
+  <line x1="38" y1="900" x2="722" y2="900" stroke="#123642" stroke-width="1"/>
+  <text x="38" y="932" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="700" fill="#56d7f1" letter-spacing="1.5">REAL PLAY BASKETBALL</text>
+</svg>
