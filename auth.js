@@ -165,7 +165,9 @@
     loadScript('auth-ownership-core.js?v=20260907-ownership-disputes-v1', () => {
       loadScript('auth-ownership-disputes.js?v=20260907-ownership-disputes-v1', () => {
         loadScript('profile-experience.js', () => {
-          loadScript('support.js', () => loadScript('support-admin.js'));
+          loadScript('player-identity-manager.js?v=20260917-name-number-v1', () => {
+            loadScript('support.js', () => loadScript('support-admin.js'));
+          });
         });
       });
     });
