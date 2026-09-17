@@ -1,0 +1,59 @@
+name: Repair priority guide artifact
+
+on:
+  push:
+    paths:
+      - '.github/workflows/repair-guide-artifact.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore original guide and remove arrow without black patch
+        shell: bash
+        run: |
+          python -m pip install --quiet pillow opencv-python-headless numpy
+          python - <<'PY'
+          from pathlib import Path
+          import cv2
+          import numpy as np
+          from PIL import Image
+
+          src = Path('assets/guides/4b389daf-8bb9-4c56-983f-d180f7776894.jfif')
+          dst = Path('assets/guides/16-player-priority-guide.png')
+
+          # Start from the untouched original upload so the previous black circle is gone.
+          img = cv2.imread(str(src), cv2.IMREAD_COLOR)
+          if img is None:
+              raise SystemExit(f'Could not read {src}')
+
+          h, w = img.shape[:2]
+
+          # Mask only the old circular down-arrow overlay near bottom-center.
+          # Use content-aware inpainting instead of painting a solid black circle.
+          mask = np.zeros((h, w), dtype=np.uint8)
+          cx = int(round(w * 0.50))
+          cy = int(round(h * 0.958))
+          radius = max(9, int(round(w * 0.052)))
+          cv2.circle(mask, (cx, cy), radius, 255, thickness=-1)
+
+          repaired = cv2.inpaint(img, mask, 5, cv2.INPAINT_TELEA)
+          cv2.imwrite(str(dst), repaired, [cv2.IMWRITE_PNG_COMPRESSION, 6])
+          print(f'Repaired {dst} from original: {w}x{h}')
+          PY
+      - name: Commit repaired guide
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/guides/16-player-priority-guide.png
+          if git diff --cached --quiet; then
+            echo "No guide image change detected."
+            exit 0
+          fi
+          git commit -m "Repair priority guide image artifact"
+          git push
