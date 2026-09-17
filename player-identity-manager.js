@@ -122,20 +122,25 @@
 
   function setStatus(message = '', type = '') {
     if (!status) return;
-    status.textContent = message;
+    if (status.textContent !== message) status.textContent = message;
     status.classList.toggle('error', type === 'error');
   }
 
   function applyName(value) {
     const name = canonicalName(value);
     if (!name) return;
-    accountName.textContent = name;
-    if (summary) summary.textContent = name.toUpperCase();
-    if (input && document.activeElement !== input) input.value = name;
+    if (canonicalName(accountName.textContent) !== name) accountName.textContent = name;
+    const summaryName = name.toUpperCase();
+    if (summary && summary.textContent !== summaryName) summary.textContent = summaryName;
+    if (input && document.activeElement !== input && input.value !== name) input.value = name;
   }
 
   function syncFromAccount() {
-    applyName(accountName.textContent);
+    const name = canonicalName(accountName.textContent);
+    if (!name) return;
+    const summaryName = name.toUpperCase();
+    if (summary && summary.textContent !== summaryName) summary.textContent = summaryName;
+    if (input && document.activeElement !== input && input.value !== name) input.value = name;
   }
 
   syncFromAccount();
@@ -228,8 +233,10 @@
   function renameProfileManageButton() {
     const button = document.querySelector('[data-rp-profile-manage-number]');
     if (!button) return false;
-    button.textContent = 'MANAGE NAME & NUMBER';
-    button.setAttribute('aria-label', 'Manage player name and number');
+    if (button.textContent !== 'MANAGE NAME & NUMBER') button.textContent = 'MANAGE NAME & NUMBER';
+    if (button.getAttribute('aria-label') !== 'Manage player name and number') {
+      button.setAttribute('aria-label', 'Manage player name and number');
+    }
     return true;
   }
 
