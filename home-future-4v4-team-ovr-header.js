@@ -110,6 +110,67 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
+      .rp-4v4-static-view{
+        --rp4v4-ovr-accent:#ff3340;
+        --rp4v4-ovr-mid:#a70f19;
+        --rp4v4-ovr-deep:#8f0d17;
+        --rp4v4-ovr-dark:#21070b;
+        --rp4v4-ovr-line:#ff3040;
+        --rp4v4-ovr-line-deep:#7a0912;
+        --rp4v4-ovr-soft:rgba(255,45,56,.22);
+        --rp4v4-ovr-glow:rgba(235,28,42,.22);
+        --rp4v4-ovr-shadow:#5a060c;
+        --rp4v4-ovr-label:#f0d8db;
+      }
+      .rp-4v4-static-view[data-rp-active-club="lions"]{
+        --rp4v4-ovr-accent:#1b9cff;
+        --rp4v4-ovr-mid:#0870db;
+        --rp4v4-ovr-deep:#0755ad;
+        --rp4v4-ovr-dark:#061d3b;
+        --rp4v4-ovr-line:#26a9ff;
+        --rp4v4-ovr-line-deep:#07539e;
+        --rp4v4-ovr-soft:rgba(27,156,255,.24);
+        --rp4v4-ovr-glow:rgba(27,156,255,.26);
+        --rp4v4-ovr-shadow:#043d78;
+        --rp4v4-ovr-label:#9fdcff;
+      }
+      .rp-4v4-static-view[data-rp-active-club="valiant"]{
+        --rp4v4-ovr-accent:#ff3340;
+        --rp4v4-ovr-mid:#a70f19;
+        --rp4v4-ovr-deep:#8f0d17;
+        --rp4v4-ovr-dark:#21070b;
+        --rp4v4-ovr-line:#ff3040;
+        --rp4v4-ovr-line-deep:#7a0912;
+        --rp4v4-ovr-soft:rgba(255,45,56,.22);
+        --rp4v4-ovr-glow:rgba(235,28,42,.22);
+        --rp4v4-ovr-shadow:#5a060c;
+        --rp4v4-ovr-label:#ffd3d7;
+      }
+      .rp-4v4-static-view[data-rp-active-club="watchmen"]{
+        --rp4v4-ovr-accent:#f4c23f;
+        --rp4v4-ovr-mid:#bd8215;
+        --rp4v4-ovr-deep:#94620b;
+        --rp4v4-ovr-dark:#352406;
+        --rp4v4-ovr-line:#ffd257;
+        --rp4v4-ovr-line-deep:#8d5d08;
+        --rp4v4-ovr-soft:rgba(244,194,63,.24);
+        --rp4v4-ovr-glow:rgba(244,194,63,.24);
+        --rp4v4-ovr-shadow:#6c4905;
+        --rp4v4-ovr-label:#ffe39a;
+      }
+      .rp-4v4-static-view[data-rp-active-club="conquerors"]{
+        --rp4v4-ovr-accent:#a454ff;
+        --rp4v4-ovr-mid:#7225d1;
+        --rp4v4-ovr-deep:#54179f;
+        --rp4v4-ovr-dark:#21093f;
+        --rp4v4-ovr-line:#b46cff;
+        --rp4v4-ovr-line-deep:#51148f;
+        --rp4v4-ovr-soft:rgba(164,84,255,.24);
+        --rp4v4-ovr-glow:rgba(164,84,255,.25);
+        --rp4v4-ovr-shadow:#451176;
+        --rp4v4-ovr-label:#d8b5ff;
+      }
+
       .rp-4v4-static-view .rp-3v3-select-head{display:none!important}
 
       .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand{
@@ -124,18 +185,20 @@
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque{
         position:relative;z-index:7;width:214px;height:68px;margin:1px auto -19px;
         display:grid;place-items:center;pointer-events:none;
-        filter:drop-shadow(0 8px 16px rgba(0,0,0,.62)) drop-shadow(0 0 11px rgba(235,28,42,.22));
+        filter:drop-shadow(0 8px 16px rgba(0,0,0,.62)) drop-shadow(0 0 11px var(--rp4v4-ovr-glow));
+        transition:filter .22s ease;
       }
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque::before{
         content:"";position:absolute;inset:0;
         clip-path:polygon(12% 0,88% 0,100% 20%,96% 72%,80% 100%,20% 100%,4% 72%,0 20%);
-        background:linear-gradient(145deg,#ff3340 0%,#8f0d17 16%,#21070b 33%,#070b10 52%,#2b080d 69%,#a70f19 84%,#ff3d48 100%);
+        background:linear-gradient(145deg,var(--rp4v4-ovr-accent) 0%,var(--rp4v4-ovr-deep) 16%,var(--rp4v4-ovr-dark) 33%,#070b10 52%,var(--rp4v4-ovr-dark) 69%,var(--rp4v4-ovr-mid) 84%,var(--rp4v4-ovr-accent) 100%);
         box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);
+        transition:background .22s ease;
       }
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque::after{
         content:"";position:absolute;inset:5px 9px 6px;
         clip-path:polygon(10% 0,90% 0,100% 23%,95% 78%,78% 100%,22% 100%,5% 78%,0 23%);
-        background:linear-gradient(90deg,rgba(255,45,56,.22),transparent 19%,transparent 81%,rgba(255,45,56,.22)),linear-gradient(180deg,#161d25 0%,#080b10 42%,#020305 100%);
+        background:linear-gradient(90deg,var(--rp4v4-ovr-soft),transparent 19%,transparent 81%,var(--rp4v4-ovr-soft)),linear-gradient(180deg,#161d25 0%,#080b10 42%,#020305 100%);
         border-top:1px solid rgba(255,255,255,.17);
       }
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core{
@@ -143,25 +206,27 @@
         display:flex;flex-direction:column;align-items:center;justify-content:center;
         clip-path:polygon(10% 0,90% 0,100% 22%,96% 78%,79% 100%,21% 100%,4% 78%,0 22%);
         background:linear-gradient(180deg,rgba(28,35,44,.98),rgba(7,10,14,.99) 56%,rgba(1,2,4,.99));
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.11),inset 0 -1px 0 rgba(255,46,58,.22);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.11),inset 0 -1px 0 var(--rp4v4-ovr-soft);
       }
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core::before,
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core::after{
         content:"";position:absolute;top:11px;width:26px;height:32px;opacity:.9;
-        border-top:2px solid #ff3040;border-bottom:2px solid #7a0912;
+        border-top:2px solid var(--rp4v4-ovr-line);border-bottom:2px solid var(--rp4v4-ovr-line-deep);
+        transition:border-color .22s ease;
       }
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core::before{left:7px;transform:skewX(-18deg)}
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core::after{right:7px;transform:skewX(18deg)}
       .rp-4v4-static-view .rp-4v4-team-ovr-label{
-        position:relative;z-index:2;margin:0 0 1px;color:#dce6ef;font-family:var(--rp-display,Arial,sans-serif);
+        position:relative;z-index:2;margin:0 0 1px;color:var(--rp4v4-ovr-label);font-family:var(--rp-display,Arial,sans-serif);
         font-size:.43rem;font-style:italic;font-weight:1000;letter-spacing:.13em;line-height:1;text-transform:uppercase;
-        text-shadow:0 1px 0 #000;
+        text-shadow:0 1px 0 #000;transition:color .22s ease;
       }
       .rp-4v4-static-view .rp-4v4-team-ovr-value{
         position:relative;z-index:2;display:block;min-width:70px;margin:0;color:#fff;
         font-family:var(--rp-display,Arial,sans-serif);font-size:2.05rem;font-style:italic;font-weight:1000;
         letter-spacing:-.045em;line-height:.88;text-align:center;
-        text-shadow:0 2px 0 #5a060c,0 0 8px rgba(255,255,255,.18),0 0 14px rgba(255,34,50,.2);
+        text-shadow:0 2px 0 var(--rp4v4-ovr-shadow),0 0 8px rgba(255,255,255,.18),0 0 14px var(--rp4v4-ovr-glow);
+        transition:text-shadow .22s ease;
       }
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque[data-ovr-empty="true"] .rp-4v4-team-ovr-value{
         font-size:1.72rem;letter-spacing:0;color:#d7e0e8;
