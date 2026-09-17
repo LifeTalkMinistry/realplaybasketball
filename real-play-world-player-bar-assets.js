@@ -49,6 +49,20 @@
       }
 
       /*
+       * Every Players filter uses the same fixed left number lane. RANK OVR
+       * displays the canonical official Rank there; every other filter displays
+       * that row's position inside the currently sorted leaderboard only.
+       */
+      .rp-world-player-row .rp-world-player-rank-badge{
+        box-sizing:border-box!important;
+        flex:0 0 38px!important;
+        width:38px!important;
+        min-width:38px!important;
+        margin-right:2px!important;
+      }
+      .rp-world-player-row .rp-world-player-rank-badge.is-visible{display:inline-block!important}
+
+      /*
        * The artwork itself scales with the row width, so the badge must use the
        * same coordinate system. Fixed pixel offsets drift across devices.
        * Keep X/Y and size as row-relative variables so every viewport preserves
@@ -83,14 +97,77 @@
         bottom:auto!important;
       }
       @media(max-width:420px){
+        .rp-world-player-row .rp-world-player-rank-badge{
+          flex-basis:34px!important;
+          width:34px!important;
+          min-width:34px!important;
+        }
         .rp-world-player-row.rp-recognition-themed .rp-player-featured-count{
           right:3px!important;
           top:-7px!important;
           bottom:auto!important;
         }
       }
+      @media(max-width:360px){
+        .rp-world-player-row .rp-world-player-rank-badge{
+          flex-basis:31px!important;
+          width:31px!important;
+          min-width:31px!important;
+        }
+      }
     `;
     document.head.appendChild(style);
+  }
+
+  function ensurePositionBadge(row) {
+    const nameNode = row?.querySelector?.('.rp-world-player-name');
+    if (!nameNode) return null;
+    let badge = nameNode.querySelector('.rp-world-player-rank-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'rp-world-player-rank-badge';
+      badge.setAttribute('aria-hidden', 'true');
+      nameNode.prepend(badge);
+    }
+    return badge;
+  }
+
+  function isVisibleLeaderboardRow(row) {
+    if (!(row instanceof HTMLElement)) return false;
+    if (row.hidden || row.getAttribute('aria-hidden') === 'true') return false;
+    return row.style.getPropertyValue('display') !== 'none';
+  }
+
+  function syncLeaderboardPositions(filterKey = activeFilterKey()) {
+    const list = document.querySelector('[data-world-player-list]');
+    if (!list) return;
+
+    const rows = [...list.querySelectorAll('.rp-world-player-row')];
+    const visibleRows = rows.filter(isVisibleLeaderboardRow);
+    const visibleSet = new Set(visibleRows);
+
+    rows.forEach((row) => {
+      if (visibleSet.has(row)) return;
+      const badge = row.querySelector('.rp-world-player-rank-badge');
+      badge?.classList.remove('is-visible');
+      row.removeAttribute('data-rp-leaderboard-position');
+    });
+
+    visibleRows.forEach((row, index) => {
+      const badge = ensurePositionBadge(row);
+      if (!badge) return;
+
+      const leaderboardPosition = index + 1;
+      const officialRank = Number(row.dataset.officialRank);
+      const displayNumber = filterKey === 'ranked' && Number.isSafeInteger(officialRank) && officialRank > 0
+        ? officialRank
+        : leaderboardPosition;
+
+      badge.textContent = `#${displayNumber}`;
+      badge.classList.add('is-visible');
+      badge.dataset.rpLeaderboardPosition = String(leaderboardPosition);
+      row.dataset.rpLeaderboardPosition = String(leaderboardPosition);
+    });
   }
 
   function syncFilterVariant() {
@@ -98,6 +175,7 @@
     if (document.documentElement.getAttribute(FILTER_ATTRIBUTE) !== next) {
       document.documentElement.setAttribute(FILTER_ATTRIBUTE, next);
     }
+    syncLeaderboardPositions(next);
   }
 
   let scheduled = false;
@@ -121,8 +199,17 @@
   const observer = new MutationObserver((mutations) => {
     if (mutations.some((mutation) => {
       if (mutation.type === 'childList') return true;
-      if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') return false;
-      return mutation.target instanceof HTMLElement && mutation.target.matches('[data-player-sort]');
+      if (mutation.type !== 'attributes') return false;
+      if (mutation.attributeName === 'class') {
+        return mutation.target instanceof HTMLElement && mutation.target.matches('[data-player-sort]');
+      }
+      if (mutation.attributeName === 'hidden') {
+        return mutation.target instanceof HTMLElement && mutation.target.matches('.rp-world-player-row');
+      }
+      if (mutation.attributeName === 'data-official-rank') {
+        return mutation.target instanceof HTMLElement && mutation.target.matches('.rp-world-player-row');
+      }
+      return false;
     })) scheduleSync();
   });
 
@@ -131,7 +218,7 @@
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['class'],
+    attributeFilter: ['class', 'hidden', 'data-official-rank'],
   });
   syncFilterVariant();
 })(window);
