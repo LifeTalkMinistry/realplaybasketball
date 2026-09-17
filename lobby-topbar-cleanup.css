@@ -42,6 +42,14 @@ body.rp-simple-navigation-active.rp-ranking-open.rp-profile-open:not(.rp-setting
   pointer-events:auto!important;
 }
 
+/* A verified game replay is a child view of the selected player profile. It
+   must sit above Open Rank (2050), the profile (2300), and the permanent nav
+   (2400). The body qualifier intentionally outranks the later generic replay
+   rule injected by profile-game-replay-link.js. */
+body.rp-career-replay-open .rp-career-replay{
+  z-index:2600!important;
+}
+
 body.rp-simple-navigation-active.rp-ranking-open.rp-profile-open .rp-public-player-profile .rp-profile-shell,
 body.rp-simple-navigation-active.rp-ranking-open.rp-profile-open [data-rp-profile] .rp-profile-shell,
 body.rp-simple-navigation-active.rp-ranking-open.rp-profile-open [data-rp-visitor-public-profile] .rp-profile-shell{
