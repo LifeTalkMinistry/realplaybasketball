@@ -80,7 +80,7 @@
   if (!document.querySelector('script[data-rp-4v4-team-ovr-header-loader]')) {
     const script = document.createElement('script');
     script.dataset.rp4v4TeamOvrHeaderLoader = '1';
-    script.src = 'home-future-4v4-team-ovr-header.js?v=20260917-4v4-profile-links-v2';
+    script.src = 'home-future-4v4-team-ovr-header.js?v=20260917-team-ovr-only-v3';
     script.async = false;
     document.head.appendChild(script);
   }
