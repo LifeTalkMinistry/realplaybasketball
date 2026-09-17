@@ -4,23 +4,46 @@
 .rp-player-strip{margin-top:max(14px,env(safe-area-inset-top))}
 
 /* Open Rank player-card drill-downs are secondary profile views. Keep the
-   ranking screen alive underneath, but always place the selected profile above
-   it and restore a real Back control so the player can return to the exact
-   Open Rank screen/state they came from. This also covers tapping your own
-   roster card, whose normal ME topbar is intentionally hidden at top level. */
+   ranking screen alive underneath, place the selected profile above it, and
+   always preserve a visible way back to the exact ranking screen. */
 body.rp-ranking-open .rp-public-player-profile.rp-profile,
-body.rp-ranking-open [data-rp-profile].rp-profile{
-  z-index:2070!important;
+body.rp-ranking-open [data-rp-profile].rp-profile,
+body.rp-ranking-open [data-rp-visitor-public-profile].rp-profile{
+  z-index:2300!important;
 }
 
+/* Authenticated public profile + own ME profile both keep a real Back control
+   when they were opened from Open Rank. The extra simple-navigation selector
+   intentionally outranks the normal top-level ME rule that hides its header. */
+body.rp-simple-navigation-active.rp-ranking-open .rp-public-player-profile .rp-profile-topbar,
+body.rp-simple-navigation-active.rp-ranking-open [data-rp-profile] .rp-profile-topbar,
 body.rp-ranking-open .rp-public-player-profile .rp-profile-topbar,
 body.rp-ranking-open [data-rp-profile] .rp-profile-topbar{
   display:grid!important;
 }
 
+body.rp-simple-navigation-active.rp-ranking-open .rp-public-player-profile .rp-profile-back,
+body.rp-simple-navigation-active.rp-ranking-open [data-rp-profile] .rp-profile-back,
 body.rp-ranking-open .rp-public-player-profile .rp-profile-back,
 body.rp-ranking-open [data-rp-profile] .rp-profile-back{
   display:block!important;
   visibility:visible!important;
   pointer-events:auto!important;
+}
+
+/* A player profile opened from Open Rank must never become a navigation
+   dead-end. Lift the permanent HOME/WORLD/PLAYERS/CHATS/ME bar above both the
+   ranking layer and the profile layer. JS closes the drill-down before the
+   selected top-level destination opens. */
+body.rp-simple-navigation-active.rp-ranking-open.rp-profile-open:not(.rp-settings-open) .rp-simple-nav{
+  z-index:2400!important;
+  display:grid!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+
+body.rp-simple-navigation-active.rp-ranking-open.rp-profile-open .rp-public-player-profile .rp-profile-shell,
+body.rp-simple-navigation-active.rp-ranking-open.rp-profile-open [data-rp-profile] .rp-profile-shell,
+body.rp-simple-navigation-active.rp-ranking-open.rp-profile-open [data-rp-visitor-public-profile] .rp-profile-shell{
+  padding-bottom:calc(var(--rp-simple-nav-height,68px) + env(safe-area-inset-bottom) + 24px)!important;
 }
