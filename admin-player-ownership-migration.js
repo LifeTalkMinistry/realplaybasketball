@@ -206,6 +206,11 @@
       window.alert(message);
       document.querySelector('[data-admin-ownership-tab]')?.click();
     } catch (error) {
+      // Release the busy guard before refreshing the choices. Previously the
+      // refresh ran while `migrating` was still true, so loadOptions() returned
+      // immediately and left the modal frozen on “MIGRATING…” after a failed API
+      // request. A failed migration must always return the admin to a usable list.
+      migrating = false;
       window.alert(error?.message || 'Player migration failed. Nothing was changed.');
       await loadOptions('');
     } finally {
