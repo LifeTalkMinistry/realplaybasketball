@@ -6,7 +6,6 @@
 
   const ROOT = "assets/world/player-bars";
   const BADGE_DOMINANT = `${ROOT}/badge-dominant`;
-  const LEGACY_CAPTAIN_RANKING_BAR = "assets/recognitions/bars/bar-captain-eligible.png";
   const FILTER_ATTRIBUTE = "data-rp-player-bar-filter";
 
   const paths = {
@@ -24,9 +23,6 @@
 
       return safeSlug ? `${BADGE_DOMINANT}/${safeSlug}.png` : "";
     },
-
-    captainEligible: `${BADGE_DOMINANT}/player-row-bar-captain-eligible.png`,
-    captainEligibleRanking: LEGACY_CAPTAIN_RANKING_BAR,
   };
 
   global.RealPlayWorldPlayerBarAssets = Object.freeze(paths);
@@ -41,12 +37,11 @@
     const style = document.createElement('style');
     style.dataset.rpWorldPlayerBarVariantStyles = '1';
     style.textContent = `
-      html[${FILTER_ATTRIBUTE}="ranked"] .rp-world-player-row[data-recognition-type="captain_eligible"]{
-        --rp-recognition-bar:url("${paths.captainEligibleRanking}")!important;
-      }
-      html:not([${FILTER_ATTRIBUTE}="ranked"]) .rp-world-player-row[data-recognition-type="captain_eligible"]{
-        --rp-recognition-bar:url("${paths.captainEligible}")!important;
-      }
+      /*
+       * Captain Eligible no longer owns any Players-directory bar artwork.
+       * Captain opportunity belongs to the League/team-formation flow. The
+       * global Players list only themes actual earned stat/MVP recognitions.
+       */
 
       /*
        * Every Players filter uses the same fixed left number lane. RANK OVR
@@ -189,10 +184,6 @@
     });
   }
 
-  // IMPORTANT: this layer never writes --rp-recognition-bar inline anymore.
-  // real-play-captain-eligibility.js owns row rendering; this file only selects
-  // which Captain Eligible artwork wins through one CSS authority. That avoids
-  // the two MutationObservers repeatedly overwriting the same inline variable.
   document.addEventListener('click', (event) => {
     if (event.target.closest?.('[data-player-sort]')) scheduleSync();
   });
