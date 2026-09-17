@@ -372,6 +372,7 @@
       'main-menu-touch-lite.js',
       'main-menu-desktop-input-fix.js',
       'player-number-recovery.js',
+      'player-identity-manager.js',
       'ranking-games.js',
       'ranking-games-secured-players.js',
       'ranking-games-standby-players.js',
