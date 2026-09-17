@@ -1,0 +1,62 @@
+name: Rebuild priority guide original filename
+
+on:
+  push:
+    paths:
+      - '.github/workflows/rebuild-priority-guide-original-name.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rebuild clean guide under original filename
+        shell: bash
+        run: |
+          python -m pip install --quiet cairosvg pillow
+          python - <<'PY'
+          from pathlib import Path
+          import io
+          import cairosvg
+          from PIL import Image
+
+          svg = Path('assets/guides/16-player-priority-guide-clean.svg')
+          dst = Path('assets/guides/4b389daf-8bb9-4c56-983f-d180f7776894.jfif')
+
+          png_bytes = cairosvg.svg2png(
+              bytestring=svg.read_bytes(),
+              output_width=1520,
+              output_height=1960,
+          )
+          image = Image.open(io.BytesIO(png_bytes)).convert('RGB')
+          image.save(dst, 'JPEG', quality=96, subsampling=0, optimize=True)
+          print(f'Rebuilt clean guide at {dst}')
+
+          js = Path('ranking-spot-priority.js')
+          text = js.read_text(encoding='utf-8')
+          import re
+          text = re.sub(
+              r"const GUIDE_IMAGE_PATH = '[^']+';",
+              "const GUIDE_IMAGE_PATH = 'assets/guides/4b389daf-8bb9-4c56-983f-d180f7776894.jfif?v=20260917-clean-v3';",
+              text,
+              count=1,
+          )
+          js.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit clean original-name asset
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/guides/4b389daf-8bb9-4c56-983f-d180f7776894.jfif ranking-spot-priority.js
+          if git diff --cached --quiet; then
+            echo "No changes needed."
+            exit 0
+          fi
+          git commit -m "Use clean priority guide at original filename"
+          git push
