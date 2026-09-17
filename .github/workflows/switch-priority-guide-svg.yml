@@ -1,0 +1,42 @@
+name: Switch priority guide to clean SVG
+
+on:
+  push:
+    paths:
+      - '.github/workflows/switch-priority-guide-svg.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Point guide viewer to clean vector asset
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('ranking-spot-priority.js')
+          text = path.read_text(encoding='utf-8')
+          old = "const GUIDE_IMAGE_PATH = 'assets/guides/16-player-priority-guide.png';"
+          new = "const GUIDE_IMAGE_PATH = 'assets/guides/16-player-priority-guide-clean.svg';"
+          if old in text:
+              text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+          elif new not in text:
+              raise SystemExit('Guide image path constant not found')
+          PY
+      - name: Commit clean guide path
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ranking-spot-priority.js
+          if git diff --cached --quiet; then
+            echo "Guide already points to SVG."
+            exit 0
+          fi
+          git commit -m "Use clean vector priority guide"
+          git push
