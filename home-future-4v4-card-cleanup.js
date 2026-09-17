@@ -26,6 +26,7 @@
         ...(token() ? { Authorization: `Bearer ${token()}` } : {}),
       },
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      cache: 'no-store',
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -46,6 +47,19 @@
       .replaceAll("'", '&#039;');
   }
 
+  function finiteNumber(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function displayNumber(value, digits = 1) {
+    const number = finiteNumber(value);
+    if (number === null) return '—';
+    if (Number.isInteger(number)) return String(number);
+    return number.toFixed(digits).replace(/\.0$/, '');
+  }
+
   function validRank(value) {
     const rank = Number(value);
     return Number.isSafeInteger(rank) && rank > 0 ? rank : null;
@@ -56,9 +70,29 @@
     return Number.isSafeInteger(number) && number >= 0 ? number : null;
   }
 
-  function validOvr(value) {
-    const ovr = Number(value);
-    return Number.isFinite(ovr) ? Math.round(ovr) : null;
+  function recordLabel(record) {
+    const wins = finiteNumber(record?.wins);
+    const losses = finiteNumber(record?.losses);
+    const games = finiteNumber(record?.games);
+    if (wins === null || losses === null || games === null || games <= 0) return '—';
+    return `${Math.max(0, Math.trunc(wins))}-${Math.max(0, Math.trunc(losses))}`;
+  }
+
+  function winRateLabel(value) {
+    const winRate = finiteNumber(value);
+    return winRate === null ? '—' : `${displayNumber(winRate)}%`;
+  }
+
+  function topStatsLabel(topStats) {
+    if (!Array.isArray(topStats) || !topStats.length) return '—';
+    const labels = topStats.slice(0, 2).map((stat) => {
+      if (typeof stat === 'string') return stat.trim().toUpperCase();
+      const key = String(stat?.key || stat?.label || '').trim().toUpperCase();
+      if (!key) return '';
+      const value = finiteNumber(stat?.value);
+      return value === null ? key : `${key} ${displayNumber(value)}`;
+    }).filter(Boolean);
+    return labels.length ? labels.join(' · ') : '—';
   }
 
   function installStyle() {
@@ -86,17 +120,13 @@
         background:linear-gradient(180deg,rgba(4,12,21,.92),rgba(3,8,14,.96))!important;
         box-shadow:0 14px 34px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.035)!important;
       }
-      .rp-4v4-preference-actions{
-        display:flex;align-items:stretch;gap:8px;width:100%;
-      }
+      .rp-4v4-preference-actions{display:flex;align-items:stretch;gap:8px;width:100%}
       .rp-4v4-preference-action{
-        flex:1 1 auto!important;width:auto!important;min-width:0!important;min-height:46px!important;margin:0!important;padding:0 14px!important;cursor:pointer!important;
-        border:1px solid rgba(84,219,255,.2)!important;border-radius:14px!important;
-        color:#eefaff!important;background:#091727!important;
-        font-family:var(--rp-display,Arial,sans-serif)!important;font-size:.72rem!important;
-        font-style:italic!important;font-weight:1000!important;letter-spacing:.035em!important;
-        line-height:1!important;text-transform:uppercase!important;
-        transition:transform .16s ease,border-color .16s ease,background .16s ease!important;
+        flex:1 1 auto!important;width:auto!important;min-width:0!important;min-height:46px!important;margin:0!important;padding:0 14px!important;
+        cursor:pointer!important;border:1px solid rgba(84,219,255,.2)!important;border-radius:14px!important;
+        color:#eefaff!important;background:#091727!important;font-family:var(--rp-display,Arial,sans-serif)!important;
+        font-size:.72rem!important;font-style:italic!important;font-weight:1000!important;letter-spacing:.035em!important;
+        line-height:1!important;text-transform:uppercase!important;transition:transform .16s ease,border-color .16s ease,background .16s ease!important;
       }
       .rp-4v4-preference-action::before,.rp-4v4-preference-action::after{display:none!important;content:none!important}
       .rp-4v4-preference-action:hover:not(:disabled){border-color:rgba(84,219,255,.52)!important;background:#0b1d31!important}
@@ -107,11 +137,9 @@
       }
       .rp-4v4-preference-action:disabled{cursor:default!important;opacity:.78!important}
       .rp-4v4-preference-cancel{
-        flex:0 0 88px;min-height:46px;margin:0;padding:0 10px;cursor:pointer;
-        border:1px solid rgba(255,117,132,.3);border-radius:14px;
-        color:#ff9eaa;background:rgba(61,15,24,.34);
-        font-family:var(--rp-display,Arial,sans-serif);font-size:.6rem;font-style:italic;font-weight:1000;
-        letter-spacing:.04em;line-height:1;text-transform:uppercase;
+        flex:0 0 88px;min-height:46px;margin:0;padding:0 10px;cursor:pointer;border:1px solid rgba(255,117,132,.3);
+        border-radius:14px;color:#ff9eaa;background:rgba(61,15,24,.34);font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.6rem;font-style:italic;font-weight:1000;letter-spacing:.04em;line-height:1;text-transform:uppercase;
         transition:transform .16s ease,border-color .16s ease,background .16s ease;
       }
       .rp-4v4-preference-cancel[hidden]{display:none!important}
@@ -138,25 +166,60 @@
         color:#6ce4ff;background:rgba(75,218,255,.09);font-family:var(--rp-display,Arial,sans-serif);
         font-size:.55rem;font-style:italic;font-weight:1000;
       }
-      .rp-4v4-preference-list{display:grid}
-      .rp-4v4-preference-row{
-        display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;min-height:42px;padding:8px 12px;
-        border-bottom:1px solid rgba(255,255,255,.055);
+      .rp-4v4-preference-list{display:flex;flex-direction:column;gap:8px;padding:10px}
+      .rp-4v4-player-card{
+        position:relative;width:100%;min-width:0;display:block;overflow:hidden;padding:0;
+        border:1px solid rgba(93,151,191,.16);border-radius:13px;box-sizing:border-box;
+        background:linear-gradient(105deg,rgba(7,20,31,.96),rgba(3,12,20,.96) 58%,rgba(6,21,30,.94));
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.018),0 8px 24px rgba(0,0,0,.14);
       }
-      .rp-4v4-preference-row:last-child{border-bottom:0}
-      .rp-4v4-preference-player{min-width:0;display:flex;align-items:baseline;gap:6px}
-      .rp-4v4-preference-player strong{
-        min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f1f7fb;
-        font-family:var(--rp-display,Arial,sans-serif);font-size:.65rem;font-style:italic;font-weight:1000;text-transform:uppercase;
+      .rp-4v4-player-card::before{
+        content:"";position:absolute;inset:0 auto 0 0;width:2px;
+        background:linear-gradient(180deg,rgba(70,218,255,.9),rgba(70,218,255,.05));opacity:.58;
       }
-      .rp-4v4-preference-player span{flex:none;color:#62768a;font-size:.48rem;font-weight:900}
-      .rp-4v4-preference-standing{
-        flex:none;color:#90a6b8;font-family:var(--rp-display,Arial,sans-serif);font-size:.56rem;font-style:italic;font-weight:1000;
-        text-align:right;white-space:nowrap;text-transform:uppercase;
+      .rp-4v4-player-identity{
+        min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;
+        border-bottom:1px solid rgba(108,151,190,.10);
       }
-      .rp-4v4-preference-standing.is-ranked{color:#74e6ff}
+      .rp-4v4-player-name-cell,.rp-4v4-player-rank-cell{min-width:0;padding:10px 11px 9px}
+      .rp-4v4-player-name-cell{padding-left:13px}
+      .rp-4v4-player-rank-cell{min-width:64px;border-left:1px solid rgba(108,151,190,.10);text-align:center}
+      .rp-4v4-player-label{
+        display:block;margin-bottom:4px;color:#607a91;font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.36rem;font-weight:950;letter-spacing:.13em;line-height:1;text-transform:uppercase;white-space:nowrap;
+      }
+      .rp-4v4-player-name-line{min-width:0;display:flex;align-items:center;gap:7px}
+      .rp-4v4-player-name{
+        min-width:0;overflow:hidden;color:#eef7ff;font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.68rem;font-weight:950;letter-spacing:.035em;line-height:1.08;text-overflow:ellipsis;
+        text-transform:uppercase;white-space:nowrap;
+      }
+      .rp-4v4-player-number{
+        flex:none;padding:3px 5px;border:1px solid rgba(89,239,198,.16);border-radius:999px;
+        background:rgba(58,218,172,.08);color:#72efc4;font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.31rem;font-weight:950;letter-spacing:.07em;line-height:1;
+      }
+      .rp-4v4-player-rank{
+        display:block;color:#55ddff;font-family:var(--rp-display,Arial,sans-serif);font-size:.72rem;
+        font-weight:950;letter-spacing:.02em;line-height:1;white-space:nowrap;
+      }
+      .rp-4v4-player-rank.is-unranked{color:#8397aa;font-size:.45rem;letter-spacing:.06em}
+      .rp-4v4-player-performance{
+        min-width:0;display:grid;grid-template-columns:56px 68px 76px minmax(0,1fr);align-items:stretch;
+      }
+      .rp-4v4-player-stat{min-width:0;padding:9px 8px 10px;border-right:1px solid rgba(108,151,190,.09)}
+      .rp-4v4-player-stat:first-child{padding-left:13px}
+      .rp-4v4-player-stat:last-child{padding-right:11px;border-right:0}
+      .rp-4v4-player-value{
+        display:block;min-width:0;overflow:hidden;color:#c8d8e5;font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.56rem;font-weight:950;letter-spacing:.025em;line-height:1.1;text-overflow:ellipsis;
+        text-transform:uppercase;white-space:nowrap;
+      }
+      .rp-4v4-player-stat.is-ovr .rp-4v4-player-value{color:#f2f8fc;font-size:.64rem}
+      .rp-4v4-player-stat.is-winrate .rp-4v4-player-value{color:#72efc4}
+      .rp-4v4-player-stat.is-top-stats .rp-4v4-player-value{color:#8fdcf3;font-size:.49rem;letter-spacing:.015em}
       .rp-4v4-preference-empty,.rp-4v4-preference-loading{
-        margin:0;padding:18px 12px;color:#65788a;font-size:.54rem;font-weight:850;letter-spacing:.045em;
+        margin:0;padding:12px 8px;color:#65788a;font-size:.54rem;font-weight:850;letter-spacing:.045em;
         line-height:1.45;text-align:center;text-transform:uppercase;
       }
       .rp-4v4-preference-loading{color:#86a8bd}
@@ -164,9 +227,14 @@
       @media(max-width:420px){
         .rp-4v4-preference-panel{margin-left:10px!important;margin-right:10px!important;padding:10px 10px 12px!important;border-radius:18px!important}
         .rp-4v4-preference-cancel{flex-basis:80px;font-size:.55rem;padding:0 8px}
-        .rp-4v4-preference-row{gap:8px;min-height:40px;padding:8px 10px}
-        .rp-4v4-preference-player strong{font-size:.61rem}
-        .rp-4v4-preference-standing{font-size:.52rem}
+        .rp-4v4-preference-list{padding:8px}
+        .rp-4v4-player-performance{grid-template-columns:52px 62px 70px minmax(0,1fr)}
+        .rp-4v4-player-stat{padding-left:6px;padding-right:6px}
+        .rp-4v4-player-stat:first-child{padding-left:10px}
+        .rp-4v4-player-stat:last-child{padding-right:8px}
+        .rp-4v4-player-label{font-size:.33rem}
+        .rp-4v4-player-value{font-size:.51rem}
+        .rp-4v4-player-stat.is-top-stats .rp-4v4-player-value{font-size:.44rem}
       }
     `;
     document.head.appendChild(style);
@@ -196,6 +264,51 @@
     const oldPreview = document.querySelector('[data-rp-home-future-4v4-preview]');
     if (oldPreview) oldPreview.hidden = true;
     document.body.classList.remove('rp-home-team-preview-open');
+  }
+
+  function playerCard(player) {
+    const number = validNumber(player?.playerNumber);
+    const rank = validRank(player?.rank);
+    const ovr = finiteNumber(player?.ovr);
+    const record = recordLabel(player?.record);
+    const winRate = winRateLabel(player?.winRate);
+    const topStats = topStatsLabel(player?.topStats);
+    const playerName = escapeHtml(player?.playerName || 'REAL PLAY PLAYER');
+
+    return `
+      <article class="rp-4v4-player-card">
+        <div class="rp-4v4-player-identity">
+          <div class="rp-4v4-player-name-cell">
+            <span class="rp-4v4-player-label">NAME</span>
+            <div class="rp-4v4-player-name-line">
+              <strong class="rp-4v4-player-name" title="${playerName}">${playerName}</strong>
+              ${number === null ? '' : `<span class="rp-4v4-player-number">#${number}</span>`}
+            </div>
+          </div>
+          <div class="rp-4v4-player-rank-cell">
+            <span class="rp-4v4-player-label">RANK</span>
+            <strong class="rp-4v4-player-rank${rank ? '' : ' is-unranked'}">${rank ? `#${rank}` : 'UNRANKED'}</strong>
+          </div>
+        </div>
+        <div class="rp-4v4-player-performance">
+          <div class="rp-4v4-player-stat is-ovr">
+            <span class="rp-4v4-player-label">OVR</span>
+            <strong class="rp-4v4-player-value">${ovr === null ? '—' : Math.round(ovr)}</strong>
+          </div>
+          <div class="rp-4v4-player-stat is-record">
+            <span class="rp-4v4-player-label">RECORD</span>
+            <strong class="rp-4v4-player-value">${escapeHtml(record)}</strong>
+          </div>
+          <div class="rp-4v4-player-stat is-winrate">
+            <span class="rp-4v4-player-label">WINRATE</span>
+            <strong class="rp-4v4-player-value">${escapeHtml(winRate)}</strong>
+          </div>
+          <div class="rp-4v4-player-stat is-top-stats">
+            <span class="rp-4v4-player-label">TOP STATS</span>
+            <strong class="rp-4v4-player-value" title="${escapeHtml(topStats)}">${escapeHtml(topStats)}</strong>
+          </div>
+        </div>
+      </article>`;
   }
 
   function ensureView() {
@@ -278,16 +391,6 @@
       status.classList.toggle('error', type === 'error');
     }
 
-    function playerStanding(player) {
-      const rank = validRank(player?.rank);
-      if (rank) {
-        const ovr = validOvr(player?.ovr);
-        return { ranked: true, text: ovr === null ? `#${rank}` : `#${rank} · ${ovr} OVR` };
-      }
-      const games = Math.max(0, Math.min(5, Number(player?.verifiedGames ?? player?.games ?? 0) || 0));
-      return { ranked: false, text: `UNRANKED · ${games}/5` };
-    }
-
     function sortedClubPlayers(clubId) {
       return preferencePlayers
         .filter((player) => String(player?.preferredClub || '').toLowerCase() === clubId)
@@ -297,6 +400,9 @@
           if (leftRank && rightRank) return leftRank - rightRank;
           if (leftRank) return -1;
           if (rightRank) return 1;
+          const leftOvr = finiteNumber(left?.ovr) ?? -Infinity;
+          const rightOvr = finiteNumber(right?.ovr) ?? -Infinity;
+          if (leftOvr !== rightOvr) return rightOvr - leftOvr;
           const gamesDiff = (Number(right?.verifiedGames ?? right?.games ?? 0) || 0) - (Number(left?.verifiedGames ?? left?.games ?? 0) || 0);
           if (gamesDiff) return gamesDiff;
           return String(left?.playerName || '').localeCompare(String(right?.playerName || ''));
@@ -334,18 +440,7 @@
         return;
       }
 
-      preferenceList.innerHTML = players.map((player) => {
-        const number = validNumber(player?.playerNumber);
-        const standing = playerStanding(player);
-        return `
-          <div class="rp-4v4-preference-row">
-            <div class="rp-4v4-preference-player">
-              <strong>${escapeHtml(player?.playerName || 'REAL PLAY PLAYER')}</strong>
-              ${number === null ? '' : `<span>#${number}</span>`}
-            </div>
-            <div class="rp-4v4-preference-standing${standing.ranked ? ' is-ranked' : ''}">${escapeHtml(standing.text)}</div>
-          </div>`;
-      }).join('');
+      preferenceList.innerHTML = players.map(playerCard).join('');
     }
 
     async function loadPreferences({ silent = false } = {}) {
@@ -388,10 +483,7 @@
       setStatus('');
       renderPreferenceBoard();
       try {
-        const data = await api('/api/real-play/4v4/preference', {
-          method: 'PUT',
-          body: { club: club.id },
-        });
+        const data = await api('/api/real-play/4v4/preference', { method: 'PUT', body: { club: club.id } });
         preferredClub = String(data?.preferredClub || club.id).toLowerCase();
         setStatus(`${club.name} SAVED AS YOUR EARLY TEAM PREFERENCE.`, 'success');
         await loadPreferences({ silent: true });
