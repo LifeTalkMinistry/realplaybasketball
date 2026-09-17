@@ -212,8 +212,18 @@
     card.dataset.rpProfileGameSession = String(id);
     setCardBusy(card, true);
     const opened = openReplay(id, card);
-    if (!opened) setCardBusy(card, false);
-    return opened;
+    if (!opened) {
+      setCardBusy(card, false);
+      return false;
+    }
+
+    // Cached game cards used to remain permanently stuck on OPENING GAME…
+    // because this fast path returns before handleGameCard reaches its finally
+    // block. Clear the temporary state after the replay handoff is dispatched.
+    window.setTimeout(() => {
+      if (card.isConnected) setCardBusy(card, false);
+    }, 250);
+    return true;
   }
 
   async function handleGameCard(card) {
@@ -274,11 +284,10 @@
       .rp-profile-game-replay-loading{opacity:.72}
       .rp-profile-game-replay-loading .rp-profile-game-open-hint span{color:#48d7ff}
 
-      /* Open Rank itself is a high-z full-screen layer (2050), and player
-         profiles opened from it sit above that layer. A replay is the next
-         navigation level, so it must sit above both instead of opening hidden
-         underneath the appointment screen. */
-      .rp-career-replay{z-index:2100!important}
+      /* Open Rank itself is a high-z full-screen layer (2050), the selected
+         profile is 2300, and its permanent nav is 2400. Replay is a child
+         route of the profile, so it must be the top normal app layer. */
+      body.rp-career-replay-open .rp-career-replay{z-index:2600!important}
       .rp-career-replay::before{display:none!important}
     `;
     document.head.appendChild(style);
