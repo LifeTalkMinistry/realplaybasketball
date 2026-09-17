@@ -58,7 +58,7 @@
     const status = String(profile?.ownershipStatus || '').trim().toLowerCase();
     return status === 'unclaimed'
       && profile?.claimedAccountId == null
-      && source.startsWith('admin_created');
+      && (source.startsWith('admin_created') || source.startsWith('claimed_existing'));
   }
 
   async function api(path, options = {}) {
@@ -195,35 +195,51 @@
     renderSheet(claimable.has(playerId));
   }
 
+  function openClaimedProfile() {
+    closeSheet();
+    try { window.RealPlayPlayers?.refresh?.(); } catch (_error) {}
+    try { window.RealPlayProfile?.refresh?.(); } catch (_error) {}
+
+    const meButton = document.querySelector('[data-rp-simple-nav-item="me"]');
+    if (meButton) {
+      meButton.click();
+      return;
+    }
+    try { window.RealPlayProfile?.open?.(); } catch (_error) {}
+  }
+
   async function submitClaim() {
     if (!selectedPlayerId || !claimable.has(selectedPlayerId)) return;
-    const confirmed = window.confirm(`Claim ${selectedPlayerName} as your Real Play player profile? Head Admin must validate the claim before ownership becomes permanent.`);
+    const claimedPlayerId = selectedPlayerId;
+    const claimedPlayerName = selectedPlayerName;
+    const confirmed = window.confirm(`Claim ${claimedPlayerName} as your Real Play player profile? You will get access to this existing player history now. The player name stays locked until Head Admin validates ownership.`);
     if (!confirmed) return;
 
     const buttons = sheet?.querySelectorAll('[data-player-option]') || [];
     buttons.forEach((button) => { button.disabled = true; });
-    setStatus('SENDING CLAIM…');
+    setStatus('CLAIMING PLAYER…');
     try {
       await api('/api/real-play/profile-ownership/claim', {
         method: 'POST',
-        body: { playerId: selectedPlayerId },
+        body: { playerId: claimedPlayerId },
       });
-      claimable.delete(selectedPlayerId);
+      claimable.delete(claimedPlayerId);
       claimableLoadedAt = Date.now();
-      setStatus('CLAIM SENT · WAITING FOR ADMIN VALIDATION', 'success');
-      try { window.RealPlayPlayers?.refresh?.(); } catch (_error) {}
+      setStatus('CLAIMED · OPENING YOUR PROFILE…', 'success');
       try {
         window.dispatchEvent(new CustomEvent('realplay:player-claim-submitted', {
-          detail: { playerId: selectedPlayerId, playerName: selectedPlayerName },
+          detail: { playerId: claimedPlayerId, playerName: claimedPlayerName },
         }));
       } catch (_error) {}
-      window.setTimeout(closeSheet, 1100);
+      window.setTimeout(openClaimedProfile, 350);
     } catch (error) {
-      const message = error?.code === 'PROFILE_EXISTS'
-        ? 'THIS ACCOUNT ALREADY HAS A REAL PLAY PLAYER PROFILE.'
-        : error?.code === 'PROFILE_NOT_CLAIMABLE'
-          ? 'THIS PLAYER IS NO LONGER AVAILABLE TO CLAIM.'
-          : (error?.message || 'CLAIM COULD NOT BE SENT.');
+      const message = error?.code === 'OWNERSHIP_HISTORY_CONFLICT'
+        ? 'YOUR CURRENT TEMPORARY PLAYER ALREADY HAS RECORDED HISTORY. HEAD ADMIN MUST RESOLVE THIS CLAIM.'
+        : error?.code === 'OWNERSHIP_EXISTS'
+          ? 'THIS ACCOUNT ALREADY OWNS OR IS CLAIMING ANOTHER PLAYER.'
+          : error?.code === 'PROFILE_NOT_CLAIMABLE'
+            ? 'THIS PLAYER IS NO LONGER AVAILABLE TO CLAIM.'
+            : (error?.message || 'CLAIM COULD NOT BE SENT.');
       setStatus(message, 'error');
       buttons.forEach((button) => { button.disabled = false; });
       await refreshClaimable(true);
