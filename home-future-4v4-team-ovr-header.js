@@ -387,12 +387,12 @@
     const modal = document.querySelector('[data-rp-4v4-info-backdrop], .rp-4v4-info-backdrop');
     if (!modal) return;
     modal.querySelectorAll('[data-rp-4v4-info-tab]').forEach((tab) => {
-      const active = tab.dataset.rp4v4InfoTab === name;
+      const active = tab.getAttribute('data-rp-4v4-info-tab') === name;
       tab.classList.toggle('active', active);
       tab.setAttribute('aria-selected', active ? 'true' : 'false');
     });
     modal.querySelectorAll('[data-rp-4v4-info-panel]').forEach((panel) => {
-      panel.hidden = panel.dataset.rp4v4InfoPanel !== name;
+      panel.hidden = panel.getAttribute('data-rp-4v4-info-panel') !== name;
     });
   }
 
@@ -633,7 +633,7 @@
 
     const tab = event.target.closest?.('[data-rp-4v4-info-tab]');
     if (tab) {
-      selectInfoTab(tab.dataset.rp4v4InfoTab || 'ovr');
+      selectInfoTab(tab.getAttribute('data-rp-4v4-info-tab') || 'ovr');
       return;
     }
 
