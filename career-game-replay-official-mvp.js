@@ -33,6 +33,18 @@
     document.head.appendChild(safariCover);
   }
 
+  // iPhone native fullscreen cannot display Real Play HTML overlays. Keep the
+  // working native fullscreen button and provide a second GAME SKIPS control.
+  // Tapping a basket reuses the official seven-second marker, then immediately
+  // opens the selected play in the same native fullscreen path.
+  if (!window.__realPlayIPhoneGameSkipsRequested) {
+    window.__realPlayIPhoneGameSkipsRequested = true;
+    const gameSkips = document.createElement('script');
+    gameSkips.src = 'career-game-replay-iphone-game-skips.js?v=20260917-iphone-game-skips-v1';
+    gameSkips.async = false;
+    document.head.appendChild(gameSkips);
+  }
+
   // Load the replay-admin bridge after the existing replay editor has installed.
   // This keeps the pencil responsive even when the heavy Admin/Game Control
   // bundle has not been opened yet in the current browser session.
