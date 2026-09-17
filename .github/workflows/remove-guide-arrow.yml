@@ -1,0 +1,50 @@
+name: Remove priority guide arrow
+
+on:
+  push:
+    paths:
+      - '.github/workflows/remove-guide-arrow.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove embedded scroll arrow
+        shell: bash
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from PIL import Image, ImageDraw
+          from pathlib import Path
+
+          path = Path('assets/guides/16-player-priority-guide.png')
+          img = Image.open(path).convert('RGB')
+          w, h = img.size
+
+          # The uploaded guide screenshot contains an old circular down-arrow UI
+          # near the bottom center. Cover only that embedded artifact.
+          cx = round(w * 0.50)
+          cy = round(h * 0.958)
+          r  = max(10, round(w * 0.058))
+
+          draw = ImageDraw.Draw(img)
+          draw.ellipse((cx-r, cy-r, cx+r, cy+r), fill=(0, 0, 0))
+          img.save(path, 'PNG', optimize=True)
+          print(f'Patched {path}: {w}x{h}, center=({cx},{cy}), radius={r}')
+          PY
+      - name: Commit cleaned guide image
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/guides/16-player-priority-guide.png
+          if git diff --cached --quiet; then
+            echo "No image change detected."
+            exit 0
+          fi
+          git commit -m "Remove embedded arrow from priority guide"
+          git push
