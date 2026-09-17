@@ -35,13 +35,7 @@
   }
 
   function openRankNumberFrom(game) {
-    const value = Number(
-      game?.openRankNumber
-      ?? game?.open_rank_number
-      ?? game?.rankingNumber
-      ?? game?.ranking_number
-      ?? 0
-    );
+    const value = Number(game?.openRankNumber ?? game?.open_rank_number ?? game?.rankingNumber ?? game?.ranking_number ?? 0);
     return Number.isSafeInteger(value) && value > 0 ? value : null;
   }
 
@@ -51,12 +45,7 @@
   }
 
   function visibleOpenRankNumberFrom(card) {
-    if (!card) return null;
-    const label = String(card.querySelector('.rp-profile-game-main strong')?.textContent || '').trim();
-    if (!label) return null;
-
-    // This number is the public Open Rank number, NOT the database session id.
-    // Examples: OPEN RANK #034, OPEN RANKING SESSION #034.
+    const label = String(card?.querySelector('.rp-profile-game-main strong')?.textContent || '').trim();
     const match = label.match(/\bOPEN\s+RANK(?:ING)?(?:\s+(?:SESSION|GAME))?\s*#\s*0*(\d+)\b/i);
     const value = Number(match?.[1] || 0);
     return Number.isSafeInteger(value) && value > 0 ? value : null;
@@ -71,16 +60,11 @@
   function resolveCanonicalSessionId(games, card, index) {
     const rows = Array.isArray(games) ? games : [];
     const openRankNumber = visibleOpenRankNumberFrom(card);
-
-    // Prefer matching the displayed Open Rank number to the API game record,
-    // then take that record's canonical sessionId. This prevents #034 from
-    // being mistaken for database session id 34.
     if (openRankNumber) {
-      const matched = rows.find((game) => openRankNumberFrom(game) === openRankNumber);
-      const matchedSessionId = sessionIdFrom(matched);
-      if (matchedSessionId) return matchedSessionId;
+      const match = rows.find((game) => openRankNumberFrom(game) === openRankNumber);
+      const id = sessionIdFrom(match);
+      if (id) return id;
     }
-
     return index >= 0 ? sessionIdFrom(rows[index]) : null;
   }
 
@@ -150,42 +134,9 @@
     return null;
   }
 
-  function closeSourceProfile(card) {
-    const publicProfile = card?.closest('[data-rp-public-profile], [data-rp-visitor-public-profile], .rp-public-player-profile');
-    if (publicProfile) {
-      const closeButton = publicProfile.querySelector('[data-rp-public-profile-close], [data-visitor-profile-close], [data-rp-profile-close], [data-rp-player-profile-close]');
-      if (closeButton) {
-        closeButton.click();
-      } else {
-        publicProfile.classList.remove('open');
-        publicProfile.setAttribute('aria-hidden', 'true');
-        if (!document.querySelector('[data-rp-profile].open, [data-rp-public-profile].open, [data-rp-visitor-public-profile].open')) {
-          document.body.classList.remove('rp-profile-open');
-        }
-      }
-      return;
-    }
-
-    const ownProfile = card?.closest('[data-rp-profile]');
-    if (!ownProfile) return;
-    if (window.RealPlayProfile?.close) {
-      window.RealPlayProfile.close();
-    } else {
-      ownProfile.classList.remove('open');
-      ownProfile.setAttribute('aria-hidden', 'true');
-      document.body.classList.remove('rp-profile-open');
-    }
-  }
-
-  function openReplay(sessionId, sourceCard = null) {
+  function openReplay(sessionId) {
     const id = Number(sessionId);
     if (!Number.isSafeInteger(id) || id < 1) return false;
-
-    // A replay opened from a player profile is a child view of that profile.
-    // Keep the source profile mounted/open underneath the replay so Back from
-    // the video returns to the exact player profile instead of dropping the
-    // user back to the Open Rank appointment that launched the profile.
-
     const proxy = document.createElement('button');
     proxy.type = 'button';
     proxy.hidden = true;
@@ -211,15 +162,11 @@
     if (!card || !id) return false;
     card.dataset.rpProfileGameSession = String(id);
     setCardBusy(card, true);
-    const opened = openReplay(id, card);
+    const opened = openReplay(id);
     if (!opened) {
       setCardBusy(card, false);
       return false;
     }
-
-    // Cached game cards used to remain permanently stuck on OPENING GAME…
-    // because this fast path returns before handleGameCard reaches its finally
-    // block. Clear the temporary state after the replay handoff is dispatched.
     window.setTimeout(() => {
       if (card.isConnected) setCardBusy(card, false);
     }, 250);
@@ -228,9 +175,6 @@
 
   async function handleGameCard(card) {
     if (!card || resolving) return;
-
-    // Only trust a session id previously resolved from API data. Never infer a
-    // database session id from the visible Open Rank number on the card.
     const immediateId = cachedSessionIdFrom(card);
     if (immediateId) {
       openResolvedCard(card, immediateId);
@@ -250,7 +194,7 @@
       const id = resolveCanonicalSessionId(games, card, index);
       if (!id) throw new Error('This game does not have a verified game page yet.');
       card.dataset.rpProfileGameSession = String(id);
-      if (!openReplay(id, card)) throw new Error('This game could not be opened.');
+      if (!openReplay(id)) throw new Error('This game could not be opened.');
     } catch (error) {
       console.warn('[Real Play] Profile game page could not open.', error);
       const hint = card.querySelector('.rp-profile-game-open-hint span');
@@ -283,14 +227,20 @@
       .rp-profile-game:hover,.rp-profile-game:focus-within{border-color:rgba(55,202,255,.2);background:#060d17}
       .rp-profile-game-replay-loading{opacity:.72}
       .rp-profile-game-replay-loading .rp-profile-game-open-hint span{color:#48d7ff}
-
-      /* Open Rank itself is a high-z full-screen layer (2050), the selected
-         profile is 2300, and its permanent nav is 2400. Replay is a child
-         route of the profile, so it must be the top normal app layer. */
       body.rp-career-replay-open .rp-career-replay{z-index:2600!important}
       .rp-career-replay::before{display:none!important}
     `;
     document.head.appendChild(style);
+  }
+
+  function loadHighlightLayer() {
+    if (window.__realPlayProfileHighlightsInstalled || document.querySelector('script[data-rp-profile-highlights-loader]')) return;
+    const script = document.createElement('script');
+    script.src = `profile-game-highlights.js?v=20260917-player-highlights-v1`;
+    script.async = false;
+    script.dataset.rpProfileHighlightsLoader = '1';
+    script.onerror = () => console.warn('[Real Play] Player highlight layer could not load.');
+    document.head.appendChild(script);
   }
 
   document.addEventListener('click', (event) => {
@@ -300,6 +250,10 @@
       if (Number.isSafeInteger(id) && id > 0) currentPublicPlayerId = id;
       return;
     }
+
+    // The dedicated highlight layer owns this button. Returning here also keeps
+    // the existing whole-card replay handler from stealing the same tap.
+    if (event.target.closest('[data-rp-profile-highlight-action]')) return;
 
     const card = event.target.closest('.rp-profile-history .rp-profile-game');
     if (!card) return;
@@ -328,4 +282,5 @@
 
   installNavigationStyles();
   collapseProfileGames();
+  loadHighlightLayer();
 })();
