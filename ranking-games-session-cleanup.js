@@ -167,8 +167,8 @@
 
 /*
  * NEXT RANKING GAME capacity badge.
- * Reuse the secured-player roster as the single source of truth so the compact
- * header count always matches the player list below (for example 02/16).
+ * Prefer the combined session-capacity summary so secured + standby players
+ * share the same first-16 pool. Fall back to the secured roster during startup.
  */
 (() => {
   if (window.__realPlayRankingCapacityBadgeInstalled) return;
@@ -255,12 +255,12 @@
   }
 
   function syncCapacity() {
-    const roster = view.querySelector('[data-rp-ranking-secured]');
-    const countNode = view.querySelector('[data-rp-ranking-secured-count]');
-    const text = String(countNode?.textContent || '').trim();
+    const accessTotal = view.querySelector('[data-rp-ranking-access-total]');
+    const securedCount = view.querySelector('[data-rp-ranking-secured-count]');
+    const text = String(accessTotal?.textContent || securedCount?.textContent || '').trim();
     const match = text.match(/(\d+)\s*\/\s*(\d+)/);
 
-    if (!roster || roster.hidden || !match) {
+    if (!match) {
       setHidden(true);
       return;
     }
@@ -400,6 +400,10 @@
     return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : 0;
   }
 
+  function pad(numberValue) {
+    return String(number(numberValue)).padStart(2, '0');
+  }
+
   function ensureSummary() {
     const card = view.querySelector('[data-rp-ranking-session]');
     if (!card) return null;
@@ -414,7 +418,7 @@
     summary.innerHTML = `
       <div class="rp-ranking-access-summary-head">
         <span>SECURED SPOTS</span>
-        <strong data-rp-ranking-access-total>0 / 0</strong>
+        <strong data-rp-ranking-access-total>00/00 SECURED</strong>
       </div>
       <div class="rp-ranking-access-breakdown" aria-label="Session access breakdown">
         <div class="is-token"><span>TOKEN</span><strong data-rp-ranking-access-token>0</strong></div>
@@ -487,8 +491,13 @@
     const standby = number(counts.standby);
     const capacityRaw = Number(session.capacity);
     const capacity = Number.isFinite(capacityRaw) && capacityRaw > 0 ? Math.trunc(capacityRaw) : null;
+    const totalPlayers = secured + standby;
+    const securedCapacityCount = capacity ? Math.min(totalPlayers, capacity) : totalPlayers;
+    const overflowStandby = capacity ? Math.max(totalPlayers - capacity, 0) : 0;
 
-    summary.querySelector('[data-rp-ranking-access-total]').textContent = capacity ? `${secured} / ${capacity}` : `${secured} SECURED`;
+    summary.querySelector('[data-rp-ranking-access-total]').textContent = capacity
+      ? `${pad(securedCapacityCount)}/${pad(capacity)} SECURED${overflowStandby > 0 ? ` · ${pad(overflowStandby)} STANDBY` : ''}`
+      : `${pad(securedCapacityCount)} SECURED`;
     summary.querySelector('[data-rp-ranking-access-token]').textContent = String(tokenSecured);
     summary.querySelector('[data-rp-ranking-access-gcash]').textContent = String(gcashSecured);
     summary.querySelector('[data-rp-ranking-access-cash]').textContent = String(cashSecured);
