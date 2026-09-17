@@ -98,14 +98,21 @@
     const style = document.createElement('style');
     style.dataset.rp4v4TeamOvrHeaderStyle = '1';
     style.textContent = `
+      .rp-4v4-static-view .rp-3v3-select-head{
+        display:none!important;
+      }
       .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand{
-        min-width:0;text-align:center;
+        min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        gap:3px;text-align:center;
       }
       .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{
-        display:block;color:#f5f9ff;font-size:.84rem;font-weight:1000;letter-spacing:.075em;line-height:1;white-space:nowrap;
+        display:block;margin:0;color:#8297aa;font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.48rem;font-weight:1000;letter-spacing:.16em;line-height:1;text-transform:uppercase;white-space:nowrap;
       }
       .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand span{
-        display:none!important;
+        display:block!important;margin:0!important;color:#f5f9ff!important;font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.91rem;font-weight:1000;letter-spacing:.075em;line-height:1.02;text-transform:uppercase;white-space:nowrap;
+        text-shadow:0 0 18px rgba(65,214,255,.08);
       }
       .rp-4v4-static-view .rp-4v4-player-card.is-profile-link{
         cursor:pointer;touch-action:manipulation;
@@ -121,7 +128,8 @@
         outline:2px solid rgba(80,220,255,.68);outline-offset:2px;
       }
       @media(max-width:380px){
-        .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{font-size:.78rem;letter-spacing:.055em}
+        .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{font-size:.44rem;letter-spacing:.13em}
+        .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand span{font-size:.84rem;letter-spacing:.055em}
       }
     `;
     document.head.appendChild(style);
@@ -130,6 +138,9 @@
   function render(data = null) {
     const view = activeView();
     if (!view) return;
+
+    view.querySelector('.rp-3v3-select-head')?.remove();
+
     const brand = view.querySelector('.rp-3v3-brand');
     const strong = brand?.querySelector('strong');
     const span = brand?.querySelector('span');
@@ -137,14 +148,14 @@
 
     ensureStyle();
     brand.classList.add('rp-4v4-team-ovr-brand');
+    strong.textContent = 'SELECT YOUR TEAM';
 
     const clubId = activeClub(view);
     const players = clubPlayers(clubId);
     const official = officialState(data, clubId);
-    span.textContent = '';
 
     if (!token()) {
-      strong.textContent = 'TEAM OVR —';
+      span.textContent = 'TEAM OVR —';
       brand.dataset.ovrState = 'signed-out';
       return;
     }
@@ -156,18 +167,18 @@
       if (!atOrBelowCap || normalized.includes('ABOVE')) brand.dataset.ovrState = 'official-over';
       else if (!atOrAboveFloor || normalized.includes('BELOW')) brand.dataset.ovrState = 'official-warning';
       else brand.dataset.ovrState = 'official-ok';
-      strong.textContent = `TEAM OVR ${Math.round(official.teamOvr)}`;
+      span.textContent = `TEAM OVR ${Math.round(official.teamOvr)}`;
       return;
     }
 
     const preview = previewAverage(players);
     if (preview === null) {
-      strong.textContent = 'TEAM OVR —';
+      span.textContent = 'TEAM OVR —';
       brand.dataset.ovrState = 'empty';
       return;
     }
 
-    strong.textContent = `TEAM OVR ${Math.round(preview)}`;
+    span.textContent = `TEAM OVR ${Math.round(preview)}`;
     brand.dataset.ovrState = 'preview';
   }
 
@@ -281,6 +292,8 @@
       load({ force });
     }, Math.max(0, delay));
   }
+
+  ensureStyle();
 
   document.addEventListener('click', (event) => {
     const profileCard = event.target.closest?.('.rp-4v4-player-card.is-profile-link');
