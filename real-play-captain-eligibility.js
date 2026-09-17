@@ -102,24 +102,26 @@
     };
   }
 
-  function badgesForRow(row) {
-    const id = String(row?.dataset?.worldPlayerId || '').trim();
-    const player = playersById.get(id) || null;
-    const source = Array.isArray(player?.badges)
-      ? player.badges
-      : Array.isArray(player?.recognitions)
-        ? player.recognitions
-        : [];
+  function badgeSources(...sources) {
+    const lists = [];
+    sources.filter(Boolean).forEach((source) => {
+      [source, source?.player, source?.profile, source?.career, source?.careerStats].filter(Boolean).forEach((candidate) => {
+        if (Array.isArray(candidate?.badges)) lists.push(candidate.badges);
+        if (Array.isArray(candidate?.recognitions)) lists.push(candidate.recognitions);
+      });
+    });
+    return lists.flat();
+  }
 
+  function normalizeBadges(sourceBadges, rank = null) {
     const byType = new Map();
-    source.forEach((badge) => {
+    (Array.isArray(sourceBadges) ? sourceBadges : []).forEach((badge) => {
       const type = String(badge?.type || '').trim().toLowerCase();
       const meta = recognitionMeta(type);
       if (!meta) return;
       byType.set(type, { ...badge, type, title: badge?.title || meta.title });
     });
 
-    const rank = currentRank(row, player);
     const captain = captainBadge(rank);
     if (captain && !byType.has(captain.type)) byType.set(captain.type, captain);
     if (!captain) byType.delete('captain_eligible');
@@ -129,6 +131,92 @@
       if (priorityDiff) return priorityDiff;
       return String(left.title || '').localeCompare(String(right.title || ''));
     });
+  }
+
+  function badgesForRow(row) {
+    const id = String(row?.dataset?.worldPlayerId || '').trim();
+    const player = playersById.get(id) || null;
+    return normalizeBadges(badgeSources(player), currentRank(row, player));
+  }
+
+  function profilePlayerName(profile) {
+    return String(profile?.querySelector('.rp-profile-name h1')?.textContent || 'REAL PLAY PLAYER').trim();
+  }
+
+  function profileRank(profile, ...sources) {
+    const values = [];
+    sources.filter(Boolean).forEach((source) => {
+      values.push(
+        source?.rank,
+        source?.career?.rank,
+        source?.careerStats?.rank,
+        source?.ranking?.rank,
+        source?.player?.rank,
+        source?.profile?.rank
+      );
+    });
+    const visible = String(profile?.querySelector('.rp-profile-rank strong')?.textContent || '');
+    const match = visible.match(/#?\s*(\d+)/);
+    if (match) values.push(Number(match[1]));
+    for (const value of values) {
+      const rank = Number(value);
+      if (Number.isSafeInteger(rank) && rank > 0) return rank;
+    }
+    return null;
+  }
+
+  function sourcePlayerId(source) {
+    const candidates = [
+      source?.playerId,
+      source?.userId,
+      source?.id,
+      source?.player?.playerId,
+      source?.player?.userId,
+      source?.player?.id,
+      source?.profile?.playerId,
+      source?.profile?.player_id,
+      source?.profile?.userId,
+      source?.profile?.user_id,
+      source?.profile?.id,
+    ];
+    for (const value of candidates) {
+      const id = Number(value);
+      if (Number.isSafeInteger(id) && id > 0) return String(id);
+    }
+    return '';
+  }
+
+  function worldPlayerForProfile(profile, source) {
+    const explicitId = String(
+      profile?.dataset?.rpPublicPlayerId
+      || profile?.dataset?.rpProfilePlayerId
+      || sourcePlayerId(source)
+      || ''
+    ).trim();
+    if (explicitId && playersById.has(explicitId)) return playersById.get(explicitId);
+
+    const wantedName = profilePlayerName(profile).toLowerCase().replace(/\s+/g, ' ').trim();
+    if (!wantedName) return null;
+    const matches = [...playersById.values()].filter((player) => (
+      String(player?.playerName || player?.player_name || player?.name || '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim() === wantedName
+    ));
+    return matches.length === 1 ? matches[0] : null;
+  }
+
+  function profileBadgeData(profile) {
+    const source = profile?.classList?.contains('rp-public-player-profile')
+      ? profile.__realPlayPublicPlayer
+      : profile.__realPlayProfileState;
+    const worldPlayer = worldPlayerForProfile(profile, source);
+    const rank = profileRank(profile, worldPlayer, source);
+    return {
+      playerName: profilePlayerName(profile),
+      rank,
+      badges: normalizeBadges(badgeSources(source, worldPlayer), rank),
+    };
   }
 
   function installStyles() {
@@ -196,17 +284,41 @@
       .rp-recognition-owned small{display:block;margin-top:3px;color:#708396;font-size:.4rem;font-weight:900;letter-spacing:.055em;text-transform:uppercase}
       .rp-recognition-note{margin:12px 0 0;color:#687b8f;font-size:.58rem;line-height:1.5;text-align:center}
 
+      /* Profile badge showcase — uses the intentionally open band between the
+         identity header and the player's name. Every currently owned verified
+         badge stays visible instead of collapsing to only the featured badge. */
+      .rp-profile-badges{
+        position:relative;z-index:3;display:flex;align-items:center;justify-content:center;gap:7px;
+        min-height:48px;margin:7px 12px 0;padding:1px 2px;overflow-x:auto;overflow-y:hidden;
+        scrollbar-width:none;-webkit-overflow-scrolling:touch;
+      }
+      .rp-profile-badges::-webkit-scrollbar{display:none}
+      .rp-profile-badge{
+        position:relative;flex:0 0 auto;width:68px;height:42px;padding:0;border:0;border-radius:10px;
+        color:inherit;background:transparent;cursor:pointer;filter:drop-shadow(0 5px 8px rgba(0,0,0,.58));
+        transition:transform .16s ease,filter .16s ease;touch-action:manipulation;
+      }
+      .rp-profile-badge:hover{transform:translateY(-1px) scale(1.055);filter:drop-shadow(0 7px 12px rgba(0,0,0,.64)) brightness(1.08)}
+      .rp-profile-badge:active{transform:scale(.96)}
+      .rp-profile-badge:focus-visible{outline:2px solid #72e6ff;outline-offset:1px}
+      .rp-profile-badge img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
+      .rp-profile.has-rp-profile-badges .rp-profile-player{margin-top:5px!important;padding-top:0!important}
+
       @media(max-width:420px){
         .rp-world-player-row.rp-recognition-themed .rp-world-player-name{padding-right:88px}
         .rp-player-featured-badge{right:55px;width:88px;height:43px}
         .rp-player-featured-count{right:-3px;bottom:0;min-width:18px;height:18px;font-size:.43rem}
         .rp-recognition-card{padding:19px 16px;border-radius:20px}
         .rp-recognition-hero img{height:100px;width:min(84%,260px)}
+        .rp-profile-badges{gap:5px;min-height:45px;margin-inline:9px}
+        .rp-profile-badge{width:62px;height:39px}
       }
       @media(max-width:355px){
         .rp-world-player-row.rp-recognition-themed .rp-world-player-name{padding-right:66px}
         .rp-player-featured-badge{right:51px;width:68px;height:38px}
         .rp-recognition-grid{grid-template-columns:1fr}
+        .rp-profile-badges{justify-content:flex-start;padding-inline:4px}
+        .rp-profile-badge{width:59px;height:37px}
       }
     `;
     document.head.appendChild(style);
@@ -289,11 +401,54 @@
     trigger.setAttribute('aria-label', trigger.title);
   }
 
+  function renderProfileBadges(profile) {
+    if (!(profile instanceof HTMLElement) || !profile.classList.contains('open')) return;
+    const hero = profile.querySelector('.rp-profile-hero');
+    const identity = hero?.querySelector('.rp-profile-identity-line');
+    if (!hero || !identity) return;
+
+    const data = profileBadgeData(profile);
+    profile.__realPlayBadges = data.badges;
+    profile.__realPlayBadgeRank = data.rank;
+    profile.__realPlayBadgePlayerName = data.playerName;
+
+    let strip = hero.querySelector('[data-rp-profile-badges]');
+    if (!data.badges.length) {
+      strip?.remove();
+      profile.classList.remove('has-rp-profile-badges');
+      return;
+    }
+
+    if (!strip) {
+      strip = document.createElement('div');
+      strip.className = 'rp-profile-badges';
+      strip.dataset.rpProfileBadges = 'true';
+      strip.setAttribute('aria-label', 'Player badges');
+      identity.insertAdjacentElement('afterend', strip);
+    }
+
+    const signature = data.badges.map((badge) => {
+      const value = badge?.count ?? badge?.value ?? badge?.metrics?.rank ?? '';
+      return `${badge.type}:${value}`;
+    }).join('|');
+    if (strip.dataset.signature !== signature) {
+      strip.dataset.signature = signature;
+      strip.innerHTML = data.badges.map((badge) => {
+        const meta = recognitionMeta(badge.type);
+        if (!meta) return '';
+        return `<button type="button" class="rp-profile-badge" data-rp-profile-recognition="${esc(badge.type)}" title="${esc(meta.title)}" aria-label="${esc(meta.title)}"><img src="${esc(meta.badge)}" alt="" draggable="false" /></button>`;
+      }).join('');
+    }
+    profile.classList.add('has-rp-profile-badges');
+  }
+
   function renderAll() {
     scheduled = false;
     const rows = [...document.querySelectorAll('.rp-world-player-row')];
+    const profiles = [...document.querySelectorAll('.rp-profile.open')];
     rows.forEach(renderRow);
-    if (rows.length && (!authorityLoadedAt || Date.now() - authorityLoadedAt >= AUTHORITY_TTL_MS)) loadAuthority();
+    profiles.forEach(renderProfileBadges);
+    if ((rows.length || profiles.length) && (!authorityLoadedAt || Date.now() - authorityLoadedAt >= AUTHORITY_TTL_MS)) loadAuthority();
   }
 
   function scheduleRender() {
@@ -339,7 +494,7 @@
     }
   }
 
-  function ownedBadgeHtml(badge, index) {
+  function ownedBadgeHtml(badge, featuredType = '') {
     const meta = recognitionMeta(badge?.type);
     if (!meta) return '';
     let sub = 'OWNED BADGE';
@@ -348,7 +503,7 @@
     if (badge.type === 'best_shooting') sub = `${Number(badge?.metrics?.fieldGoalPct ?? badge.value ?? 0).toFixed(1)}% FG`;
     if (badge.type === 'best_rebounder') sub = `${Number(badge?.metrics?.reboundsPerGame ?? badge.value ?? 0).toFixed(2)} REB/G`;
     if (badge.type === 'captain_eligible') sub = `OFFICIAL RANK #${badge?.metrics?.rank ?? badge.value ?? '—'}`;
-    return `<article class="rp-recognition-owned${index === 0 ? ' is-featured' : ''}"><img src="${esc(meta.badge)}" alt="" draggable="false" /><strong>${esc(meta.title)}</strong><small>${esc(sub)}</small></article>`;
+    return `<article class="rp-recognition-owned${badge?.type === featuredType ? ' is-featured' : ''}"><img src="${esc(meta.badge)}" alt="" draggable="false" /><strong>${esc(meta.title)}</strong><small>${esc(sub)}</small></article>`;
   }
 
   function ensureModal() {
@@ -364,13 +519,10 @@
     return modal;
   }
 
-  function openModal(row) {
-    const badges = Array.isArray(row?.__realPlayBadges) ? row.__realPlayBadges : badgesForRow(row);
-    const featured = badges[0];
+  function showRecognitionModal({ badges, featured, name, rank }) {
     const meta = recognitionMeta(featured?.type);
-    if (!row || !featured || !meta) return;
+    if (!featured || !meta) return;
 
-    const rank = currentRank(row, playersById.get(String(row.dataset.worldPlayerId || '').trim()));
     const metrics = metricPairs(featured);
     const dialog = ensureModal();
     const reason = String(featured.reason || meta.fallback || '').trim();
@@ -383,12 +535,12 @@
         <button type="button" class="rp-recognition-close" data-rp-recognition-close aria-label="Close recognition details">×</button>
         <p class="rp-recognition-kicker">REAL PLAY RECOGNITION</p>
         <div class="rp-recognition-hero"><img src="${esc(meta.badge)}" alt="${esc(meta.title)} badge" draggable="false" /><h2>${esc(meta.title)}</h2></div>
-        <div class="rp-recognition-player"><strong>${esc(playerName(row))}</strong><b>${rank ? `RANK #${rank}` : 'REAL PLAY PLAYER'}</b></div>
+        <div class="rp-recognition-player"><strong>${esc(name || 'REAL PLAY PLAYER')}</strong><b>${rank ? `RANK #${rank}` : 'REAL PLAY PLAYER'}</b></div>
         <p class="rp-recognition-reason">${esc(reason)}</p>
         ${metrics.length ? `<div class="rp-recognition-metrics">${metrics.map(([value, label]) => `<span><b>${esc(value)}</b><small>${esc(label)}</small></span>`).join('')}</div>` : ''}
         <section class="rp-recognition-collection">
           <div class="rp-recognition-collection-head"><div><small>PLAYER COLLECTION</small><strong>BADGES</strong></div><span>${badges.length} OWNED</span></div>
-          <div class="rp-recognition-grid">${badges.map(ownedBadgeHtml).join('')}</div>
+          <div class="rp-recognition-grid">${badges.map((badge) => ownedBadgeHtml(badge, featured.type)).join('')}</div>
         </section>
         <p class="rp-recognition-note">${esc(note)}</p>
       </section>`;
@@ -398,6 +550,29 @@
     dialog.querySelector('[data-rp-recognition-close]')?.focus({ preventScroll: true });
   }
 
+  function openModal(row) {
+    const badges = Array.isArray(row?.__realPlayBadges) ? row.__realPlayBadges : badgesForRow(row);
+    const featured = badges[0];
+    if (!row || !featured) return;
+    const rank = currentRank(row, playersById.get(String(row.dataset.worldPlayerId || '').trim()));
+    showRecognitionModal({ badges, featured, name: playerName(row), rank });
+  }
+
+  function openProfileModal(trigger) {
+    const profile = trigger?.closest?.('.rp-profile');
+    if (!profile) return;
+    const badges = Array.isArray(profile.__realPlayBadges) ? profile.__realPlayBadges : profileBadgeData(profile).badges;
+    const type = String(trigger.dataset.rpProfileRecognition || '').trim().toLowerCase();
+    const featured = badges.find((badge) => badge?.type === type);
+    if (!featured) return;
+    showRecognitionModal({
+      badges,
+      featured,
+      name: profile.__realPlayBadgePlayerName || profilePlayerName(profile),
+      rank: profile.__realPlayBadgeRank || profileRank(profile),
+    });
+  }
+
   function closeModal() {
     if (!modal) return;
     modal.classList.remove('open');
@@ -405,6 +580,15 @@
   }
 
   function handleFeaturedInteraction(event) {
+    const profileTrigger = event.target.closest?.('[data-rp-profile-recognition]');
+    if (profileTrigger) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      openProfileModal(profileTrigger);
+      return true;
+    }
+
     const trigger = event.target.closest?.('[data-rp-featured-recognition]');
     if (!trigger) return false;
     const row = trigger.closest('.rp-world-player-row');
@@ -424,7 +608,8 @@
       closeModal();
       return;
     }
-    if ((event.key === 'Enter' || event.key === ' ') && event.target.closest?.('[data-rp-featured-recognition]')) {
+    if ((event.key === 'Enter' || event.key === ' ')
+      && event.target.closest?.('[data-rp-featured-recognition], [data-rp-profile-recognition]')) {
       handleFeaturedInteraction(event);
     }
   }, true);
@@ -446,8 +631,10 @@
     loadAuthority(true);
   }, AUTHORITY_TTL_MS);
 
+  window.addEventListener('realplay:profile-loaded', scheduleRender);
+  window.addEventListener('realplay:public-profile-loaded', scheduleRender);
   window.addEventListener('focus', () => {
-    if (document.querySelector('.rp-world-player-row')) loadAuthority();
+    if (document.querySelector('.rp-world-player-row, .rp-profile.open')) loadAuthority();
   });
 
   window.addEventListener('pagehide', () => {
