@@ -181,7 +181,10 @@
     const id = Number(sessionId);
     if (!Number.isSafeInteger(id) || id < 1) return false;
 
-    closeSourceProfile(sourceCard);
+    // A replay opened from a player profile is a child view of that profile.
+    // Keep the source profile mounted/open underneath the replay so Back from
+    // the video returns to the exact player profile instead of dropping the
+    // user back to the Open Rank appointment that launched the profile.
 
     const proxy = document.createElement('button');
     proxy.type = 'button';
@@ -271,6 +274,11 @@
       .rp-profile-game-replay-loading{opacity:.72}
       .rp-profile-game-replay-loading .rp-profile-game-open-hint span{color:#48d7ff}
 
+      /* Open Rank itself is a high-z full-screen layer (2050), and player
+         profiles opened from it sit above that layer. A replay is the next
+         navigation level, so it must sit above both instead of opening hidden
+         underneath the appointment screen. */
+      .rp-career-replay{z-index:2100!important}
       .rp-career-replay::before{display:none!important}
     `;
     document.head.appendChild(style);
