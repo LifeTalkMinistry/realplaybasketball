@@ -348,7 +348,9 @@
   }
 
   function shouldUsePseudoFullscreen(stage) {
-    if (isIPhoneBrowser()) return true;
+    // iPhone now uses the media element / YouTube native fullscreen path owned
+    // by career-game-replay.js, so do not intercept its Expand click here.
+    if (isIPhoneBrowser()) return false;
     return !(stage?.requestFullscreen || stage?.webkitRequestFullscreen);
   }
 
