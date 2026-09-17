@@ -10,6 +10,10 @@
 .rp-ranking-next .rp-ranking-section-head h2{visibility:hidden!important}
 .rp-ranking-next .rp-ranking-section-head h2::after{content:"SUNDAY OPEN RANKING";display:block;visibility:visible!important}
 
+/* The secured total already appears inside SECURED SPOTS. Do not render a
+ * second 04/16 badge in the section header; it collides with the title/icon. */
+.rp-ranking-next .rp-ranking-capacity-badge{display:none!important}
+
 /* Open Rank primary CTA — deliberately dark and restrained. The enabled button
  * rule in ranking-games.css has higher specificity, so this selector targets the
  * actual button and uses explicit overrides to prevent the old bright cyan fill.
