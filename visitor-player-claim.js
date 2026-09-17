@@ -67,6 +67,16 @@
       .rp-visitor-claim-field label{color:#8195a7;font-size:.48rem;font-weight:950;letter-spacing:.075em;text-transform:uppercase}
       .rp-visitor-claim-field input{width:100%;box-sizing:border-box;padding:12px 11px;border:1px solid rgba(255,255,255,.1);border-radius:11px;outline:none;color:#eef8ff;background:#08121c;font-size:.76rem;font-weight:700}
       .rp-visitor-claim-field input:focus{border-color:rgba(72,215,255,.55);box-shadow:0 0 0 2px rgba(72,215,255,.08)}
+      .rp-visitor-claim-field input.rp-visitor-claim-name-locked,
+      .rp-visitor-claim-field input.rp-visitor-claim-name-locked:focus{
+        color:#738292!important;
+        background:#04090e!important;
+        border-color:rgba(255,255,255,.055)!important;
+        box-shadow:none!important;
+        cursor:not-allowed!important;
+        opacity:.72;
+      }
+      .rp-visitor-claim-field-lock{display:block;margin:0 2px;color:#756f65;font-size:.43rem;font-weight:850;letter-spacing:.045em;line-height:1.35;text-transform:uppercase}
       .rp-visitor-claim-submit,.rp-visitor-claim-done{width:100%;margin-top:3px;padding:13px;border:0;border-radius:12px;color:#031018;background:linear-gradient(180deg,#5de4ff,#2bc6ef);font-family:var(--rp-display,Arial,sans-serif);font-size:.66rem;font-weight:1000;letter-spacing:.055em;cursor:pointer}
       .rp-visitor-claim-submit:disabled{opacity:.55;cursor:wait}
       .rp-visitor-claim-note{margin:11px 0 0;color:#667b8f;font-size:.55rem;font-weight:700;line-height:1.5;text-align:center}
@@ -151,7 +161,11 @@
         <p class="rp-visitor-claim-copy">Create the account that will be associated with this Real Play player. The profile will <b>not</b> become permanently yours yet — the claim still requires Admin review.</p>
         <div class="rp-visitor-claim-player"><span>#</span><div><strong>${esc(playerName)}</strong><small>${esc(publicPlayerId)} · EXISTING REAL PLAY PROFILE</small></div></div>
         <form class="rp-visitor-claim-form" data-rp-visitor-claim-form>
-          <div class="rp-visitor-claim-field"><label for="rp-visitor-claim-name">Account Name</label><input id="rp-visitor-claim-name" name="name" type="text" minlength="2" maxlength="100" autocomplete="name" value="${esc(playerName)}" required /></div>
+          <div class="rp-visitor-claim-field">
+            <label for="rp-visitor-claim-name">Account Name · Locked</label>
+            <input class="rp-visitor-claim-name-locked" id="rp-visitor-claim-name" name="name" type="text" value="${esc(playerName)}" readonly aria-readonly="true" tabindex="-1" required />
+            <small class="rp-visitor-claim-field-lock">Locked to this existing player until Admin fully validates ownership.</small>
+          </div>
           <div class="rp-visitor-claim-field"><label for="rp-visitor-claim-email">Email</label><input id="rp-visitor-claim-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required /></div>
           <div class="rp-visitor-claim-field"><label for="rp-visitor-claim-password">Password</label><input id="rp-visitor-claim-password" name="password" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required /></div>
           <div class="rp-visitor-claim-field"><label for="rp-visitor-claim-confirm">Confirm Password</label><input id="rp-visitor-claim-confirm" name="confirm_password" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat your password" required /></div>
@@ -190,12 +204,16 @@
     if (busy || !selectedPlayer?.playerId) return;
     const form = event.currentTarget;
     const data = new FormData(form);
-    const name = String(data.get('name') || '').trim();
+
+    // The existing Real Play player owns the identity during a visitor claim.
+    // Never trust an editable/form-supplied account name here; the registration
+    // name is always forced to the selected existing player's canonical name.
+    const name = String(selectedPlayer?.playerName || '').trim();
     const email = String(data.get('email') || '').trim();
     const password = String(data.get('password') || '');
     const confirm = String(data.get('confirm_password') || '');
 
-    if (name.length < 2) return setStatus('Enter your name.');
+    if (name.length < 2) return setStatus('This existing player profile does not have a valid account name.');
     if (!email) return setStatus('Enter your email.');
     if (password.length < 8) return setStatus('Password must be at least 8 characters.');
     if (password !== confirm) return setStatus('Passwords do not match.');
