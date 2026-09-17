@@ -102,18 +102,64 @@
         display:none!important;
       }
       .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand{
-        min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-        gap:3px;text-align:center;
+        min-width:0;display:flex;align-items:center;justify-content:center;text-align:center;
       }
       .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{
-        display:block;margin:0;color:#8297aa;font-family:var(--rp-display,Arial,sans-serif);
-        font-size:.48rem;font-weight:1000;letter-spacing:.16em;line-height:1;text-transform:uppercase;white-space:nowrap;
+        display:block;margin:0;color:#f5f9ff;font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.54rem;font-weight:1000;letter-spacing:.16em;line-height:1;text-transform:uppercase;white-space:nowrap;
       }
       .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand span{
-        display:block!important;margin:0!important;color:#f5f9ff!important;font-family:var(--rp-display,Arial,sans-serif);
-        font-size:.91rem;font-weight:1000;letter-spacing:.075em;line-height:1.02;text-transform:uppercase;white-space:nowrap;
-        text-shadow:0 0 18px rgba(65,214,255,.08);
+        display:none!important;
       }
+
+      .rp-4v4-static-view .rp-4v4-team-ovr-plaque{
+        position:relative;z-index:7;width:214px;height:68px;margin:1px auto -19px;
+        display:grid;place-items:center;pointer-events:none;
+        filter:drop-shadow(0 8px 16px rgba(0,0,0,.62)) drop-shadow(0 0 11px rgba(235,28,42,.22));
+      }
+      .rp-4v4-static-view .rp-4v4-team-ovr-plaque::before{
+        content:"";position:absolute;inset:0;
+        clip-path:polygon(12% 0,88% 0,100% 20%,96% 72%,80% 100%,20% 100%,4% 72%,0 20%);
+        background:linear-gradient(145deg,#ff3340 0%,#8f0d17 16%,#21070b 33%,#070b10 52%,#2b080d 69%,#a70f19 84%,#ff3d48 100%);
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);
+      }
+      .rp-4v4-static-view .rp-4v4-team-ovr-plaque::after{
+        content:"";position:absolute;inset:5px 9px 6px;
+        clip-path:polygon(10% 0,90% 0,100% 23%,95% 78%,78% 100%,22% 100%,5% 78%,0 23%);
+        background:
+          linear-gradient(90deg,rgba(255,45,56,.22),transparent 19%,transparent 81%,rgba(255,45,56,.22)),
+          linear-gradient(180deg,#161d25 0%,#080b10 42%,#020305 100%);
+        border-top:1px solid rgba(255,255,255,.17);
+      }
+      .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core{
+        position:relative;z-index:2;min-width:118px;height:58px;padding:7px 22px 5px;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;
+        clip-path:polygon(10% 0,90% 0,100% 22%,96% 78%,79% 100%,21% 100%,4% 78%,0 22%);
+        background:linear-gradient(180deg,rgba(28,35,44,.98),rgba(7,10,14,.99) 56%,rgba(1,2,4,.99));
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.11),inset 0 -1px 0 rgba(255,46,58,.22);
+      }
+      .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core::before,
+      .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core::after{
+        content:"";position:absolute;top:11px;width:26px;height:32px;opacity:.9;
+        border-top:2px solid #ff3040;border-bottom:2px solid #7a0912;
+      }
+      .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core::before{left:7px;transform:skewX(-18deg)}
+      .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core::after{right:7px;transform:skewX(18deg)}
+      .rp-4v4-static-view .rp-4v4-team-ovr-label{
+        position:relative;z-index:2;margin:0 0 1px;color:#dce6ef;font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.43rem;font-style:italic;font-weight:1000;letter-spacing:.13em;line-height:1;text-transform:uppercase;
+        text-shadow:0 1px 0 #000;
+      }
+      .rp-4v4-static-view .rp-4v4-team-ovr-value{
+        position:relative;z-index:2;display:block;min-width:70px;margin:0;color:#fff;
+        font-family:var(--rp-display,Arial,sans-serif);font-size:2.05rem;font-style:italic;font-weight:1000;
+        letter-spacing:-.045em;line-height:.88;text-align:center;
+        text-shadow:0 2px 0 #5a060c,0 0 8px rgba(255,255,255,.18),0 0 14px rgba(255,34,50,.2);
+      }
+      .rp-4v4-static-view .rp-4v4-team-ovr-plaque[data-ovr-empty="true"] .rp-4v4-team-ovr-value{
+        font-size:1.72rem;letter-spacing:0;color:#d7e0e8;
+      }
+
       .rp-4v4-static-view .rp-4v4-player-card.is-profile-link{
         cursor:pointer;touch-action:manipulation;
         transition:border-color .16s ease,background .16s ease,transform .16s ease,box-shadow .16s ease;
@@ -128,11 +174,48 @@
         outline:2px solid rgba(80,220,255,.68);outline-offset:2px;
       }
       @media(max-width:380px){
-        .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{font-size:.44rem;letter-spacing:.13em}
-        .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand span{font-size:.84rem;letter-spacing:.055em}
+        .rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{font-size:.49rem;letter-spacing:.13em}
+        .rp-4v4-static-view .rp-4v4-team-ovr-plaque{width:196px;height:64px;margin-bottom:-18px}
+        .rp-4v4-static-view .rp-4v4-team-ovr-plaque-core{height:54px;min-width:110px;padding-inline:20px}
+        .rp-4v4-static-view .rp-4v4-team-ovr-value{font-size:1.9rem}
       }
     `;
     document.head.appendChild(style);
+  }
+
+  function ensurePlaque(view) {
+    let plaque = view?.querySelector?.('[data-rp-4v4-team-ovr-plaque]');
+    if (plaque) return plaque;
+
+    const topbar = view?.querySelector?.('.rp-3v3-topbar');
+    if (!topbar) return null;
+
+    plaque = document.createElement('div');
+    plaque.className = 'rp-4v4-team-ovr-plaque';
+    plaque.dataset.rp4v4TeamOvrPlaque = '1';
+    plaque.dataset.ovrEmpty = 'true';
+    plaque.setAttribute('aria-label', 'Team OVR unavailable');
+    plaque.innerHTML = `
+      <div class="rp-4v4-team-ovr-plaque-core">
+        <small class="rp-4v4-team-ovr-label">TEAM OVR</small>
+        <strong class="rp-4v4-team-ovr-value" data-rp-4v4-team-ovr-value>—</strong>
+      </div>`;
+    topbar.insertAdjacentElement('afterend', plaque);
+    return plaque;
+  }
+
+  function setPlaqueValue(view, value, state) {
+    const plaque = ensurePlaque(view);
+    const target = plaque?.querySelector?.('[data-rp-4v4-team-ovr-value]');
+    if (!plaque || !target) return;
+
+    const number = finite(value);
+    const hasValue = number !== null && number > 0;
+    const display = hasValue ? String(Math.round(number)) : '—';
+    target.textContent = display;
+    plaque.dataset.ovrEmpty = hasValue ? 'false' : 'true';
+    plaque.dataset.ovrState = state || (hasValue ? 'preview' : 'empty');
+    plaque.setAttribute('aria-label', hasValue ? `Team OVR ${display}` : 'Team OVR unavailable');
   }
 
   function render(data = null) {
@@ -149,14 +232,16 @@
     ensureStyle();
     brand.classList.add('rp-4v4-team-ovr-brand');
     strong.textContent = 'SELECT YOUR TEAM';
+    span.textContent = '';
+    ensurePlaque(view);
 
     const clubId = activeClub(view);
     const players = clubPlayers(clubId);
     const official = officialState(data, clubId);
 
     if (!token()) {
-      span.textContent = 'TEAM OVR —';
       brand.dataset.ovrState = 'signed-out';
+      setPlaqueValue(view, null, 'signed-out');
       return;
     }
 
@@ -167,19 +252,19 @@
       if (!atOrBelowCap || normalized.includes('ABOVE')) brand.dataset.ovrState = 'official-over';
       else if (!atOrAboveFloor || normalized.includes('BELOW')) brand.dataset.ovrState = 'official-warning';
       else brand.dataset.ovrState = 'official-ok';
-      span.textContent = `TEAM OVR ${Math.round(official.teamOvr)}`;
+      setPlaqueValue(view, official.teamOvr, brand.dataset.ovrState);
       return;
     }
 
     const preview = previewAverage(players);
     if (preview === null) {
-      span.textContent = 'TEAM OVR —';
       brand.dataset.ovrState = 'empty';
+      setPlaqueValue(view, null, 'empty');
       return;
     }
 
-    span.textContent = `TEAM OVR ${Math.round(preview)}`;
     brand.dataset.ovrState = 'preview';
+    setPlaqueValue(view, preview, 'preview');
   }
 
   function bindPreferenceCards() {
