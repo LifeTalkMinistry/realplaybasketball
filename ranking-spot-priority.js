@@ -3,7 +3,7 @@
   window.__realPlayRankingSpotPriorityInstalled = true;
 
   const STYLE_ID = 'rp-ranking-spot-priority-style';
-  const GUIDE_IMAGE_PATH = 'assets/guides/16-player-priority-guide.png';
+  const GUIDE_IMAGE_PATH = 'assets/guides/16-player-priority-guide-clean.svg';
 
   let view = null;
   let trigger = null;
