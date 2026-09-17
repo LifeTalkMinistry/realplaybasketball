@@ -48,6 +48,37 @@
   };
 
   /*
+    Head Admin player controls keep their own verified player directory. The
+    permanent PLAYERS navigation is intentionally isolated from World bootstrap,
+    so it no longer clicks the old internal Players tab that used to refresh that
+    admin directory. Resync it here after global admin verification completes.
+  */
+  let adminSyncTimer = 0;
+  let adminSyncAttempts = 0;
+
+  function syncPlayerAdminAccess({ reset = false } = {}) {
+    if (reset) adminSyncAttempts = 0;
+    if (adminSyncTimer) window.clearTimeout(adminSyncTimer);
+    adminSyncTimer = 0;
+
+    const playerAdmin = window.RealPlayPlayerAdmin;
+    if (adminContextRequested() && typeof playerAdmin?.refresh === 'function') {
+      adminSyncAttempts = 0;
+      try { playerAdmin.refresh(); } catch (_error) {}
+      return true;
+    }
+
+    // admin-access-bootstrap loads after the player-admin layer and verifies the
+    // server asynchronously. Give it a short bounded window to finish instead
+    // of permanently leaving the player-admin module in its initial false state.
+    if (adminSyncAttempts < 40) {
+      adminSyncAttempts += 1;
+      adminSyncTimer = window.setTimeout(() => syncPlayerAdminAccess(), 125);
+    }
+    return false;
+  }
+
+  /*
     Players is a directory view, not the World social feed. Previously the
     permanent PLAYERS nav opened RealPlayWorld.open(), which starts the full
     World bootstrap, renders feed + channels + chat, and starts its polling
@@ -123,6 +154,7 @@
         playersOpenQueued = false;
         forcePlayersDirectory(panel);
         try { window.RealPlayPlayers?.refresh?.(); } catch (_error) {}
+        syncPlayerAdminAccess({ reset: true });
       });
     }
 
@@ -132,6 +164,7 @@
     window.setTimeout(() => {
       if (document.querySelector('[data-rp-simple-nav-item="players"][aria-current="page"]')) {
         forcePlayersDirectory(panel);
+        syncPlayerAdminAccess();
       }
     }, 300);
   }
@@ -147,6 +180,16 @@
   window.RealPlayPlayersStableNavigation = {
     open: openPlayersDirectory,
   };
+
+  // Start one bounded sync attempt during app boot as well. This covers Head
+  // Admin opening directly into Players or returning from a restored session.
+  syncPlayerAdminAccess({ reset: true });
+  window.addEventListener('realplay:app-ready', () => syncPlayerAdminAccess({ reset: true }));
+  window.addEventListener('focus', () => {
+    if (document.querySelector('[data-rp-simple-nav-item="players"][aria-current="page"]')) {
+      syncPlayerAdminAccess({ reset: true });
+    }
+  });
 
   // Player-facing long-hold controls are kept separate from the Head Admin
   // long-hold menu. This layer only exposes VIEW + CLAIM for real admin-created
