@@ -225,6 +225,7 @@
       .rp-profile-game .rp-profile-game-open-hint b{font-size:0!important;transform:none!important}
       .rp-profile-game .rp-profile-game-open-hint b::after{content:'›';font-size:.75rem;line-height:1}
       .rp-profile-game:hover,.rp-profile-game:focus-within{border-color:rgba(55,202,255,.2);background:#060d17}
+      .rp-profile-game-media-actions{grid-column:1/-1!important}
       .rp-profile-game-replay-loading{opacity:.72}
       .rp-profile-game-replay-loading .rp-profile-game-open-hint span{color:#48d7ff}
       body.rp-career-replay-open .rp-career-replay{z-index:2600!important}
