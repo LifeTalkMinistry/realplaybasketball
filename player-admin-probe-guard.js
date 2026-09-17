@@ -147,4 +147,17 @@
   window.RealPlayPlayersStableNavigation = {
     open: openPlayersDirectory,
   };
+
+  // Player-facing long-hold controls are kept separate from the Head Admin
+  // long-hold menu. This layer only exposes VIEW + CLAIM for real admin-created
+  // beta identities that are still unclaimed; server ownership rules remain the
+  // authority for whether a claim is accepted.
+  if (!document.querySelector('script[data-rp-player-claim-loader]')) {
+    const script = document.createElement('script');
+    script.dataset.rpPlayerClaimLoader = '1';
+    script.src = 'real-play-player-claim.js?v=20260917-player-claim-v1';
+    script.async = false;
+    script.onerror = () => console.error('[Real Play] Player claim controls failed to load.');
+    document.head.appendChild(script);
+  }
 })();
