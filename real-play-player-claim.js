@@ -53,6 +53,14 @@
     return String(row?.querySelector('.rp-world-player-name strong')?.textContent || 'REAL PLAY PLAYER').trim();
   }
 
+  function isAdminCreatedUnclaimed(profile) {
+    const source = String(profile?.ownershipSource || '').trim().toLowerCase();
+    const status = String(profile?.ownershipStatus || '').trim().toLowerCase();
+    return status === 'unclaimed'
+      && profile?.claimedAccountId == null
+      && source.startsWith('admin_created');
+  }
+
   async function api(path, options = {}) {
     const auth = token();
     if (!auth) {
@@ -94,6 +102,7 @@
         const data = await api('/api/real-play/profile-ownership/unclaimed');
         const profiles = Array.isArray(data?.profiles) ? data.profiles : [];
         claimable = new Map(profiles
+          .filter(isAdminCreatedUnclaimed)
           .map((profile) => [Number(profile?.playerId ?? profile?.id), profile])
           .filter(([id]) => Number.isSafeInteger(id) && id > 0));
         claimableLoadedAt = Date.now();
