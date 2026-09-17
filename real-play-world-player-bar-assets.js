@@ -162,8 +162,9 @@
       const displayNumber = filterKey === 'ranked' && Number.isSafeInteger(officialRank) && officialRank > 0
         ? officialRank
         : leaderboardPosition;
+      const displayText = `#${displayNumber}`;
 
-      badge.textContent = `#${displayNumber}`;
+      if (badge.textContent !== displayText) badge.textContent = displayText;
       badge.classList.add('is-visible');
       badge.dataset.rpLeaderboardPosition = String(leaderboardPosition);
       row.dataset.rpLeaderboardPosition = String(leaderboardPosition);
