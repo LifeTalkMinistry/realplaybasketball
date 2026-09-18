@@ -140,7 +140,7 @@
   if (window.__realPlayDefaultProfileArtInstalled) return;
   window.__realPlayDefaultProfileArtInstalled = true;
 
-  const DEFAULT_PROFILE_ART_SRC = 'assets/profile-art/default-player.webp';
+  const DEFAULT_PROFILE_ART_SRC = 'assets/profile-art/default-player.png';
 
   const style = document.createElement('style');
   style.id = 'rp-default-profile-art-style';
