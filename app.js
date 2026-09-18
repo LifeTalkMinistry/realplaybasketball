@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260918-home-spots-left-v91';
+  const version = '20260918-clean-snapshot-v92';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
