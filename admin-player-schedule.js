@@ -109,14 +109,14 @@
 
     const unclaimed = Boolean(sheetBody.querySelector('[data-admin-menu-action="attach_account"]'));
     const view = sheetBody.querySelector('[data-admin-menu-action="view"]');
-    const unavailable = unclaimed || Boolean(view?.disabled);
+    const unavailable = Boolean(view?.disabled);
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'rp-player-admin-action schedule';
     button.dataset.adminScheduleOpen = '1';
     button.disabled = unavailable;
     button.innerHTML = `ADD TO UPCOMING SCHEDULE <span>›</span>`;
-    if (unclaimed) button.title = 'Attach this player to an account before scheduling.';
+    if (unclaimed) button.title = 'Add this unclaimed basketball identity as admin Priority or Standby.';
     else if (unavailable) button.title = 'Reactivate this player before scheduling.';
     changeJersey.insertAdjacentElement('afterend', button);
   }
@@ -144,23 +144,34 @@
     const entry = state?.entry || null;
     const availableTokens = Math.max(0, Number(state?.tokens?.available || 0));
     const playerActive = String(state?.player?.status || 'active').toLowerCase() === 'active';
+    const unclaimed = Boolean(state?.player?.unclaimed);
     const currentToken = entry?.entryType === 'token' && entry?.paymentStatus === 'token_committed';
+    const currentAdminPriority = entry?.entryType === 'admin_priority';
     const currentStandby = entry?.entryType === 'standby';
     const tokenLocked = Boolean(state?.tokenCancellation?.locked);
-    const canUseToken = Boolean(session && playerActive && (currentToken || availableTokens > 0));
+    const canUseToken = Boolean(
+      session
+      && playerActive
+      && (currentAdminPriority || unclaimed || currentToken || availableTokens > 0)
+    );
     const canStandby = Boolean(session && playerActive && !tokenLocked);
 
     let current = 'NOT SCHEDULED';
-    if (currentToken) current = 'CURRENT · PRIORITY — PLAY TOKEN';
+    if (currentAdminPriority) current = 'CURRENT · PRIORITY — ADMIN';
+    else if (currentToken) current = 'CURRENT · PRIORITY — PLAY TOKEN';
     else if (currentStandby) current = 'CURRENT · FREE STANDBY';
     else if (entry?.entryType === 'pay_to_play') current = 'CURRENT · PAY TO PLAY';
     else if (entry) current = `CURRENT · ${String(entry.status || 'SCHEDULED').toUpperCase()}`;
 
-    const tokenNote = currentToken
-      ? 'Already using a Play Token · no additional token will be deducted'
-      : availableTokens > 0
-        ? `${availableTokens} Play Token${availableTokens === 1 ? '' : 's'} available · deducts 1 token`
-        : 'No Play Token available for this player';
+    const tokenNote = currentAdminPriority
+      ? 'Already secured by Admin Priority · no player account token is required'
+      : unclaimed
+        ? 'Admin Priority · secures this unclaimed player without requiring an account token'
+        : currentToken
+          ? 'Already using a Play Token · no additional token will be deducted'
+          : availableTokens > 0
+            ? `${availableTokens} Play Token${availableTokens === 1 ? '' : 's'} available · deducts 1 token`
+            : 'No Play Token available for this player';
     const standbyNote = tokenLocked
       ? 'Current token booking is locked and can no longer be changed to Standby'
       : 'No token used · player can enter only if a secured spot opens';
@@ -180,13 +191,13 @@
       ${sessionMeta}
       <div class="rp-player-admin-actions">
         <button type="button" class="rp-player-admin-action rp-admin-schedule-option token" data-admin-schedule-choice="token" ${canUseToken ? '' : 'disabled'}>
-          <div><strong>PRIORITY — USE TOKEN</strong><small>${esc(tokenNote)}</small></div><span>›</span>
+          <div><strong>${unclaimed ? 'PRIORITY — ADMIN SECURE' : 'PRIORITY — USE TOKEN'}</strong><small>${esc(tokenNote)}</small></div><span>›</span>
         </button>
         <button type="button" class="rp-player-admin-action rp-admin-schedule-option standby" data-admin-schedule-choice="standby" ${canStandby ? '' : 'disabled'}>
           <div><strong>ADD AS STANDBY</strong><small>${esc(standbyNote)}</small></div><span>›</span>
         </button>
       </div>
-      <div class="rp-player-admin-form-actions" style="margin-top:10px"><button type="button" data-admin-schedule-back>BACK</button><button type="button" disabled>${availableTokens} TOKEN${availableTokens === 1 ? '' : 'S'} LEFT</button></div>`;
+      <div class="rp-player-admin-form-actions" style="margin-top:10px"><button type="button" data-admin-schedule-back>BACK</button><button type="button" disabled>${unclaimed ? 'ADMIN SCHEDULING' : `${availableTokens} TOKEN${availableTokens === 1 ? '' : 'S'} LEFT`}</button></div>`;
   }
 
   async function openSchedule() {
