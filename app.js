@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260918-roster-restore-v94';
+  const version = '20260918-highlight-picker-v95';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
