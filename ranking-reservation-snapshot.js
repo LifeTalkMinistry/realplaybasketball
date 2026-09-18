@@ -102,6 +102,22 @@
       .rp-snapshot-capture-mode .rp-ranking-access-summary-head{
         justify-content:flex-end!important;
       }
+      .rp-snapshot-capture-mode [data-rp-ranking-secured] > .rp-ranking-secured-head,
+      .rp-snapshot-capture-mode [data-rp-ranking-standby-roster] > .rp-ranking-secured-head{
+        justify-content:center!important;
+        margin-bottom:14px!important;
+        text-align:center!important;
+      }
+      .rp-snapshot-capture-mode [data-rp-ranking-secured] > .rp-ranking-secured-head > span,
+      .rp-snapshot-capture-mode [data-rp-ranking-standby-roster] > .rp-ranking-secured-head > span{
+        display:none!important;
+      }
+      .rp-snapshot-capture-mode [data-rp-ranking-secured] > .rp-ranking-secured-head > strong,
+      .rp-snapshot-capture-mode [data-rp-ranking-standby-roster] > .rp-ranking-secured-head > strong{
+        width:100%!important;
+        text-align:center!important;
+        text-transform:none!important;
+      }
       .rp-snapshot-capture-mode .rp-ranking-secured-name,
       .rp-snapshot-capture-mode .rp-ranking-secured-value,
       .rp-snapshot-capture-mode .rp-ranking-secured-rank,
@@ -189,6 +205,47 @@
   function sourceNode() {
     return document.querySelector('[data-rp-ranking-games] .rp-ranking-next')
       || document.querySelector('[data-rp-ranking-session]');
+  }
+
+  function snapshotInteger(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
+  }
+
+  function prepareSnapshotRosterHeaders(source) {
+    const restores = [];
+
+    const replaceText = (node, nextText) => {
+      if (!node || !nextText) return;
+      const previous = node.textContent;
+      restores.push(() => { node.textContent = previous; });
+      node.textContent = nextText;
+    };
+
+    const tokenCount = source.querySelector('[data-rp-ranking-secured] [data-rp-ranking-secured-count]');
+    if (tokenCount) {
+      const parts = String(tokenCount.textContent || '').match(/\d+/g) || [];
+      const current = snapshotInteger(parts[0]);
+      const capacity = snapshotInteger(parts[1]);
+      if (current !== null) {
+        const paddedCurrent = String(current).padStart(2, '0');
+        replaceText(
+          tokenCount,
+          capacity !== null ? `${paddedCurrent}/${capacity} Token Users` : `${paddedCurrent} Token Users`
+        );
+      }
+    }
+
+    const standbyCount = source.querySelector('[data-rp-ranking-standby-roster] [data-rp-ranking-standby-count]');
+    if (standbyCount) {
+      const match = String(standbyCount.textContent || '').match(/\d+/);
+      const count = snapshotInteger(match?.[0]);
+      if (count !== null) replaceText(standbyCount, `Standby ${count}`);
+    }
+
+    return () => {
+      for (let index = restores.length - 1; index >= 0; index -= 1) restores[index]();
+    };
   }
 
   async function waitForStableFonts() {
@@ -292,9 +349,10 @@
 
     await waitForStableFonts();
 
-    // Capture mode changes only export-only details: it removes the utility
-    // controls and gives the display font enough line box to avoid clipped
-    // glyphs. The card dimensions and mobile grid stay the live dimensions.
+    // Capture mode changes only export-only details: it removes utility
+    // controls, formats the roster headers, and gives the display font enough
+    // line box to avoid clipped glyphs. The live Open Rank UI is restored after capture.
+    const restoreSnapshotHeaders = prepareSnapshotRosterHeaders(source);
     source.classList.add('rp-snapshot-capture-mode');
     source.setAttribute(SOURCE_ATTR, 'true');
 
@@ -318,6 +376,7 @@
     } finally {
       source.classList.remove('rp-snapshot-capture-mode');
       source.removeAttribute(SOURCE_ATTR);
+      restoreSnapshotHeaders();
     }
   }
 
