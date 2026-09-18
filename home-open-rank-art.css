@@ -116,6 +116,32 @@ body.rp-simple-navigation-active .rp-home-session-copy>span{
   text-transform:uppercase!important;
 }
 
+body.rp-simple-navigation-active .rp-home-session-copy>.rp-home-spots-left{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:24px!important;
+  margin-top:10px!important;
+  padding:0 9px!important;
+  border:1px solid rgba(74,218,255,.18)!important;
+  border-radius:999px!important;
+  background:rgba(16,88,111,.12)!important;
+  color:#5fe6ff!important;
+  font-size:.48rem!important;
+  font-weight:950!important;
+  letter-spacing:.12em!important;
+  line-height:1!important;
+  text-transform:uppercase!important;
+}
+body.rp-simple-navigation-active .rp-home-session-copy>.rp-home-spots-left.is-full{
+  border-color:rgba(255,101,117,.20)!important;
+  background:rgba(99,20,32,.13)!important;
+  color:#ff8998!important;
+}
+body.rp-simple-navigation-active .rp-home-session-copy>.rp-home-spots-left[hidden]{
+  display:none!important;
+}
+
 body.rp-simple-navigation-active .rp-home-save-slot{
   width:100%!important;
   min-height:46px!important;
