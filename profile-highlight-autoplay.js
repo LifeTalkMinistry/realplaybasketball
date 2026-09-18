@@ -11,6 +11,26 @@
   let intentUntil = 0;
   let timers = [];
   const youtubePlaying = new WeakSet();
+  const watchedMedia = new WeakSet();
+
+  function installLoadingFadeStyle() {
+    if (document.querySelector('[data-rp-highlight-loading-fade-style]')) return;
+    const style = document.createElement('style');
+    style.dataset.rpHighlightLoadingFadeStyle = '1';
+    style.textContent = `
+      .rp-highlight-loading{
+        opacity:1;
+        transition:opacity .18s ease,visibility .18s ease;
+        pointer-events:none!important;
+      }
+      .rp-highlight-loading.rp-highlight-loading-fade{
+        opacity:0!important;
+        visibility:hidden!important;
+      }
+      .rp-highlight-loading[hidden]{display:none!important}
+    `;
+    document.head.appendChild(style);
+  }
 
   function clearTimers() {
     timers.forEach((timer) => window.clearTimeout(timer));
@@ -19,6 +39,28 @@
 
   function viewer() {
     return document.querySelector('.rp-highlight-viewer.open');
+  }
+
+  function loadingNode(root = viewer()) {
+    return root?.querySelector('[data-rp-highlight-loading]') || null;
+  }
+
+  function resetLoading(root = viewer()) {
+    const loading = loadingNode(root);
+    if (!loading) return;
+    loading.classList.remove('rp-highlight-loading-fade');
+    loading.style.removeProperty('display');
+  }
+
+  function fadeLoading(root = viewer()) {
+    const loading = loadingNode(root);
+    if (!loading || loading.hidden || loading.classList.contains('rp-highlight-loading-fade')) return;
+    loading.classList.add('rp-highlight-loading-fade');
+    window.setTimeout(() => {
+      if (!loading.isConnected) return;
+      loading.hidden = true;
+      loading.style.display = 'none';
+    }, 200);
   }
 
   function highlightIsPlayable(root) {
@@ -33,6 +75,34 @@
     if (!frame) return null;
     const src = String(frame.getAttribute('src') || '');
     return /youtube(?:-nocookie)?\.com|youtu\.be/i.test(src) ? frame : null;
+  }
+
+  function watchMountedMedia(root = viewer()) {
+    if (!root) return;
+
+    const video = root.querySelector('[data-rp-highlight-media] video');
+    if (video && !watchedMedia.has(video)) {
+      watchedMedia.add(video);
+      const ready = () => fadeLoading(root);
+      video.addEventListener('loadeddata', ready, { once: true });
+      video.addEventListener('canplay', ready, { once: true });
+      video.addEventListener('playing', ready, { once: true });
+      if (video.readyState >= 2) fadeLoading(root);
+    }
+
+    const frame = youtubeFrame(root);
+    if (frame && !watchedMedia.has(frame)) {
+      watchedMedia.add(frame);
+      frame.addEventListener('load', () => {
+        window.setTimeout(() => fadeLoading(root), 180);
+      }, { once: true });
+
+      // The iframe can already be loaded before the observer sees it. Never let
+      // LOADING SCORES/ASSISTS/etc stay permanently over visible footage.
+      window.setTimeout(() => {
+        if (frame.isConnected) fadeLoading(root);
+      }, 650);
+    }
   }
 
   function sendYouTube(frame, func, args = []) {
@@ -88,16 +158,24 @@
     const root = viewer();
     if (!highlightIsPlayable(root)) return;
 
+    watchMountedMedia(root);
+
     const video = root.querySelector('[data-rp-highlight-media] video');
     if (video) {
       attemptDirectVideo(video, isMobileAutoplayRestricted && attempt >= 2);
-      if (!video.paused) return;
+      if (!video.paused) {
+        fadeLoading(root);
+        return;
+      }
     }
 
     const frame = youtubeFrame(root);
     if (frame) {
       ensureAutoplayPermission(frame);
-      if (youtubePlaying.has(frame)) return;
+      if (youtubePlaying.has(frame)) {
+        fadeLoading(root);
+        return;
+      }
 
       // First preserve sound and ask YouTube to play. Mobile Safari and Android
       // Chrome can reject playback after the async iframe/player setup, so the
@@ -112,6 +190,7 @@
     const id = ++intentId;
     intentUntil = Date.now() + 6500;
     clearTimers();
+    resetLoading();
 
     [0, 80, 180, 360, 700, 1200, 2000, 3200, 5000].forEach((delay, index) => {
       timers.push(window.setTimeout(() => attemptAutoplay(id, index), delay));
@@ -131,8 +210,12 @@
     if (!frame || frame.contentWindow !== event.source) return;
     const data = parseMessage(event.data);
     const playerState = data?.info?.playerState ?? (data?.event === 'onStateChange' ? data?.info : undefined);
-    if (Number(playerState) === 1) youtubePlaying.add(frame);
-    else if (Number.isFinite(Number(playerState))) youtubePlaying.delete(frame);
+    if (Number(playerState) === 1) {
+      youtubePlaying.add(frame);
+      fadeLoading(root);
+    } else if (Number.isFinite(Number(playerState))) {
+      youtubePlaying.delete(frame);
+    }
   });
 
   document.addEventListener('click', (event) => {
@@ -145,13 +228,17 @@
 
   // Media is mounted asynchronously after the category tap. Keep watching only
   // during the short autoplay intent window so a deliberate later pause is not
-  // overridden.
+  // overridden. This also removes the loading label as soon as media is ready.
   const observer = new MutationObserver(() => {
+    const root = viewer();
+    if (root) watchMountedMedia(root);
     if (Date.now() <= intentUntil) attemptAutoplay(intentId, 1);
   });
 
   function start() {
+    installLoadingFadeStyle();
     if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+    watchMountedMedia();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
