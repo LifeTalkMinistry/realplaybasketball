@@ -1,42 +1,32 @@
 /*
-  REAL PLAY — MANUAL PREMIUM PROFILE ART
+  REAL PLAY — ADMIN PREMIUM PROFILE ART STUDIO
 
-  This stylesheet intentionally reuses the legacy profile-intro asset slot so
-  the current app loader does not need a second media-customization feature.
-  There is no player-facing upload UI. Approved artwork is assigned manually
-  through assets/profile-art/registry.json.
-
-  STANDARD ART CONTRACT
-  - 1600x2000 canvas (4:5)
-  - transparent PNG/WebP
-  - upper-body / waist-up subject
-  - subject fills roughly 85–92% of canvas height
-  - very little transparent padding
+  The entire profile hero is the artwork canvas. There is deliberately no
+  smaller right-side portrait container, so an uploaded transparent portrait
+  can never expose a rectangular/vertical container seam inside the card.
 */
 
 .rp-profile .rp-profile-hero{
-  isolation:isolate;
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:hidden!important;
 }
 
 .rp-profile .rp-profile-hero-glow{
-  z-index:0;
+  position:absolute;
+  z-index:0!important;
 }
 
 .rp-profile .rp-profile-identity-line,
 .rp-profile .rp-profile-rating-row{
   position:relative;
-  z-index:6;
+  z-index:7!important;
 }
 
-/*
-  Identity hierarchy:
-  upper-left = earned badges
-  lower-left = #NUMBER + PLAYER NAME
-  right = premium portrait artwork
-*/
+/* Identity hierarchy: badges upper-left, #NUMBER + NAME lower-left. */
 .rp-profile .rp-profile-player{
   position:relative!important;
-  z-index:6!important;
+  z-index:7!important;
   display:flex!important;
   align-items:center!important;
   justify-content:flex-start!important;
@@ -87,13 +77,13 @@
   text-overflow:ellipsis!important;
   white-space:nowrap!important;
   text-align:left!important;
-  text-shadow:0 3px 18px rgba(0,0,0,.72);
+  text-shadow:0 3px 18px rgba(0,0,0,.82);
 }
 
-/* Existing recognition system, anchored to the upper-left badge zone. */
+/* Existing recognition system remains the upper-left badge surface. */
 .rp-profile .rp-profile-hero .rp-profile-badges{
   position:relative!important;
-  z-index:7!important;
+  z-index:8!important;
   display:flex!important;
   align-items:center!important;
   justify-content:flex-start!important;
@@ -120,159 +110,342 @@
 }
 
 /*
-  Dominant portrait zone.
-  Standard 4:5 artwork is intentionally rendered by WIDTH, not contained inside
-  a small box. The tall source is allowed to crop naturally against the hero so
-  the player dominates the right side like card artwork instead of a thumbnail.
-
-  The mask is deliberately generous. The hard edge of the image must never be
-  visible; the image should dissolve into the card before it reaches the left
-  boundary of the portrait layer.
+  FULL HERO CANVAS
+  --------------------------------------------------------------------------
+  The art layer covers the whole hero. The image itself moves inside that one
+  canvas using percentage X/Y and scale values saved by the backend.
 */
 .rp-premium-profile-art{
-  --rp-premium-art-x:50%;
-  --rp-premium-art-y:46%;
-  --rp-premium-art-scale:1;
-  --rp-premium-art-opacity:1;
-  position:absolute;
-  z-index:2;
-  top:31px;
-  right:-5.5%;
-  bottom:68px;
-  width:69%;
-  overflow:visible;
-  pointer-events:none;
-  opacity:0;
-  transform:translateZ(0);
-  transition:opacity .28s ease;
-  -webkit-mask-image:radial-gradient(ellipse 112% 112% at 72% 43%,#000 0%,#000 54%,rgba(0,0,0,.97) 64%,rgba(0,0,0,.82) 74%,rgba(0,0,0,.54) 84%,rgba(0,0,0,.23) 93%,transparent 100%);
-  mask-image:radial-gradient(ellipse 112% 112% at 72% 43%,#000 0%,#000 54%,rgba(0,0,0,.97) 64%,rgba(0,0,0,.82) 74%,rgba(0,0,0,.54) 84%,rgba(0,0,0,.23) 93%,transparent 100%);
-}
-
-.rp-premium-profile-art.is-ready{
-  opacity:var(--rp-premium-art-opacity);
-}
-
-.rp-premium-profile-art::before{
-  content:'';
-  position:absolute;
-  inset:2% -5% -3% 3%;
-  z-index:0;
-  border-radius:50%;
-  background:
-    radial-gradient(circle at 35% 42%,rgba(28,150,255,.20),transparent 48%),
-    radial-gradient(circle at 86% 48%,rgba(255,44,66,.15),transparent 43%);
-  filter:blur(20px);
-  pointer-events:none;
-}
-
-/*
-  Dedicated left-side feather. This is intentionally above the portrait image
-  so a source asset that reaches its own transparent-canvas edge cannot reveal
-  a vertical seam inside the card. The extra blur makes the transition feel
-  atmospheric instead of like a rectangular image boundary.
-*/
-.rp-premium-profile-art::after{
-  content:'';
-  position:absolute;
-  z-index:2;
-  left:-13%;
-  top:-7%;
-  bottom:-7%;
-  width:58%;
-  pointer-events:none;
-  background:linear-gradient(90deg,
-    rgba(3,7,13,1) 0%,
-    rgba(3,7,13,.98) 13%,
-    rgba(3,7,13,.90) 25%,
-    rgba(3,7,13,.70) 38%,
-    rgba(3,7,13,.44) 51%,
-    rgba(3,7,13,.20) 64%,
-    rgba(3,7,13,.06) 75%,
-    transparent 86%);
-  filter:blur(18px);
-  opacity:.96;
-}
-
-/*
-  Official standard mode: 1600x2000 source with a tightly framed subject.
-  IMPORTANT: anchor the source from the TOP, not the bottom. A 4:5 portrait is
-  taller than the visible hero zone; bottom anchoring pushed the face above the
-  card and cropped the player's forehead/head. Top anchoring keeps the complete
-  identity visible and lets the lower torso be the part that naturally crops and
-  fades behind the stat row.
-*/
-.rp-premium-profile-art[data-fit-mode="standard"] > img{
-  position:absolute;
-  z-index:1;
-  top:-1%;
-  right:-2%;
-  bottom:auto;
-  display:block;
-  width:104%;
-  height:auto;
-  max-width:none;
-  object-fit:unset;
-  transform:scale(var(--rp-premium-art-scale));
-  transform-origin:68% 20%;
-  filter:drop-shadow(0 18px 24px rgba(0,0,0,.40)) saturate(.99) contrast(1.025) blur(.2px);
-  user-select:none;
-}
-
-/* Manual compatibility mode for older/non-standard artwork. */
-.rp-premium-profile-art[data-fit-mode="manual"] > img{
+  --rp-art-x:72%;
+  --rp-art-y:44%;
+  --rp-art-scale:1.15;
+  --rp-art-opacity:1;
   position:absolute;
   z-index:1;
   inset:0;
-  display:block;
-  width:100%;
-  height:100%;
-  max-width:none;
-  object-fit:contain;
-  object-position:var(--rp-premium-art-x) var(--rp-premium-art-y);
-  transform:scale(var(--rp-premium-art-scale));
-  transform-origin:var(--rp-premium-art-x) var(--rp-premium-art-y);
-  filter:drop-shadow(0 16px 22px rgba(0,0,0,.36)) saturate(.98) contrast(1.025);
-  user-select:none;
+  overflow:hidden;
+  pointer-events:none;
+  opacity:0;
+  transform:translateZ(0);
+  transition:opacity .22s ease;
 }
 
-.rp-premium-profile-art-shade{
+.rp-premium-profile-art.is-ready{
+  opacity:var(--rp-art-opacity);
+}
+
+/* Soft full-card ambient light — never a portrait-box boundary. */
+.rp-premium-profile-art::before{
+  content:'';
   position:absolute;
-  z-index:3;
-  inset:-3px;
+  z-index:0;
+  inset:-10%;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 72% 35%,rgba(22,137,255,.16),transparent 35%),
+    radial-gradient(circle at 94% 48%,rgba(255,42,63,.16),transparent 31%);
+  filter:blur(20px);
+}
+
+.rp-premium-profile-art > img{
+  position:absolute;
+  z-index:1;
+  left:var(--rp-art-x);
+  top:var(--rp-art-y);
+  display:block;
+  width:70%;
+  height:auto;
+  max-width:none;
+  transform:translate(-50%,-50%) scale(var(--rp-art-scale));
+  transform-origin:center;
+  filter:drop-shadow(0 18px 26px rgba(0,0,0,.42)) saturate(.99) contrast(1.02);
+  user-select:none;
+  -webkit-user-drag:none;
+  will-change:left,top,transform;
+}
+
+/*
+  This atmosphere spans ALL THE WAY across the hero. It gives the left-side
+  text and the bottom stat cards a dark reading surface while allowing the
+  portrait to dissolve naturally into the card. There is no vertical mask edge.
+*/
+.rp-premium-profile-art-atmosphere{
+  position:absolute;
+  z-index:2;
+  inset:0;
   pointer-events:none;
   background:
     linear-gradient(90deg,
-      rgba(3,7,13,1) 0%,
-      rgba(3,7,13,.94) 11%,
-      rgba(3,7,13,.76) 22%,
-      rgba(3,7,13,.48) 34%,
-      rgba(3,7,13,.24) 45%,
-      rgba(3,7,13,.08) 56%,
-      transparent 69%),
+      rgba(3,7,13,.97) 0%,
+      rgba(3,7,13,.88) 18%,
+      rgba(3,7,13,.62) 31%,
+      rgba(3,7,13,.30) 43%,
+      rgba(3,7,13,.10) 54%,
+      transparent 67%),
     linear-gradient(0deg,
       rgba(3,7,13,.99) 0%,
-      rgba(3,7,13,.62) 15%,
-      rgba(3,7,13,.28) 28%,
-      rgba(3,7,13,.08) 41%,
-      transparent 55%);
-  filter:blur(.35px);
-}
-
-/* The portrait is allowed to bleed behind the identity, but text stays readable. */
-.rp-profile.has-rp-premium-profile-art .rp-profile-player{
-  width:78%!important;
-  max-width:78%!important;
+      rgba(3,7,13,.88) 14%,
+      rgba(3,7,13,.52) 27%,
+      rgba(3,7,13,.18) 39%,
+      transparent 54%),
+    linear-gradient(180deg,
+      rgba(3,7,13,.08) 0%,
+      transparent 22%,
+      transparent 72%,
+      rgba(3,7,13,.24) 100%);
 }
 
 .rp-profile.has-rp-premium-profile-art .rp-profile-name > h1{
-  max-width:min(50vw,270px)!important;
+  max-width:min(54vw,292px)!important;
 }
 
 .rp-profile.has-rp-premium-profile-art .rp-profile-rating-row > div{
   position:relative;
   z-index:2;
-  backdrop-filter:blur(2px);
+  background:rgba(4,9,16,.84)!important;
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+}
+
+/* Admin-only camera control injected by JS after admin verification. */
+.rp-profile-art-edit-button{
+  position:absolute;
+  z-index:20;
+  top:52px;
+  right:12px;
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid rgba(91,219,255,.35);
+  border-radius:50%;
+  color:#65e2ff;
+  background:rgba(2,8,14,.82);
+  box-shadow:0 8px 22px rgba(0,0,0,.38),0 0 0 1px rgba(0,0,0,.22);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  cursor:pointer;
+  touch-action:manipulation;
+}
+
+.rp-profile-art-edit-button svg{
+  width:17px;
+  height:17px;
+  fill:currentColor;
+}
+
+.rp-profile-art-edit-button:active{
+  transform:scale(.94);
+}
+
+.rp-profile-art-edit-button:focus-visible{
+  outline:2px solid #70e7ff;
+  outline-offset:2px;
+}
+
+/* Editing turns the entire hero into the direct manipulation surface. */
+.rp-profile.rp-profile-art-editing .rp-profile-hero{
+  cursor:grab;
+  touch-action:none!important;
+  box-shadow:0 0 0 2px rgba(72,215,255,.65),0 22px 60px rgba(0,0,0,.42)!important;
+}
+
+.rp-profile.rp-profile-art-editing .rp-profile-hero:active{
+  cursor:grabbing;
+}
+
+.rp-profile.rp-profile-art-editing .rp-premium-profile-art-atmosphere{
+  opacity:.58;
+}
+
+.rp-profile.rp-profile-art-editing .rp-profile-identity-line,
+.rp-profile.rp-profile-art-editing .rp-profile-badges,
+.rp-profile.rp-profile-art-editing .rp-profile-player,
+.rp-profile.rp-profile-art-editing .rp-profile-rating-row{
+  pointer-events:none!important;
+}
+
+.rp-profile.rp-profile-art-editing .rp-profile-art-edit-button{
+  opacity:.45;
+  pointer-events:none;
+}
+
+/* Profile Art Studio controls live immediately below the hero card. */
+.rp-profile-art-editor{
+  margin-top:10px;
+  padding:14px;
+  border:1px solid rgba(72,215,255,.22);
+  border-radius:18px;
+  color:#eef8ff;
+  background:
+    radial-gradient(circle at 90% 0%,rgba(255,48,69,.08),transparent 34%),
+    radial-gradient(circle at 8% 0%,rgba(31,151,255,.11),transparent 38%),
+    #050a11;
+  box-shadow:0 16px 38px rgba(0,0,0,.31);
+}
+
+.rp-profile-art-editor-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  padding-bottom:11px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+
+.rp-profile-art-editor-head div{
+  min-width:0;
+}
+
+.rp-profile-art-editor-head small{
+  display:block;
+  color:#49d8ff;
+  font-size:.43rem;
+  font-weight:950;
+  letter-spacing:.12em;
+}
+
+.rp-profile-art-editor-head strong{
+  display:block;
+  margin-top:3px;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.92rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.025em;
+}
+
+.rp-profile-art-editor-head > span{
+  flex:none;
+  color:#62748a;
+  font-size:.39rem;
+  font-weight:900;
+  letter-spacing:.07em;
+}
+
+.rp-profile-art-editor-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:9px;
+  margin-top:11px;
+}
+
+.rp-profile-art-upload-row > button,
+.rp-profile-art-zoom,
+.rp-profile-art-nudge button,
+.rp-profile-art-editor-actions button{
+  min-height:40px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:11px;
+  color:#edf7ff;
+  background:#09111b;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.55rem;
+  font-weight:950;
+  letter-spacing:.055em;
+}
+
+.rp-profile-art-upload-row > button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  color:#65dfff;
+  border-color:rgba(72,215,255,.22);
+  background:rgba(22,112,165,.09);
+}
+
+.rp-profile-art-upload-row > button svg{
+  width:16px;
+  height:16px;
+  fill:currentColor;
+}
+
+.rp-profile-art-zoom{
+  min-width:124px;
+  display:grid;
+  grid-template-columns:34px 56px 34px;
+  align-items:center;
+  overflow:hidden;
+}
+
+.rp-profile-art-zoom button{
+  height:100%;
+  border:0;
+  color:#74e4ff;
+  background:transparent;
+  font-size:1rem;
+  font-weight:950;
+}
+
+.rp-profile-art-zoom output{
+  color:#eef8ff;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.65rem;
+  font-weight:950;
+  text-align:center;
+}
+
+.rp-profile-art-nudge{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:7px;
+  margin-top:8px;
+}
+
+.rp-profile-art-nudge button{
+  color:#95a9bd;
+  font-size:.9rem;
+}
+
+.rp-profile-art-editor-help{
+  margin:10px 2px 0;
+  color:#708297;
+  font-size:.52rem;
+  font-weight:700;
+  line-height:1.45;
+}
+
+.rp-profile-art-editor-status{
+  min-height:15px;
+  margin:8px 2px 0;
+  color:#6d8197;
+  font-size:.45rem;
+  font-weight:900;
+  letter-spacing:.055em;
+}
+
+.rp-profile-art-editor-status.error{color:#ff8190}
+.rp-profile-art-editor-status.success{color:#55ddb1}
+
+.rp-profile-art-editor-actions{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:7px;
+  margin-top:9px;
+}
+
+.rp-profile-art-editor-actions button.primary{
+  color:#071017;
+  border-color:#62dfff;
+  background:#62dfff;
+}
+
+.rp-profile-art-editor-actions button.danger{
+  color:#ff8997;
+  border-color:rgba(255,77,96,.23);
+  background:rgba(189,24,44,.08);
+}
+
+.rp-profile-art-editor button{
+  cursor:pointer;
+  touch-action:manipulation;
+}
+
+.rp-profile-art-editor button:active{
+  transform:scale(.975);
 }
 
 /* Never surface the retired self-service intro/photo editing controls. */
@@ -297,23 +470,8 @@
     height:68px!important;
   }
 
-  .rp-premium-profile-art{
-    top:33px;
-    right:-7.5%;
-    bottom:70px;
-    width:72%;
-  }
-
-  .rp-premium-profile-art::after{
-    left:-15%;
-    width:61%;
-    filter:blur(17px);
-  }
-
-  .rp-premium-profile-art[data-fit-mode="standard"] > img{
-    top:-1%;
-    right:-2%;
-    width:104%;
+  .rp-premium-profile-art > img{
+    width:74%;
   }
 
   .rp-profile .rp-profile-number > strong,
@@ -321,13 +479,33 @@
     font-size:clamp(1.55rem,7.1vw,2rem)!important;
   }
 
-  .rp-profile.has-rp-premium-profile-art .rp-profile-player{
-    width:80%!important;
-    max-width:80%!important;
+  .rp-profile.has-rp-premium-profile-art .rp-profile-name > h1{
+    max-width:51vw!important;
   }
 
-  .rp-profile.has-rp-premium-profile-art .rp-profile-name > h1{
-    max-width:49vw!important;
+  .rp-profile-art-edit-button{
+    top:49px;
+    right:10px;
+    width:32px;
+    height:32px;
+  }
+
+  .rp-profile-art-editor{
+    padding:12px;
+    border-radius:16px;
+  }
+
+  .rp-profile-art-editor-head > span{
+    display:none;
+  }
+
+  .rp-profile-art-editor-row{
+    grid-template-columns:minmax(0,1fr) 120px;
+  }
+
+  .rp-profile-art-zoom{
+    min-width:120px;
+    grid-template-columns:32px 56px 32px;
   }
 }
 
@@ -352,19 +530,21 @@
     font-size:1.55rem!important;
   }
 
-  .rp-premium-profile-art{
-    right:-9%;
-    width:75%;
+  .rp-premium-profile-art > img{
+    width:78%;
   }
 
-  .rp-premium-profile-art::after{
-    left:-16%;
-    width:63%;
+  .rp-profile-art-editor-row{
+    grid-template-columns:1fr;
   }
 
-  .rp-profile.has-rp-premium-profile-art .rp-profile-player{
-    width:82%!important;
-    max-width:82%!important;
+  .rp-profile-art-zoom{
+    width:100%;
+    grid-template-columns:40px 1fr 40px;
+  }
+
+  .rp-profile-art-editor-actions{
+    grid-template-columns:repeat(2,minmax(0,1fr));
   }
 }
 
