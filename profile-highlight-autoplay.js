@@ -4,6 +4,8 @@
 
   const ua = String(navigator.userAgent || '');
   const isIOS = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && Number(navigator.maxTouchPoints || 0) > 1);
+  const isAndroid = /Android/i.test(ua);
+  const isMobileAutoplayRestricted = isIOS || isAndroid;
 
   let intentId = 0;
   let intentUntil = 0;
@@ -88,7 +90,7 @@
 
     const video = root.querySelector('[data-rp-highlight-media] video');
     if (video) {
-      attemptDirectVideo(video, isIOS && attempt >= 2);
+      attemptDirectVideo(video, isMobileAutoplayRestricted && attempt >= 2);
       if (!video.paused) return;
     }
 
@@ -97,10 +99,11 @@
       ensureAutoplayPermission(frame);
       if (youtubePlaying.has(frame)) return;
 
-      // First preserve sound and ask YouTube to play. iPhone Safari can reject
-      // that after the async iframe/player setup, so the later attempts fall
-      // back to muted autoplay rather than making the player tap Play again.
-      if (isIOS && attempt >= 2) sendYouTube(frame, 'mute');
+      // First preserve sound and ask YouTube to play. Mobile Safari and Android
+      // Chrome can reject playback after the async iframe/player setup, so the
+      // later attempts fall back to muted autoplay instead of making the player
+      // tap Play again.
+      if (isMobileAutoplayRestricted && attempt >= 2) sendYouTube(frame, 'mute');
       sendYouTube(frame, 'playVideo');
     }
   }
