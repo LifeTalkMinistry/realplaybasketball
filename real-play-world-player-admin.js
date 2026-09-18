@@ -76,6 +76,10 @@
       .rp-player-admin-sheet{position:fixed;z-index:590;inset:0;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.66);backdrop-filter:blur(8px);padding:18px 12px max(12px,env(safe-area-inset-bottom))}
       .rp-player-admin-sheet.open{display:flex}
       .rp-player-admin-card{width:min(100%,520px);max-height:min(82vh,720px);overflow-y:auto;border:1px solid rgba(255,255,255,.11);border-radius:22px;background:linear-gradient(180deg,#0a0f17,#04070c);box-shadow:0 -24px 70px rgba(0,0,0,.5);color:#f5f9ff;font-family:var(--rp-body,Arial,sans-serif)}
+      @media(max-width:700px){
+        .rp-player-admin-sheet{padding-bottom:calc(82px + env(safe-area-inset-bottom))}
+        .rp-player-admin-card{max-height:min(calc(100dvh - 112px),720px)}
+      }
       .rp-player-admin-head{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(7,11,17,.96);backdrop-filter:blur(14px)}
       .rp-player-admin-head small{display:block;color:#45d8ff;font-size:.46rem;font-weight:950;letter-spacing:.13em}
       .rp-player-admin-head strong{display:block;margin-top:3px;font-family:var(--rp-display,Arial,sans-serif);font-size:.94rem;font-style:italic;font-weight:950;letter-spacing:.025em;text-transform:uppercase}
