@@ -244,6 +244,17 @@
     document.head.appendChild(script);
   }
 
+  function loadIPhoneHighlightOrientationLayer() {
+    if (!/iPhone|iPod/i.test(String(navigator.userAgent || ''))) return;
+    if (window.__realPlayIPhoneHighlightOrientationInstalled || document.querySelector('script[data-rp-iphone-highlight-orientation-loader]')) return;
+    const script = document.createElement('script');
+    script.src = `profile-highlight-iphone-orientation.js?v=20260918-iphone-native-v1`;
+    script.async = false;
+    script.dataset.rpIphoneHighlightOrientationLoader = '1';
+    script.onerror = () => console.warn('[Real Play] iPhone highlight orientation layer could not load.');
+    document.head.appendChild(script);
+  }
+
   document.addEventListener('click', (event) => {
     const playerRow = event.target.closest('[data-world-player-id]');
     if (playerRow) {
@@ -284,4 +295,5 @@
   installNavigationStyles();
   collapseProfileGames();
   loadHighlightLayer();
+  loadIPhoneHighlightOrientationLayer();
 })();
