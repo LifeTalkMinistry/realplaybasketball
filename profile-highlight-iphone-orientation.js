@@ -3,8 +3,7 @@
   window.__realPlayIPhoneHighlightOrientationInstalled = true;
 
   const ua = String(navigator.userAgent || '');
-  const isIPhone = /iPhone|iPod/i.test(ua);
-  if (!isIPhone) return;
+  if (!/iPhone|iPod/i.test(ua)) return;
 
   let orientationTimer = 0;
   let activeVideo = null;
@@ -20,12 +19,12 @@
     return document.querySelector('.rp-highlight-viewer.open');
   }
 
-  function landscape() {
+  function isLandscape() {
     const legacy = Number(window.orientation);
     if (Number.isFinite(legacy) && Math.abs(legacy) === 90) return true;
-    if (window.matchMedia) {
-      try { return window.matchMedia('(orientation: landscape)').matches; } catch (_) {}
-    }
+    try {
+      if (window.matchMedia) return window.matchMedia('(orientation: landscape)').matches;
+    } catch (_) {}
     return window.innerWidth > window.innerHeight;
   }
 
@@ -43,6 +42,22 @@
     if (!frame) return null;
     const src = String(frame.getAttribute('src') || '');
     return /youtube(?:-nocookie)?\.com|youtu\.be/i.test(src) ? frame : null;
+  }
+
+  function setVideoInline(video, inline) {
+    if (!video) return;
+    try { video.playsInline = Boolean(inline); } catch (_) {}
+    if (inline) {
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
+      video.controls = false;
+      video.removeAttribute('controls');
+    } else {
+      video.removeAttribute('playsinline');
+      video.removeAttribute('webkit-playsinline');
+      video.controls = true;
+      video.setAttribute('controls', '');
+    }
   }
 
   function requestPortraitWhenPossible() {
@@ -75,33 +90,47 @@
     } catch (_) {}
   }
 
+  function enterVideoOnlyMode(root, video) {
+    if (!root) return;
+    root.classList.add('rp-ios-video-only');
+    root.classList.remove('rp-ios-highlight-return');
+    if (video) setVideoInline(video, false);
+  }
+
+  function leaveVideoOnlyMode(root, video) {
+    if (!root) return;
+    root.classList.remove('rp-ios-video-only');
+    if (video) setVideoInline(video, true);
+  }
+
   function finishHighlightReturn(root) {
+    if (!root) return;
     endingHighlight = true;
     landscapeDismissed = true;
-    requestPortraitWhenPossible();
-    exitNativeVideo();
-    exitDocumentFullscreen();
-    root?.classList.add('rp-ios-highlight-return');
 
-    // The native player is gone; the normal Real Play shell owns the completed
-    // highlight again and keeps NEXT HIGHLIGHT under the player's control.
+    const video = currentVideo(root) || activeVideo;
+    leaveVideoOnlyMode(root, video);
+    requestPortraitWhenPossible();
+    exitNativeVideo(video);
+    exitDocumentFullscreen();
+    root.classList.remove('rp-ios-highlight-landscape');
+    root.classList.add('rp-ios-highlight-return');
+
     window.setTimeout(() => {
       const current = viewer();
       if (!current) return;
+      current.classList.remove('rp-ios-video-only', 'rp-ios-highlight-landscape');
       current.classList.add('rp-ios-highlight-return');
       const end = current.querySelector('[data-rp-highlight-end]');
       if (end && !end.hidden) end.scrollIntoView?.({ block: 'center', inline: 'center' });
-    }, 80);
+    }, 60);
   }
 
   function bindVideo(video) {
     if (!video || video === activeVideo) return;
     activeVideo = video;
     nativeFullscreen = false;
-
-    video.playsInline = true;
-    video.setAttribute('playsinline', '');
-    video.setAttribute('webkit-playsinline', '');
+    setVideoInline(video, true);
 
     video.addEventListener('webkitbeginfullscreen', () => {
       nativeFullscreen = true;
@@ -121,25 +150,28 @@
     video.addEventListener('webkitendfullscreen', () => {
       nativeFullscreen = false;
       if (endingHighlight) return;
-      // If the player manually dismisses native fullscreen while still holding
-      // the phone sideways, do not trap them by immediately reopening it.
-      if (landscape()) landscapeDismissed = true;
+      if (isLandscape()) landscapeDismissed = true;
     });
 
     video.addEventListener('play', () => {
-      if (landscape() && !endingHighlight && !landscapeDismissed) {
+      if (isLandscape() && !endingHighlight && !landscapeDismissed) {
         window.setTimeout(syncOrientation, 0);
       }
     });
   }
 
   function enterNativeVideo(video, root) {
-    if (!video || !root || endingHighlight || highlightComplete(root) || !landscape() || landscapeDismissed) return false;
+    if (!video || !root || endingHighlight || highlightComplete(root) || !isLandscape()) return false;
     if (video.webkitDisplayingFullscreen || nativeFullscreen) return true;
 
     handoffTime = Math.max(0, Number(video.currentTime) || 0);
     handoffWasPlaying = !video.paused;
+    enterVideoOnlyMode(root, video);
 
+    // iPhone Safari can refuse programmatic native fullscreen when an
+    // orientation event is not considered a direct user gesture. We still try
+    // native first, but the video-only takeover above is the guaranteed
+    // fallback so the Real Play shell never remains around landscape playback.
     try {
       if (typeof video.webkitEnterFullscreen === 'function') {
         video.webkitEnterFullscreen();
@@ -157,28 +189,37 @@
         return true;
       }
     } catch (_) {}
+
+    try {
+      if (handoffWasPlaying && video.paused) video.play().catch(() => {});
+    } catch (_) {}
     return false;
   }
 
   function enterYouTubeFullscreen(frame, root) {
-    if (!frame || !root || endingHighlight || highlightComplete(root) || !landscape() || landscapeDismissed || iframeFullscreenPending) return false;
-    if (document.fullscreenElement || document.webkitFullscreenElement) return true;
+    if (!frame || !root || endingHighlight || highlightComplete(root) || !isLandscape()) return false;
 
-    // Keep the exact same iframe/player instance. If iOS allows iframe
-    // fullscreen here, playback continues at the current YouTube timestamp
-    // instead of rebuilding or restarting the video.
+    // YouTube embeds do not expose the underlying iPhone HTML5 video element to
+    // the parent page. Remove all Real Play chrome immediately, keep the exact
+    // same iframe/player instance (so the timestamp continues), then request
+    // iframe fullscreen when Safari permits it.
+    enterVideoOnlyMode(root, null);
     frame.setAttribute('allowfullscreen', '');
     const previousAllow = String(frame.getAttribute('allow') || '');
     if (!/fullscreen/i.test(previousAllow)) {
       frame.setAttribute('allow', `${previousAllow}${previousAllow ? '; ' : ''}autoplay; fullscreen; picture-in-picture`);
     }
 
+    if (document.fullscreenElement || document.webkitFullscreenElement || iframeFullscreenPending) return true;
     iframeFullscreenPending = true;
     try {
       const request = frame.requestFullscreen?.() || frame.webkitRequestFullscreen?.();
-      if (request?.then) request.catch(() => {}).finally(() => { iframeFullscreenPending = false; });
-      else window.setTimeout(() => { iframeFullscreenPending = false; }, 300);
-      return Boolean(request || document.fullscreenElement || document.webkitFullscreenElement);
+      if (request?.then) {
+        request.catch(() => {}).finally(() => { iframeFullscreenPending = false; });
+      } else {
+        window.setTimeout(() => { iframeFullscreenPending = false; }, 350);
+      }
+      return true;
     } catch (_) {
       iframeFullscreenPending = false;
       return false;
@@ -198,15 +239,18 @@
       finishHighlightReturn(root);
       return;
     }
+
     if (!complete && endVisible) {
       endVisible = false;
       endingHighlight = false;
+      landscapeDismissed = false;
       root.classList.remove('rp-ios-highlight-return');
     }
 
-    if (!landscape()) {
+    if (!isLandscape()) {
       landscapeDismissed = false;
       if (!complete) endingHighlight = false;
+      leaveVideoOnlyMode(root, video);
       exitNativeVideo(video);
       exitDocumentFullscreen();
       root.classList.remove('rp-ios-highlight-landscape');
@@ -230,7 +274,7 @@
     orientationTimer = window.setTimeout(() => {
       orientationTimer = 0;
       syncOrientation();
-    }, 120);
+    }, 80);
   }
 
   function installStyle() {
@@ -238,7 +282,47 @@
     const style = document.createElement('style');
     style.dataset.rpIosHighlightOrientationStyle = '1';
     style.textContent = `
+      .rp-highlight-viewer.rp-ios-video-only{
+        background:#000!important;
+        z-index:2147483000!important;
+      }
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-stage{
+        width:100vw!important;
+        height:100dvh!important;
+        background:#000!important;
+      }
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-stage::after,
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-topbar,
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-event,
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-play,
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-end,
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-empty,
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-loading,
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-picker{
+        display:none!important;
+      }
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media,
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media>div,
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media video,
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media iframe{
+        position:fixed!important;
+        inset:0!important;
+        width:100vw!important;
+        height:100dvh!important;
+        max-width:none!important;
+        max-height:none!important;
+        margin:0!important;
+        border:0!important;
+        background:#000!important;
+      }
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media video{
+        object-fit:contain!important;
+      }
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media iframe{
+        pointer-events:auto!important;
+      }
       @media (orientation:landscape){
+        html,body{background:#000!important}
         .rp-highlight-viewer.rp-ios-highlight-return .rp-highlight-end{
           left:50%!important;
           top:50%!important;
@@ -255,12 +339,14 @@
 
   function start() {
     installStyle();
-    if (document.body) observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'hidden'],
-    });
+    if (document.body) {
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'hidden'],
+      });
+    }
     scheduleOrientationSync();
   }
 
