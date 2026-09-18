@@ -149,11 +149,7 @@
     const currentAdminPriority = entry?.entryType === 'admin_priority';
     const currentStandby = entry?.entryType === 'standby';
     const tokenLocked = Boolean(state?.tokenCancellation?.locked);
-    const canUseToken = Boolean(
-      session
-      && playerActive
-      && (currentAdminPriority || unclaimed || currentToken || availableTokens > 0)
-    );
+    const canUseToken = Boolean(session && playerActive);
     const canStandby = Boolean(session && playerActive && !tokenLocked);
 
     let current = 'NOT SCHEDULED';
@@ -164,14 +160,12 @@
     else if (entry) current = `CURRENT · ${String(entry.status || 'SCHEDULED').toUpperCase()}`;
 
     const tokenNote = currentAdminPriority
-      ? 'Already secured by Admin Priority · no player account token is required'
-      : unclaimed
-        ? 'Admin Priority · secures this unclaimed player without requiring an account token'
-        : currentToken
-          ? 'Already using a Play Token · no additional token will be deducted'
-          : availableTokens > 0
-            ? `${availableTokens} Play Token${availableTokens === 1 ? '' : 's'} available · deducts 1 token`
-            : 'No Play Token available for this player';
+      ? 'Already secured by Admin Priority · no player Play Token is required'
+      : currentToken
+        ? 'Already secured with the player’s Play Token · admin action will not deduct another token'
+        : unclaimed
+          ? 'Admin Priority · secures this unclaimed player without requiring an account token'
+          : 'Admin Priority · secures this player without using a Play Token';
     const standbyNote = tokenLocked
       ? 'Current token booking is locked and can no longer be changed to Standby'
       : 'No token used · player can enter only if a secured spot opens';
@@ -191,7 +185,7 @@
       ${sessionMeta}
       <div class="rp-player-admin-actions">
         <button type="button" class="rp-player-admin-action rp-admin-schedule-option token" data-admin-schedule-choice="token" ${canUseToken ? '' : 'disabled'}>
-          <div><strong>${unclaimed ? 'PRIORITY — ADMIN SECURE' : 'PRIORITY — USE TOKEN'}</strong><small>${esc(tokenNote)}</small></div><span>›</span>
+          <div><strong>PRIORITY — ADMIN SECURE</strong><small>${esc(tokenNote)}</small></div><span>›</span>
         </button>
         <button type="button" class="rp-player-admin-action rp-admin-schedule-option standby" data-admin-schedule-choice="standby" ${canStandby ? '' : 'disabled'}>
           <div><strong>ADD AS STANDBY</strong><small>${esc(standbyNote)}</small></div><span>›</span>
