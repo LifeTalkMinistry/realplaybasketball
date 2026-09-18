@@ -5,6 +5,13 @@
   the current app loader does not need a second media-customization feature.
   There is no player-facing upload UI. Approved artwork is assigned manually
   through assets/profile-art/registry.json.
+
+  STANDARD ART CONTRACT
+  - 1600x2000 canvas (4:5)
+  - transparent PNG/WebP
+  - upper-body / waist-up subject
+  - subject fills roughly 85–92% of canvas height
+  - very little transparent padding
 */
 
 .rp-profile .rp-profile-hero{
@@ -25,7 +32,7 @@
   Identity hierarchy:
   upper-left = earned badges
   lower-left = #NUMBER + PLAYER NAME
-  right = optional premium portrait
+  right = premium portrait artwork
 */
 .rp-profile .rp-profile-player{
   position:relative!important;
@@ -83,7 +90,7 @@
   text-shadow:0 3px 18px rgba(0,0,0,.72);
 }
 
-/* Existing recognition system, now anchored to the upper-left badge zone. */
+/* Existing recognition system, anchored to the upper-left badge zone. */
 .rp-profile .rp-profile-hero .rp-profile-badges{
   position:relative!important;
   z-index:7!important;
@@ -91,8 +98,8 @@
   align-items:center!important;
   justify-content:flex-start!important;
   gap:9px!important;
-  width:62%!important;
-  max-width:62%!important;
+  width:58%!important;
+  max-width:58%!important;
   min-height:82px!important;
   margin:8px 0 0!important;
   padding:3px 0 4px!important;
@@ -112,25 +119,30 @@
   height:72px!important;
 }
 
-/* Premium artwork is decorative card art, never an interactive profile photo. */
+/*
+  Dominant portrait zone.
+  Standard 4:5 artwork is intentionally rendered by WIDTH, not contained inside
+  a small box. The tall source is allowed to crop naturally against the hero so
+  the player dominates the right side like card artwork instead of a thumbnail.
+*/
 .rp-premium-profile-art{
-  --rp-premium-art-x:72%;
-  --rp-premium-art-y:44%;
+  --rp-premium-art-x:50%;
+  --rp-premium-art-y:46%;
   --rp-premium-art-scale:1;
   --rp-premium-art-opacity:1;
   position:absolute;
   z-index:2;
-  top:43px;
-  right:-20px;
-  bottom:76px;
-  width:59%;
+  top:31px;
+  right:-5.5%;
+  bottom:68px;
+  width:69%;
   overflow:visible;
   pointer-events:none;
   opacity:0;
   transform:translateZ(0);
   transition:opacity .28s ease;
-  -webkit-mask-image:radial-gradient(ellipse 96% 104% at 78% 43%,#000 0%,#000 48%,rgba(0,0,0,.96) 59%,rgba(0,0,0,.68) 72%,rgba(0,0,0,.22) 86%,transparent 100%);
-  mask-image:radial-gradient(ellipse 96% 104% at 78% 43%,#000 0%,#000 48%,rgba(0,0,0,.96) 59%,rgba(0,0,0,.68) 72%,rgba(0,0,0,.22) 86%,transparent 100%);
+  -webkit-mask-image:radial-gradient(ellipse 102% 106% at 70% 43%,#000 0%,#000 59%,rgba(0,0,0,.92) 69%,rgba(0,0,0,.57) 80%,rgba(0,0,0,.18) 90%,transparent 100%);
+  mask-image:radial-gradient(ellipse 102% 106% at 70% 43%,#000 0%,#000 59%,rgba(0,0,0,.92) 69%,rgba(0,0,0,.57) 80%,rgba(0,0,0,.18) 90%,transparent 100%);
 }
 
 .rp-premium-profile-art.is-ready{
@@ -140,17 +152,35 @@
 .rp-premium-profile-art::before{
   content:'';
   position:absolute;
-  inset:8% -8% 2% 8%;
+  inset:2% -5% -3% 3%;
   z-index:0;
   border-radius:50%;
   background:
-    radial-gradient(circle at 42% 42%,rgba(28,150,255,.20),transparent 47%),
-    radial-gradient(circle at 86% 48%,rgba(255,44,66,.14),transparent 42%);
-  filter:blur(18px);
+    radial-gradient(circle at 35% 42%,rgba(28,150,255,.20),transparent 48%),
+    radial-gradient(circle at 86% 48%,rgba(255,44,66,.15),transparent 43%);
+  filter:blur(20px);
   pointer-events:none;
 }
 
-.rp-premium-profile-art > img{
+/* Official standard mode: 1600x2000 source with a tightly framed subject. */
+.rp-premium-profile-art[data-fit-mode="standard"] > img{
+  position:absolute;
+  z-index:1;
+  right:0;
+  bottom:-8%;
+  display:block;
+  width:100%;
+  height:auto;
+  max-width:none;
+  object-fit:unset;
+  transform:scale(var(--rp-premium-art-scale));
+  transform-origin:68% 58%;
+  filter:drop-shadow(0 18px 24px rgba(0,0,0,.40)) saturate(.99) contrast(1.025);
+  user-select:none;
+}
+
+/* Manual compatibility mode for older/non-standard artwork. */
+.rp-premium-profile-art[data-fit-mode="manual"] > img{
   position:absolute;
   z-index:1;
   inset:0;
@@ -169,21 +199,21 @@
 .rp-premium-profile-art-shade{
   position:absolute;
   z-index:3;
-  inset:-2px;
+  inset:-3px;
   pointer-events:none;
   background:
-    linear-gradient(90deg,rgba(3,7,13,.96) 0%,rgba(3,7,13,.74) 15%,rgba(3,7,13,.24) 38%,transparent 60%),
-    linear-gradient(0deg,rgba(3,7,13,.94) 0%,rgba(3,7,13,.28) 24%,transparent 53%);
+    linear-gradient(90deg,rgba(3,7,13,.98) 0%,rgba(3,7,13,.76) 14%,rgba(3,7,13,.28) 31%,rgba(3,7,13,.05) 48%,transparent 66%),
+    linear-gradient(0deg,rgba(3,7,13,.98) 0%,rgba(3,7,13,.52) 16%,rgba(3,7,13,.12) 34%,transparent 53%);
 }
 
-/* When art exists, protect the left identity lockup from the portrait. */
+/* The portrait is allowed to bleed behind the identity, but text stays readable. */
 .rp-profile.has-rp-premium-profile-art .rp-profile-player{
-  width:68%!important;
-  max-width:68%!important;
+  width:78%!important;
+  max-width:78%!important;
 }
 
 .rp-profile.has-rp-premium-profile-art .rp-profile-name > h1{
-  max-width:min(44vw,230px)!important;
+  max-width:min(50vw,270px)!important;
 }
 
 .rp-profile.has-rp-premium-profile-art .rp-profile-rating-row > div{
@@ -203,8 +233,8 @@
 
 @media(max-width:420px){
   .rp-profile .rp-profile-hero .rp-profile-badges{
-    width:64%!important;
-    max-width:64%!important;
+    width:57%!important;
+    max-width:57%!important;
     min-height:78px!important;
     gap:8px!important;
   }
@@ -215,10 +245,14 @@
   }
 
   .rp-premium-profile-art{
-    top:46px;
-    right:-24px;
-    bottom:78px;
-    width:62%;
+    top:33px;
+    right:-7.5%;
+    bottom:70px;
+    width:72%;
+  }
+
+  .rp-premium-profile-art[data-fit-mode="standard"] > img{
+    bottom:-7%;
   }
 
   .rp-profile .rp-profile-number > strong,
@@ -227,19 +261,19 @@
   }
 
   .rp-profile.has-rp-premium-profile-art .rp-profile-player{
-    width:70%!important;
-    max-width:70%!important;
+    width:80%!important;
+    max-width:80%!important;
   }
 
   .rp-profile.has-rp-premium-profile-art .rp-profile-name > h1{
-    max-width:43vw!important;
+    max-width:49vw!important;
   }
 }
 
 @media(max-width:355px){
   .rp-profile .rp-profile-hero .rp-profile-badges{
-    width:63%!important;
-    max-width:63%!important;
+    width:56%!important;
+    max-width:56%!important;
     min-height:72px!important;
   }
 
@@ -258,13 +292,13 @@
   }
 
   .rp-premium-profile-art{
-    right:-28px;
-    width:64%;
+    right:-9%;
+    width:75%;
   }
 
   .rp-profile.has-rp-premium-profile-art .rp-profile-player{
-    width:72%!important;
-    max-width:72%!important;
+    width:82%!important;
+    max-width:82%!important;
   }
 }
 
