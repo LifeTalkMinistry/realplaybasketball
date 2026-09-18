@@ -4,9 +4,11 @@
 
   const HOLD_MS = 850;
   const MOVE_TOLERANCE = 14;
+  const DOM_TO_IMAGE_URL = 'https://cdn.jsdelivr.net/npm/dom-to-image-more@3.6.0/dist/dom-to-image-more.min.js';
   const HTML2CANVAS_URL = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
   const STYLE_ID = 'rp-reservation-snapshot-style';
-  const LIB_ID = 'rp-reservation-snapshot-html2canvas';
+  const DOM_LIB_ID = 'rp-reservation-snapshot-domtoimage';
+  const FALLBACK_LIB_ID = 'rp-reservation-snapshot-html2canvas';
   const SOURCE_ATTR = 'data-rp-reservation-snapshot-source';
 
   let trigger = null;
@@ -81,6 +83,22 @@
       [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-ranking-standby-list]{
         height:auto!important;max-height:none!important;overflow:visible!important;
       }
+      .rp-snapshot-capture-mode [data-rp-spot-priority],
+      .rp-snapshot-capture-mode [data-rp-ranking-cancel],
+      .rp-snapshot-capture-mode [data-rp-snapshot-exclude]{
+        display:none!important;
+      }
+      .rp-snapshot-capture-mode .rp-ranking-secured-name,
+      .rp-snapshot-capture-mode .rp-ranking-secured-value,
+      .rp-snapshot-capture-mode .rp-ranking-secured-rank,
+      .rp-snapshot-capture-mode .rp-ranking-secured-label{
+        overflow:visible!important;
+        text-overflow:clip!important;
+        line-height:1.22!important;
+      }
+      .rp-snapshot-capture-mode .rp-ranking-secured-player{
+        overflow:hidden!important;
+      }
       @media(min-width:700px){
         .rp-snapshot-preview{align-items:center;padding:18px}
         .rp-snapshot-preview-sheet{border-bottom:1px solid rgba(65,200,238,.30);border-radius:24px}
@@ -115,27 +133,43 @@
     window.setTimeout(() => window.removeEventListener('click', block, true), 800);
   }
 
-  function loadHtml2Canvas() {
-    if (typeof window.html2canvas === 'function') return Promise.resolve(window.html2canvas);
+  function loadScriptLibrary(id, src, ready) {
+    if (ready()) return Promise.resolve();
     return new Promise((resolve, reject) => {
-      const existing = document.getElementById(LIB_ID);
+      const existing = document.getElementById(id);
       if (existing) {
-        existing.addEventListener('load', () => resolve(window.html2canvas), { once:true });
+        if (ready()) return resolve();
+        existing.addEventListener('load', () => ready() ? resolve() : reject(new Error('Snapshot renderer is unavailable.')), { once:true });
         existing.addEventListener('error', () => reject(new Error('Snapshot renderer could not load.')), { once:true });
         return;
       }
       const script = document.createElement('script');
-      script.id = LIB_ID;
-      script.src = HTML2CANVAS_URL;
+      script.id = id;
+      script.src = src;
       script.async = true;
       script.crossOrigin = 'anonymous';
-      script.addEventListener('load', () => {
-        if (typeof window.html2canvas === 'function') resolve(window.html2canvas);
-        else reject(new Error('Snapshot renderer is unavailable.'));
-      }, { once:true });
+      script.addEventListener('load', () => ready() ? resolve() : reject(new Error('Snapshot renderer is unavailable.')), { once:true });
       script.addEventListener('error', () => reject(new Error('Snapshot renderer could not load.')), { once:true });
       document.head.appendChild(script);
     });
+  }
+
+  async function loadPrimaryRenderer() {
+    await loadScriptLibrary(
+      DOM_LIB_ID,
+      DOM_TO_IMAGE_URL,
+      () => Boolean(window.domtoimage && typeof window.domtoimage.toBlob === 'function')
+    );
+    return window.domtoimage;
+  }
+
+  async function loadFallbackRenderer() {
+    await loadScriptLibrary(
+      FALLBACK_LIB_ID,
+      HTML2CANVAS_URL,
+      () => typeof window.html2canvas === 'function'
+    );
+    return window.html2canvas;
   }
 
   function sourceNode() {
@@ -151,63 +185,117 @@
     ]);
   }
 
+  function captureFilter(node) {
+    if (!(node instanceof Element)) return true;
+    return !(
+      node.matches?.('[data-rp-spot-priority]')
+      || node.matches?.('[data-rp-ranking-cancel]')
+      || node.matches?.('[data-rp-snapshot-exclude]')
+      || node.matches?.('.rp-snapshot-toast')
+      || node.matches?.('.rp-snapshot-preview')
+    );
+  }
+
+  async function renderWithDomToImage(source, width, height) {
+    const domtoimage = await loadPrimaryRenderer();
+
+    // Render at native CSS width, but rasterize the browser-rendered DOM at a
+    // larger pixel ratio. This preserves the exact mobile layout instead of
+    // reflowing it into a fake poster width.
+    const maxScaleByHeight = 12000 / Math.max(1, height);
+    const scale = Math.max(1.75, Math.min(3, maxScaleByHeight));
+
+    return domtoimage.toBlob(source, {
+      bgcolor: '#020306',
+      cacheBust: true,
+      filter: captureFilter,
+      width: Math.round(width * scale),
+      height: Math.round(height * scale),
+      style: {
+        transform: 'scale(' + scale + ')',
+        transformOrigin: 'top left',
+        width: width + 'px',
+        height: height + 'px',
+        margin: '0',
+      },
+    });
+  }
+
+  async function renderWithHtml2Canvas(source, width, height) {
+    const html2canvas = await loadFallbackRenderer();
+    const canvas = await html2canvas(source, {
+      backgroundColor: '#020306',
+      scale: Math.min(3, Math.max(2, window.devicePixelRatio || 2)),
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      width,
+      height,
+      scrollX: -window.scrollX,
+      scrollY: -window.scrollY,
+      windowWidth: Math.max(document.documentElement.clientWidth, width),
+      windowHeight: Math.max(document.documentElement.clientHeight, height),
+      onclone: (clonedDocument) => {
+        const clone = clonedDocument.querySelector('[data-rp-reservation-snapshot-source="true"]');
+        if (!clone) return;
+
+        clone.classList.add('rp-snapshot-exact-source', 'rp-snapshot-capture-mode');
+        clone.style.setProperty('width', String(width) + 'px', 'important');
+        clone.style.setProperty('min-width', String(width) + 'px', 'important');
+        clone.style.setProperty('max-width', String(width) + 'px', 'important');
+        clone.style.setProperty('height', 'auto', 'important');
+        clone.style.setProperty('max-height', 'none', 'important');
+        clone.style.setProperty('overflow', 'visible', 'important');
+        clone.style.setProperty('margin', '0', 'important');
+
+        clone.querySelectorAll('[data-rp-spot-priority], [data-rp-ranking-cancel], [data-rp-snapshot-exclude]').forEach((node) => {
+          node.style.setProperty('display', 'none', 'important');
+        });
+
+        clone.querySelectorAll(
+          '[data-rp-ranking-secured], [data-rp-ranking-standby-roster], [data-rp-ranking-secured-list], [data-rp-ranking-standby-list]'
+        ).forEach((node) => {
+          node.style.setProperty('height', 'auto', 'important');
+          node.style.setProperty('max-height', 'none', 'important');
+          node.style.setProperty('overflow', 'visible', 'important');
+        });
+      },
+    });
+
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 1));
+  }
+
   async function renderSnapshot() {
-    const html2canvas = await loadHtml2Canvas();
     const source = sourceNode();
     if (!source) throw new Error('Open Rank reservation is not available.');
 
     await waitForStableFonts();
-    await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
 
-    const rect = source.getBoundingClientRect();
-    const width = Math.max(300, Math.ceil(rect.width || source.offsetWidth || 360));
-    const height = Math.max(1, Math.ceil(source.scrollHeight || rect.height || source.offsetHeight || 1));
-
+    // Capture mode changes only export-only details: it removes the utility
+    // controls and gives the display font enough line box to avoid clipped
+    // glyphs. The card dimensions and mobile grid stay the live dimensions.
+    source.classList.add('rp-snapshot-capture-mode');
     source.setAttribute(SOURCE_ATTR, 'true');
+
     try {
-      const canvas = await html2canvas(source, {
-        backgroundColor: '#020306',
-        scale: Math.min(4, Math.max(3, window.devicePixelRatio || 2)),
-        useCORS: true,
-        allowTaint: false,
-        logging: false,
-        width,
-        height,
-        scrollX: -window.scrollX,
-        scrollY: -window.scrollY,
-        windowWidth: Math.max(document.documentElement.clientWidth, width),
-        windowHeight: Math.max(document.documentElement.clientHeight, height),
-        onclone: (clonedDocument) => {
-          const clone = clonedDocument.querySelector('[data-rp-reservation-snapshot-source="true"]');
-          if (!clone) return;
+      await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
 
-          clone.classList.add('rp-snapshot-exact-source');
-          clone.style.setProperty('width', String(width) + 'px', 'important');
-          clone.style.setProperty('min-width', String(width) + 'px', 'important');
-          clone.style.setProperty('max-width', String(width) + 'px', 'important');
-          clone.style.setProperty('height', 'auto', 'important');
-          clone.style.setProperty('max-height', 'none', 'important');
-          clone.style.setProperty('overflow', 'visible', 'important');
-          clone.style.setProperty('margin', '0', 'important');
+      const rect = source.getBoundingClientRect();
+      const width = Math.max(300, Math.ceil(rect.width || source.offsetWidth || 360));
+      const height = Math.max(1, Math.ceil(source.scrollHeight || rect.height || source.offsetHeight || 1));
 
-          clone.querySelectorAll('[data-rp-spot-priority], [data-rp-ranking-cancel], [data-rp-snapshot-exclude]').forEach((node) => {
-            node.style.setProperty('display', 'none', 'important');
-          });
+      try {
+        const blob = await renderWithDomToImage(source, width, height);
+        if (blob) return blob;
+      } catch (primaryError) {
+        console.warn('[Real Play] Browser-native reservation renderer failed; using compatibility renderer.', primaryError);
+      }
 
-          clone.querySelectorAll(
-            '[data-rp-ranking-secured], [data-rp-ranking-standby-roster], [data-rp-ranking-secured-list], [data-rp-ranking-standby-list]'
-          ).forEach((node) => {
-            node.style.setProperty('height', 'auto', 'important');
-            node.style.setProperty('max-height', 'none', 'important');
-            node.style.setProperty('overflow', 'visible', 'important');
-          });
-        },
-      });
-
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 1));
-      if (!blob) throw new Error('The reservation image could not be created.');
-      return blob;
+      const fallbackBlob = await renderWithHtml2Canvas(source, width, height);
+      if (!fallbackBlob) throw new Error('The reservation image could not be created.');
+      return fallbackBlob;
     } finally {
+      source.classList.remove('rp-snapshot-capture-mode');
       source.removeAttribute(SOURCE_ATTR);
     }
   }
