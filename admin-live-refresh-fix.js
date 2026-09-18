@@ -173,7 +173,9 @@
     const gcash = breakdownCount('[data-rp-ranking-access-gcash]');
     const cash = breakdownCount('[data-rp-ranking-access-cash]');
     const standby = breakdownCount('[data-rp-ranking-access-standby]');
-    const totalPlayers = token + gcash + cash + standby;
+    const summary = view.querySelector('[data-rp-ranking-access-summary]');
+    const adminPriority = number(summary?.dataset?.rpAdminPrioritySecured);
+    const totalPlayers = token + gcash + cash + standby + adminPriority;
     const next = spotsLabel(totalPlayers, capacity);
 
     if (totalNode.textContent !== next) totalNode.textContent = next;
