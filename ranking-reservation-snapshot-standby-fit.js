@@ -140,6 +140,8 @@
   if (window.__realPlayDefaultProfileArtInstalled) return;
   window.__realPlayDefaultProfileArtInstalled = true;
 
+  const DEFAULT_PROFILE_ART_SRC = 'assets/profile-art/default-player.webp';
+
   const style = document.createElement('style');
   style.id = 'rp-default-profile-art-style';
   style.textContent = `
@@ -155,7 +157,7 @@
       inset:0;
       overflow:hidden;
       pointer-events:none;
-      opacity:.96;
+      opacity:.94;
     }
 
     .rp-default-profile-art::before{
@@ -164,21 +166,24 @@
       z-index:0;
       inset:-12%;
       background:
-        radial-gradient(circle at 76% 34%,rgba(38,153,255,.14),transparent 33%),
-        radial-gradient(circle at 96% 48%,rgba(255,55,72,.11),transparent 29%);
+        radial-gradient(circle at 76% 34%,rgba(38,153,255,.12),transparent 33%),
+        radial-gradient(circle at 96% 48%,rgba(255,55,72,.10),transparent 29%);
       filter:blur(18px);
     }
 
-    .rp-default-profile-art svg{
+    .rp-default-profile-art img{
       position:absolute;
       z-index:1;
-      top:14%;
-      right:-3%;
-      width:49%;
+      top:7%;
+      right:-8%;
+      width:61%;
       height:auto;
-      max-width:260px;
-      opacity:.74;
+      max-width:320px;
+      object-fit:contain;
+      opacity:.96;
       filter:drop-shadow(0 20px 28px rgba(0,0,0,.46));
+      user-select:none;
+      -webkit-user-drag:none;
     }
 
     .rp-default-profile-art::after{
@@ -213,14 +218,14 @@
     }
 
     .rp-profile.rp-profile-art-editing .rp-default-profile-art{
-      opacity:.45;
+      opacity:.42;
     }
 
     @media(max-width:420px){
-      .rp-default-profile-art svg{
-        top:15%;
-        right:-5%;
-        width:53%;
+      .rp-default-profile-art img{
+        top:8%;
+        right:-10%;
+        width:65%;
       }
 
       .rp-profile.has-rp-default-profile-art .rp-profile-name > h1{
@@ -229,55 +234,14 @@
     }
 
     @media(max-width:355px){
-      .rp-default-profile-art svg{
-        top:16%;
-        right:-7%;
-        width:57%;
+      .rp-default-profile-art img{
+        top:9%;
+        right:-12%;
+        width:69%;
       }
     }
   `;
   document.head.appendChild(style);
-
-  const silhouette = `
-    <svg viewBox="0 0 720 960" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id="rpDefaultBody" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#25394d"/>
-          <stop offset="0.52" stop-color="#111d29"/>
-          <stop offset="1" stop-color="#0a1119"/>
-        </linearGradient>
-        <linearGradient id="rpDefaultRim" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#35cfff" stop-opacity=".76"/>
-          <stop offset=".48" stop-color="#6f879a" stop-opacity=".16"/>
-          <stop offset="1" stop-color="#ff445c" stop-opacity=".64"/>
-        </linearGradient>
-        <radialGradient id="rpDefaultFace" cx="48%" cy="35%" r="70%">
-          <stop offset="0" stop-color="#31475b"/>
-          <stop offset="1" stop-color="#15222f"/>
-        </radialGradient>
-        <filter id="rpDefaultGlow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="11"/>
-        </filter>
-      </defs>
-
-      <ellipse cx="432" cy="430" rx="232" ry="342" fill="#1a9fff" opacity=".09" filter="url(#rpDefaultGlow)"/>
-      <ellipse cx="570" cy="464" rx="190" ry="300" fill="#ff4059" opacity=".07" filter="url(#rpDefaultGlow)"/>
-
-      <path d="M355 372c-15 69-41 105-88 133-58 34-96 92-111 174l-25 143h507l-18-139c-11-88-49-146-111-180-49-27-77-65-89-131Z" fill="url(#rpDefaultBody)" stroke="url(#rpDefaultRim)" stroke-width="5" stroke-opacity=".72"/>
-      <path d="M315 493c29 28 64 42 104 42 42 0 79-15 109-45l29 28c-39 42-84 62-137 62-53 0-99-20-137-59Z" fill="#08121c" opacity=".86"/>
-      <path d="M367 490l51 70 51-70" fill="none" stroke="#4acfff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
-
-      <ellipse cx="419" cy="262" rx="126" ry="151" fill="url(#rpDefaultFace)" stroke="url(#rpDefaultRim)" stroke-width="5"/>
-      <path d="M324 219c23-79 173-108 218-13-19-26-42-41-69-49-55-16-108 6-149 62Z" fill="#0a121a" opacity=".88"/>
-      <path d="M339 337c22 50 47 75 80 75 34 0 61-25 82-75-24 24-51 36-82 36-31 0-58-12-80-36Z" fill="#0b151f" opacity=".48"/>
-
-      <circle cx="380" cy="264" r="8" fill="#7f99ad" opacity=".3"/>
-      <circle cx="458" cy="264" r="8" fill="#7f99ad" opacity=".3"/>
-      <path d="M393 316c18 9 36 9 54 0" fill="none" stroke="#8196a8" stroke-width="7" stroke-linecap="round" opacity=".24"/>
-
-      <circle cx="420" cy="693" r="64" fill="none" stroke="#667f92" stroke-width="6" opacity=".16"/>
-      <path d="M357 692h126M420 630c-31 34-31 92 0 126M420 630c31 34 31 92 0 126" fill="none" stroke="#667f92" stroke-width="5" opacity=".14"/>
-    </svg>`;
 
   let scheduled = false;
 
@@ -291,30 +255,32 @@
     const hero = panel.querySelector('.rp-profile-hero');
     if (!hero) return;
 
-    const premiumLayer = hero.querySelector('[data-rp-premium-profile-art]');
-    const hasPremium = Boolean(
-      panel.classList.contains('has-rp-premium-profile-art') ||
-      premiumLayer?.classList.contains('is-ready')
+    const premium = hero.querySelector('[data-rp-premium-profile-art]');
+    const premiumVisible = Boolean(
+      premium &&
+      premium.classList.contains('is-ready') &&
+      panel.classList.contains('has-rp-premium-profile-art')
     );
 
-    if (hasPremium) {
+    if (premiumVisible) {
       removeDefault(panel);
       return;
     }
 
-    let layer = hero.querySelector('[data-rp-default-profile-art]');
-    if (!layer) {
-      layer = document.createElement('div');
-      layer.className = 'rp-default-profile-art';
-      layer.dataset.rpDefaultProfileArt = 'true';
-      layer.setAttribute('aria-hidden', 'true');
-      layer.innerHTML = silhouette;
-      hero.insertBefore(layer, hero.firstChild);
+    let fallback = hero.querySelector('[data-rp-default-profile-art]');
+    if (!fallback) {
+      fallback = document.createElement('div');
+      fallback.className = 'rp-default-profile-art';
+      fallback.dataset.rpDefaultProfileArt = 'true';
+      fallback.setAttribute('aria-hidden', 'true');
+      fallback.innerHTML = `<img src="${DEFAULT_PROFILE_ART_SRC}" alt="" draggable="false" />`;
+      hero.insertBefore(fallback, hero.firstChild);
     }
+
     panel.classList.add('has-rp-default-profile-art');
   }
 
-  function syncAll() {
+  function renderAll() {
     scheduled = false;
     document.querySelectorAll('.rp-profile.open').forEach(syncPanel);
   }
@@ -322,32 +288,14 @@
   function schedule() {
     if (scheduled) return;
     scheduled = true;
-    window.requestAnimationFrame(syncAll);
+    requestAnimationFrame(renderAll);
   }
 
-  window.addEventListener('realplay:profile-loaded', schedule);
-  window.addEventListener('realplay:public-profile-loaded', schedule);
-  window.addEventListener('realplay:profile-art-updated', schedule);
-  window.addEventListener('realplay:app-ready', schedule);
-
-  const observer = new MutationObserver((mutations) => {
-    const relevant = mutations.some((mutation) => {
-      if (mutation.type === 'attributes') {
-        const target = mutation.target;
-        return target instanceof HTMLElement && (
-          target.classList.contains('rp-profile') ||
-          target.hasAttribute('data-rp-premium-profile-art')
-        );
-      }
-      return [...mutation.addedNodes, ...mutation.removedNodes].some((node) => (
-        node instanceof HTMLElement &&
-        (node.matches?.('.rp-profile, .rp-profile-hero, [data-rp-premium-profile-art]') ||
-         node.querySelector?.('.rp-profile, .rp-profile-hero, [data-rp-premium-profile-art]'))
-      ));
-    });
-    if (relevant) schedule();
+  ['realplay:profile-loaded', 'realplay:public-profile-loaded', 'realplay:profile-art-updated', 'realplay:app-ready'].forEach((eventName) => {
+    window.addEventListener(eventName, schedule);
   });
 
+  const observer = new MutationObserver(schedule);
   observer.observe(document.documentElement, {
     childList:true,
     subtree:true,
