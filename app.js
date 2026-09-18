@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260918-clean-snapshot-v92';
+  const version = '20260918-roster-rollback-v93';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
