@@ -9,18 +9,17 @@
 
   let intentId = 0;
   let intentUntil = 0;
-  let intentStartedAt = 0;
   let timers = [];
   const youtubePlaying = new WeakSet();
   const watchedMedia = new WeakSet();
 
-  function loadSeekGuard() {
-    if (window.__realPlayHighlightSeekGuardInstalled || document.querySelector('script[data-rp-highlight-seek-guard-loader]')) return;
+  function loadConsistencyLayer() {
+    if (window.__realPlayHighlightConsistencyInstalled || document.querySelector('script[data-rp-highlight-consistency-loader]')) return;
     const script = document.createElement('script');
-    script.src = 'profile-highlight-seek-guard.js?v=20260918-highlight-seek-v1';
+    script.src = 'profile-highlight-consistency.js?v=20260918-canonical-highlight-v1';
     script.async = false;
-    script.dataset.rpHighlightSeekGuardLoader = '1';
-    script.onerror = () => console.warn('[Real Play] Highlight seek guard could not load.');
+    script.dataset.rpHighlightConsistencyLoader = '1';
+    script.onerror = () => console.warn('[Real Play] Highlight consistency layer could not load.');
     document.head.appendChild(script);
   }
 
@@ -81,6 +80,10 @@
     return true;
   }
 
+  function seekReady(root) {
+    return Boolean(root && root.dataset.rpHighlightSeekReady === '1');
+  }
+
   function youtubeFrame(root) {
     const frame = root?.querySelector('[data-rp-highlight-media] iframe');
     if (!frame) return null;
@@ -99,24 +102,29 @@
       });
       video.addEventListener('seeked', () => {
         root.dataset.rpHighlightSeekReady = '1';
-        if (Date.now() <= intentUntil) attemptAutoplay(intentId, 3);
+        try {
+          window.dispatchEvent(new CustomEvent('realplay:highlight-seek-ready', {
+            detail: { targetSeconds: Math.max(0, Number(video.currentTime) || 0) }
+          }));
+        } catch (_) {}
       });
-      const ready = () => fadeLoading(root);
+      const ready = () => {
+        if (seekReady(root)) fadeLoading(root);
+      };
       video.addEventListener('loadeddata', ready, { once: true });
       video.addEventListener('canplay', ready, { once: true });
       video.addEventListener('playing', ready, { once: true });
-      if (video.readyState >= 2) fadeLoading(root);
+      if (video.readyState >= 2 && seekReady(root)) fadeLoading(root);
     }
 
     const frame = youtubeFrame(root);
     if (frame && !watchedMedia.has(frame)) {
       watchedMedia.add(frame);
       frame.addEventListener('load', () => {
-        window.setTimeout(() => fadeLoading(root), 180);
+        window.setTimeout(() => {
+          if (seekReady(root)) fadeLoading(root);
+        }, 180);
       }, { once: true });
-      window.setTimeout(() => {
-        if (frame.isConnected) fadeLoading(root);
-      }, 650);
     }
   }
 
@@ -175,16 +183,13 @@
 
     watchMountedMedia(root);
 
+    // One rule everywhere: no playback until the selected highlight timestamp
+    // has been confirmed. This applies to ME, authenticated public profiles,
+    // visitor profiles, archive history, Android, and iPhone.
+    if (!seekReady(root)) return;
+
     const video = root.querySelector('[data-rp-highlight-media] video');
     if (video) {
-      // Do not let the autoplay helper race ahead of the core highlight seek.
-      // A direct video normally fires seeked after playAt() applies the timestamp.
-      // If the highlight actually begins at 0:00, allow a conservative fallback.
-      const seekReady = root.dataset.rpHighlightSeekReady === '1';
-      const zeroStartFallback = Date.now() - intentStartedAt >= 650 && Math.abs(Number(video.currentTime || 0)) < 0.35;
-      if (!seekReady && !zeroStartFallback) return;
-      if (zeroStartFallback) root.dataset.rpHighlightSeekReady = '1';
-
       attemptDirectVideo(video, isMobileAutoplayRestricted && attempt >= 2);
       if (!video.paused) {
         fadeLoading(root);
@@ -195,11 +200,6 @@
     const frame = youtubeFrame(root);
     if (frame) {
       ensureAutoplayPermission(frame);
-
-      // The YouTube iframe is created at 0:00 before the core player applies
-      // the official highlight timestamp. Never send playVideo until the seek
-      // guard confirms that timestamp is active.
-      if (root.dataset.rpHighlightSeekReady !== '1') return;
       if (youtubePlaying.has(frame)) {
         fadeLoading(root);
         return;
@@ -215,12 +215,11 @@
     if (root) root.dataset.rpHighlightSeekReady = '0';
 
     const id = ++intentId;
-    intentStartedAt = Date.now();
-    intentUntil = intentStartedAt + 7000;
+    intentUntil = Date.now() + 8000;
     clearTimers();
     resetLoading(root);
 
-    [0, 80, 180, 360, 700, 1200, 2000, 3200, 5000, 6500].forEach((delay, index) => {
+    [0, 80, 180, 360, 700, 1200, 2000, 3200, 5000, 7000].forEach((delay, index) => {
       timers.push(window.setTimeout(() => attemptAutoplay(id, index), delay));
     });
   }
@@ -238,7 +237,15 @@
     if (!frame || frame.contentWindow !== event.source) return;
     const data = parseMessage(event.data);
     const playerState = data?.info?.playerState ?? (data?.event === 'onStateChange' ? data?.info : undefined);
+
     if (Number(playerState) === 1) {
+      if (!seekReady(root)) {
+        // Defensive stop: even if YouTube internally autoplays from 0:00,
+        // immediately pause until the canonical seek has landed.
+        sendYouTube(frame, 'pauseVideo');
+        youtubePlaying.delete(frame);
+        return;
+      }
       youtubePlaying.add(frame);
       fadeLoading(root);
     } else if (Number.isFinite(Number(playerState))) {
@@ -247,7 +254,7 @@
   });
 
   window.addEventListener('realplay:highlight-seek-ready', () => {
-    if (Date.now() <= intentUntil) attemptAutoplay(intentId, 3);
+    if (Date.now() <= intentUntil) attemptAutoplay(intentId, 0);
   });
 
   document.addEventListener('click', (event) => {
@@ -265,7 +272,7 @@
   });
 
   function start() {
-    loadSeekGuard();
+    loadConsistencyLayer();
     installLoadingFadeStyle();
     if (document.body) observer.observe(document.body, { childList: true, subtree: true });
     watchMountedMedia();
