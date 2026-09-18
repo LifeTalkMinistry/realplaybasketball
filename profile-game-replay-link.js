@@ -237,7 +237,7 @@
   function loadHighlightLayer() {
     if (window.__realPlayProfileHighlightsInstalled || document.querySelector('script[data-rp-profile-highlights-loader]')) return;
     const script = document.createElement('script');
-    script.src = `profile-game-highlights.js?v=20260917-player-highlights-v1`;
+    script.src = `profile-game-highlights.js?v=20260918-highlight-picker-v2`;
     script.async = false;
     script.dataset.rpProfileHighlightsLoader = '1';
     script.onerror = () => console.warn('[Real Play] Player highlight layer could not load.');
