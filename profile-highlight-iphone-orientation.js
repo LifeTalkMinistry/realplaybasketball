@@ -3,7 +3,11 @@
   window.__realPlayIPhoneHighlightOrientationInstalled = true;
 
   const ua = String(navigator.userAgent || '');
-  if (!/iPhone|iPod/i.test(ua)) return;
+  const platform = String(navigator.platform || '');
+  const touchPoints = Number(navigator.maxTouchPoints || 0);
+  const isTouchIOS = /iPhone|iPod|iPad/i.test(ua)
+    || ((/Macintosh/i.test(ua) || platform === 'MacIntel') && touchPoints > 1);
+  if (!isTouchIOS) return;
 
   let orientationTimer = 0;
   let activeVideo = null;
@@ -94,12 +98,16 @@
     if (!root) return;
     root.classList.add('rp-ios-video-only');
     root.classList.remove('rp-ios-highlight-return');
+    document.documentElement.classList.add('rp-ios-highlight-video-only');
+    document.body?.classList.add('rp-ios-highlight-video-only');
     if (video) setVideoInline(video, false);
   }
 
   function leaveVideoOnlyMode(root, video) {
     if (!root) return;
     root.classList.remove('rp-ios-video-only');
+    document.documentElement.classList.remove('rp-ios-highlight-video-only');
+    document.body?.classList.remove('rp-ios-highlight-video-only');
     if (video) setVideoInline(video, true);
   }
 
@@ -121,6 +129,8 @@
       if (!current) return;
       current.classList.remove('rp-ios-video-only', 'rp-ios-highlight-landscape');
       current.classList.add('rp-ios-highlight-return');
+      document.documentElement.classList.remove('rp-ios-highlight-video-only');
+      document.body?.classList.remove('rp-ios-highlight-video-only');
       const end = current.querySelector('[data-rp-highlight-end]');
       if (end && !end.hidden) end.scrollIntoView?.({ block: 'center', inline: 'center' });
     }, 60);
@@ -168,10 +178,6 @@
     handoffWasPlaying = !video.paused;
     enterVideoOnlyMode(root, video);
 
-    // iPhone Safari can refuse programmatic native fullscreen when an
-    // orientation event is not considered a direct user gesture. We still try
-    // native first, but the video-only takeover above is the guaranteed
-    // fallback so the Real Play shell never remains around landscape playback.
     try {
       if (typeof video.webkitEnterFullscreen === 'function') {
         video.webkitEnterFullscreen();
@@ -199,10 +205,10 @@
   function enterYouTubeFullscreen(frame, root) {
     if (!frame || !root || endingHighlight || highlightComplete(root) || !isLandscape()) return false;
 
-    // YouTube embeds do not expose the underlying iPhone HTML5 video element to
-    // the parent page. Remove all Real Play chrome immediately, keep the exact
-    // same iframe/player instance (so the timestamp continues), then request
-    // iframe fullscreen when Safari permits it.
+    // The YouTube iframe hides its underlying HTML5 video from the parent page,
+    // so iOS will not let Real Play directly call webkitEnterFullscreen on that
+    // hidden video. The guaranteed fallback is a true video-only landscape view:
+    // no Real Play chrome, same iframe instance, same current timeline.
     enterVideoOnlyMode(root, null);
     frame.setAttribute('allowfullscreen', '');
     const previousAllow = String(frame.getAttribute('allow') || '');
@@ -266,7 +272,15 @@
     }
 
     const frame = currentYouTubeFrame(root);
-    if (frame) enterYouTubeFullscreen(frame, root);
+    if (frame) {
+      enterYouTubeFullscreen(frame, root);
+      return;
+    }
+
+    // If Safari changes the YouTube iframe URL shape or mounts media a frame
+    // later, still remove the app shell immediately on rotation. The observer
+    // will sync again as soon as the media element appears.
+    enterVideoOnlyMode(root, null);
   }
 
   function scheduleOrientationSync() {
@@ -274,7 +288,7 @@
     orientationTimer = window.setTimeout(() => {
       orientationTimer = 0;
       syncOrientation();
-    }, 80);
+    }, 60);
   }
 
   function installStyle() {
@@ -282,13 +296,36 @@
     const style = document.createElement('style');
     style.dataset.rpIosHighlightOrientationStyle = '1';
     style.textContent = `
-      .rp-highlight-viewer.rp-ios-video-only{
+      html.rp-ios-highlight-video-only,
+      html.rp-ios-highlight-video-only body{
+        margin:0!important;
+        padding:0!important;
+        overflow:hidden!important;
         background:#000!important;
-        z-index:2147483000!important;
       }
-      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-stage{
+      html.rp-ios-highlight-video-only body>*:not(.rp-highlight-viewer){
+        visibility:hidden!important;
+        pointer-events:none!important;
+      }
+      .rp-highlight-viewer.rp-ios-video-only{
+        display:block!important;
+        position:fixed!important;
+        inset:0!important;
         width:100vw!important;
         height:100dvh!important;
+        margin:0!important;
+        padding:0!important;
+        background:#000!important;
+        z-index:2147483646!important;
+      }
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-stage{
+        position:fixed!important;
+        inset:0!important;
+        width:100vw!important;
+        height:100dvh!important;
+        margin:0!important;
+        padding:0!important;
+        overflow:hidden!important;
         background:#000!important;
       }
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-stage::after,
@@ -300,11 +337,15 @@
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-loading,
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-picker{
         display:none!important;
+        visibility:hidden!important;
+        pointer-events:none!important;
       }
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media,
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media>div,
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media video,
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media iframe{
+        display:block!important;
+        visibility:visible!important;
         position:fixed!important;
         inset:0!important;
         width:100vw!important;
@@ -312,8 +353,10 @@
         max-width:none!important;
         max-height:none!important;
         margin:0!important;
+        padding:0!important;
         border:0!important;
         background:#000!important;
+        transform:none!important;
       }
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media video{
         object-fit:contain!important;
@@ -322,7 +365,9 @@
         pointer-events:auto!important;
       }
       @media (orientation:landscape){
-        html,body{background:#000!important}
+        html.rp-ios-highlight-video-only .rp-highlight-viewer.open:not(.choosing){
+          background:#000!important;
+        }
         .rp-highlight-viewer.rp-ios-highlight-return .rp-highlight-end{
           left:50%!important;
           top:50%!important;
