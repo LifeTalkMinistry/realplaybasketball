@@ -20,7 +20,9 @@
 
   let viewer = null;
   let replayData = null;
+  let allHighlights = [];
   let highlights = [];
+  let activeFilter = 'all';
   let activeIndex = 0;
   let activeSessionId = 0;
   let activeContext = null;
@@ -313,6 +315,151 @@
     ));
   }
 
+  const HIGHLIGHT_FILTERS = [
+    {
+      key: 'all',
+      label: 'ALL HIGHLIGHTS',
+      viewerLabel: 'MY HIGHLIGHTS',
+      matches: () => true,
+    },
+    {
+      key: 'scores',
+      label: 'SCORES',
+      viewerLabel: 'MY SCORES',
+      matches: (item) => item?.label === '1PT MAKE' || item?.label === '2PT MAKE',
+    },
+    {
+      key: 'assists',
+      label: 'ASSISTS',
+      viewerLabel: 'MY ASSISTS',
+      matches: (item) => item?.label === 'ASSIST',
+    },
+    {
+      key: 'rebounds',
+      label: 'REBOUNDS',
+      viewerLabel: 'MY REBOUNDS',
+      matches: (item) => item?.label === 'REBOUND',
+    },
+    {
+      key: 'steals',
+      label: 'STEALS',
+      viewerLabel: 'MY STEALS',
+      matches: (item) => item?.label === 'STEAL',
+    },
+    {
+      key: 'blocks',
+      label: 'BLOCKS',
+      viewerLabel: 'MY BLOCKS',
+      matches: (item) => item?.label === 'BLOCK',
+    },
+  ];
+
+  function highlightFilterDefinition(key) {
+    return HIGHLIGHT_FILTERS.find((filter) => filter.key === key) || HIGHLIGHT_FILTERS[0];
+  }
+
+  function filteredHighlights(items, key) {
+    const filter = highlightFilterDefinition(key);
+    return (Array.isArray(items) ? items : []).filter((item) => filter.matches(item));
+  }
+
+  function availableHighlightFilters(items) {
+    const source = Array.isArray(items) ? items : [];
+    return HIGHLIGHT_FILTERS
+      .map((filter) => ({ ...filter, count: source.filter((item) => filter.matches(item)).length }))
+      .filter((filter) => filter.key === 'all' ? filter.count > 0 : filter.count > 0);
+  }
+
+  function showHighlightPicker() {
+    const root = ensureViewer();
+    const picker = root.querySelector('[data-rp-highlight-picker]');
+    const options = root.querySelector('[data-rp-highlight-picker-options]');
+    if (!picker || !options) return;
+
+    const filters = availableHighlightFilters(allHighlights);
+    const identity = identityFrom(replayData, activeContext || {});
+    const player = picker.querySelector('[data-rp-highlight-picker-player]');
+    const game = picker.querySelector('[data-rp-highlight-picker-game]');
+    const title = picker.querySelector('[data-rp-highlight-picker-title]');
+    if (player) player.textContent = `${identity.playerNumber || '#--'} ${identity.name}`;
+    if (game) game.textContent = activeContext?.gameLabel || replayData?.game?.title || 'REAL PLAY GAME';
+    if (title) title.textContent = activeContext?.isPublic ? 'WATCH PLAYER HIGHLIGHTS' : 'WATCH MY HIGHLIGHTS';
+
+    options.replaceChildren();
+    filters.forEach((filter) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `rp-highlight-picker-option${filter.key === 'all' ? ' all' : ''}`;
+      button.dataset.rpHighlightFilter = filter.key;
+      const label = document.createElement('span');
+      label.textContent = filter.label;
+      const count = document.createElement('b');
+      count.textContent = String(filter.count);
+      button.append(label, count);
+      options.appendChild(button);
+    });
+
+    root.classList.add('choosing');
+    picker.hidden = false;
+    const loading = root.querySelector('[data-rp-highlight-loading]');
+    const empty = root.querySelector('[data-rp-highlight-empty]');
+    const end = root.querySelector('[data-rp-highlight-end]');
+    if (loading) loading.hidden = true;
+    if (empty) empty.hidden = true;
+    if (end) end.hidden = true;
+  }
+
+  async function startHighlightFilter(filterKey) {
+    const root = ensureViewer();
+    const filter = highlightFilterDefinition(filterKey);
+    const next = filteredHighlights(allHighlights, filter.key);
+    if (!next.length || !replayData) return;
+
+    activeFilter = filter.key;
+    highlights = next;
+    activeIndex = 0;
+    root.classList.remove('choosing');
+    const picker = root.querySelector('[data-rp-highlight-picker]');
+    if (picker) picker.hidden = true;
+
+    destroyMedia();
+
+    const loading = root.querySelector('[data-rp-highlight-loading]');
+    const empty = root.querySelector('[data-rp-highlight-empty]');
+    const end = root.querySelector('[data-rp-highlight-end]');
+    const count = root.querySelector('[data-rp-highlight-count]');
+    const mode = root.querySelector('[data-rp-highlight-mode]');
+    if (loading) {
+      loading.hidden = false;
+      loading.textContent = `LOADING ${filter.label}…`;
+    }
+    if (empty) empty.hidden = true;
+    if (end) end.hidden = true;
+    if (count) count.textContent = `1 / ${highlights.length}`;
+    if (mode) mode.textContent = activeContext?.isPublic ? filter.label : filter.viewerLabel;
+
+    updateChrome();
+
+    // The filter button is the user gesture that launches the immersive viewer.
+    tryFullscreen(root);
+
+    const requestId = loadToken;
+    try {
+      const sourceType = replayData?.recording?.sourceType === 'youtube' ? 'youtube' : 'uploaded';
+      if (sourceType === 'youtube') {
+        await mountYouTube(replayData?.recording?.youtubeVideoId, requestId);
+      } else {
+        mountDirect(
+          replayData?.streamUrl ?? replayData?.recording?.streamUrl ?? replayData?.recording?.stream_url,
+          requestId
+        );
+      }
+    } catch (error) {
+      console.warn('[Real Play] Selected highlights could not start.', error);
+      showMediaError(error?.message || 'The selected highlights could not be loaded.');
+    }
+  }
+
   function installStyles() {
     if (document.querySelector('[data-rp-profile-highlight-styles]')) return;
     const style = document.createElement('style');
@@ -348,6 +495,22 @@
       .rp-highlight-end-actions{display:grid;grid-template-columns:1fr 1.35fr;gap:8px}.rp-highlight-end button,.rp-highlight-empty button{min-height:44px;border:1px solid rgba(255,255,255,.12);border-radius:11px;background:#090d13;color:#e7edf3;font-family:var(--rp-display,Impact,Arial,sans-serif);font-size:.54rem;font-style:italic;font-weight:950;letter-spacing:.06em}.rp-highlight-end .primary{border-color:rgba(72,215,255,.34);background:linear-gradient(160deg,#07354a,#06131e);color:#63e0ff}.rp-highlight-end .primary:disabled{opacity:.45}.rp-highlight-full-game{width:100%;margin-top:8px!important;color:#9aa7b4!important;background:rgba(5,8,12,.74)!important}
       .rp-highlight-empty{position:absolute;z-index:8;left:50%;top:50%;width:min(88vw,470px);transform:translate(-50%,-50%);box-sizing:border-box;padding:22px;border:1px solid rgba(255,255,255,.13);border-radius:18px;background:rgba(4,8,13,.95);text-align:center}.rp-highlight-empty[hidden]{display:none!important}.rp-highlight-empty strong{display:block;font-family:var(--rp-display,Impact,Arial,sans-serif);font-size:1rem;font-style:italic}.rp-highlight-empty p{margin:8px 0 16px;color:#8fa0ad;font-size:.69rem;line-height:1.5}.rp-highlight-empty button{width:100%;border-color:rgba(72,215,255,.28);color:#64ddff}
       .rp-highlight-loading{position:absolute;z-index:8;left:50%;top:50%;transform:translate(-50%,-50%);color:#66dcff;font-family:var(--rp-display,Impact,Arial,sans-serif);font-size:.68rem;font-style:italic;font-weight:950;letter-spacing:.11em;white-space:nowrap}.rp-highlight-loading[hidden]{display:none!important}
+
+      .rp-highlight-picker{position:absolute;z-index:20;inset:0;display:grid;place-items:center;box-sizing:border-box;padding:calc(22px + env(safe-area-inset-top)) 18px calc(22px + env(safe-area-inset-bottom));background:radial-gradient(circle at 50% 18%,rgba(9,48,65,.34),transparent 34%),linear-gradient(180deg,#03070b 0%,#010204 100%)}
+      .rp-highlight-picker[hidden]{display:none!important}
+      .rp-highlight-picker-close{position:absolute;top:calc(12px + env(safe-area-inset-top));right:14px;width:40px;height:40px;border:1px solid rgba(255,255,255,.16);border-radius:50%;background:rgba(7,12,18,.82);color:#fff;font-size:1.3rem;line-height:1}
+      .rp-highlight-picker-card{width:min(92vw,480px);box-sizing:border-box;padding:25px 18px 18px;border:1px solid rgba(72,215,255,.22);border-radius:22px;background:linear-gradient(160deg,rgba(7,17,25,.98),rgba(2,6,10,.99));box-shadow:0 24px 80px rgba(0,0,0,.58)}
+      .rp-highlight-picker-eyebrow{display:block;color:#57dcff;font-family:var(--rp-display,Impact,Arial,sans-serif);font-size:.56rem;font-style:italic;font-weight:950;letter-spacing:.16em;text-align:center}
+      .rp-highlight-picker-player{display:block;margin-top:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font-family:var(--rp-display,Impact,Arial,sans-serif);font-size:1.18rem;font-style:italic;letter-spacing:.045em;text-align:center}
+      .rp-highlight-picker-game{display:block;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8292a1;font-size:.53rem;font-weight:850;letter-spacing:.08em;text-align:center}
+      .rp-highlight-picker-question{margin:22px 0 11px;color:#aebac4;font-size:.6rem;font-weight:900;letter-spacing:.09em;text-align:center}
+      .rp-highlight-picker-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .rp-highlight-picker-option{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:0 13px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:linear-gradient(160deg,#0a1017,#05080c);color:#e9f0f5;font-family:var(--rp-display,Impact,Arial,sans-serif);font-size:.62rem;font-style:italic;font-weight:950;letter-spacing:.055em;text-align:left;cursor:pointer}
+      .rp-highlight-picker-option.all{grid-column:1/-1;border-color:rgba(72,215,255,.34);background:linear-gradient(160deg,rgba(7,48,66,.94),rgba(4,17,25,.98));color:#68e2ff}
+      .rp-highlight-picker-option b{display:grid;place-items:center;min-width:26px;height:26px;padding:0 6px;box-sizing:border-box;border:1px solid rgba(255,255,255,.11);border-radius:999px;background:rgba(255,255,255,.04);color:#fff;font-family:var(--rp-body,Arial,sans-serif);font-size:.55rem;font-style:normal;letter-spacing:0}
+      .rp-highlight-picker-option:active{transform:scale(.985)}
+      .rp-highlight-viewer.choosing .rp-highlight-topbar,.rp-highlight-viewer.choosing .rp-highlight-event,.rp-highlight-viewer.choosing .rp-highlight-play,.rp-highlight-viewer.choosing .rp-highlight-end{opacity:0;pointer-events:none}
+      @media(max-width:390px){.rp-highlight-picker-card{padding-inline:14px}.rp-highlight-picker-option{min-height:49px;padding-inline:10px;font-size:.56rem}}
       @media(orientation:landscape){.rp-highlight-topbar{padding-top:max(8px,env(safe-area-inset-top));padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}.rp-highlight-event{left:max(18px,env(safe-area-inset-left));bottom:max(16px,env(safe-area-inset-bottom));max-width:44%}.rp-highlight-end{width:min(620px,70vw);bottom:max(14px,env(safe-area-inset-bottom))}.rp-highlight-identity strong{font-size:.94rem}}
       @media(max-width:620px) and (orientation:portrait){.rp-highlight-topbar{grid-template-columns:38px minmax(0,1fr) 40px}.rp-highlight-close{width:38px;height:38px}.rp-highlight-end{bottom:calc(18px + env(safe-area-inset-bottom))}}
       @media(prefers-reduced-motion:reduce){.rp-highlight-play{transition:none}}
@@ -366,7 +529,7 @@
         <div class="rp-highlight-media" data-rp-highlight-media></div>
         <div class="rp-highlight-topbar">
           <button type="button" class="rp-highlight-close" data-rp-highlight-close aria-label="Close highlights">×</button>
-          <div class="rp-highlight-identity"><small>MY HIGHLIGHTS</small><strong data-rp-highlight-player>REAL PLAY PLAYER</strong></div>
+          <div class="rp-highlight-identity"><small data-rp-highlight-mode>MY HIGHLIGHTS</small><strong data-rp-highlight-player>REAL PLAY PLAYER</strong></div>
           <span class="rp-highlight-count" data-rp-highlight-count>—</span>
         </div>
         <div class="rp-highlight-event"><strong data-rp-highlight-event>HIGHLIGHT</strong><span data-rp-highlight-game>REAL PLAY GAME</span></div>
@@ -385,11 +548,27 @@
           <button type="button" data-rp-highlight-full-game>WATCH FULL VIDEO</button>
         </div>
         <div class="rp-highlight-loading" data-rp-highlight-loading>BUILDING YOUR HIGHLIGHTS…</div>
+        <div class="rp-highlight-picker" data-rp-highlight-picker hidden>
+          <button type="button" class="rp-highlight-picker-close" data-rp-highlight-close aria-label="Close highlight choices">×</button>
+          <div class="rp-highlight-picker-card">
+            <small class="rp-highlight-picker-eyebrow" data-rp-highlight-picker-title>WATCH MY HIGHLIGHTS</small>
+            <strong class="rp-highlight-picker-player" data-rp-highlight-picker-player>REAL PLAY PLAYER</strong>
+            <span class="rp-highlight-picker-game" data-rp-highlight-picker-game>REAL PLAY GAME</span>
+            <p class="rp-highlight-picker-question">WHAT DO YOU WANT TO WATCH?</p>
+            <div class="rp-highlight-picker-options" data-rp-highlight-picker-options></div>
+          </div>
+        </div>
       </div>`;
     document.body.appendChild(viewer);
 
     viewer.addEventListener('click', (event) => {
       if (event.target.closest('[data-rp-highlight-close]')) return closeViewer();
+      const filterButton = event.target.closest('[data-rp-highlight-filter]');
+      if (filterButton) {
+        event.preventDefault();
+        startHighlightFilter(filterButton.dataset.rpHighlightFilter);
+        return;
+      }
       if (event.target.closest('[data-rp-highlight-toggle]')) {
         if (playing) pauseMedia(); else playMedia();
         return;
@@ -704,14 +883,16 @@
     const context = contextFromCard(card);
     const root = ensureViewer();
     root.classList.add('open');
+    root.classList.remove('choosing');
     root.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-profile-highlight-open');
-    tryFullscreen(root);
 
     const requestId = ++loadToken;
     destroyMedia();
     replayData = null;
+    allHighlights = [];
     highlights = [];
+    activeFilter = 'all';
     activeIndex = 0;
     activeContext = context;
 
@@ -729,24 +910,25 @@
       const data = await fetchReplay(sessionId);
       if (requestId !== loadToken) return;
       replayData = data;
-      highlights = collectHighlights(data, context);
+      allHighlights = collectHighlights(data, context);
 
       const identity = identityFrom(data, context);
       const player = root.querySelector('[data-rp-highlight-player]');
       const count = root.querySelector('[data-rp-highlight-count]');
+      const mode = root.querySelector('[data-rp-highlight-mode]');
       if (player) player.textContent = `${identity.playerNumber || '#--'} ${identity.name}`;
-      if (count) count.textContent = highlights.length ? `1 / ${highlights.length}` : '0 / 0';
+      if (count) count.textContent = allHighlights.length ? `1 / ${allHighlights.length}` : '0 / 0';
+      if (mode) mode.textContent = context?.isPublic ? 'HIGHLIGHTS' : 'MY HIGHLIGHTS';
 
-      if (!highlights.length) {
+      if (!allHighlights.length) {
         if (loading) loading.hidden = true;
         if (empty) empty.hidden = false;
         return;
       }
 
-      updateChrome();
-      const sourceType = data?.recording?.sourceType === 'youtube' ? 'youtube' : 'uploaded';
-      if (sourceType === 'youtube') await mountYouTube(data?.recording?.youtubeVideoId, requestId);
-      else mountDirect(data?.streamUrl ?? data?.recording?.streamUrl ?? data?.recording?.stream_url, requestId);
+      // Do not start a long mixed highlight reel automatically. Let the player
+      // choose All, Scores, Assists, Rebounds, Steals, or Blocks first.
+      showHighlightPicker();
     } catch (error) {
       console.warn('[Real Play] Highlight viewer could not open.', error);
       if (loading) loading.hidden = true;
@@ -764,12 +946,16 @@
     ++loadToken;
     destroyMedia();
     replayData = null;
+    allHighlights = [];
     highlights = [];
+    activeFilter = 'all';
     activeIndex = 0;
     activeSessionId = 0;
     activeContext = null;
     if (viewer) {
-      viewer.classList.remove('open');
+      viewer.classList.remove('open', 'choosing');
+      const picker = viewer.querySelector('[data-rp-highlight-picker]');
+      if (picker) picker.hidden = true;
       viewer.setAttribute('aria-hidden', 'true');
     }
     document.body.classList.remove('rp-profile-highlight-open');
