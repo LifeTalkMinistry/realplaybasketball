@@ -74,8 +74,15 @@
       }
       [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-spot-priority],
       [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-ranking-cancel],
+      [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-ranking-session-action],
       [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-snapshot-exclude]{
         display:none!important;
+      }
+      [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source .rp-ranking-access-summary-head span{
+        display:none!important;
+      }
+      [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source .rp-ranking-access-summary-head{
+        justify-content:flex-end!important;
       }
       [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-ranking-secured],
       [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-ranking-standby-roster],
@@ -85,8 +92,15 @@
       }
       .rp-snapshot-capture-mode [data-rp-spot-priority],
       .rp-snapshot-capture-mode [data-rp-ranking-cancel],
+      .rp-snapshot-capture-mode [data-rp-ranking-session-action],
       .rp-snapshot-capture-mode [data-rp-snapshot-exclude]{
         display:none!important;
+      }
+      .rp-snapshot-capture-mode .rp-ranking-access-summary-head span{
+        display:none!important;
+      }
+      .rp-snapshot-capture-mode .rp-ranking-access-summary-head{
+        justify-content:flex-end!important;
       }
       .rp-snapshot-capture-mode .rp-ranking-secured-name,
       .rp-snapshot-capture-mode .rp-ranking-secured-value,
@@ -190,6 +204,7 @@
     return !(
       node.matches?.('[data-rp-spot-priority]')
       || node.matches?.('[data-rp-ranking-cancel]')
+      || node.matches?.('[data-rp-ranking-session-action]')
       || node.matches?.('[data-rp-snapshot-exclude]')
       || node.matches?.('.rp-snapshot-toast')
       || node.matches?.('.rp-snapshot-preview')
@@ -248,8 +263,14 @@
         clone.style.setProperty('overflow', 'visible', 'important');
         clone.style.setProperty('margin', '0', 'important');
 
-        clone.querySelectorAll('[data-rp-spot-priority], [data-rp-ranking-cancel], [data-rp-snapshot-exclude]').forEach((node) => {
+        clone.querySelectorAll('[data-rp-spot-priority], [data-rp-ranking-cancel], [data-rp-ranking-session-action], [data-rp-snapshot-exclude]').forEach((node) => {
           node.style.setProperty('display', 'none', 'important');
+        });
+        clone.querySelectorAll('.rp-ranking-access-summary-head span').forEach((node) => {
+          node.style.setProperty('display', 'none', 'important');
+        });
+        clone.querySelectorAll('.rp-ranking-access-summary-head').forEach((node) => {
+          node.style.setProperty('justify-content', 'flex-end', 'important');
         });
 
         clone.querySelectorAll(
