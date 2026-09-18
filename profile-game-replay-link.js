@@ -244,14 +244,22 @@
     document.head.appendChild(script);
   }
 
+  function isTouchIOSBrowser() {
+    const ua = String(navigator.userAgent || '');
+    const platform = String(navigator.platform || '');
+    const touchPoints = Number(navigator.maxTouchPoints || 0);
+    return /iPhone|iPod|iPad/i.test(ua)
+      || ((/Macintosh/i.test(ua) || platform === 'MacIntel') && touchPoints > 1);
+  }
+
   function loadIPhoneHighlightOrientationLayer() {
-    if (!/iPhone|iPod/i.test(String(navigator.userAgent || ''))) return;
+    if (!isTouchIOSBrowser()) return;
     if (window.__realPlayIPhoneHighlightOrientationInstalled || document.querySelector('script[data-rp-iphone-highlight-orientation-loader]')) return;
     const script = document.createElement('script');
-    script.src = `profile-highlight-iphone-orientation.js?v=20260918-iphone-native-v1`;
+    script.src = `profile-highlight-iphone-orientation.js?v=20260918-ios-video-only-v3`;
     script.async = false;
     script.dataset.rpIphoneHighlightOrientationLoader = '1';
-    script.onerror = () => console.warn('[Real Play] iPhone highlight orientation layer could not load.');
+    script.onerror = () => console.warn('[Real Play] iOS highlight orientation layer could not load.');
     document.head.appendChild(script);
   }
 
@@ -263,8 +271,6 @@
       return;
     }
 
-    // The dedicated highlight layer owns this button. Returning here also keeps
-    // the existing whole-card replay handler from stealing the same tap.
     if (event.target.closest('[data-rp-profile-highlight-action]')) return;
 
     const card = event.target.closest('.rp-profile-history .rp-profile-game');
