@@ -95,6 +95,12 @@
       .rp-player-admin-form label{display:grid;gap:6px;color:#748397;font-size:.48rem;font-weight:900;letter-spacing:.08em}
       .rp-player-admin-form input{width:100%;min-height:44px;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:0 12px;outline:0;color:#eef6ff;background:#050910;font:700 16px var(--rp-body,Arial,sans-serif)}
       .rp-player-admin-form input:focus{border-color:rgba(71,215,255,.38)}
+      .rp-player-admin-account-suggestions{display:grid;gap:7px;max-height:230px;overflow:auto;padding-right:2px}
+      .rp-player-admin-account-empty{padding:11px 12px;border:1px dashed rgba(255,255,255,.08);border-radius:12px;color:#68798d;background:#050910;font-size:.54rem;font-weight:800;line-height:1.45;text-align:center}
+      .rp-player-admin-account-choice{width:100%;min-height:54px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px;border:1px solid rgba(255,255,255,.08);border-radius:12px;color:#dce9f4;background:#060b12;text-align:left;cursor:pointer}
+      .rp-player-admin-account-choice>span{min-width:0}.rp-player-admin-account-choice strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--rp-display,Arial,sans-serif);font-size:.67rem;font-style:italic;font-weight:950;text-transform:uppercase}.rp-player-admin-account-choice small{display:block;margin-top:4px;color:#6f8296;font-size:.47rem;font-weight:850;letter-spacing:.055em}.rp-player-admin-account-choice b{flex:none;color:#50dcff;font-size:.48rem;font-weight:950;letter-spacing:.08em}
+      .rp-player-admin-account-choice.selected{border-color:rgba(71,215,255,.46);background:rgba(16,105,140,.14);box-shadow:inset 0 0 0 1px rgba(71,215,255,.08)}
+      .rp-player-admin-account-choice.selected b{color:#62e4ff}
       .rp-player-admin-warning{margin:11px 0 0;padding:12px 13px;border:1px solid rgba(255,187,67,.13);border-radius:13px;color:#b9a789;background:rgba(100,61,8,.06);font-size:.6rem;line-height:1.5}
       .rp-player-admin-warning.info{border-color:rgba(72,215,255,.16);color:#9fc7d4;background:rgba(15,94,128,.07)}
       .rp-player-admin-warning.danger{border-color:rgba(255,73,94,.17);color:#c99aa1;background:rgba(115,12,25,.08)}
@@ -199,15 +205,93 @@
 
   function renderAttachAccount() {
     const body = sheet.querySelector('[data-rp-player-admin-body]');
+    const initialName = String(selectedPlayer?.playerName || '').trim();
     body.innerHTML = `
       ${identityMarkup(selectedPlayer)}
       <p class="rp-player-admin-status" data-rp-player-admin-status></p>
       <form class="rp-player-admin-form" data-admin-form="attach_account">
-        <p class="rp-player-admin-warning info">Attach this unclaimed basketball identity to an existing Real Play account. The player's verified games, stats, OVR, rank and history stay with this player. An empty account-created profile can be replaced automatically, but an account that already has official game history will be blocked.</p>
-        <label>REAL PLAY ACCOUNT EMAIL<input name="accountEmail" type="email" autocomplete="email" placeholder="player@email.com" required /></label>
-        <div class="rp-player-admin-form-actions"><button type="button" data-admin-back>BACK</button><button class="primary" type="submit">ATTACH PLAYER</button></div>
+        <p class="rp-player-admin-warning info">Search the player's Real Play account by name, then choose the correct match below. No email is required. The verified games, stats, OVR, rank and history stay with this basketball identity.</p>
+        <label>REAL PLAY PLAYER NAME<input name="accountName" type="search" autocomplete="off" placeholder="Type player name" value="${esc(initialName)}" required /></label>
+        <input name="accountUserId" type="hidden" value="" />
+        <div class="rp-player-admin-account-suggestions" data-admin-account-suggestions>
+          <div class="rp-player-admin-account-empty">SEARCHING FOR MATCHING REAL PLAY PLAYERS…</div>
+        </div>
+        <div class="rp-player-admin-form-actions"><button type="button" data-admin-back>BACK</button><button class="primary" type="submit" data-admin-attach-submit disabled>ATTACH PLAYER</button></div>
       </form>`;
-    body.querySelector('input')?.focus();
+
+    const form = body.querySelector('[data-admin-form="attach_account"]');
+    const input = form?.querySelector('[name="accountName"]');
+    const hidden = form?.querySelector('[name="accountUserId"]');
+    const suggestions = form?.querySelector('[data-admin-account-suggestions]');
+    const submit = form?.querySelector('[data-admin-attach-submit]');
+    let lookupTimer = null;
+    let lookupSequence = 0;
+
+    function clearSelection() {
+      if (hidden) hidden.value = '';
+      if (submit) submit.disabled = true;
+      suggestions?.querySelectorAll('.rp-player-admin-account-choice.selected').forEach((node) => node.classList.remove('selected'));
+    }
+
+    async function searchAccounts(rawQuery) {
+      const query = String(rawQuery || '').trim().replace(/\s+/g, ' ');
+      const sequence = ++lookupSequence;
+      clearSelection();
+
+      if (!suggestions) return;
+      if (query.length < 2) {
+        suggestions.innerHTML = '<div class="rp-player-admin-account-empty">TYPE AT LEAST 2 CHARACTERS TO FIND A PLAYER ACCOUNT.</div>';
+        return;
+      }
+
+      suggestions.innerHTML = '<div class="rp-player-admin-account-empty">SEARCHING FOR MATCHING REAL PLAY PLAYERS…</div>';
+
+      try {
+        const result = await adminCall('account_lookup', {
+          playerId: selectedPlayer.userId,
+          query,
+        });
+        if (sequence !== lookupSequence || !form?.isConnected) return;
+        const matches = Array.isArray(result?.matches) ? result.matches : [];
+        suggestions.innerHTML = matches.length
+          ? matches.map((match) => {
+            const id = Number(match.accountUserId);
+            const number = match.playerNumber === null || match.playerNumber === undefined
+              ? 'REAL PLAY ACCOUNT'
+              : `#${Number(match.playerNumber)} · REAL PLAY ACCOUNT`;
+            return `<button type="button" class="rp-player-admin-account-choice" data-admin-account-choice="${id}">
+              <span><strong>${esc(match.playerName || 'REAL PLAY PLAYER')}</strong><small>${esc(number)}</small></span>
+              <b>SELECT</b>
+            </button>`;
+          }).join('')
+          : '<div class="rp-player-admin-account-empty">NO ELIGIBLE REAL PLAY ACCOUNT MATCHES FOUND FOR THAT NAME.</div>';
+      } catch (error) {
+        if (sequence !== lookupSequence || !form?.isConnected) return;
+        suggestions.innerHTML = `<div class="rp-player-admin-account-empty">${esc(error.message || 'Could not search player accounts.')}</div>`;
+      }
+    }
+
+    input?.addEventListener('input', () => {
+      clearSelection();
+      if (lookupTimer) clearTimeout(lookupTimer);
+      lookupTimer = setTimeout(() => searchAccounts(input.value), 180);
+    });
+
+    suggestions?.addEventListener('click', (event) => {
+      const choice = event.target.closest('[data-admin-account-choice]');
+      if (!choice) return;
+      const accountUserId = Number(choice.dataset.adminAccountChoice);
+      if (!Number.isSafeInteger(accountUserId) || accountUserId <= 0) return;
+      clearSelection();
+      choice.classList.add('selected');
+      if (hidden) hidden.value = String(accountUserId);
+      if (submit) submit.disabled = false;
+      const name = choice.querySelector('strong')?.textContent?.trim() || 'selected player';
+      setSheetStatus(`SELECTED · ${name}`, 'success');
+    });
+
+    input?.focus();
+    searchAccounts(initialName);
   }
 
   function renderChangeJersey() {
@@ -301,7 +385,12 @@
       const payload = { playerId: selectedPlayer.userId };
       const data = new FormData(form);
       if (action === 'edit_name') payload.playerName = String(data.get('playerName') || '').trim();
-      if (action === 'attach_account') payload.accountEmail = String(data.get('accountEmail') || '').trim().toLowerCase();
+      if (action === 'attach_account') {
+        payload.accountUserId = Number(data.get('accountUserId'));
+        if (!Number.isSafeInteger(payload.accountUserId) || payload.accountUserId <= 0) {
+          throw new Error('Select the matching Real Play player account first.');
+        }
+      }
       if (action === 'change_jersey') payload.playerNumber = Number(data.get('playerNumber'));
       if (action === 'reset_competitive' || action === 'delete_account') {
         payload.confirmation = String(data.get('confirmation') || '').trim();
