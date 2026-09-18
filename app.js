@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260918-snapshot-roster-headers-v97';
+  const version = '20260918-profile-art-studio-v99';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
