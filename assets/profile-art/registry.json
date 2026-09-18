@@ -1,4 +1,13 @@
 {
   "version": 1,
-  "players": []
+  "players": [
+    {
+      "playerId": 1,
+      "src": "assets/profile-art/player-maxa-emorej-23.png",
+      "positionX": "72%",
+      "positionY": "44%",
+      "scale": 1.06,
+      "opacity": 1
+    }
+  ]
 }
