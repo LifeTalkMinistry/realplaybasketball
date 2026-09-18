@@ -182,9 +182,9 @@
           if (!clone) return;
 
           clone.classList.add('rp-snapshot-exact-source');
-          clone.style.setProperty('width', '${width}px', 'important');
-          clone.style.setProperty('min-width', '${width}px', 'important');
-          clone.style.setProperty('max-width', '${width}px', 'important');
+          clone.style.setProperty('width', String(width) + 'px', 'important');
+          clone.style.setProperty('min-width', String(width) + 'px', 'important');
+          clone.style.setProperty('max-width', String(width) + 'px', 'important');
           clone.style.setProperty('height', 'auto', 'important');
           clone.style.setProperty('max-height', 'none', 'important');
           clone.style.setProperty('overflow', 'visible', 'important');
