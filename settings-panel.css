@@ -40,9 +40,33 @@ body.rp-settings-open{overflow:hidden}
 }
 .rp-settings-head small{display:block;color:#46b6ff;font-family:var(--rp-display,Impact,sans-serif);font-size:.72rem;font-weight:900;letter-spacing:.13em}
 .rp-settings-head h2{margin:3px 0 0;color:#fff;font-family:var(--rp-display,Impact,sans-serif);font-size:2rem;font-style:italic;font-weight:900;line-height:.9;letter-spacing:-.025em}
-.rp-settings-identity{padding:20px 2px 18px;display:grid;gap:5px}
-.rp-settings-identity strong{font-family:var(--rp-display,Impact,sans-serif);font-size:1.28rem;font-style:italic;font-weight:900;letter-spacing:.01em}
-.rp-settings-identity span{color:#8994a3;font-size:.78rem;overflow-wrap:anywhere}
+.rp-settings-identity{padding:20px 2px 18px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px}
+.rp-settings-identity-copy{min-width:0;display:grid;gap:5px}
+.rp-settings-identity-copy>strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--rp-display,Impact,sans-serif);font-size:1.28rem;font-style:italic;font-weight:900;letter-spacing:.01em}
+.rp-settings-identity-copy>span{color:#8994a3;font-size:.78rem;overflow-wrap:anywhere}
+.rp-settings-player-id{
+  min-width:104px;
+  min-height:62px;
+  padding:9px 11px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  grid-template-areas:"label label" "value copy";
+  align-items:end;
+  gap:3px 9px;
+  border:1px solid rgba(70,182,255,.22);
+  border-radius:13px;
+  color:#eff9ff;
+  background:linear-gradient(145deg,rgba(15,54,84,.34),rgba(5,9,14,.92));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+  text-align:left;
+  cursor:pointer;
+}
+.rp-settings-player-id>small{grid-area:label;color:#607b91;font-size:.46rem;font-weight:950;letter-spacing:.12em}
+.rp-settings-player-id>strong{grid-area:value;color:#48d7ff;font-family:var(--rp-display,Impact,sans-serif);font-size:1.18rem;font-style:italic;font-weight:950;line-height:1}
+.rp-settings-player-id>span{grid-area:copy;align-self:center;color:#74899b;font-size:.42rem;font-weight:950;letter-spacing:.08em}
+.rp-settings-player-id:not(:disabled):hover,.rp-settings-player-id:not(:disabled):focus-visible{border-color:rgba(72,215,255,.5);outline:none;background:linear-gradient(145deg,rgba(17,72,108,.42),rgba(5,10,16,.96))}
+.rp-settings-player-id:not(:disabled):active{transform:scale(.985)}
+.rp-settings-player-id:disabled{cursor:default;opacity:.58}
 .rp-settings-list{display:grid;gap:8px}
 .rp-settings-row{
   width:100%;
@@ -87,4 +111,10 @@ body.rp-settings-open{overflow:hidden}
 .rp-settings-rule strong{color:#fff;font-family:var(--rp-display,Impact,sans-serif);font-size:.88rem;font-style:italic;letter-spacing:.035em}
 .rp-settings-rule span{color:#8d98a6;font-size:.78rem;line-height:1.45}
 
+@media(max-width:390px){
+  .rp-settings-identity{gap:9px}
+  .rp-settings-player-id{min-width:92px;padding-inline:9px}
+  .rp-settings-identity-copy>strong{font-size:1.12rem}
+  .rp-settings-identity-copy>span{font-size:.7rem}
+}
 @media(min-width:700px){.rp-settings-overlay{align-items:center}}
