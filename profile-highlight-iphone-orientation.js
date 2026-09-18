@@ -14,10 +14,19 @@
   let nativeFullscreen = false;
   let handoffTime = 0;
   let handoffWasPlaying = false;
-  let landscapeDismissed = false;
   let endVisible = false;
   let endingHighlight = false;
   let iframeFullscreenPending = false;
+
+  function loadAutoplayController() {
+    if (window.__realPlayHighlightAutoplayInstalled || document.querySelector('script[data-rp-highlight-autoplay-loader]')) return;
+    const script = document.createElement('script');
+    script.src = 'profile-highlight-autoplay.js?v=20260918-autoplay-v1';
+    script.async = false;
+    script.dataset.rpHighlightAutoplayLoader = '1';
+    script.onerror = () => console.warn('[Real Play] Highlight autoplay controller could not load.');
+    document.head.appendChild(script);
+  }
 
   function viewer() {
     return document.querySelector('.rp-highlight-viewer.open');
@@ -67,9 +76,7 @@
   function requestPortraitWhenPossible() {
     try {
       const lock = window.screen?.orientation?.lock;
-      if (typeof lock === 'function') {
-        Promise.resolve(lock.call(window.screen.orientation, 'portrait')).catch(() => {});
-      }
+      if (typeof lock === 'function') Promise.resolve(lock.call(window.screen.orientation, 'portrait')).catch(() => {});
     } catch (_) {}
   }
 
@@ -77,9 +84,7 @@
     try {
       if (document.fullscreenElement && document.exitFullscreen) {
         Promise.resolve(document.exitFullscreen()).catch(() => {});
-        return;
-      }
-      if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+      } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
         document.webkitExitFullscreen();
       }
     } catch (_) {}
@@ -88,9 +93,7 @@
   function exitNativeVideo(video = activeVideo) {
     if (!video) return;
     try {
-      if (video.webkitDisplayingFullscreen && typeof video.webkitExitFullscreen === 'function') {
-        video.webkitExitFullscreen();
-      }
+      if (video.webkitDisplayingFullscreen && typeof video.webkitExitFullscreen === 'function') video.webkitExitFullscreen();
     } catch (_) {}
   }
 
@@ -114,8 +117,6 @@
   function finishHighlightReturn(root) {
     if (!root) return;
     endingHighlight = true;
-    landscapeDismissed = true;
-
     const video = currentVideo(root) || activeVideo;
     leaveVideoOnlyMode(root, video);
     requestPortraitWhenPossible();
@@ -131,8 +132,6 @@
       current.classList.add('rp-ios-highlight-return');
       document.documentElement.classList.remove('rp-ios-highlight-video-only');
       document.body?.classList.remove('rp-ios-highlight-video-only');
-      const end = current.querySelector('[data-rp-highlight-end]');
-      if (end && !end.hidden) end.scrollIntoView?.({ block: 'center', inline: 'center' });
     }, 60);
   }
 
@@ -144,7 +143,6 @@
 
     video.addEventListener('webkitbeginfullscreen', () => {
       nativeFullscreen = true;
-      landscapeDismissed = false;
       const expected = Math.max(0, Number(handoffTime) || 0);
       window.setTimeout(() => {
         if (activeVideo !== video) return;
@@ -157,17 +155,7 @@
       }, 0);
     });
 
-    video.addEventListener('webkitendfullscreen', () => {
-      nativeFullscreen = false;
-      if (endingHighlight) return;
-      if (isLandscape()) landscapeDismissed = true;
-    });
-
-    video.addEventListener('play', () => {
-      if (isLandscape() && !endingHighlight && !landscapeDismissed) {
-        window.setTimeout(syncOrientation, 0);
-      }
-    });
+    video.addEventListener('webkitendfullscreen', () => { nativeFullscreen = false; });
   }
 
   function enterNativeVideo(video, root) {
@@ -188,48 +176,28 @@
         return true;
       }
     } catch (_) {}
-
-    try {
-      if (typeof video.requestFullscreen === 'function') {
-        Promise.resolve(video.requestFullscreen()).catch(() => {});
-        return true;
-      }
-    } catch (_) {}
-
-    try {
-      if (handoffWasPlaying && video.paused) video.play().catch(() => {});
-    } catch (_) {}
     return false;
   }
 
   function enterYouTubeFullscreen(frame, root) {
     if (!frame || !root || endingHighlight || highlightComplete(root) || !isLandscape()) return false;
-
-    // The YouTube iframe hides its underlying HTML5 video from the parent page,
-    // so iOS will not let Real Play directly call webkitEnterFullscreen on that
-    // hidden video. The guaranteed fallback is a true video-only landscape view:
-    // no Real Play chrome, same iframe instance, same current timeline.
     enterVideoOnlyMode(root, null);
     frame.setAttribute('allowfullscreen', '');
-    const previousAllow = String(frame.getAttribute('allow') || '');
-    if (!/fullscreen/i.test(previousAllow)) {
-      frame.setAttribute('allow', `${previousAllow}${previousAllow ? '; ' : ''}autoplay; fullscreen; picture-in-picture`);
+    const allow = String(frame.getAttribute('allow') || '');
+    if (!/autoplay/i.test(allow) || !/fullscreen/i.test(allow)) {
+      frame.setAttribute('allow', `${allow}${allow ? '; ' : ''}autoplay; fullscreen; picture-in-picture`);
     }
 
     if (document.fullscreenElement || document.webkitFullscreenElement || iframeFullscreenPending) return true;
     iframeFullscreenPending = true;
     try {
       const request = frame.requestFullscreen?.() || frame.webkitRequestFullscreen?.();
-      if (request?.then) {
-        request.catch(() => {}).finally(() => { iframeFullscreenPending = false; });
-      } else {
-        window.setTimeout(() => { iframeFullscreenPending = false; }, 350);
-      }
-      return true;
+      if (request?.then) request.catch(() => {}).finally(() => { iframeFullscreenPending = false; });
+      else window.setTimeout(() => { iframeFullscreenPending = false; }, 350);
     } catch (_) {
       iframeFullscreenPending = false;
-      return false;
     }
+    return true;
   }
 
   function syncOrientation() {
@@ -245,16 +213,13 @@
       finishHighlightReturn(root);
       return;
     }
-
     if (!complete && endVisible) {
       endVisible = false;
       endingHighlight = false;
-      landscapeDismissed = false;
       root.classList.remove('rp-ios-highlight-return');
     }
 
     if (!isLandscape()) {
-      landscapeDismissed = false;
       if (!complete) endingHighlight = false;
       leaveVideoOnlyMode(root, video);
       exitNativeVideo(video);
@@ -265,21 +230,9 @@
 
     if (complete) return;
     root.classList.add('rp-ios-highlight-landscape');
-
-    if (video) {
-      enterNativeVideo(video, root);
-      return;
-    }
-
+    if (video) return void enterNativeVideo(video, root);
     const frame = currentYouTubeFrame(root);
-    if (frame) {
-      enterYouTubeFullscreen(frame, root);
-      return;
-    }
-
-    // If Safari changes the YouTube iframe URL shape or mounts media a frame
-    // later, still remove the app shell immediately on rotation. The observer
-    // will sync again as soon as the media element appears.
+    if (frame) return void enterYouTubeFullscreen(frame, root);
     enterVideoOnlyMode(root, null);
   }
 
@@ -297,37 +250,10 @@
     style.dataset.rpIosHighlightOrientationStyle = '1';
     style.textContent = `
       html.rp-ios-highlight-video-only,
-      html.rp-ios-highlight-video-only body{
-        margin:0!important;
-        padding:0!important;
-        overflow:hidden!important;
-        background:#000!important;
-      }
-      html.rp-ios-highlight-video-only body>*:not(.rp-highlight-viewer){
-        visibility:hidden!important;
-        pointer-events:none!important;
-      }
-      .rp-highlight-viewer.rp-ios-video-only{
-        display:block!important;
-        position:fixed!important;
-        inset:0!important;
-        width:100vw!important;
-        height:100dvh!important;
-        margin:0!important;
-        padding:0!important;
-        background:#000!important;
-        z-index:2147483646!important;
-      }
-      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-stage{
-        position:fixed!important;
-        inset:0!important;
-        width:100vw!important;
-        height:100dvh!important;
-        margin:0!important;
-        padding:0!important;
-        overflow:hidden!important;
-        background:#000!important;
-      }
+      html.rp-ios-highlight-video-only body{margin:0!important;padding:0!important;overflow:hidden!important;background:#000!important}
+      html.rp-ios-highlight-video-only body>*:not(.rp-highlight-viewer){visibility:hidden!important;pointer-events:none!important}
+      .rp-highlight-viewer.rp-ios-video-only{display:block!important;position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;margin:0!important;padding:0!important;background:#000!important;z-index:2147483646!important}
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-stage{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#000!important}
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-stage::after,
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-topbar,
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-event,
@@ -335,47 +261,14 @@
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-end,
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-empty,
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-loading,
-      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-picker{
-        display:none!important;
-        visibility:hidden!important;
-        pointer-events:none!important;
-      }
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-picker{display:none!important;visibility:hidden!important;pointer-events:none!important}
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media,
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media>div,
       .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media video,
-      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media iframe{
-        display:block!important;
-        visibility:visible!important;
-        position:fixed!important;
-        inset:0!important;
-        width:100vw!important;
-        height:100dvh!important;
-        max-width:none!important;
-        max-height:none!important;
-        margin:0!important;
-        padding:0!important;
-        border:0!important;
-        background:#000!important;
-        transform:none!important;
-      }
-      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media video{
-        object-fit:contain!important;
-      }
-      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media iframe{
-        pointer-events:auto!important;
-      }
-      @media (orientation:landscape){
-        html.rp-ios-highlight-video-only .rp-highlight-viewer.open:not(.choosing){
-          background:#000!important;
-        }
-        .rp-highlight-viewer.rp-ios-highlight-return .rp-highlight-end{
-          left:50%!important;
-          top:50%!important;
-          bottom:auto!important;
-          width:min(430px,78vw)!important;
-          transform:translate(-50%,-50%)!important;
-        }
-      }
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media iframe{display:block!important;visibility:visible!important;position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;background:#000!important;transform:none!important}
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media video{object-fit:contain!important}
+      .rp-highlight-viewer.rp-ios-video-only .rp-highlight-media iframe{pointer-events:auto!important}
+      @media(orientation:landscape){.rp-highlight-viewer.rp-ios-highlight-return .rp-highlight-end{left:50%!important;top:50%!important;bottom:auto!important;width:min(430px,78vw)!important;transform:translate(-50%,-50%)!important}}
     `;
     document.head.appendChild(style);
   }
@@ -384,14 +277,13 @@
 
   function start() {
     installStyle();
-    if (document.body) {
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['class', 'hidden'],
-      });
-    }
+    loadAutoplayController();
+    if (document.body) observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'hidden'],
+    });
     scheduleOrientationSync();
   }
 
