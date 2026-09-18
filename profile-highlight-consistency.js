@@ -4,7 +4,10 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
-  const VISITOR_KEY = 'real_play_visitor_mode';
+
+  let ownGamesCache = null;
+  let ownGamesCacheAt = 0;
+  let ownGamesLoading = false;
 
   const positiveId = (value) => {
     const id = Number(value);
@@ -77,9 +80,6 @@
           const target = Math.max(0, Number(seconds) || 0);
           const generation = ++seekGeneration;
           setSeekReady(false, target);
-
-          // Never allow the full video to visibly run from 0:00 while the
-          // official highlight timestamp is still being applied.
           try { originalPauseVideo?.(); } catch (_) {}
 
           const result = originalSeekTo(target, allowSeekAhead);
@@ -97,9 +97,6 @@
               return;
             }
 
-            // A timeout is only a fallback for YouTube reporting lag. Re-seek
-            // once before releasing playback so every profile/view path uses
-            // the same authoritative timestamp.
             if (!closeEnough) {
               try { originalSeekTo(target, true); } catch (_) {}
             }
@@ -177,6 +174,40 @@
     return positiveId(match?.[1]);
   }
 
+  function visibleGameLabel(card) {
+    return normalize(card?.querySelector('.rp-profile-game-main strong')?.textContent);
+  }
+
+  function gameLabelCandidates(game) {
+    const labels = new Set();
+    const add = (value) => {
+      const clean = normalize(value);
+      if (clean) labels.add(clean);
+    };
+
+    add(game?.displayLabel);
+    add(game?.officialGameId);
+    add(game?.official_game_id);
+    add(game?.label);
+    add(game?.title);
+
+    const rankNo = openRankNumber(game);
+    if (rankNo) {
+      add(`OPEN RANK #${String(rankNo).padStart(3, '0')}`);
+      add(`OPEN RANKING SESSION #${String(rankNo).padStart(3, '0')}`);
+      add(`OPEN RANK #${rankNo}`);
+      add(`OPEN RANKING SESSION #${rankNo}`);
+    }
+
+    const id = sessionId(game);
+    if (id) {
+      add(`RANKING GAME #${String(id).padStart(3, '0')}`);
+      add(`OFFICIAL GAME #${id}`);
+    }
+
+    return labels;
+  }
+
   function attachSessions(profile, games) {
     if (!profile || !Array.isArray(games) || !games.length) return;
     const cards = [...profile.querySelectorAll('.rp-profile-history > .rp-profile-game')];
@@ -184,8 +215,11 @@
       if (positiveId(card.dataset.rpProfileGameSession)) return;
 
       const rankNo = visibleOpenRankNumber(card);
+      const label = visibleGameLabel(card);
       let game = rankNo ? games.find((row) => openRankNumber(row) === rankNo) : null;
+      if (!game && label) game = games.find((row) => gameLabelCandidates(row).has(label)) || null;
       if (!game) game = games[index] || null;
+
       const id = sessionId(game);
       if (id) card.dataset.rpProfileGameSession = String(id);
     });
@@ -220,13 +254,26 @@
     }, 0);
   }
 
+  function recentGamesFrom(data) {
+    const career = data?.career || data?.careerSummary || data?.career_summary || data?.profile?.career || {};
+    const games = data?.recentGames || data?.recent_games || career?.recentGames || career?.recent_games || data?.games;
+    return Array.isArray(games) ? games : [];
+  }
+
   async function enrichOwnProfile() {
     const profile = document.querySelector('[data-rp-profile].open, .rp-profile[data-rp-profile="true"].open');
-    if (!profile || profile.dataset.rpHighlightSessionsEnriched === '1') return;
-    profile.dataset.rpHighlightSessionsEnriched = '1';
+    if (!profile) return;
+
+    if (ownGamesCache && Date.now() - ownGamesCacheAt < 5000) {
+      attachSessions(profile, ownGamesCache);
+      return;
+    }
+    if (ownGamesLoading) return;
 
     const auth = localStorage.getItem(TOKEN_KEY) || '';
     if (!auth) return;
+
+    ownGamesLoading = true;
     try {
       const response = await fetch(`${API_BASE_URL}/api/real-play/me`, {
         headers: { Accept: 'application/json', Authorization: `Bearer ${auth}` },
@@ -234,19 +281,26 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) return;
-      const career = data?.career || data?.careerSummary || data?.career_summary || {};
-      const games = data?.recentGames || data?.recent_games || career?.recentGames || career?.recent_games || data?.games;
-      attachSessions(profile, Array.isArray(games) ? games : []);
-    } catch (_) {}
+      ownGamesCache = recentGamesFrom(data);
+      ownGamesCacheAt = Date.now();
+      attachSessions(profile, ownGamesCache);
+    } catch (_) {
+    } finally {
+      ownGamesLoading = false;
+    }
   }
 
   window.addEventListener('realplay:public-profile-loaded', (event) => {
     const player = event?.detail?.player || null;
     const playerId = positiveId(event?.detail?.playerId ?? player?.playerId ?? player?.userId);
     const profile = publicProfileById(playerId);
-    const career = player?.career || player?.careerSummary || player?.career_summary || {};
-    const games = player?.recentGames || player?.recent_games || career?.recentGames || career?.recent_games || player?.games;
-    if (profile) attachSessions(profile, Array.isArray(games) ? games : []);
+    if (profile) attachSessions(profile, recentGamesFrom(player));
+  });
+
+  window.addEventListener('storage', (event) => {
+    if (event.key !== TOKEN_KEY) return;
+    ownGamesCache = null;
+    ownGamesCacheAt = 0;
   });
 
   document.addEventListener('click', (event) => {
