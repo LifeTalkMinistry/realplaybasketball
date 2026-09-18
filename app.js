@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260918-safe-overflow-v96';
+  const version = '20260918-snapshot-roster-headers-v97';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
