@@ -3,6 +3,7 @@
   window.__realPlaySettingsPanelInstalled = true;
 
   const TOKEN_KEY = 'real_play_access_token';
+  const API_BASE_URL = 'https://api.clarapmc.com';
 
   const menu = document.querySelector('[data-rp-main-menu]');
   const settingsChoice = document.querySelector('[data-rp-main-action="settings"]');
@@ -27,8 +28,15 @@
       </header>
 
       <div class="rp-settings-identity">
-        <strong data-rp-settings-name>REAL PLAY PLAYER</strong>
-        <span data-rp-settings-email></span>
+        <div class="rp-settings-identity-copy">
+          <strong data-rp-settings-name>REAL PLAY PLAYER</strong>
+          <span data-rp-settings-email></span>
+        </div>
+        <button class="rp-settings-player-id" type="button" data-rp-settings-player-id aria-label="Copy Real Play player ID" disabled>
+          <small>PLAYER ID</small>
+          <strong data-rp-settings-player-id-value>—</strong>
+          <span data-rp-settings-player-id-copy>COPY</span>
+        </button>
       </div>
 
       <div class="rp-settings-list">
@@ -67,6 +75,72 @@
   const communityPanel = panel.querySelector('[data-rp-settings-community]');
   const nameNode = panel.querySelector('[data-rp-settings-name]');
   const emailNode = panel.querySelector('[data-rp-settings-email]');
+  const playerIdButton = panel.querySelector('[data-rp-settings-player-id]');
+  const playerIdNode = panel.querySelector('[data-rp-settings-player-id-value]');
+  const playerIdCopyNode = panel.querySelector('[data-rp-settings-player-id-copy]');
+  let currentPlayerId = null;
+  let identityRequest = 0;
+  let copyResetTimer = 0;
+
+  function positiveInteger(value) {
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  function playerIdFromProfileData(data) {
+    const candidates = [
+      data?.playerId,
+      data?.userId,
+      data?.profile?.playerId,
+      data?.profile?.player_id,
+      data?.profile?.userId,
+      data?.profile?.user_id,
+      data?.profile?.id,
+    ];
+    for (const value of candidates) {
+      const id = positiveInteger(value);
+      if (id !== null) return id;
+    }
+    return null;
+  }
+
+  function setPlayerId(value) {
+    const id = positiveInteger(value);
+    currentPlayerId = id;
+    if (playerIdNode) playerIdNode.textContent = id === null ? '—' : String(id);
+    if (playerIdButton) {
+      playerIdButton.disabled = id === null;
+      playerIdButton.setAttribute('aria-label', id === null
+        ? 'Real Play player ID unavailable'
+        : `Copy Real Play player ID ${id}`);
+    }
+    if (playerIdCopyNode) playerIdCopyNode.textContent = id === null ? 'ID' : 'COPY';
+  }
+
+  async function refreshPlayerId() {
+    const requestId = ++identityRequest;
+    const existingId = positiveInteger(
+      document.querySelector('[data-rp-profile-player-id]')?.dataset?.rpProfilePlayerId
+    );
+    if (existingId !== null) setPlayerId(existingId);
+    else setPlayerId(null);
+
+    const accessToken = window.localStorage.getItem(TOKEN_KEY) || '';
+    if (!accessToken) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/real-play/me`, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${accessToken}` },
+        cache: 'no-store',
+      });
+      if (!response.ok || requestId !== identityRequest) return;
+      const data = await response.json().catch(() => ({}));
+      if (requestId !== identityRequest) return;
+      setPlayerId(playerIdFromProfileData(data));
+    } catch (_error) {
+      // Settings stays usable even when the identity request is temporarily unavailable.
+    }
+  }
 
   function syncIdentity() {
     const lobby = document.querySelector('[data-rp-lobby]');
@@ -82,6 +156,39 @@
       emailNode.textContent = email;
       emailNode.hidden = !email;
     }
+    refreshPlayerId();
+  }
+
+  async function copyPlayerId() {
+    if (currentPlayerId === null) return;
+    const text = String(currentPlayerId);
+    let copied = false;
+
+    try {
+      await navigator.clipboard?.writeText?.(text);
+      copied = true;
+    } catch (_error) {}
+
+    if (!copied) {
+      try {
+        const input = document.createElement('textarea');
+        input.value = text;
+        input.setAttribute('readonly', '');
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        input.select();
+        copied = document.execCommand('copy');
+        input.remove();
+      } catch (_error) {}
+    }
+
+    if (!playerIdCopyNode) return;
+    if (copyResetTimer) window.clearTimeout(copyResetTimer);
+    playerIdCopyNode.textContent = copied ? 'COPIED' : 'ID';
+    copyResetTimer = window.setTimeout(() => {
+      if (playerIdCopyNode) playerIdCopyNode.textContent = currentPlayerId === null ? 'ID' : 'COPY';
+    }, 1400);
   }
 
   function showMainSettings() {
@@ -174,6 +281,7 @@
     }
   }, true);
 
+  playerIdButton?.addEventListener('click', copyPlayerId);
   panel.querySelector('[data-rp-settings-back]')?.addEventListener('click', closeSettings);
   panel.querySelector('[data-rp-community-back]')?.addEventListener('click', showMainSettings);
 
