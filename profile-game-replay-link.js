@@ -247,7 +247,7 @@
   function loadHighlightAutoplayLayer() {
     if (window.__realPlayHighlightAutoplayInstalled || document.querySelector('script[data-rp-highlight-autoplay-loader]')) return;
     const script = document.createElement('script');
-    script.src = `profile-highlight-autoplay.js?v=20260918-mobile-autoplay-v2`;
+    script.src = `profile-highlight-autoplay.js?v=20260918-highlight-seek-autoplay-v3`;
     script.async = false;
     script.dataset.rpHighlightAutoplayLoader = '1';
     script.onerror = () => console.warn('[Real Play] Highlight autoplay layer could not load.');
