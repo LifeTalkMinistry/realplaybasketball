@@ -103,3 +103,24 @@
   width:100%!important;
   text-align:center!important;
 }
+
+/* Session Guide overflow explanation. Keep this presentation-only so the working
+ * reservation/priority logic remains untouched. */
+.rp-session-guide-panel[data-rp-session-guide-panel="priority"] .rp-spot-priority-list::after{
+  content:"5  OVERFLOW · LOWEST PRIORITY\A When the 16-player pool is already full, additional standby players move to Overflow. They stay in line and automatically return to normal Standby when a spot opens.";
+  display:block;
+  box-sizing:border-box;
+  padding:11px 12px;
+  border:1px solid rgba(184,92,108,.17);
+  border-radius:13px;
+  background:linear-gradient(180deg,rgba(24,14,18,.72),rgba(8,12,16,.80));
+  color:#8192a5;
+  font:750 .61rem/1.42 Arial,sans-serif;
+  letter-spacing:.01em;
+  white-space:pre-line;
+}
+.rp-session-guide-panel[data-rp-session-guide-panel="priority"] .rp-spot-priority-chain::after{
+  content:" → OVERFLOW";
+  color:#c27a86;
+  font-weight:950;
+}
