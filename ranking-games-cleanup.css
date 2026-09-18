@@ -90,3 +90,16 @@
   .rp-ranking-session .rp-ranking-access-breakdown span{font-size:.34rem!important}
   .rp-ranking-session .rp-ranking-access-breakdown strong{font-size:.74rem!important}
 }
+
+/* Snapshot-only cleanup: once SECURED SPOTS is removed, center the live total
+ * so the share image reads as one balanced headline above the access breakdown.
+ */
+.rp-snapshot-capture-mode .rp-ranking-access-summary-head,
+.rp-snapshot-exact-source .rp-ranking-access-summary-head{
+  justify-content:center!important;
+}
+.rp-snapshot-capture-mode .rp-ranking-access-summary-head strong,
+.rp-snapshot-exact-source .rp-ranking-access-summary-head strong{
+  width:100%!important;
+  text-align:center!important;
+}
