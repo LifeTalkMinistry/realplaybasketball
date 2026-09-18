@@ -124,6 +124,10 @@
   Standard 4:5 artwork is intentionally rendered by WIDTH, not contained inside
   a small box. The tall source is allowed to crop naturally against the hero so
   the player dominates the right side like card artwork instead of a thumbnail.
+
+  The mask is deliberately generous. The hard edge of the image must never be
+  visible; the image should dissolve into the card before it reaches the left
+  boundary of the portrait layer.
 */
 .rp-premium-profile-art{
   --rp-premium-art-x:50%;
@@ -141,8 +145,8 @@
   opacity:0;
   transform:translateZ(0);
   transition:opacity .28s ease;
-  -webkit-mask-image:radial-gradient(ellipse 102% 106% at 70% 43%,#000 0%,#000 59%,rgba(0,0,0,.92) 69%,rgba(0,0,0,.57) 80%,rgba(0,0,0,.18) 90%,transparent 100%);
-  mask-image:radial-gradient(ellipse 102% 106% at 70% 43%,#000 0%,#000 59%,rgba(0,0,0,.92) 69%,rgba(0,0,0,.57) 80%,rgba(0,0,0,.18) 90%,transparent 100%);
+  -webkit-mask-image:radial-gradient(ellipse 112% 112% at 72% 43%,#000 0%,#000 54%,rgba(0,0,0,.97) 64%,rgba(0,0,0,.82) 74%,rgba(0,0,0,.54) 84%,rgba(0,0,0,.23) 93%,transparent 100%);
+  mask-image:radial-gradient(ellipse 112% 112% at 72% 43%,#000 0%,#000 54%,rgba(0,0,0,.97) 64%,rgba(0,0,0,.82) 74%,rgba(0,0,0,.54) 84%,rgba(0,0,0,.23) 93%,transparent 100%);
 }
 
 .rp-premium-profile-art.is-ready{
@@ -160,6 +164,34 @@
     radial-gradient(circle at 86% 48%,rgba(255,44,66,.15),transparent 43%);
   filter:blur(20px);
   pointer-events:none;
+}
+
+/*
+  Dedicated left-side feather. This is intentionally above the portrait image
+  so a source asset that reaches its own transparent-canvas edge cannot reveal
+  a vertical seam inside the card. The extra blur makes the transition feel
+  atmospheric instead of like a rectangular image boundary.
+*/
+.rp-premium-profile-art::after{
+  content:'';
+  position:absolute;
+  z-index:2;
+  left:-13%;
+  top:-7%;
+  bottom:-7%;
+  width:58%;
+  pointer-events:none;
+  background:linear-gradient(90deg,
+    rgba(3,7,13,1) 0%,
+    rgba(3,7,13,.98) 13%,
+    rgba(3,7,13,.90) 25%,
+    rgba(3,7,13,.70) 38%,
+    rgba(3,7,13,.44) 51%,
+    rgba(3,7,13,.20) 64%,
+    rgba(3,7,13,.06) 75%,
+    transparent 86%);
+  filter:blur(18px);
+  opacity:.96;
 }
 
 /*
@@ -183,7 +215,7 @@
   object-fit:unset;
   transform:scale(var(--rp-premium-art-scale));
   transform-origin:68% 20%;
-  filter:drop-shadow(0 18px 24px rgba(0,0,0,.40)) saturate(.99) contrast(1.025);
+  filter:drop-shadow(0 18px 24px rgba(0,0,0,.40)) saturate(.99) contrast(1.025) blur(.2px);
   user-select:none;
 }
 
@@ -210,8 +242,21 @@
   inset:-3px;
   pointer-events:none;
   background:
-    linear-gradient(90deg,rgba(3,7,13,.98) 0%,rgba(3,7,13,.76) 14%,rgba(3,7,13,.28) 31%,rgba(3,7,13,.05) 48%,transparent 66%),
-    linear-gradient(0deg,rgba(3,7,13,.98) 0%,rgba(3,7,13,.52) 16%,rgba(3,7,13,.12) 34%,transparent 53%);
+    linear-gradient(90deg,
+      rgba(3,7,13,1) 0%,
+      rgba(3,7,13,.94) 11%,
+      rgba(3,7,13,.76) 22%,
+      rgba(3,7,13,.48) 34%,
+      rgba(3,7,13,.24) 45%,
+      rgba(3,7,13,.08) 56%,
+      transparent 69%),
+    linear-gradient(0deg,
+      rgba(3,7,13,.99) 0%,
+      rgba(3,7,13,.62) 15%,
+      rgba(3,7,13,.28) 28%,
+      rgba(3,7,13,.08) 41%,
+      transparent 55%);
+  filter:blur(.35px);
 }
 
 /* The portrait is allowed to bleed behind the identity, but text stays readable. */
@@ -259,6 +304,12 @@
     width:72%;
   }
 
+  .rp-premium-profile-art::after{
+    left:-15%;
+    width:61%;
+    filter:blur(17px);
+  }
+
   .rp-premium-profile-art[data-fit-mode="standard"] > img{
     top:-1%;
     right:-2%;
@@ -304,6 +355,11 @@
   .rp-premium-profile-art{
     right:-9%;
     width:75%;
+  }
+
+  .rp-premium-profile-art::after{
+    left:-16%;
+    width:63%;
   }
 
   .rp-profile.has-rp-premium-profile-art .rp-profile-player{
