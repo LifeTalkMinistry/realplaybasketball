@@ -14,6 +14,7 @@
       priority: 500,
       badge: 'assets/recognitions/badges/badge-most-overall-team-mvp.png',
       bar: 'assets/recognitions/bars/bar-most-overall-team-mvp.png',
+      profileScale: 1.04,
       fallback: 'Leads Real Play in verified Overall MVP awards.',
     },
     most_team_mvp: {
@@ -22,6 +23,7 @@
       priority: 400,
       badge: 'assets/recognitions/badges/badge-most-team-mvp.png',
       bar: 'assets/recognitions/bars/bar-most-team-mvp.png',
+      profileScale: 1.00,
       fallback: 'Leads Real Play in verified Team MVP awards.',
     },
     best_shooting: {
@@ -30,6 +32,7 @@
       priority: 300,
       badge: 'assets/recognitions/badges/badge-best-shooting.png',
       bar: 'assets/recognitions/bars/bar-best-shooting.png',
+      profileScale: 1.10,
       fallback: 'Leads qualified Real Play players in career shooting percentage.',
     },
     best_rebounder: {
@@ -38,6 +41,7 @@
       priority: 200,
       badge: 'assets/recognitions/badges/badge-best-rebounder.png',
       bar: 'assets/recognitions/bars/bar-best-rebounder.png',
+      profileScale: 1.08,
       fallback: 'Leads qualified Real Play players in rebounds per game.',
     },
     captain_eligible: {
@@ -46,6 +50,7 @@
       priority: 100,
       badge: 'assets/recognitions/badges/badge-captain-eligible.png',
       bar: 'assets/recognitions/bars/bar-captain-eligible.png',
+      profileScale: 1.22,
       fallback: 'Currently inside the official Top 4 captain line for a future Real Play League.',
     },
   });
@@ -301,7 +306,10 @@
       .rp-profile-badge:hover{transform:translateY(-1px) scale(1.035);filter:drop-shadow(0 9px 15px rgba(0,0,0,.70)) brightness(1.08)}
       .rp-profile-badge:active{transform:scale(.97)}
       .rp-profile-badge:focus-visible{outline:2px solid #72e6ff;outline-offset:2px}
-      .rp-profile-badge img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
+      .rp-profile-badge img{
+        display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;
+        transform:scale(var(--rp-profile-badge-scale,1));transform-origin:center;
+      }
       .rp-profile.has-rp-profile-badges .rp-profile-player{margin-top:0!important;padding-top:0!important}
 
       @media(max-width:420px){
@@ -436,7 +444,8 @@
       strip.innerHTML = data.badges.map((badge) => {
         const meta = recognitionMeta(badge.type);
         if (!meta) return '';
-        return `<button type="button" class="rp-profile-badge" data-rp-profile-recognition="${esc(badge.type)}" title="${esc(meta.title)}" aria-label="${esc(meta.title)}"><img src="${esc(meta.badge)}" alt="" draggable="false" /></button>`;
+        const scale = Number(meta.profileScale || 1);
+        return `<button type="button" class="rp-profile-badge" data-rp-profile-recognition="${esc(badge.type)}" title="${esc(meta.title)}" aria-label="${esc(meta.title)}" style="--rp-profile-badge-scale:${Number.isFinite(scale) ? scale : 1}"><img src="${esc(meta.badge)}" alt="" draggable="false" /></button>`;
       }).join('');
     }
     profile.classList.add('has-rp-profile-badges');
