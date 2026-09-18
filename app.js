@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260918-manual-schedule-counts-v87';
+  const version = '20260918-reservation-snapshot-v88';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -379,6 +379,7 @@
       'ranking-games-info-toggle.js',
       'ranking-games-session-cleanup.js',
       'ranking-spot-priority.js',
+      'ranking-reservation-snapshot.js',
       'overlay-focus-release.js',
       'settings-panel.js',
       'player-admin-probe-guard.js',
