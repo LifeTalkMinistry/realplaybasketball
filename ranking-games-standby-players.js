@@ -11,10 +11,6 @@
   let loading = false;
   let cancelling = false;
   let pollTimer = 0;
-  let lastRosterData = null;
-  let summaryNode = null;
-  let summaryObserver = null;
-  let summarySyncQueued = false;
 
   const style = document.createElement('style');
   style.dataset.rpRankingStandbyPlayers = 'true';
@@ -56,44 +52,6 @@
       line-height:1;
       text-transform:uppercase;
     }
-
-    .rp-ranking-overflow-roster{
-      margin-top:14px;
-      padding-top:14px;
-      border-top:1px solid rgba(188,94,108,.18);
-    }
-    .rp-ranking-overflow-roster[hidden]{display:none!important}
-    .rp-ranking-overflow-roster .rp-ranking-secured-head{margin-bottom:5px}
-    .rp-ranking-overflow-roster .rp-ranking-secured-head span{color:#8f6670!important}
-    .rp-ranking-overflow-roster .rp-ranking-secured-head strong{color:#d27b89!important}
-    .rp-ranking-overflow-note{
-      margin:0 0 10px;
-      color:#765f67;
-      font-family:var(--rp-body,Arial,sans-serif);
-      font-size:.43rem;
-      font-weight:850;
-      letter-spacing:.065em;
-      line-height:1.35;
-      text-transform:uppercase;
-    }
-    .rp-ranking-overflow-player{
-      border-color:rgba(177,83,98,.17)!important;
-      background:linear-gradient(105deg,rgba(24,14,18,.96),rgba(8,11,16,.98) 58%,rgba(23,13,17,.95))!important;
-    }
-    .rp-ranking-overflow-player::before{
-      background:linear-gradient(180deg,rgba(201,91,107,.86),rgba(201,91,107,.04))!important;
-      opacity:.68!important;
-    }
-    .rp-ranking-overflow-player.is-you{
-      border-color:rgba(211,105,120,.30)!important;
-      background:linear-gradient(105deg,rgba(31,16,21,.98),rgba(9,13,18,.99) 58%,rgba(28,15,19,.97))!important;
-    }
-    .rp-ranking-overflow-player .rp-ranking-standby-access{
-      border-color:rgba(192,97,111,.17);
-      background:rgba(151,55,71,.08);
-      color:#ba7a85;
-    }
-
     .rp-ranking-session button.rp-ranking-leave-standby,
     .rp-ranking-session button.rp-ranking-leave-standby:not(:disabled){
       width:100%;
@@ -139,20 +97,6 @@
     if (value === null || value === undefined || value === '') return null;
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  function positiveInt(value) {
-    const parsed = Number(value);
-    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
-  }
-
-  function countValue(value) {
-    const parsed = finiteNumber(value);
-    return parsed === null ? 0 : Math.max(0, Math.trunc(parsed));
-  }
-
-  function pad(value) {
-    return String(countValue(value)).padStart(2, '0');
   }
 
   function displayNumber(value, digits = 1) {
@@ -235,31 +179,6 @@
     return roster;
   }
 
-  function ensureOverflowRoster() {
-    const card = view.querySelector('[data-rp-ranking-session]');
-    if (!card) return null;
-    let roster = card.querySelector('[data-rp-ranking-overflow-roster]');
-    if (roster) return roster;
-
-    roster = document.createElement('section');
-    roster.className = 'rp-ranking-secured rp-ranking-overflow-roster';
-    roster.dataset.rpRankingOverflowRoster = 'true';
-    roster.hidden = true;
-    roster.innerHTML = `
-      <div class="rp-ranking-secured-head">
-        <span>OVERFLOW</span>
-        <strong data-rp-ranking-overflow-count>0 OVERFLOW</strong>
-      </div>
-      <p class="rp-ranking-overflow-note">Waiting after the 16 session spots are filled</p>
-      <div class="rp-ranking-secured-list" data-rp-ranking-overflow-list></div>
-    `;
-
-    const standbyRoster = ensureRoster();
-    if (standbyRoster) standbyRoster.insertAdjacentElement('afterend', roster);
-    else card.appendChild(roster);
-    return roster;
-  }
-
   function syncLeaveButton(standbyPlayers) {
     const card = view.querySelector('[data-rp-ranking-session]');
     const action = card?.querySelector('[data-rp-ranking-session-action]');
@@ -287,24 +206,11 @@
     }
   }
 
-  function decorateAdminRemovalTarget(item, player, group) {
-    if (!item || !player) return;
-    const playerId = positiveInt(player?.playerId);
-    const accountUserId = positiveInt(player?.accountUserId ?? player?.profileUserId);
-    if (!playerId && !accountUserId) return;
-    item.dataset.rpSessionAdminTarget = 'true';
-    item.dataset.rpSessionPlayerId = playerId ? String(playerId) : '';
-    item.dataset.rpSessionAccountUserId = accountUserId ? String(accountUserId) : '';
-    item.dataset.rpSessionPlayerName = String(player?.playerName || 'REAL PLAY PLAYER');
-    item.dataset.rpSessionEntryGroup = group;
-  }
-
-  function renderPlayer(player, overflow = false) {
+  function renderPlayer(player) {
     const profileId = finiteNumber(player?.playerId);
     const canOpenProfile = Number.isSafeInteger(profileId) && profileId > 0;
     const item = document.createElement(canOpenProfile ? 'button' : 'div');
     item.className = 'rp-ranking-secured-player rp-ranking-standby-player';
-    if (overflow) item.classList.add('rp-ranking-overflow-player');
     if (player?.isYou) item.classList.add('is-you');
     if (canOpenProfile) {
       item.type = 'button';
@@ -367,98 +273,22 @@
       createStatCell('TOP STATS', topStatsLabel(player?.topStats), 'is-top-stats')
     );
     item.append(identity, performance);
-    decorateAdminRemovalTarget(item, player, 'standby');
     return item;
   }
 
-  function splitStandby(data = {}) {
-    const players = Array.isArray(data.standbyPlayers) ? data.standbyPlayers : [];
-    const capacityNumber = finiteNumber(data.capacity);
-    const capacity = capacityNumber !== null && capacityNumber > 0 ? Math.trunc(capacityNumber) : null;
-    const confirmed = countValue(data.confirmedCount ?? data.players?.length);
-    const normalLimit = capacity === null
-      ? players.length
-      : Math.max(0, capacity - confirmed);
-
-    return {
-      players,
-      capacity,
-      confirmed,
-      normalPlayers: players.slice(0, normalLimit),
-      overflowPlayers: players.slice(normalLimit),
-    };
-  }
-
-  function syncSummary(data = lastRosterData) {
-    summarySyncQueued = false;
-    if (!data) return;
-    const summary = view.querySelector('[data-rp-ranking-access-summary]');
-    if (!summary) return;
-
-    const split = splitStandby(data);
-    const standbyNode = summary.querySelector('[data-rp-ranking-access-standby]');
-    const totalNode = summary.querySelector('[data-rp-ranking-access-total]');
-    const normalCount = split.normalPlayers.length;
-    const totalStandby = split.players.length;
-    const filled = split.capacity === null
-      ? split.confirmed + totalStandby
-      : Math.min(split.capacity, split.confirmed + totalStandby);
-
-    const nextStandby = String(normalCount);
-    if (standbyNode && standbyNode.textContent !== nextStandby) standbyNode.textContent = nextStandby;
-
-    const nextTotal = split.capacity === null
-      ? `${pad(filled)} SECURED`
-      : `${pad(filled)}/${pad(split.capacity)} SECURED`;
-    if (totalNode && totalNode.textContent !== nextTotal) totalNode.textContent = nextTotal;
-
-    summary.dataset.rpOverflowCount = String(split.overflowPlayers.length);
-  }
-
-  function queueSummarySync() {
-    if (summarySyncQueued) return;
-    summarySyncQueued = true;
-    window.queueMicrotask(syncSummary);
-  }
-
-  function ensureSummaryObserver() {
-    const next = view.querySelector('[data-rp-ranking-access-summary]');
-    if (!next || next === summaryNode) return;
-    summaryObserver?.disconnect();
-    summaryNode = next;
-    summaryObserver = new MutationObserver(queueSummarySync);
-    summaryObserver.observe(summaryNode, {
-      childList: true,
-      characterData: true,
-      subtree: true,
-    });
-    queueSummarySync();
-  }
-
   function render(data = {}) {
-    lastRosterData = data;
     const roster = ensureRoster();
-    const overflowRoster = ensureOverflowRoster();
-    if (!roster || !overflowRoster) return;
-
-    const split = splitStandby(data);
+    if (!roster) return;
+    const players = Array.isArray(data.standbyPlayers) ? data.standbyPlayers : [];
+    const count = Number.isFinite(Number(data.standbyCount)) ? Number(data.standbyCount) : players.length;
     const countNode = roster.querySelector('[data-rp-ranking-standby-count]');
     const list = roster.querySelector('[data-rp-ranking-standby-list]');
-    const overflowCountNode = overflowRoster.querySelector('[data-rp-ranking-overflow-count]');
-    const overflowList = overflowRoster.querySelector('[data-rp-ranking-overflow-list]');
 
-    syncLeaveButton(split.players);
-
-    roster.hidden = split.normalPlayers.length === 0;
-    overflowRoster.hidden = split.overflowPlayers.length === 0;
-
-    if (countNode) countNode.textContent = `${split.normalPlayers.length} STANDBY`;
-    if (overflowCountNode) overflowCountNode.textContent = `${split.overflowPlayers.length} OVERFLOW`;
-    if (list) list.replaceChildren(...split.normalPlayers.map((player) => renderPlayer(player, false)));
-    if (overflowList) overflowList.replaceChildren(...split.overflowPlayers.map((player) => renderPlayer(player, true)));
-
-    ensureSummaryObserver();
-    syncSummary(data);
+    syncLeaveButton(players);
+    roster.hidden = players.length === 0;
+    if (countNode) countNode.textContent = `${count} STANDBY`;
+    if (!list) return;
+    list.replaceChildren(...players.map(renderPlayer));
   }
 
   async function refresh() {
@@ -474,7 +304,7 @@
       if (!response.ok) return;
       render(await response.json().catch(() => ({})));
     } catch (_error) {
-      // Standby and overflow rosters are enhancements; keep core reservation controls usable.
+      // Standby roster is an enhancement; keep the core Open Rank screen usable.
     } finally {
       loading = false;
     }
@@ -519,18 +349,9 @@
 
   const observer = new MutationObserver(() => {
     ensureRoster();
-    ensureOverflowRoster();
-    ensureSummaryObserver();
-    if (lastRosterData) queueSummarySync();
     if (view.classList.contains('open')) refresh();
   });
   observer.observe(view, { attributes: true, attributeFilter: ['class'] });
-
-  const summaryMountObserver = new MutationObserver(() => {
-    ensureSummaryObserver();
-    if (lastRosterData) queueSummarySync();
-  });
-  summaryMountObserver.observe(view, { childList: true, subtree: true });
 
   window.addEventListener('realplay:ranking-session-changed', () => window.setTimeout(refresh, 80));
   window.addEventListener('realplay:ranking-entry-updated', () => window.setTimeout(refresh, 80));
@@ -540,13 +361,9 @@
   });
 
   ensureRoster();
-  ensureOverflowRoster();
-  ensureSummaryObserver();
   refresh();
   pollTimer = window.setInterval(refresh, POLL_MS);
   window.addEventListener('beforeunload', () => {
     if (pollTimer) window.clearInterval(pollTimer);
-    summaryObserver?.disconnect();
-    summaryMountObserver.disconnect();
   });
 })();
