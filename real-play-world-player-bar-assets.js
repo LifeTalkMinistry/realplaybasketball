@@ -8,6 +8,23 @@
   const BADGE_DOMINANT = `${ROOT}/badge-dominant`;
   const FILTER_ATTRIBUTE = "data-rp-player-bar-filter";
 
+  const DEFAULT_DIRECTIONS = Object.freeze({
+    ranked: 'asc',
+    unranked: 'desc',
+    winrate: 'desc',
+    overallmvp: 'desc',
+    teammvp: 'desc',
+    shooting: 'desc',
+    rebounding: 'desc',
+    scoring: 'desc',
+    assists: 'desc',
+    steals: 'desc',
+    blocks: 'desc',
+    games: 'desc',
+    name: 'asc',
+    jersey: 'asc',
+  });
+
   const paths = {
     root: ROOT,
     default: `${ROOT}/default`,
@@ -45,8 +62,9 @@
 
       /*
        * Every Players filter uses the same fixed left number lane. RANK OVR
-       * displays the canonical official Rank there; every other filter displays
-       * that row's position inside the currently sorted leaderboard only.
+       * displays the canonical official Rank there. Every other filter displays
+       * the player's canonical position for that leaderboard, so reversing the
+       * visual sort never reassigns #1, #2, #3 to different players.
        */
       .rp-world-player-row .rp-world-player-rank-badge{
         box-sizing:border-box!important;
@@ -133,6 +151,65 @@
     return row.style.getPropertyValue('display') !== 'none';
   }
 
+  function rowName(row) {
+    return String(row?.querySelector?.('.rp-world-player-name strong')?.textContent || '').trim();
+  }
+
+  function compareNames(a, b) {
+    return rowName(a).localeCompare(rowName(b), undefined, { sensitivity: 'base', numeric: true });
+  }
+
+  function numberFromText(value) {
+    const raw = String(value || '').trim();
+    if (!raw || /^—/.test(raw) || /UNRANKED/i.test(raw)) return null;
+    const parsed = Number.parseFloat(raw.replace(/[^0-9.\-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function rowFilterNumber(row, filterKey) {
+    if (filterKey === 'unranked') {
+      return numberFromText(row?.querySelector?.('.rp-world-player-ovr')?.textContent);
+    }
+    if (filterKey === 'winrate') {
+      return numberFromText(row?.querySelector?.('.rp-world-player-winrate')?.textContent);
+    }
+    if (filterKey === 'jersey') {
+      return numberFromText(row?.querySelector?.('.rp-world-player-name b')?.textContent);
+    }
+    if (['overallmvp', 'teammvp', 'shooting', 'rebounding', 'scoring', 'assists', 'steals', 'blocks', 'games'].includes(filterKey)) {
+      return numberFromText(row?.querySelector?.('.rp-world-player-filter-stat strong')?.textContent);
+    }
+    return null;
+  }
+
+  function compareCanonicalRows(a, b, filterKey) {
+    const direction = DEFAULT_DIRECTIONS[filterKey] || 'desc';
+
+    if (filterKey === 'name') {
+      const result = compareNames(a, b);
+      return direction === 'asc' ? result : -result;
+    }
+
+    const av = rowFilterNumber(a, filterKey);
+    const bv = rowFilterNumber(b, filterKey);
+    const aMissing = av === null || av === undefined || Number.isNaN(av);
+    const bMissing = bv === null || bv === undefined || Number.isNaN(bv);
+
+    // Match the Players filter authority: missing values stay at the bottom in
+    // either direction, while exact numeric ties keep the same name tie-break.
+    if (aMissing !== bMissing) return aMissing ? 1 : -1;
+    if (aMissing && bMissing) return compareNames(a, b);
+    if (av === bv) return compareNames(a, b);
+    return direction === 'asc' ? av - bv : bv - av;
+  }
+
+  function canonicalPositions(filterKey, visibleRows) {
+    const ordered = [...visibleRows].sort((a, b) => compareCanonicalRows(a, b, filterKey));
+    const positions = new Map();
+    ordered.forEach((row, index) => positions.set(row, index + 1));
+    return positions;
+  }
+
   function syncLeaderboardPositions(filterKey = activeFilterKey()) {
     const list = document.querySelector('[data-world-player-list]');
     if (!list) return;
@@ -140,29 +217,37 @@
     const rows = [...list.querySelectorAll('.rp-world-player-row')];
     const visibleRows = rows.filter(isVisibleLeaderboardRow);
     const visibleSet = new Set(visibleRows);
+    const stablePositions = filterKey === 'ranked'
+      ? null
+      : canonicalPositions(filterKey, visibleRows);
 
     rows.forEach((row) => {
       if (visibleSet.has(row)) return;
       const badge = row.querySelector('.rp-world-player-rank-badge');
       badge?.classList.remove('is-visible');
       row.removeAttribute('data-rp-leaderboard-position');
+      row.removeAttribute('data-rp-visual-position');
     });
 
     visibleRows.forEach((row, index) => {
       const badge = ensurePositionBadge(row);
       if (!badge) return;
 
-      const leaderboardPosition = index + 1;
+      const visualPosition = index + 1;
       const officialRank = Number(row.dataset.officialRank);
       const hasOfficialRank = Number.isSafeInteger(officialRank) && officialRank > 0;
+      const leaderboardPosition = filterKey === 'ranked'
+        ? (hasOfficialRank ? officialRank : null)
+        : (stablePositions?.get(row) ?? visualPosition);
       const displayText = filterKey === 'ranked'
         ? (hasOfficialRank ? `#${officialRank}` : '—')
         : `#${leaderboardPosition}`;
 
       if (badge.textContent !== displayText) badge.textContent = displayText;
       badge.classList.add('is-visible');
-      badge.dataset.rpLeaderboardPosition = String(leaderboardPosition);
-      row.dataset.rpLeaderboardPosition = String(leaderboardPosition);
+      badge.dataset.rpLeaderboardPosition = leaderboardPosition === null ? '' : String(leaderboardPosition);
+      row.dataset.rpLeaderboardPosition = leaderboardPosition === null ? '' : String(leaderboardPosition);
+      row.dataset.rpVisualPosition = String(visualPosition);
     });
   }
 
