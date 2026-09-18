@@ -18,7 +18,7 @@ Suggested filename:
 
 Example:
 
-`player-23-max-emorej.webp`
+`player-184-max-emorej.webp`
 
 ## Assigning artwork
 
@@ -26,8 +26,8 @@ Add a record to `registry.json`:
 
 ```json
 {
-  "playerId": 23,
-  "src": "assets/profile-art/player-23-max-emorej.webp",
+  "playerId": 184,
+  "src": "assets/profile-art/player-184-max-emorej.webp",
   "positionX": "72%",
   "positionY": "44%",
   "scale": 1.06,
@@ -35,7 +35,7 @@ Add a record to `registry.json`:
 }
 ```
 
-`playerId` is the preferred authoritative key. During early testing, the renderer also supports an exact `playerName` plus optional `jerseyNumber`, but player ID should be used once known.
+`playerId` is the preferred authoritative key and is **not the jersey number**. During early testing, the renderer also supports an exact `playerName` plus optional `jerseyNumber`, but player ID should be used once known.
 
 Optional tuning fields:
 
