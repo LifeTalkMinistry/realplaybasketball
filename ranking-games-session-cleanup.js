@@ -488,6 +488,7 @@
     const tokenSecured = number(counts.tokenSecured ?? counts.token_secured);
     const gcashSecured = number(counts.gcashSecured ?? counts.gcash_secured);
     const cashSecured = number(counts.cashSecured ?? counts.cash_secured);
+    const adminPrioritySecured = number(counts.adminPrioritySecured ?? counts.admin_priority_secured);
     const standby = number(counts.standby);
     const capacityRaw = Number(session.capacity);
     const capacity = Number.isFinite(capacityRaw) && capacityRaw > 0 ? Math.trunc(capacityRaw) : null;
@@ -502,6 +503,7 @@
     summary.querySelector('[data-rp-ranking-access-gcash]').textContent = String(gcashSecured);
     summary.querySelector('[data-rp-ranking-access-cash]').textContent = String(cashSecured);
     summary.querySelector('[data-rp-ranking-access-standby]').textContent = String(standby);
+    summary.dataset.rpAdminPrioritySecured = String(adminPrioritySecured);
 
     summary.hidden = false;
     card.classList.add('has-access-summary');
