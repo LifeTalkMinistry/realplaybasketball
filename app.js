@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260918-unclaimed-admin-schedule-v86';
+  const version = '20260918-manual-schedule-counts-v87';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
