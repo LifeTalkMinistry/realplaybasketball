@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260918-exact-reservation-snapshot-v89';
+  const version = '20260918-readable-reservation-snapshot-v90';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
