@@ -9,9 +9,20 @@
 
   let intentId = 0;
   let intentUntil = 0;
+  let intentStartedAt = 0;
   let timers = [];
   const youtubePlaying = new WeakSet();
   const watchedMedia = new WeakSet();
+
+  function loadSeekGuard() {
+    if (window.__realPlayHighlightSeekGuardInstalled || document.querySelector('script[data-rp-highlight-seek-guard-loader]')) return;
+    const script = document.createElement('script');
+    script.src = 'profile-highlight-seek-guard.js?v=20260918-highlight-seek-v1';
+    script.async = false;
+    script.dataset.rpHighlightSeekGuardLoader = '1';
+    script.onerror = () => console.warn('[Real Play] Highlight seek guard could not load.');
+    document.head.appendChild(script);
+  }
 
   function installLoadingFadeStyle() {
     if (document.querySelector('[data-rp-highlight-loading-fade-style]')) return;
@@ -83,6 +94,13 @@
     const video = root.querySelector('[data-rp-highlight-media] video');
     if (video && !watchedMedia.has(video)) {
       watchedMedia.add(video);
+      video.addEventListener('seeking', () => {
+        root.dataset.rpHighlightSeekReady = '0';
+      });
+      video.addEventListener('seeked', () => {
+        root.dataset.rpHighlightSeekReady = '1';
+        if (Date.now() <= intentUntil) attemptAutoplay(intentId, 3);
+      });
       const ready = () => fadeLoading(root);
       video.addEventListener('loadeddata', ready, { once: true });
       video.addEventListener('canplay', ready, { once: true });
@@ -96,9 +114,6 @@
       frame.addEventListener('load', () => {
         window.setTimeout(() => fadeLoading(root), 180);
       }, { once: true });
-
-      // The iframe can already be loaded before the observer sees it. Never let
-      // LOADING SCORES/ASSISTS/etc stay permanently over visible footage.
       window.setTimeout(() => {
         if (frame.isConnected) fadeLoading(root);
       }, 650);
@@ -162,6 +177,14 @@
 
     const video = root.querySelector('[data-rp-highlight-media] video');
     if (video) {
+      // Do not let the autoplay helper race ahead of the core highlight seek.
+      // A direct video normally fires seeked after playAt() applies the timestamp.
+      // If the highlight actually begins at 0:00, allow a conservative fallback.
+      const seekReady = root.dataset.rpHighlightSeekReady === '1';
+      const zeroStartFallback = Date.now() - intentStartedAt >= 650 && Math.abs(Number(video.currentTime || 0)) < 0.35;
+      if (!seekReady && !zeroStartFallback) return;
+      if (zeroStartFallback) root.dataset.rpHighlightSeekReady = '1';
+
       attemptDirectVideo(video, isMobileAutoplayRestricted && attempt >= 2);
       if (!video.paused) {
         fadeLoading(root);
@@ -172,27 +195,32 @@
     const frame = youtubeFrame(root);
     if (frame) {
       ensureAutoplayPermission(frame);
+
+      // The YouTube iframe is created at 0:00 before the core player applies
+      // the official highlight timestamp. Never send playVideo until the seek
+      // guard confirms that timestamp is active.
+      if (root.dataset.rpHighlightSeekReady !== '1') return;
       if (youtubePlaying.has(frame)) {
         fadeLoading(root);
         return;
       }
 
-      // First preserve sound and ask YouTube to play. Mobile Safari and Android
-      // Chrome can reject playback after the async iframe/player setup, so the
-      // later attempts fall back to muted autoplay instead of making the player
-      // tap Play again.
       if (isMobileAutoplayRestricted && attempt >= 2) sendYouTube(frame, 'mute');
       sendYouTube(frame, 'playVideo');
     }
   }
 
   function requestAutoplay() {
-    const id = ++intentId;
-    intentUntil = Date.now() + 6500;
-    clearTimers();
-    resetLoading();
+    const root = viewer();
+    if (root) root.dataset.rpHighlightSeekReady = '0';
 
-    [0, 80, 180, 360, 700, 1200, 2000, 3200, 5000].forEach((delay, index) => {
+    const id = ++intentId;
+    intentStartedAt = Date.now();
+    intentUntil = intentStartedAt + 7000;
+    clearTimers();
+    resetLoading(root);
+
+    [0, 80, 180, 360, 700, 1200, 2000, 3200, 5000, 6500].forEach((delay, index) => {
       timers.push(window.setTimeout(() => attemptAutoplay(id, index), delay));
     });
   }
@@ -218,6 +246,10 @@
     }
   });
 
+  window.addEventListener('realplay:highlight-seek-ready', () => {
+    if (Date.now() <= intentUntil) attemptAutoplay(intentId, 3);
+  });
+
   document.addEventListener('click', (event) => {
     const trigger = event.target.closest(
       '[data-rp-highlight-filter], [data-rp-highlight-next], [data-rp-highlight-replay]'
@@ -226,9 +258,6 @@
     requestAutoplay();
   }, true);
 
-  // Media is mounted asynchronously after the category tap. Keep watching only
-  // during the short autoplay intent window so a deliberate later pause is not
-  // overridden. This also removes the loading label as soon as media is ready.
   const observer = new MutationObserver(() => {
     const root = viewer();
     if (root) watchMountedMedia(root);
@@ -236,6 +265,7 @@
   });
 
   function start() {
+    loadSeekGuard();
     installLoadingFadeStyle();
     if (document.body) observer.observe(document.body, { childList: true, subtree: true });
     watchMountedMedia();
