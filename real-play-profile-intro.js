@@ -7,9 +7,16 @@
   window.__realPlayProfileIntroInstalled = true;
 
   const REGISTRY_URL = 'assets/profile-art/registry.json';
+  const STANDARD_CANVAS = Object.freeze({
+    width: 1600,
+    height: 2000,
+    aspectRatio: 1600 / 2000,
+    aspectTolerance: 0.04,
+  });
   const DEFAULTS = Object.freeze({
-    positionX: '72%',
-    positionY: '44%',
+    fitMode: 'standard',
+    positionX: '50%',
+    positionY: '46%',
     scale: 1,
     opacity: 1,
   });
@@ -46,13 +53,19 @@
     return null;
   }
 
+  function normalizeFitMode(value) {
+    return String(value || DEFAULTS.fitMode).trim().toLowerCase() === 'manual'
+      ? 'manual'
+      : 'standard';
+  }
+
   async function loadRegistry(force = false) {
     if (registryPromise) return registryPromise;
     if (!force && registry.length) return registry;
 
     registryPromise = (async () => {
       try {
-        const response = await fetch(`${REGISTRY_URL}?v=20260918-premium-profile-art-v1`, {
+        const response = await fetch(`${REGISTRY_URL}?v=20260918-premium-profile-art-v2`, {
           headers: { Accept: 'application/json' },
           cache: 'no-store',
         });
@@ -151,6 +164,18 @@
     panel?.classList.remove('has-rp-premium-profile-art');
   }
 
+  function validateStandardCanvas(image, src, fitMode) {
+    if (!image?.naturalWidth || !image?.naturalHeight) return false;
+    const aspect = image.naturalWidth / image.naturalHeight;
+    const isStandard = Math.abs(aspect - STANDARD_CANVAS.aspectRatio) <= STANDARD_CANVAS.aspectTolerance;
+    if (fitMode === 'standard' && !isStandard) {
+      console.warn(
+        `[Real Play] Premium profile art is not close to the official 4:5 canvas (${STANDARD_CANVAS.width}x${STANDARD_CANVAS.height}): ${src} is ${image.naturalWidth}x${image.naturalHeight}.`
+      );
+    }
+    return isStandard;
+  }
+
   function applyArt(panel) {
     if (!(panel instanceof HTMLElement) || !panel.classList.contains('open')) return;
     const hero = panel.querySelector('.rp-profile-hero');
@@ -168,13 +193,14 @@
       return;
     }
 
+    const fitMode = normalizeFitMode(entry.fitMode || entry.fit_mode);
     const positionX = String(entry.positionX || entry.position_x || DEFAULTS.positionX);
     const positionY = String(entry.positionY || entry.position_y || DEFAULTS.positionY);
     const rawScale = Number(entry.scale ?? DEFAULTS.scale);
     const rawOpacity = Number(entry.opacity ?? DEFAULTS.opacity);
-    const scale = Number.isFinite(rawScale) ? clamp(rawScale, 0.72, 1.7) : DEFAULTS.scale;
+    const scale = Number.isFinite(rawScale) ? clamp(rawScale, 0.72, 1.8) : DEFAULTS.scale;
     const opacity = Number.isFinite(rawOpacity) ? clamp(rawOpacity, 0, 1) : DEFAULTS.opacity;
-    const signature = [src, positionX, positionY, scale, opacity].join('|');
+    const signature = [src, fitMode, positionX, positionY, scale, opacity].join('|');
 
     let layer = hero.querySelector('[data-rp-premium-profile-art]');
     if (!layer) {
@@ -186,6 +212,7 @@
       hero.insertBefore(layer, hero.querySelector('.rp-profile-identity-line')?.nextSibling || hero.firstChild);
     }
 
+    layer.dataset.fitMode = fitMode;
     layer.style.setProperty('--rp-premium-art-x', positionX);
     layer.style.setProperty('--rp-premium-art-y', positionY);
     layer.style.setProperty('--rp-premium-art-scale', String(scale));
@@ -193,11 +220,16 @@
 
     if (layer.dataset.signature !== signature) {
       layer.dataset.signature = signature;
-      layer.classList.remove('is-ready');
+      layer.classList.remove('is-ready', 'is-standard-canvas', 'is-nonstandard-canvas');
       const image = layer.querySelector('img');
       if (image) {
         image.onload = () => {
           if (layer.dataset.signature !== signature) return;
+          const standardCanvas = validateStandardCanvas(image, src, fitMode);
+          layer.classList.toggle('is-standard-canvas', standardCanvas);
+          layer.classList.toggle('is-nonstandard-canvas', !standardCanvas);
+          layer.dataset.sourceWidth = String(image.naturalWidth || '');
+          layer.dataset.sourceHeight = String(image.naturalHeight || '');
           layer.classList.add('is-ready');
           panel.classList.add('has-rp-premium-profile-art');
         };
@@ -260,6 +292,7 @@
       scheduleRender();
     },
     configuredPlayerCount: () => registry.length,
+    standardCanvas: () => ({ ...STANDARD_CANVAS }),
   };
 
   loadRegistry();
