@@ -7,6 +7,7 @@
   const HTML2CANVAS_URL = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
   const STYLE_ID = 'rp-reservation-snapshot-style';
   const LIB_ID = 'rp-reservation-snapshot-html2canvas';
+  const SOURCE_ATTR = 'data-rp-reservation-snapshot-source';
 
   let trigger = null;
   let holdTimer = 0;
@@ -30,16 +31,15 @@
         max-width:min(88vw,360px);padding:10px 14px;border:1px solid rgba(75,218,250,.26);border-radius:999px;
         background:rgba(3,12,19,.94);color:#dff8ff;box-shadow:0 10px 30px rgba(0,0,0,.38);
         backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transform:translateX(-50%);
-        font:900 .58rem/1.2 Arial,sans-serif;letter-spacing:.08em;text-align:center;text-transform:uppercase;
-        pointer-events:none;
+        font:900 .58rem/1.2 Arial,sans-serif;letter-spacing:.08em;text-align:center;text-transform:uppercase;pointer-events:none;
       }
       .rp-snapshot-preview{
         position:fixed;inset:0;z-index:2147483601;display:flex;align-items:flex-end;justify-content:center;
-        padding:16px 12px 0;box-sizing:border-box;background:rgba(0,3,7,.82);
+        padding:16px 12px 0;box-sizing:border-box;background:rgba(0,3,7,.84);
         backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
       }
       .rp-snapshot-preview-sheet{
-        width:min(100%,460px);max-height:calc(100dvh - 18px);overflow:auto;box-sizing:border-box;
+        width:min(100%,480px);max-height:calc(100dvh - 18px);overflow:auto;box-sizing:border-box;
         padding:10px 14px calc(16px + env(safe-area-inset-bottom));border:1px solid rgba(65,200,238,.30);
         border-bottom:0;border-radius:24px 24px 0 0;background:linear-gradient(180deg,#071722 0%,#040b12 100%);
         box-shadow:0 -20px 60px rgba(0,0,0,.58);scrollbar-width:none;
@@ -49,22 +49,38 @@
       .rp-snapshot-preview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 1px 10px}
       .rp-snapshot-preview-head div{min-width:0}
       .rp-snapshot-preview-head small{display:block;margin-bottom:4px;color:#60d9f2;font:950 .44rem/1 Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase}
-      .rp-snapshot-preview-head strong{display:block;color:#f7fbff;font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);font-size:1.2rem;font-style:italic;font-weight:950;letter-spacing:.025em;line-height:1;text-transform:uppercase}
+      .rp-snapshot-preview-head strong{display:block;color:#f7fbff;font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);font-size:1.18rem;font-style:italic;font-weight:950;letter-spacing:.025em;line-height:1;text-transform:uppercase}
       .rp-snapshot-preview-close{flex:0 0 auto;width:36px;height:36px;display:grid;place-items:center;padding:0;border:1px solid rgba(255,255,255,.12);border-radius:50%;background:rgba(255,255,255,.035);color:#b6c6d3;font:800 1rem/1 Arial,sans-serif;cursor:pointer}
-      .rp-snapshot-preview-image{overflow:hidden;border:1px solid rgba(73,205,239,.18);border-radius:16px;background:#02070b}
-      .rp-snapshot-preview-image img{display:block;width:100%;height:auto}
+      .rp-snapshot-preview-image{
+        width:100%;max-height:66dvh;overflow:auto;border:1px solid rgba(73,205,239,.18);border-radius:16px;
+        background:#02070b;scrollbar-width:thin;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+        touch-action:pan-x pan-y pinch-zoom;
+      }
+      .rp-snapshot-preview-image img{display:block;width:100%;height:auto;max-width:none;image-rendering:auto}
+      .rp-snapshot-preview-hint{margin:8px 4px 0;color:#6f8497;font:800 .49rem/1.4 Arial,sans-serif;letter-spacing:.055em;text-align:center;text-transform:uppercase}
       .rp-snapshot-preview-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
-      .rp-snapshot-preview-actions button{min-height:42px;padding:0 10px;border:1px solid rgba(80,144,180,.18);border-radius:12px;background:rgba(4,13,21,.86);color:#d8e5ee;font:950 .54rem/1 Arial,sans-serif;letter-spacing:.07em;text-transform:uppercase;cursor:pointer}
-      .rp-snapshot-preview-actions button.primary{border-color:rgba(73,216,249,.42);background:linear-gradient(180deg,rgba(11,55,73,.82),rgba(5,26,38,.92));color:#76e6fc}
-      .rp-snapshot-export-stage{position:fixed!important;left:-10000px!important;top:0!important;z-index:-1!important;pointer-events:none!important;overflow:visible!important}
-      .rp-snapshot-export-card{box-sizing:border-box!important;margin:0!important}
-      .rp-snapshot-export-card [data-rp-ranking-secured-list],
-      .rp-snapshot-export-card [data-rp-ranking-standby-list]{max-height:none!important;overflow:visible!important}
-      .rp-snapshot-export-card [data-rp-ranking-secured],
-      .rp-snapshot-export-card [data-rp-ranking-standby-roster]{max-height:none!important;overflow:visible!important}
-      .rp-snapshot-export-card .rp-ranking-secured-player{pointer-events:none!important}
-      .rp-snapshot-export-brand{padding:15px 14px 11px;text-align:center;color:#f4f9fd;font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);font-size:1rem;font-style:italic;font-weight:950;letter-spacing:.055em;line-height:1;text-transform:uppercase}
-      .rp-snapshot-export-footer{padding:13px 12px 4px;color:#60778a;font:900 .45rem/1 Arial,sans-serif;letter-spacing:.12em;text-align:center;text-transform:uppercase}
+      .rp-snapshot-preview-actions button{
+        min-height:42px;padding:0 10px;border:1px solid rgba(80,144,180,.18);border-radius:12px;background:rgba(4,13,21,.86);
+        color:#d8e5ee;font:950 .54rem/1 Arial,sans-serif;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;
+      }
+      .rp-snapshot-preview-actions button.primary{
+        border-color:rgba(73,216,249,.42);background:linear-gradient(180deg,rgba(11,55,73,.82),rgba(5,26,38,.92));color:#76e6fc;
+      }
+
+      [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source{
+        box-sizing:border-box!important;height:auto!important;max-height:none!important;overflow:visible!important;transform:none!important;
+      }
+      [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-spot-priority],
+      [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-ranking-cancel],
+      [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-snapshot-exclude]{
+        display:none!important;
+      }
+      [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-ranking-secured],
+      [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-ranking-standby-roster],
+      [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-ranking-secured-list],
+      [data-rp-reservation-snapshot-source="true"].rp-snapshot-exact-source [data-rp-ranking-standby-list]{
+        height:auto!important;max-height:none!important;overflow:visible!important;
+      }
       @media(min-width:700px){
         .rp-snapshot-preview{align-items:center;padding:18px}
         .rp-snapshot-preview-sheet{border-bottom:1px solid rgba(65,200,238,.30);border-radius:24px}
@@ -101,7 +117,6 @@
 
   function loadHtml2Canvas() {
     if (typeof window.html2canvas === 'function') return Promise.resolve(window.html2canvas);
-
     return new Promise((resolve, reject) => {
       const existing = document.getElementById(LIB_ID);
       if (existing) {
@@ -109,7 +124,6 @@
         existing.addEventListener('error', () => reject(new Error('Snapshot renderer could not load.')), { once:true });
         return;
       }
-
       const script = document.createElement('script');
       script.id = LIB_ID;
       script.src = HTML2CANVAS_URL;
@@ -124,84 +138,77 @@
     });
   }
 
-  function removeExportOnlyControls(root) {
-    [
-      '[data-rp-spot-priority]',
-      '[data-rp-ranking-cancel]',
-      '[data-rp-snapshot-exclude]',
-      '.rp-snapshot-toast',
-      '.rp-snapshot-preview'
-    ].forEach((selector) => root.querySelectorAll(selector).forEach((node) => node.remove()));
-
-    root.querySelectorAll('button').forEach((button) => {
-      const text = String(button.textContent || '').trim().toUpperCase();
-      if (text.includes('CANCEL SPOT')) button.remove();
-    });
+  function sourceNode() {
+    return document.querySelector('[data-rp-ranking-games] .rp-ranking-next')
+      || document.querySelector('[data-rp-ranking-session]');
   }
 
-  function buildStage() {
-    const card = document.querySelector('[data-rp-ranking-session]');
-    if (!card) throw new Error('Open Rank reservation is not available.');
-
-    const rect = card.getBoundingClientRect();
-    const width = Math.max(320, Math.round(rect.width || card.offsetWidth || 360));
-
-    const stage = document.createElement('div');
-    stage.className = 'rp-snapshot-export-stage';
-    stage.style.width = `${width}px`;
-
-    const brand = document.createElement('div');
-    brand.className = 'rp-snapshot-export-brand';
-    brand.textContent = 'REAL PLAY BASKETBALL · OPEN RANK';
-
-    const clone = card.cloneNode(true);
-    clone.classList.add('rp-snapshot-export-card');
-    clone.style.width = `${width}px`;
-    clone.style.maxWidth = 'none';
-    clone.style.height = 'auto';
-    clone.style.maxHeight = 'none';
-    clone.style.overflow = 'visible';
-    removeExportOnlyControls(clone);
-
-    const footer = document.createElement('div');
-    footer.className = 'rp-snapshot-export-footer';
-    footer.textContent = 'LESS SCREEN. REAL POINTS.';
-
-    stage.append(brand, clone, footer);
-    document.body.appendChild(stage);
-    return stage;
+  async function waitForStableFonts() {
+    if (!document.fonts?.ready) return;
+    await Promise.race([
+      document.fonts.ready.catch(() => undefined),
+      new Promise((resolve) => window.setTimeout(resolve, 1200)),
+    ]);
   }
 
   async function renderSnapshot() {
     const html2canvas = await loadHtml2Canvas();
-    const stage = buildStage();
+    const source = sourceNode();
+    if (!source) throw new Error('Open Rank reservation is not available.');
 
+    await waitForStableFonts();
+    await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+
+    const rect = source.getBoundingClientRect();
+    const width = Math.max(300, Math.ceil(rect.width || source.offsetWidth || 360));
+    const height = Math.max(1, Math.ceil(source.scrollHeight || rect.height || source.offsetHeight || 1));
+
+    source.setAttribute(SOURCE_ATTR, 'true');
     try {
-      if (document.fonts?.ready) {
-        await Promise.race([
-          document.fonts.ready.catch(() => undefined),
-          new Promise((resolve) => window.setTimeout(resolve, 900)),
-        ]);
-      }
-      await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
-
-      const canvas = await html2canvas(stage, {
-        backgroundColor: '#02070b',
-        scale: Math.min(3, Math.max(2, window.devicePixelRatio || 2)),
+      const canvas = await html2canvas(source, {
+        backgroundColor: '#020306',
+        scale: Math.min(4, Math.max(3, window.devicePixelRatio || 2)),
         useCORS: true,
         allowTaint: false,
         logging: false,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: Math.max(document.documentElement.clientWidth, stage.scrollWidth),
-        windowHeight: Math.max(document.documentElement.clientHeight, stage.scrollHeight),
+        width,
+        height,
+        scrollX: -window.scrollX,
+        scrollY: -window.scrollY,
+        windowWidth: Math.max(document.documentElement.clientWidth, width),
+        windowHeight: Math.max(document.documentElement.clientHeight, height),
+        onclone: (clonedDocument) => {
+          const clone = clonedDocument.querySelector('[data-rp-reservation-snapshot-source="true"]');
+          if (!clone) return;
+
+          clone.classList.add('rp-snapshot-exact-source');
+          clone.style.setProperty('width', '${width}px', 'important');
+          clone.style.setProperty('min-width', '${width}px', 'important');
+          clone.style.setProperty('max-width', '${width}px', 'important');
+          clone.style.setProperty('height', 'auto', 'important');
+          clone.style.setProperty('max-height', 'none', 'important');
+          clone.style.setProperty('overflow', 'visible', 'important');
+          clone.style.setProperty('margin', '0', 'important');
+
+          clone.querySelectorAll('[data-rp-spot-priority], [data-rp-ranking-cancel], [data-rp-snapshot-exclude]').forEach((node) => {
+            node.style.setProperty('display', 'none', 'important');
+          });
+
+          clone.querySelectorAll(
+            '[data-rp-ranking-secured], [data-rp-ranking-standby-roster], [data-rp-ranking-secured-list], [data-rp-ranking-standby-list]'
+          ).forEach((node) => {
+            node.style.setProperty('height', 'auto', 'important');
+            node.style.setProperty('max-height', 'none', 'important');
+            node.style.setProperty('overflow', 'visible', 'important');
+          });
+        },
       });
 
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 1));
       if (!blob) throw new Error('The reservation image could not be created.');
       return blob;
     } finally {
-      stage.remove();
+      source.removeAttribute(SOURCE_ATTR);
     }
   }
 
@@ -237,13 +244,12 @@
   async function shareBlob(blob) {
     if (!navigator.share) return false;
     const file = new File([blob], fileName(), { type:'image/png' });
-    const payload = {
+    if (navigator.canShare && !navigator.canShare({ files:[file] })) return false;
+    await navigator.share({
       title:'Real Play Open Rank',
       text:'Current Real Play Open Rank reservation.',
       files:[file],
-    };
-    if (navigator.canShare && !navigator.canShare({ files:[file] })) return false;
-    await navigator.share(payload);
+    });
     return true;
   }
 
@@ -257,10 +263,13 @@
       <section class="rp-snapshot-preview-sheet" role="dialog" aria-modal="true" aria-label="Open Rank reservation snapshot">
         <div class="rp-snapshot-grab" aria-hidden="true"></div>
         <header class="rp-snapshot-preview-head">
-          <div><small>READY TO SHARE</small><strong>RESERVATION SNAPSHOT</strong></div>
+          <div><small>EXACT LIVE CARD</small><strong>RESERVATION SNAPSHOT</strong></div>
           <button class="rp-snapshot-preview-close" type="button" aria-label="Close snapshot">×</button>
         </header>
-        <div class="rp-snapshot-preview-image"><img src="${previewUrl}" alt="Current Open Rank reservation snapshot"></div>
+        <div class="rp-snapshot-preview-image">
+          <img src="${previewUrl}" alt="Current Open Rank reservation snapshot">
+        </div>
+        <p class="rp-snapshot-preview-hint">Scroll the preview to inspect the full roster · saved image stays full resolution</p>
         <div class="rp-snapshot-preview-actions">
           <button class="primary" type="button" data-rp-snapshot-share>SHARE IMAGE</button>
           <button type="button" data-rp-snapshot-save>SAVE IMAGE</button>
@@ -290,7 +299,7 @@
           const shared = await shareBlob(blob);
           if (!shared) {
             saveBlob(blob);
-            showToast('Sharing is unavailable here · image saved instead.', 2200);
+            showToast('Sharing unavailable here · image saved instead.', 2200);
           }
         } catch (error) {
           if (error?.name !== 'AbortError') {
@@ -308,7 +317,7 @@
   async function createSnapshot() {
     if (generating) return;
     generating = true;
-    showToast('Creating clean reservation snapshot…', 1800);
+    showToast('Capturing exact live reservation…', 1800);
     try {
       const blob = await renderSnapshot();
       openPreview(blob);
@@ -347,9 +356,10 @@
 
     node.addEventListener('pointermove', (event) => {
       if (!holdTimer || !holdStart) return;
-      if (Math.abs(event.clientX - holdStart.x) > MOVE_TOLERANCE || Math.abs(event.clientY - holdStart.y) > MOVE_TOLERANCE) {
-        cleanupHold();
-      }
+      if (
+        Math.abs(event.clientX - holdStart.x) > MOVE_TOLERANCE
+        || Math.abs(event.clientY - holdStart.y) > MOVE_TOLERANCE
+      ) cleanupHold();
     });
 
     const finish = () => {
