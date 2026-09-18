@@ -3,11 +3,13 @@
   window.__realPlaySimpleNavigationStateAuthorityInstalled = true;
 
   const TOKEN_KEY = 'real_play_access_token';
-  const PUBLIC_UPDATES_URL = 'https://api.clarapmc.com/api/real-play/public/updates';
+  const API_BASE_URL = 'https://api.clarapmc.com';
+  const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
   let enforcing = false;
   let enforceQueued = false;
   let homeRefreshTimer = 0;
   let homeLoading = false;
+  let homeSpotsLoading = false;
   const observedAuthorityTargets = new WeakSet();
 
   const esc = (value) => String(value ?? '')
@@ -172,6 +174,7 @@
         <div class="rp-home-session-copy">
           <strong data-rp-home-open-rank-title>SUNDAY OPEN RANKING</strong>
           <p data-rp-home-open-rank-meta>EVERY SUNDAY · 8:00 PM – 11:00 PM</p>
+          <span class="rp-home-spots-left" data-rp-home-open-rank-spots-left hidden></span>
         </div>
         <button class="rp-home-save-slot" type="button" data-rp-home-save-slot>SAVE MY SLOT</button>
       </section>
@@ -257,6 +260,76 @@
     if (capacity) capacity.textContent = Number.isFinite(cap) && cap > 0 ? `${cap} PLAYER CAP` : '16 PLAYER CAP';
   }
 
+  function hideHomeSpotsLeft() {
+    const node = homeRoot()?.querySelector('[data-rp-home-open-rank-spots-left]');
+    if (!node) return;
+    node.hidden = true;
+    node.classList.remove('is-full');
+    node.textContent = '';
+  }
+
+  function renderHomeSpotsLeft(state = {}) {
+    const node = homeRoot()?.querySelector('[data-rp-home-open-rank-spots-left]');
+    if (!node) return;
+
+    const session = state?.session;
+    const gameStatus = String(session?.gameStatus || session?.game_status || 'setup').toLowerCase();
+    const capacityRaw = Number(session?.capacity);
+    const capacity = Number.isFinite(capacityRaw) && capacityRaw > 0 ? Math.trunc(capacityRaw) : null;
+
+    if (!session || gameStatus !== 'setup' || !capacity) {
+      hideHomeSpotsLeft();
+      return;
+    }
+
+    const counts = state?.counts || {};
+    const securedRaw = Number(counts.secured);
+    const standbyRaw = Number(counts.standby);
+    const secured = Number.isFinite(securedRaw) ? Math.max(0, Math.trunc(securedRaw)) : 0;
+    const standby = Number.isFinite(standbyRaw) ? Math.max(0, Math.trunc(standbyRaw)) : 0;
+
+    // Match the Open Rank card authority: standby players count toward the
+    // visible occupied capacity until the session cap is reached.
+    const occupied = Math.min(secured + standby, capacity);
+    const remaining = Math.max(capacity - occupied, 0);
+
+    node.textContent = `${remaining} SPOT${remaining === 1 ? '' : 'S'} LEFT`;
+    node.classList.toggle('is-full', remaining === 0);
+    node.hidden = false;
+  }
+
+  async function refreshHomeSpotsLeft() {
+    if (homeSpotsLoading) return;
+
+    const auth = localStorage.getItem(TOKEN_KEY);
+    if (!auth) {
+      hideHomeSpotsLeft();
+      return;
+    }
+
+    homeSpotsLoading = true;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/real-play/career/access`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${auth}`,
+        },
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        hideHomeSpotsLeft();
+        return;
+      }
+
+      const state = await response.json().catch(() => ({}));
+      renderHomeSpotsLeft(state || {});
+    } catch (_error) {
+      hideHomeSpotsLeft();
+    } finally {
+      homeSpotsLoading = false;
+    }
+  }
+
   async function refreshHomeCommandCenter() {
     if (!installHomeCommandCenter() || homeLoading) return;
     homeLoading = true;
@@ -291,8 +364,10 @@
       const openRank = schedules.find((entry) => entry.type === 'open-rank')?.item || null;
       renderAnnouncement(announcement);
       renderOpenRank(openRank);
+      refreshHomeSpotsLeft();
     } catch (_error) {
       renderOpenRank(null);
+      refreshHomeSpotsLeft();
     } finally {
       homeLoading = false;
     }
@@ -370,6 +445,7 @@
   window.addEventListener('storage', refreshHomeCommandCenter);
   window.addEventListener('realplay:visitorchange', refreshHomeCommandCenter);
   window.addEventListener('realplay:ranking-session-changed', refreshHomeCommandCenter);
+  window.addEventListener('realplay:ranking-entry-updated', refreshHomeSpotsLeft);
 
   homeRefreshTimer = window.setInterval(() => {
     if (!document.hidden && activeRoute() === 'home') refreshHomeCommandCenter();
