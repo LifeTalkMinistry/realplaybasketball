@@ -162,19 +162,27 @@
   pointer-events:none;
 }
 
-/* Official standard mode: 1600x2000 source with a tightly framed subject. */
+/*
+  Official standard mode: 1600x2000 source with a tightly framed subject.
+  IMPORTANT: anchor the source from the TOP, not the bottom. A 4:5 portrait is
+  taller than the visible hero zone; bottom anchoring pushed the face above the
+  card and cropped the player's forehead/head. Top anchoring keeps the complete
+  identity visible and lets the lower torso be the part that naturally crops and
+  fades behind the stat row.
+*/
 .rp-premium-profile-art[data-fit-mode="standard"] > img{
   position:absolute;
   z-index:1;
-  right:0;
-  bottom:-8%;
+  top:-1%;
+  right:-2%;
+  bottom:auto;
   display:block;
-  width:100%;
+  width:104%;
   height:auto;
   max-width:none;
   object-fit:unset;
   transform:scale(var(--rp-premium-art-scale));
-  transform-origin:68% 58%;
+  transform-origin:68% 20%;
   filter:drop-shadow(0 18px 24px rgba(0,0,0,.40)) saturate(.99) contrast(1.025);
   user-select:none;
 }
@@ -252,7 +260,9 @@
   }
 
   .rp-premium-profile-art[data-fit-mode="standard"] > img{
-    bottom:-7%;
+    top:-1%;
+    right:-2%;
+    width:104%;
   }
 
   .rp-profile .rp-profile-number > strong,
