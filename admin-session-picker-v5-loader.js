@@ -16,7 +16,7 @@
   if (!document.querySelector('script[data-rp-admin-player-schedule-loader]')) {
     const scheduleScript = document.createElement('script');
     scheduleScript.dataset.rpAdminPlayerScheduleLoader = '1';
-    scheduleScript.src = 'admin-player-schedule.js?v=20260917-admin-player-schedule-v1';
+    scheduleScript.src = 'admin-player-schedule.js?v=20260918-admin-player-schedule-v2';
     scheduleScript.async = false;
     scheduleScript.onerror = () => console.error('[Real Play] Admin player schedule controls failed to load.');
     document.head.appendChild(scheduleScript);
