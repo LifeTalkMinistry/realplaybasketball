@@ -492,17 +492,20 @@
     const standby = number(counts.standby);
     const capacityRaw = Number(session.capacity);
     const capacity = Number.isFinite(capacityRaw) && capacityRaw > 0 ? Math.trunc(capacityRaw) : null;
-    const totalPlayers = secured + standby;
-    const securedCapacityCount = capacity ? Math.min(totalPlayers, capacity) : totalPlayers;
-    const overflowStandby = capacity ? Math.max(totalPlayers - capacity, 0) : 0;
+    const mainStandby = capacity
+      ? Math.min(standby, Math.max(capacity - secured, 0))
+      : standby;
+    const overflowStandby = Math.max(standby - mainStandby, 0);
+    const securedCapacityCount = secured + mainStandby;
 
     summary.querySelector('[data-rp-ranking-access-total]').textContent = capacity
-      ? `${pad(securedCapacityCount)}/${pad(capacity)} SECURED${overflowStandby > 0 ? ` · ${pad(overflowStandby)} STANDBY` : ''}`
+      ? `${pad(securedCapacityCount)}/${pad(capacity)} SECURED`
       : `${pad(securedCapacityCount)} SECURED`;
     summary.querySelector('[data-rp-ranking-access-token]').textContent = String(tokenSecured);
     summary.querySelector('[data-rp-ranking-access-gcash]').textContent = String(gcashSecured);
     summary.querySelector('[data-rp-ranking-access-cash]').textContent = String(cashSecured);
-    summary.querySelector('[data-rp-ranking-access-standby]').textContent = String(standby);
+    summary.querySelector('[data-rp-ranking-access-standby]').textContent = String(mainStandby);
+    summary.dataset.rpOverflowStandby = String(overflowStandby);
     summary.dataset.rpAdminPrioritySecured = String(adminPrioritySecured);
 
     summary.hidden = false;

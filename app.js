@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260918-highlight-picker-v95';
+  const version = '20260918-safe-overflow-v96';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 

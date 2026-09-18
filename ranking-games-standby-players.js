@@ -52,6 +52,33 @@
       line-height:1;
       text-transform:uppercase;
     }
+
+    .rp-ranking-overflow-roster{
+      margin-top:14px;
+      padding-top:14px;
+      border-top:1px solid rgba(184,92,108,.17);
+    }
+    .rp-ranking-overflow-roster[hidden]{display:none!important}
+    .rp-ranking-overflow-roster .rp-ranking-secured-head strong{color:#d17b89!important}
+    .rp-ranking-overflow-roster .rp-ranking-secured-head span{color:#8d6972!important}
+    .rp-ranking-overflow-note{
+      margin:-3px 0 10px;
+      color:#725d65;
+      font-size:.43rem;
+      font-weight:850;
+      letter-spacing:.06em;
+      line-height:1.4;
+      text-transform:uppercase;
+    }
+    .rp-ranking-overflow-player{
+      border-color:rgba(184,92,108,.16)!important;
+      background:linear-gradient(105deg,rgba(24,14,18,.96),rgba(8,12,16,.98) 58%,rgba(22,13,17,.95))!important;
+    }
+    .rp-ranking-overflow-player::before{
+      background:linear-gradient(180deg,rgba(206,94,110,.86),rgba(206,94,110,.04))!important;
+      opacity:.66!important;
+    }
+
     .rp-ranking-session button.rp-ranking-leave-standby,
     .rp-ranking-session button.rp-ranking-leave-standby:not(:disabled){
       width:100%;
@@ -179,6 +206,32 @@
     return roster;
   }
 
+  function ensureOverflowRoster() {
+    const card = view.querySelector('[data-rp-ranking-session]');
+    if (!card) return null;
+
+    let roster = card.querySelector('[data-rp-ranking-overflow-roster]');
+    if (roster) return roster;
+
+    roster = document.createElement('section');
+    roster.className = 'rp-ranking-secured rp-ranking-overflow-roster';
+    roster.dataset.rpRankingOverflowRoster = 'true';
+    roster.hidden = true;
+    roster.innerHTML = `
+      <div class="rp-ranking-secured-head">
+        <span>OVERFLOW</span>
+        <strong data-rp-ranking-overflow-count>0 OVERFLOW</strong>
+      </div>
+      <p class="rp-ranking-overflow-note">Waiting after the 16 session spots are filled</p>
+      <div class="rp-ranking-secured-list" data-rp-ranking-overflow-list></div>
+    `;
+
+    const standbyRoster = ensureRoster();
+    if (standbyRoster) standbyRoster.insertAdjacentElement('afterend', roster);
+    else card.appendChild(roster);
+    return roster;
+  }
+
   function syncLeaveButton(standbyPlayers) {
     const card = view.querySelector('[data-rp-ranking-session]');
     const action = card?.querySelector('[data-rp-ranking-session-action]');
@@ -206,11 +259,26 @@
     }
   }
 
-  function renderPlayer(player) {
+  function decorateAdminRemovalTarget(item, player) {
+    const playerId = Number(player?.playerId);
+    const accountUserId = Number(player?.accountUserId ?? player?.profileUserId);
+    const validPlayerId = Number.isSafeInteger(playerId) && playerId > 0;
+    const validAccountUserId = Number.isSafeInteger(accountUserId) && accountUserId > 0;
+    if (!validPlayerId && !validAccountUserId) return;
+
+    item.dataset.rpSessionAdminTarget = 'true';
+    item.dataset.rpSessionPlayerId = validPlayerId ? String(playerId) : '';
+    item.dataset.rpSessionAccountUserId = validAccountUserId ? String(accountUserId) : '';
+    item.dataset.rpSessionPlayerName = String(player?.playerName || 'REAL PLAY PLAYER');
+    item.dataset.rpSessionEntryGroup = 'standby';
+  }
+
+  function renderPlayer(player, overflow = false) {
     const profileId = finiteNumber(player?.playerId);
     const canOpenProfile = Number.isSafeInteger(profileId) && profileId > 0;
     const item = document.createElement(canOpenProfile ? 'button' : 'div');
     item.className = 'rp-ranking-secured-player rp-ranking-standby-player';
+    if (overflow) item.classList.add('rp-ranking-overflow-player');
     if (player?.isYou) item.classList.add('is-you');
     if (canOpenProfile) {
       item.type = 'button';
@@ -273,22 +341,42 @@
       createStatCell('TOP STATS', topStatsLabel(player?.topStats), 'is-top-stats')
     );
     item.append(identity, performance);
+    decorateAdminRemovalTarget(item, player);
     return item;
   }
 
   function render(data = {}) {
     const roster = ensureRoster();
-    if (!roster) return;
+    const overflowRoster = ensureOverflowRoster();
+    if (!roster || !overflowRoster) return;
+
     const players = Array.isArray(data.standbyPlayers) ? data.standbyPlayers : [];
-    const count = Number.isFinite(Number(data.standbyCount)) ? Number(data.standbyCount) : players.length;
+    const capacityRaw = Number(data.capacity);
+    const capacity = Number.isFinite(capacityRaw) && capacityRaw > 0 ? Math.trunc(capacityRaw) : null;
+    const confirmedRaw = Number(data.confirmedCount);
+    const confirmed = Number.isFinite(confirmedRaw)
+      ? Math.max(0, Math.trunc(confirmedRaw))
+      : (Array.isArray(data.players) ? data.players.length : 0);
+    const mainStandbyLimit = capacity === null
+      ? players.length
+      : Math.max(0, capacity - confirmed);
+    const standbyPlayers = players.slice(0, mainStandbyLimit);
+    const overflowPlayers = players.slice(mainStandbyLimit);
+
     const countNode = roster.querySelector('[data-rp-ranking-standby-count]');
     const list = roster.querySelector('[data-rp-ranking-standby-list]');
+    const overflowCountNode = overflowRoster.querySelector('[data-rp-ranking-overflow-count]');
+    const overflowList = overflowRoster.querySelector('[data-rp-ranking-overflow-list]');
 
     syncLeaveButton(players);
-    roster.hidden = players.length === 0;
-    if (countNode) countNode.textContent = `${count} STANDBY`;
-    if (!list) return;
-    list.replaceChildren(...players.map(renderPlayer));
+
+    roster.hidden = standbyPlayers.length === 0;
+    overflowRoster.hidden = overflowPlayers.length === 0;
+
+    if (countNode) countNode.textContent = `${standbyPlayers.length} STANDBY`;
+    if (overflowCountNode) overflowCountNode.textContent = `${overflowPlayers.length} OVERFLOW`;
+    if (list) list.replaceChildren(...standbyPlayers.map((player) => renderPlayer(player, false)));
+    if (overflowList) overflowList.replaceChildren(...overflowPlayers.map((player) => renderPlayer(player, true)));
   }
 
   async function refresh() {
@@ -349,6 +437,7 @@
 
   const observer = new MutationObserver(() => {
     ensureRoster();
+    ensureOverflowRoster();
     if (view.classList.contains('open')) refresh();
   });
   observer.observe(view, { attributes: true, attributeFilter: ['class'] });
@@ -361,6 +450,7 @@
   });
 
   ensureRoster();
+  ensureOverflowRoster();
   refresh();
   pollTimer = window.setInterval(refresh, POLL_MS);
   window.addEventListener('beforeunload', () => {
