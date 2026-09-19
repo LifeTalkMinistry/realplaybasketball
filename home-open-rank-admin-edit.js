@@ -310,7 +310,7 @@
     form.elements.endsAt.value = endTime24FromLabel(parseEndLabel(update));
     form.elements.capacity.value = String(parseCapacity(update));
     form.elements.locationName.value = String(update?.location_name || update?.locationName || '').trim();
-    editorStatus('Changes update the public Home card immediately after saving.');
+    editorStatus('This only controls the public Home schedule card. Game Control stays separate.');
     backdrop.hidden = false;
     document.body.classList.add('rp-home-open-rank-editing');
     window.setTimeout(() => form.elements.title.focus({ preventScroll: true }), 0);
@@ -360,7 +360,7 @@
     if (!Number.isFinite(capacity) || capacity < 1 || capacity > 500) return editorStatus('Player cap must be between 1 and 500.', true);
 
     setEditorBusy(true);
-    editorStatus('Saving public Open Ranking schedule…');
+    editorStatus('Saving Home schedule…');
     const oldOverrideId = Number(currentOverride?.id);
 
     try {
@@ -387,7 +387,7 @@
       ingestUpdates(updates);
       renderOverride();
       editorStatus('Saved.');
-      window.dispatchEvent(new CustomEvent('realplay:ranking-session-changed'));
+      window.dispatchEvent(new CustomEvent('realplay:home-schedule-changed'));
       window.setTimeout(() => {
         setEditorBusy(false);
         closeEditor();
@@ -412,7 +412,7 @@
       .sort((left, right) => new Date(right.item.published_at || 0) - new Date(left.item.published_at || 0));
 
     currentOverride = overrides[0]?.item || null;
-    currentOpenRank = currentOverride || candidates[0]?.item || null;
+    currentOpenRank = currentOverride;
   }
 
   async function refreshOpenRankState() {
@@ -439,7 +439,7 @@
       button.type = 'button';
       button.className = 'rp-home-open-rank-edit';
       button.dataset.rpHomeOpenRankEdit = '1';
-      button.setAttribute('aria-label', 'Edit current Open Ranking schedule');
+      button.setAttribute('aria-label', 'Edit Home schedule');
       button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>';
       button.addEventListener('click', (event) => {
         event.preventDefault();
@@ -519,7 +519,7 @@
     verifiedToken = '';
     verifyAdmin(true);
   });
-  window.addEventListener('realplay:ranking-session-changed', refreshOpenRankState);
+  window.addEventListener('realplay:home-schedule-changed', refreshOpenRankState);
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeEditor();
   });
