@@ -164,5 +164,20 @@
     document.head.appendChild(script);
   }
 
+  function loadProfileShare() {
+    if (window.__realPlayProfileShareInstalled) return;
+    if (document.querySelector('script[data-rp-profile-share-loader]')) return;
+
+    const script = document.createElement('script');
+    script.dataset.rpProfileShareLoader = 'true';
+    script.src = 'profile-share.js?v=20260919-profile-share-v1';
+    script.async = false;
+    script.addEventListener('error', () => {
+      console.warn('[Real Play] Profile sharing failed to load.');
+    }, { once: true });
+    document.head.appendChild(script);
+  }
+
   loadPlayerConnections();
+  loadProfileShare();
 })();
