@@ -1,13 +1,58 @@
 (() => {
-  if (window.__realPlayProfileLinkedShareInstalledV110) return;
-  window.__realPlayProfileLinkedShareInstalledV110 = true;
+  if (window.__realPlayProfileLinkedShareInstalledV111) return;
+  window.__realPlayProfileLinkedShareInstalledV111 = true;
+
+  const PUBLIC_APP_URL = 'https://joinrealplay.com/';
+  const PROFILE_SHARE_URL = /^https:\/\/api\.clarapmc\.com\/api\/real-play\/profile-share\/[a-f0-9]{40}(?:[?#].*)?$/i;
+  const DIRECT_PROFILE_URL = /^https:\/\/joinrealplay\.com\/(?:\?player=\d+)?(?:#.*)?$/i;
+  const SNAPSHOT_UPLOAD_URL = /^https:\/\/api\.clarapmc\.com\/api\/real-play\/profile-share-snapshots(?:\?|$)/i;
+  const PLAYER_MEMORY_MS = 15000;
+
+  let latestSharePlayerId = null;
+  let latestSharePlayerAt = 0;
+
+  const positiveId = (value) => {
+    const id = Number(value);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+  };
+
+  function directProfileUrl(playerId) {
+    const id = positiveId(playerId);
+    if (!id) return PUBLIC_APP_URL;
+    const url = new URL(PUBLIC_APP_URL);
+    url.searchParams.set('player', String(id));
+    return url.toString();
+  }
+
+  function rememberSnapshotPlayer(input) {
+    const raw = typeof input === 'string'
+      ? input
+      : input instanceof URL
+        ? input.href
+        : input?.url || '';
+    if (!SNAPSHOT_UPLOAD_URL.test(String(raw))) return;
+    try {
+      const id = positiveId(new URL(raw, window.location.href).searchParams.get('player'));
+      if (!id) return;
+      latestSharePlayerId = id;
+      latestSharePlayerAt = Date.now();
+    } catch (_error) {}
+  }
+
+  // The profile-share publisher already knows the canonical public player id.
+  // Remember it when the snapshot upload begins so the native share handoff can
+  // use joinrealplay.com instead of exposing the API host to Facebook.
+  if (typeof window.fetch === 'function') {
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = function realPlayShareDomainFetch(input, init) {
+      rememberSnapshotPlayer(input);
+      return nativeFetch(input, init);
+    };
+  }
 
   if (typeof navigator.share !== 'function') return;
 
   const nativeShare = navigator.share.bind(navigator);
-  const PROFILE_SHARE_URL = /^https:\/\/api\.clarapmc\.com\/api\/real-play\/profile-share\/[a-f0-9]{40}(?:[?#].*)?$/i;
-  const DIRECT_PROFILE_URL = /^https:\/\/joinrealplay\.com\/(?:\?player=\d+)?(?:#.*)?$/i;
-  const PREVIEW_VERSION = '20260920-image-only-v110';
 
   function isProfileImage(file) {
     if (!file) return false;
@@ -16,39 +61,55 @@
     return type === 'image/png' && (name.startsWith('real-play-') || name === 'real-play-profile.png');
   }
 
-  function shouldConvertToLinkedCard(payload) {
+  function currentPublicPlayerId() {
+    const panel = document.querySelector('.rp-profile.open');
+    if (!panel) return null;
+    const source = panel.__realPlayPublicPlayer || panel.__realPlayProfileState || {};
+    const profile = source?.profile || source?.player || source || {};
+    return positiveId(
+      panel.dataset?.rpPublicPlayerId ??
+      source?.playerId ?? source?.player_id ?? source?.publicPlayerId ?? source?.public_player_id ??
+      profile?.playerId ?? profile?.player_id
+    );
+  }
+
+  function rememberedPlayerId() {
+    if (latestSharePlayerId && Date.now() - latestSharePlayerAt <= PLAYER_MEMORY_MS) {
+      return latestSharePlayerId;
+    }
+    return currentPublicPlayerId();
+  }
+
+  function profileFiles(payload) {
+    return Array.isArray(payload?.files) ? payload.files.filter(isProfileImage) : [];
+  }
+
+  function shouldRewrite(payload) {
     if (!payload || typeof payload !== 'object') return false;
+    if (!profileFiles(payload).length) return false;
     const url = String(payload.url || '').trim();
-    const files = Array.isArray(payload.files) ? payload.files : [];
-    if (!url || !files.some(isProfileImage)) return false;
     return PROFILE_SHARE_URL.test(url) || DIRECT_PROFILE_URL.test(url);
   }
 
-  function versionedPreviewUrl(value) {
-    const raw = String(value || '').trim();
-    if (!PROFILE_SHARE_URL.test(raw)) return raw;
-    try {
-      const url = new URL(raw);
-      url.searchParams.set('rp_preview', PREVIEW_VERSION);
-      return url.toString();
-    } catch (_error) {
-      return raw;
-    }
-  }
+  function directPayload(payload) {
+    const files = profileFiles(payload);
+    const suppliedUrl = String(payload.url || '').trim();
+    let url = DIRECT_PROFILE_URL.test(suppliedUrl) ? suppliedUrl : '';
+    if (!url) url = directProfileUrl(rememberedPlayerId());
 
-  function linkedPayload(payload) {
-    const url = versionedPreviewUrl(payload.url);
-
-    // Native share targets are inconsistent when a PNG and URL are supplied
-    // together. Share only the social URL here so Facebook can keep the exact
-    // captured hero clickable. The social document itself now owns the image,
-    // canonical joinrealplay.com destination, and deliberately minimal metadata.
-    return { url };
+    // Facebook treats a URL share as a web-card and prints the source host under
+    // the image. For profile sharing we want the actual profile image as the post
+    // media, with the Real Play player URL carried in the post text. That keeps
+    // the artwork clean and ensures the only shared destination is joinrealplay.com.
+    return {
+      files,
+      text: url,
+    };
   }
 
   function share(payload) {
-    if (!shouldConvertToLinkedCard(payload)) return nativeShare(payload);
-    return nativeShare(linkedPayload(payload));
+    if (!shouldRewrite(payload)) return nativeShare(payload);
+    return nativeShare(directPayload(payload));
   }
 
   let installed = false;
