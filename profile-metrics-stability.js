@@ -164,18 +164,45 @@
     document.head.appendChild(script);
   }
 
-  function loadProfileShare() {
+  function appendProfileShareScript() {
     if (window.__realPlayProfileShareInstalled) return;
     if (document.querySelector('script[data-rp-profile-share-loader]')) return;
 
     const script = document.createElement('script');
     script.dataset.rpProfileShareLoader = 'true';
-    script.src = 'profile-share.js?v=20260919-profile-share-v1';
+    script.src = 'profile-share.js?v=20260919-profile-share-v2';
     script.async = false;
     script.addEventListener('error', () => {
       console.warn('[Real Play] Profile sharing failed to load.');
     }, { once: true });
     document.head.appendChild(script);
+  }
+
+  function loadProfileShare() {
+    if (window.__realPlayProfileShareInstalled) return;
+
+    if (window.__realPlayProfileShareArtBridgeInstalled) {
+      appendProfileShareScript();
+      return;
+    }
+
+    const existing = document.querySelector('script[data-rp-profile-share-art-bridge-loader]');
+    if (existing) {
+      existing.addEventListener('load', appendProfileShareScript, { once: true });
+      existing.addEventListener('error', appendProfileShareScript, { once: true });
+      return;
+    }
+
+    const bridge = document.createElement('script');
+    bridge.dataset.rpProfileShareArtBridgeLoader = 'true';
+    bridge.src = 'profile-share-art-bridge.js?v=20260919-profile-share-art-bridge-v1';
+    bridge.async = false;
+    bridge.addEventListener('load', appendProfileShareScript, { once: true });
+    bridge.addEventListener('error', () => {
+      console.warn('[Real Play] Profile share art bridge failed to load.');
+      appendProfileShareScript();
+    }, { once: true });
+    document.head.appendChild(bridge);
   }
 
   loadPlayerConnections();
