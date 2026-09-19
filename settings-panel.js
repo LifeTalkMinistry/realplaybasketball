@@ -271,20 +271,30 @@
 
   function openProfileArtStudio() {
     closeSettings({ restoreFocus: false });
-    window.RealPlayProfile?.open?.();
 
-    let attempts = 0;
-    const tryOpen = () => {
+    let settled = false;
+    let fallbackTimer = 0;
+    const openStudioAfterProfileRender = () => {
+      if (settled) return;
       const profile = document.querySelector('[data-rp-profile].open');
       const studio = window.RealPlayPremiumProfileArt;
-      if (profile && typeof studio?.editOpenProfile === 'function') {
-        studio.editOpenProfile();
-        if (profile.querySelector('[data-rp-profile-art-editor]')) return;
-      }
-      attempts += 1;
-      if (attempts < 40) window.setTimeout(tryOpen, 75);
+      if (!profile || typeof studio?.editOpenProfile !== 'function') return;
+
+      settled = true;
+      window.removeEventListener('realplay:profile-loaded', handleProfileLoaded);
+      if (fallbackTimer) window.clearTimeout(fallbackTimer);
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => studio.editOpenProfile());
+      });
     };
-    window.setTimeout(tryOpen, 90);
+
+    const handleProfileLoaded = () => openStudioAfterProfileRender();
+    window.addEventListener('realplay:profile-loaded', handleProfileLoaded);
+    window.RealPlayProfile?.open?.();
+
+    // The profile loader normally emits realplay:profile-loaded after replacing
+    // the profile DOM. This fallback only covers an already-settled/cached view.
+    fallbackTimer = window.setTimeout(openStudioAfterProfileRender, 1800);
   }
 
   function logout() {
