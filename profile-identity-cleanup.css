@@ -252,34 +252,34 @@
 }
 
 /*
-  Recognition badges are artwork, not stretchable UI panels. Keep their native
-  image ratio in both the live profile and html2canvas snapshots. Using intrinsic
-  width/height here also avoids relying on object-fit, which DOM rasterizers can
-  interpret differently from the browser compositor.
+  Recognition badges are artwork, not stretchable UI panels. Keep the badge in
+  normal document flow so html2canvas uses the same coordinate space as the
+  browser. The image keeps its intrinsic ratio and is centered by the slot.
 */
 .rp-profile .rp-profile-hero .rp-profile-badge{
+  display:grid!important;
+  place-items:center!important;
   overflow:visible!important;
 }
 
 .rp-profile .rp-profile-hero .rp-profile-badge img{
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
+  position:static!important;
+  left:auto!important;
+  top:auto!important;
+  display:block!important;
   width:auto!important;
   height:auto!important;
   max-width:100%!important;
   max-height:100%!important;
-  margin:0!important;
+  margin:auto!important;
   object-fit:contain!important;
   aspect-ratio:auto!important;
-  transform:translate(-50%,-50%) scale(var(--rp-profile-badge-scale,1))!important;
+  transform:scale(var(--rp-profile-badge-scale,1))!important;
   transform-origin:center!important;
 }
 
 /* Captain Eligible was intentionally enlarged 22% by the recognition layer.
-   That makes this particular crest look pulled/stretched in the hero. Render
-   the source art at its natural profile scale while keeping the same slot and
-   position. */
+   Keep the source artwork at natural scale so the crest is not exaggerated. */
 .rp-profile .rp-profile-hero .rp-profile-badge[data-rp-profile-recognition="captain_eligible"]{
   --rp-profile-badge-scale:1!important;
 }
