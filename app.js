@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260919-profile-art-owner-authority-v106';
+  const version = '20260920-profile-art-unified-access-v107';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
