@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260919-rank-info-removal-v102';
+  const version = '20260919-focus-close-authority-v103';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
