@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260918-profile-art-studio-v99';
+  const version = '20260919-profile-art-owner-v100';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -353,6 +353,7 @@
       'profile-load-guard.js',
       'real-play-profile.js',
       'real-play-profile-intro.js',
+      'profile-art-owner-access.js',
       'profile-metrics-stability.js',
       'real-play-profile-metrics.js',
       'real-play-world-players.js',
