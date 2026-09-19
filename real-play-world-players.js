@@ -349,8 +349,22 @@
     const root = publicProfilePanel?.querySelector('[data-rp-public-profile-content]');
     if (!root) return;
     publicProfilePanel.__realPlayPublicPlayer = player || null;
-    if (player?.playerId) publicProfilePanel.dataset.rpPublicPlayerId = String(player.playerId);
-    else delete publicProfilePanel.dataset.rpPublicPlayerId;
+
+    // The public profile route is keyed by canonical Player ID, but premium
+    // profile art for a claimed player is stored against the owning account ID.
+    // Keep the canonical ID on the player payload/event and expose only the art
+    // authority ID through this dataset consumed by real-play-profile-intro.js.
+    const profileArtPlayerId = Number(
+      player?.accountUserId
+      ?? player?.account_user_id
+      ?? player?.playerId
+      ?? 0
+    );
+    if (Number.isSafeInteger(profileArtPlayerId) && profileArtPlayerId > 0) {
+      publicProfilePanel.dataset.rpPublicPlayerId = String(profileArtPlayerId);
+    } else {
+      delete publicProfilePanel.dataset.rpPublicPlayerId;
+    }
 
     const stats = player?.careerStats || {};
     const jersey = player?.playerNumber === null || player?.playerNumber === undefined ? null : Number(player.playerNumber);
