@@ -3,6 +3,7 @@
   window.__realPlayProfileShareInstalled = true;
 
   const API_BASE_URL = 'https://api.clarapmc.com';
+  const PUBLIC_APP_URL = 'https://joinrealplay.com/';
   const TOKEN_KEY = 'real_play_access_token';
   const LONG_PRESS_MS = 620;
   const MOVE_CANCEL_PX = 14;
@@ -47,6 +48,7 @@
     style.dataset.rpProfileShareStyles = '1';
     style.textContent = `
       .rp-profile.open .rp-profile-hero{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+      .rp-profile.has-rp-premium-profile-art .rp-profile-name>h1{max-width:min(69vw,350px)!important}
       .rp-profile.rp-profile-share-armed .rp-profile-hero{box-shadow:0 0 0 2px rgba(68,218,255,.72),0 18px 48px rgba(0,0,0,.48)!important}
       .rp-profile.rp-profile-share-armed .rp-profile-hero::after{content:'RELEASE TO SHARE PROFILE';position:absolute;z-index:30;left:50%;bottom:12px;transform:translateX(-50%);padding:8px 12px;border:1px solid rgba(78,220,255,.35);border-radius:999px;color:#76e7ff;background:rgba(1,7,13,.88);font:900 .46rem/1 Arial,sans-serif;letter-spacing:.12em;white-space:nowrap;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.38)}
       .rp-profile-share-toast{position:fixed;z-index:2147483000;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translate(-50%,12px);max-width:min(88vw,420px);padding:11px 14px;border:1px solid rgba(71,216,255,.28);border-radius:13px;color:#dff7ff;background:rgba(2,8,14,.94);font:900 .58rem/1.25 Arial,sans-serif;letter-spacing:.055em;text-align:center;opacity:0;pointer-events:none;transition:opacity .16s ease,transform .16s ease;box-shadow:0 18px 46px rgba(0,0,0,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
@@ -168,11 +170,15 @@
   }
 
   function shareUrl(publicPlayerId) {
-    const url = new URL(window.location.href);
+    const url = new URL(PUBLIC_APP_URL);
     url.hash = '';
     url.search = '';
     if (publicPlayerId) url.searchParams.set('player', String(publicPlayerId));
     return url.toString();
+  }
+
+  function socialShareUrl(shareId) {
+    return `${API_BASE_URL}/api/real-play/profile-share/${encodeURIComponent(shareId)}`;
   }
 
   function loadScript(src) {
@@ -341,7 +347,7 @@
     });
   }
 
-  async function captureHeroDom(panel, { allowArmedClone = false } = {}) {
+  async function captureHeroDom(panel) {
     if (!(panel instanceof HTMLElement) || !panel.classList.contains('open')) throw new Error('Player profile is not open.');
     const data = panelData(panel);
     const hero = data.hero;
@@ -366,7 +372,9 @@
         onclone: (clonedDocument) => {
           const cloneHero = clonedDocument.querySelector(`[data-rp-profile-share-capture-target="${captureId}"]`);
           const clonePanel = cloneHero?.closest('.rp-profile');
-          if (allowArmedClone) clonePanel?.classList.remove('rp-profile-share-armed');
+          // The hold prompt is interaction feedback only. It must never become
+          // part of the shared profile image, even if capture finishes while held.
+          clonePanel?.classList.remove('rp-profile-share-armed');
           cloneHero?.querySelectorAll(IGNORE_CAPTURE_SELECTOR).forEach((node) => node.remove());
           localized.replacements.forEach((objectUrl, key) => {
             const cloneImage = cloneHero?.querySelector(`img[data-rp-share-capture-image="${key}"]`);
@@ -374,7 +382,8 @@
           });
         },
       });
-      return await canvasToBlob(canvas);
+      const blob = await canvasToBlob(canvas);
+      return { blob, width: canvas.width, height: canvas.height };
     } finally {
       delete hero.dataset.rpProfileShareCaptureTarget;
       localized.cleanup();
@@ -422,16 +431,17 @@
     return promise;
   }
 
-  async function primeCapture(panel, allowArmedClone = false) {
+  async function primeCapture(panel) {
     const data = panelData(panel);
     if (!data.hero) return null;
-    const sig = captureSignature(data);
+    const initialSig = captureSignature(data);
     const current = captureCache.get(panel);
-    if (current?.signature === sig && current?.blob) return current;
-    if (current?.signature === sig && current?.promise) return current.promise;
-    const promise = captureHeroDom(panel, { allowArmedClone })
-      .then((blob) => {
-        const result = { signature: sig, blob };
+    if (current?.signature === initialSig && current?.blob) return current;
+    if (current?.signature === initialSig && current?.promise) return current.promise;
+    const promise = captureHeroDom(panel)
+      .then((capture) => {
+        const finalSig = captureSignature(panelData(panel));
+        const result = { signature: finalSig, ...capture };
         captureCache.set(panel, result);
         return result;
       })
@@ -439,8 +449,71 @@
         captureCache.delete(panel);
         throw error;
       });
-    captureCache.set(panel, { signature: sig, promise });
+    captureCache.set(panel, { signature: initialSig, promise });
     return promise;
+  }
+
+  async function deriveShareId(publicPlayerId, blob) {
+    if (!publicPlayerId || !blob || !window.crypto?.subtle || typeof TextEncoder !== 'function') return null;
+    try {
+      const prefix = new TextEncoder().encode(`${publicPlayerId}\0`);
+      const image = new Uint8Array(await blob.arrayBuffer());
+      const bytes = new Uint8Array(prefix.length + image.length);
+      bytes.set(prefix, 0);
+      bytes.set(image, prefix.length);
+      const digest = new Uint8Array(await window.crypto.subtle.digest('SHA-256', bytes));
+      return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('').slice(0, 40);
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  async function createSharePackage(item, capture) {
+    if (!item || !capture?.blob) return { item, capture, socialUrl: null, publishPromise: null };
+    const shareId = await deriveShareId(item.publicPlayerId, capture.blob);
+    const packageData = {
+      item,
+      capture,
+      shareId,
+      socialUrl: shareId ? socialShareUrl(shareId) : null,
+      publishPromise: null,
+      published: false,
+    };
+    return packageData;
+  }
+
+  function publishSharePackage(packageData) {
+    if (!packageData?.shareId || !packageData?.item?.publicPlayerId || !packageData?.capture?.blob) return null;
+    if (packageData.publishPromise) return packageData.publishPromise;
+    const params = new URLSearchParams({
+      player: String(packageData.item.publicPlayerId),
+      name: packageData.item.data.playerName,
+      jersey: packageData.item.data.jerseyText,
+      width: String(packageData.capture.width || ''),
+      height: String(packageData.capture.height || ''),
+    });
+    packageData.publishPromise = fetch(`${API_BASE_URL}/api/real-play/profile-share-snapshots?${params.toString()}`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'image/png',
+      },
+      body: packageData.capture.blob,
+      cache: 'no-store',
+    })
+      .then(async (response) => {
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result?.message || 'Could not publish profile snapshot.');
+        packageData.published = true;
+        if (result?.share?.shareUrl) packageData.socialUrl = result.share.shareUrl;
+        return result;
+      })
+      .catch((error) => {
+        packageData.published = false;
+        packageData.publishError = error;
+        return null;
+      });
+    return packageData.publishPromise;
   }
 
   function downloadBlob(blob, filename) {
@@ -465,47 +538,66 @@
     return new File([blob], filename || 'real-play-profile.png', { type: 'image/png', lastModified: Date.now() });
   }
 
-  async function nativeShareNow(panel, primedCapture = null) {
-    let item = prepared.get(panel);
-    if (!item) {
-      try { item = await preparePanel(panel); } catch (_error) { item = null; }
-    }
-    const data = panelData(panel);
-    const fallbackUrl = shareUrl(data.directPublicId);
-    const url = item?.url || fallbackUrl;
+  function sharePreparedPackageNow(packageData) {
+    const item = packageData?.item;
+    const capture = packageData?.capture;
+    const data = item?.data || panelData(packageData?.panel);
+    const url = packageData?.socialUrl || item?.url || shareUrl(item?.publicPlayerId || data?.directPublicId);
     const title = item?.title || 'Real Play Basketball';
-    const text = item?.text || `${data.jerseyText} ${data.playerName}\nLess Screen. Real Points.`;
+    const text = item?.text || `${data?.jerseyText || ''} ${data?.playerName || 'REAL PLAY PLAYER'}\nLess Screen. Real Points.`;
     const filename = item?.filename || 'real-play-profile.png';
-    let blob = null;
-    try {
-      const currentSig = captureSignature(data);
-      if (primedCapture?.blob && primedCapture.signature === currentSig) {
-        blob = primedCapture.blob;
-      } else {
-        const fresh = await primeCapture(panel, false);
-        blob = fresh?.blob || null;
-      }
-    } catch (_error) {}
+    const blob = capture?.blob || null;
     const file = makeFile(blob, filename);
+
     if (navigator.share) {
       const canShareFile = Boolean(file && navigator.canShare && (() => {
         try { return navigator.canShare({ files: [file] }); } catch (_error) { return false; }
       })());
       const payload = canShareFile ? { title, text, url, files: [file] } : { title, text, url };
-      try {
-        await navigator.share(payload);
-        return;
-      } catch (error) {
+      navigator.share(payload).catch((error) => {
         if (error?.name === 'AbortError') return;
         copyLink(url);
         if (blob) downloadBlob(blob, filename);
         toast(blob ? 'SHARE SHEET BLOCKED · PROFILE PNG SAVED + LINK COPIED.' : 'SHARE COULD NOT OPEN · PROFILE LINK COPIED.', 2800);
-        return;
-      }
+      });
+      return;
     }
+
     copyLink(url);
     if (blob) downloadBlob(blob, filename);
     toast(blob ? 'PROFILE PNG SAVED · LINK COPIED.' : 'PROFILE LINK COPIED.', 2400);
+  }
+
+  async function prepareSharePackage(panel) {
+    const [item, capture] = await Promise.all([preparePanel(panel), primeCapture(panel)]);
+    const packageData = await createSharePackage(item, capture);
+    publishSharePackage(packageData);
+    return packageData;
+  }
+
+  async function nativeShareNow(panel, primedPackage = null) {
+    try {
+      const packageData = primedPackage || await prepareSharePackage(panel);
+      sharePreparedPackageNow(packageData);
+    } catch (_error) {
+      const data = panelData(panel);
+      const fallbackUrl = shareUrl(data.directPublicId);
+      if (navigator.share) {
+        navigator.share({
+          title: 'Real Play Basketball',
+          text: `${data.jerseyText} ${data.playerName}\nLess Screen. Real Points.`,
+          url: fallbackUrl,
+        }).catch((error) => {
+          if (error?.name !== 'AbortError') {
+            copyLink(fallbackUrl);
+            toast('PROFILE LINK COPIED.');
+          }
+        });
+      } else {
+        copyLink(fallbackUrl);
+        toast('PROFILE LINK COPIED.');
+      }
+    }
   }
 
   function cancelPress() {
@@ -520,9 +612,8 @@
     if (!panel || panel.classList.contains('rp-profile-art-editing')) return;
     if (event.button !== undefined && event.button !== 0) return;
     if (event.target.closest('button,a,input,textarea,select,[role="button"]')) return;
+
     cancelPress();
-    preparePanel(panel).catch(() => {});
-    waitForHeroReady(hero).catch(() => {});
     const nextPress = {
       panel,
       hero,
@@ -530,17 +621,40 @@
       startX: event.clientX,
       startY: event.clientY,
       armed: false,
-      capturePromise: null,
-      captureResult: null,
+      itemPromise: preparePanel(panel),
+      capturePromise: primeCapture(panel),
+      packagePromise: null,
+      packageResult: null,
       timer: null,
     };
+
+    // Start the real hero snapshot BEFORE the visual hold prompt is added. That
+    // guarantees the PNG is the normal profile hero, not the temporary share UI.
+    Promise.all([nextPress.itemPromise, nextPress.capturePromise])
+      .then(([item, capture]) => createSharePackage(item, capture))
+      .then((packageData) => {
+        nextPress.packageResult = packageData;
+        if (nextPress.armed) publishSharePackage(packageData);
+        return packageData;
+      })
+      .catch(() => null);
+
     nextPress.timer = setTimeout(() => {
       if (press !== nextPress) return;
       nextPress.armed = true;
       panel.classList.add('rp-profile-share-armed');
-      nextPress.capturePromise = primeCapture(panel, true)
-        .then((result) => { nextPress.captureResult = result; return result; })
-        .catch(() => null);
+      if (nextPress.packageResult) {
+        publishSharePackage(nextPress.packageResult);
+      } else {
+        nextPress.packagePromise = Promise.all([nextPress.itemPromise, nextPress.capturePromise])
+          .then(([item, capture]) => createSharePackage(item, capture))
+          .then((packageData) => {
+            nextPress.packageResult = packageData;
+            publishSharePackage(packageData);
+            return packageData;
+          })
+          .catch(() => null);
+      }
       try { navigator.vibrate?.(18); } catch (_error) {}
     }, LONG_PRESS_MS);
     press = nextPress;
@@ -552,7 +666,20 @@
     if (distance > MOVE_CANCEL_PX) cancelPress();
   }
 
-  async function endPress(event) {
+  function finishDelayedShare(current) {
+    const promise = current.packagePromise
+      || Promise.all([current.itemPromise, current.capturePromise])
+        .then(([item, capture]) => createSharePackage(item, capture));
+    promise
+      .then((packageData) => {
+        if (!packageData) throw new Error('Share package unavailable.');
+        publishSharePackage(packageData);
+        sharePreparedPackageNow(packageData);
+      })
+      .catch(() => nativeShareNow(current.panel));
+  }
+
+  function endPress(event) {
     if (!press || event.pointerId !== press.pointerId) return;
     const current = press;
     const armed = current.armed;
@@ -560,17 +687,19 @@
     current.panel.classList.remove('rp-profile-share-armed');
     press = null;
     if (!armed) return;
+
     event.preventDefault();
     event.stopPropagation();
-    if (current.captureResult) {
-      nativeShareNow(current.panel, current.captureResult);
+
+    // If preparation finished during the hold, navigator.share is called in the
+    // pointer-up task itself so iPhone/Safari keeps the native user activation.
+    if (current.packageResult) {
+      publishSharePackage(current.packageResult);
+      sharePreparedPackageNow(current.packageResult);
       return;
     }
-    let primedCapture = null;
-    if (current.capturePromise) {
-      try { primedCapture = await current.capturePromise; } catch (_error) {}
-    }
-    await nativeShareNow(current.panel, primedCapture);
+
+    finishDelayedShare(current);
   }
 
   function bindLongPress() {
@@ -657,7 +786,6 @@
       const panel = document.querySelector('.rp-profile.open');
       if (!panel) return;
       try {
-        await preparePanel(panel);
         await nativeShareNow(panel);
       } catch (_error) {
         toast('PROFILE SHARE IS NOT READY YET.');
@@ -666,7 +794,7 @@
     captureOpenHero: async () => {
       const panel = document.querySelector('.rp-profile.open');
       if (!panel) return null;
-      const result = await primeCapture(panel, false);
+      const result = await primeCapture(panel);
       return result?.blob || null;
     },
   };
