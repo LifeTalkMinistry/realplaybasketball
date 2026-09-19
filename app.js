@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260919-focus-close-authority-v103';
+  const version = '20260919-script-first-bootstrap-v104';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -212,7 +212,7 @@
     await nextPaint();
   }
 
-  const stylesheetLoads = [
+  const stylesheetHrefs = [
     'mobile-lobby.css',
     'lobby-topbar-cleanup.css',
     'mobile-entry.css',
@@ -272,7 +272,7 @@
     'home-open-rank-art.css',
     'home-why-real-play.css',
     'world-results.css',
-  ].map((href) => addStylesheet(href));
+  ];
 
   (async () => {
     const guardLoaded = await loadScript('auth-session-guard.js', 5000);
@@ -351,6 +351,7 @@
       'real-play-world-chat-cleanup.js',
       'profile-load-guard.js',
       'real-play-profile.js',
+      'settings-panel.js',
       'real-play-profile-intro.js',
       'profile-art-owner-access.js',
       'profile-metrics-stability.js',
@@ -381,7 +382,6 @@
       'ranking-spot-priority.js',
       'ranking-reservation-snapshot.js',
       'overlay-focus-release.js',
-      'settings-panel.js',
       'player-admin-probe-guard.js',
       'admin-live-stat-stability.js',
       'admin-courtside-live.js',
@@ -404,8 +404,9 @@
       if (!loaded) console.warn(`[Real Play] Optional layer failed to load: ${href}`);
     }
 
-    // Dynamic CSS loads in parallel, but it must also settle before interaction
-    // is enabled. Failed optional CSS is logged without trapping the whole app.
+    // Load behavior-critical JavaScript before fanning out cold-cache CSS requests.
+    // This prevents optional stylesheets from starving auth/settings/navigation scripts.
+    const stylesheetLoads = stylesheetHrefs.map((href) => addStylesheet(href));
     const stylesheetResults = await Promise.all(stylesheetLoads);
     stylesheetResults.forEach((loaded, index) => {
       if (!loaded) console.warn(`[Real Play] Optional stylesheet failed to settle at index ${index}.`);
