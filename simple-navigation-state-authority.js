@@ -9,7 +9,6 @@
   let enforceQueued = false;
   let homeRefreshTimer = 0;
   let homeLoading = false;
-  let homeSpotsLoading = false;
   const observedAuthorityTargets = new WeakSet();
 
   const esc = (value) => String(value ?? '')
@@ -119,6 +118,13 @@
     return '';
   }
 
+  function isHomeScheduleOverride(update) {
+    if (!update || update.category !== 'schedule') return false;
+    if (update.source_key || update.sourceKey) return false;
+    if (scheduleType(update) !== 'open-rank') return false;
+    return /\bPLAYER\s+CAP\b/i.test(String(update.body || ''));
+  }
+
   function homeRoot() {
     return document.querySelector('[data-rp-simple-home]');
   }
@@ -174,7 +180,7 @@
         <div class="rp-home-session-copy">
           <strong data-rp-home-open-rank-title>SUNDAY OPEN RANKING</strong>
           <p data-rp-home-open-rank-meta>EVERY SUNDAY · 8:00 PM – 11:00 PM</p>
-          <span class="rp-home-spots-left" data-rp-home-open-rank-spots-left hidden></span>
+          <span class="rp-home-spots-left" data-rp-home-open-rank-capacity>16 PLAYER CAP</span>
         </div>
         <button class="rp-home-save-slot" type="button" data-rp-home-save-slot>SAVE MY SLOT</button>
       </section>
@@ -253,81 +259,13 @@
     const when = formatEvent(update.event_at || update.eventAt);
     const location = String(update.location_name || update.locationName || '').trim();
     const metadata = update?.metadata || {};
-    const cap = Number(metadata.capacity ?? update.capacity);
+    const directCap = Number(metadata.capacity ?? update.capacity);
+    const bodyCap = Number(String(update.body || '').match(/\b(\d{1,3})\s+PLAYER\s+CAP\b/i)?.[1]);
+    const cap = Number.isFinite(directCap) && directCap > 0 ? directCap : bodyCap;
 
     if (title) title.textContent = String(update.title || 'SUNDAY OPEN RANKING').toUpperCase();
     if (meta) meta.textContent = [when, location].filter(Boolean).join(' · ') || 'SUNDAY · 8:00 PM – 11:00 PM';
-    if (capacity) capacity.textContent = Number.isFinite(cap) && cap > 0 ? `${cap} PLAYER CAP` : '16 PLAYER CAP';
-  }
-
-  function hideHomeSpotsLeft() {
-    const node = homeRoot()?.querySelector('[data-rp-home-open-rank-spots-left]');
-    if (!node) return;
-    node.hidden = true;
-    node.classList.remove('is-full');
-    node.textContent = '';
-  }
-
-  function renderHomeSpotsLeft(state = {}) {
-    const node = homeRoot()?.querySelector('[data-rp-home-open-rank-spots-left]');
-    if (!node) return;
-
-    const session = state?.session;
-    const gameStatus = String(session?.gameStatus || session?.game_status || 'setup').toLowerCase();
-    const capacityRaw = Number(session?.capacity);
-    const capacity = Number.isFinite(capacityRaw) && capacityRaw > 0 ? Math.trunc(capacityRaw) : null;
-
-    if (!session || gameStatus !== 'setup' || !capacity) {
-      hideHomeSpotsLeft();
-      return;
-    }
-
-    const counts = state?.counts || {};
-    const securedRaw = Number(counts.secured);
-    const standbyRaw = Number(counts.standby);
-    const secured = Number.isFinite(securedRaw) ? Math.max(0, Math.trunc(securedRaw)) : 0;
-    const standby = Number.isFinite(standbyRaw) ? Math.max(0, Math.trunc(standbyRaw)) : 0;
-
-    // Match the Open Rank card authority: standby players count toward the
-    // visible occupied capacity until the session cap is reached.
-    const occupied = Math.min(secured + standby, capacity);
-    const remaining = Math.max(capacity - occupied, 0);
-
-    node.textContent = `${remaining} SPOT${remaining === 1 ? '' : 'S'} LEFT`;
-    node.classList.toggle('is-full', remaining === 0);
-    node.hidden = false;
-  }
-
-  async function refreshHomeSpotsLeft() {
-    if (homeSpotsLoading) return;
-
-    const auth = localStorage.getItem(TOKEN_KEY);
-    if (!auth) {
-      hideHomeSpotsLeft();
-      return;
-    }
-
-    homeSpotsLoading = true;
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/real-play/career/access`, {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${auth}`,
-        },
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        hideHomeSpotsLeft();
-        return;
-      }
-
-      const state = await response.json().catch(() => ({}));
-      renderHomeSpotsLeft(state || {});
-    } catch (_error) {
-      hideHomeSpotsLeft();
-    } finally {
-      homeSpotsLoading = false;
-    }
+    if (capacity) capacity.textContent = Number.isFinite(cap) && cap > 0 ? `${Math.round(cap)} PLAYER CAP` : '16 PLAYER CAP';
   }
 
   async function refreshHomeCommandCenter() {
@@ -351,23 +289,20 @@
         || null;
 
       const now = Date.now();
-      const schedules = updates
-        .filter((item) => item?.category === 'schedule')
+      const homeSchedules = updates
+        .filter(isHomeScheduleOverride)
         .map((item) => ({
           item,
           time: Date.parse(item.event_at || item.eventAt || ''),
-          type: scheduleType(item),
+          published: Date.parse(item.published_at || item.publishedAt || '') || 0,
         }))
         .filter((entry) => Number.isFinite(entry.time) && entry.time >= now - 60_000)
-        .sort((a, b) => a.time - b.time);
+        .sort((a, b) => b.published - a.published || a.time - b.time);
 
-      const openRank = schedules.find((entry) => entry.type === 'open-rank')?.item || null;
       renderAnnouncement(announcement);
-      renderOpenRank(openRank);
-      refreshHomeSpotsLeft();
+      renderOpenRank(homeSchedules[0]?.item || null);
     } catch (_error) {
       renderOpenRank(null);
-      refreshHomeSpotsLeft();
     } finally {
       homeLoading = false;
     }
@@ -444,8 +379,7 @@
   });
   window.addEventListener('storage', refreshHomeCommandCenter);
   window.addEventListener('realplay:visitorchange', refreshHomeCommandCenter);
-  window.addEventListener('realplay:ranking-session-changed', refreshHomeCommandCenter);
-  window.addEventListener('realplay:ranking-entry-updated', refreshHomeSpotsLeft);
+  window.addEventListener('realplay:home-schedule-changed', refreshHomeCommandCenter);
 
   homeRefreshTimer = window.setInterval(() => {
     if (!document.hidden && activeRoute() === 'home') refreshHomeCommandCenter();
