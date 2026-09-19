@@ -12,7 +12,6 @@
     canEditProfileArt: false,
   };
   let accessPromise = null;
-  let refreshTimer = 0;
 
   function token() {
     return window.localStorage.getItem(TOKEN_KEY) || '';
@@ -26,35 +25,16 @@
     return null;
   }
 
-  function normalizeOwnProfileArtAuthority(panel) {
-    if (!panel || panel.classList.contains('rp-public-player-profile')) return;
-    if (!access.loaded || !access.userId) return;
-
-    // The ME profile can expose the permanent basketball Player ID here, but
-    // profile art is stored and authorized by the logged-in Real Play account.
-    // Force the art studio to target the authenticated account ID so owner
-    // access, uploads, saves and removals all use the same authority key.
-    const accountId = String(access.userId);
-    if (panel.dataset.rpProfilePlayerId !== accountId) {
-      panel.dataset.rpProfilePlayerId = accountId;
-    }
-  }
-
-  function panelTargetId(panel) {
+  function publicPanelTargetId(panel) {
     if (!panel) return null;
-    const isPublic = panel.classList.contains('rp-public-player-profile');
-    const source = isPublic
-      ? (panel.__realPlayPublicPlayer || {})
-      : (panel.__realPlayProfileState || {});
+    const source = panel.__realPlayPublicPlayer || {};
     const profile = source?.profile || source?.player || source || {};
-
-    // Public profiles expose their owning account ID through
-    // data-rp-public-player-id. The signed-in ME profile is normalized above to
-    // the authenticated account ID before this function is used.
     return firstPositiveInteger(
-      isPublic ? panel.dataset?.rpPublicPlayerId : panel.dataset?.rpProfilePlayerId,
+      panel.dataset?.rpPublicPlayerId,
       source?.accountUserId,
       source?.account_user_id,
+      source?.userId,
+      source?.user_id,
       source?.profile?.userId,
       source?.profile?.user_id,
       profile?.accountUserId,
@@ -62,10 +42,21 @@
       profile?.userId,
       profile?.user_id,
       profile?.id,
-      source?.userId,
-      source?.id,
-      source?.playerId
+      source?.id
     );
+  }
+
+  function panelTargetId(panel) {
+    if (!panel) return null;
+
+    // The regular ME profile is always the authenticated account's own profile.
+    // Profile art is keyed by real_play_accounts.id, so use the authenticated
+    // account id directly instead of deriving it from basketball/career ids.
+    if (!panel.classList.contains('rp-public-player-profile')) {
+      return access.loaded ? access.userId : null;
+    }
+
+    return publicPanelTargetId(panel);
   }
 
   function canEditPanel(panel) {
@@ -75,31 +66,37 @@
     return Boolean(targetId && access.userId && targetId === access.userId);
   }
 
+  function stabilizeOwnProfile(panel) {
+    if (!panel || panel.classList.contains('rp-public-player-profile')) return false;
+    if (!access.loaded || !access.userId || !access.canEditProfileArt) return false;
+
+    // This is the only identity normalization used by Profile Art Studio.
+    // Do it before the premium-art renderer/editor sees the profile so its
+    // WeakMap state is created once against the account id and never retargeted
+    // after the controller has opened.
+    panel.dataset.rpProfilePlayerId = String(access.userId);
+    return true;
+  }
+
   function decorateEditor(panel) {
     const editor = panel?.querySelector?.('[data-rp-profile-art-editor]');
     if (!editor || access.admin || !canEditPanel(panel)) return;
     const label = editor.querySelector('.rp-profile-art-editor-head small');
-    if (label && label.textContent !== 'PLAYER · PREMIUM PROFILE') {
-      label.textContent = 'PLAYER · PREMIUM PROFILE';
-    }
+    if (label) label.textContent = 'PLAYER · PREMIUM PROFILE';
+  }
+
+  function applyPanel(panel) {
+    if (!panel) return false;
+    if (!panel.classList.contains('rp-public-player-profile')) stabilizeOwnProfile(panel);
+    const editable = canEditPanel(panel);
+    panel.classList.toggle('rp-profile-art-owner-readonly', !editable);
+    panel.classList.toggle('rp-profile-art-owner-editable', editable && !access.admin);
+    decorateEditor(panel);
+    return editable;
   }
 
   function applyPanelAccess() {
-    document.querySelectorAll('.rp-profile.open').forEach((panel) => {
-      normalizeOwnProfileArtAuthority(panel);
-      const editable = canEditPanel(panel);
-      panel.classList.toggle('rp-profile-art-owner-readonly', !editable);
-      panel.classList.toggle('rp-profile-art-owner-editable', editable && !access.admin);
-      decorateEditor(panel);
-    });
-  }
-
-  function scheduleApply(delay = 0) {
-    if (refreshTimer) window.clearTimeout(refreshTimer);
-    refreshTimer = window.setTimeout(() => {
-      refreshTimer = 0;
-      applyPanelAccess();
-    }, delay);
+    document.querySelectorAll('.rp-profile.open').forEach(applyPanel);
   }
 
   async function loadAccess(force = false) {
@@ -130,7 +127,7 @@
             loaded: true,
             admin: data?.admin === true,
             userId: firstPositiveInteger(data?.userId, data?.adminUserId),
-            canEditProfileArt: data?.canEditProfileArt !== false,
+            canEditProfileArt: data?.canEditProfileArt === true,
           };
         }
       } catch (_error) {
@@ -139,21 +136,29 @@
         accessPromise = null;
       }
 
-      scheduleApply(80);
+      applyPanelAccess();
+      try {
+        window.dispatchEvent(new CustomEvent('realplay:profile-art-access-ready', {
+          detail: { ...access },
+        }));
+      } catch (_error) {}
       return access;
     })();
 
     return accessPromise;
   }
 
-  function refreshForProfile() {
-    // The app-ready access check normally finishes before the shell is exposed.
-    // Apply that known authority synchronously when a profile opens so the
-    // premium-art layer sees the authenticated account ID on its first pass,
-    // instead of opening against the basketball Player ID and being torn down
-    // moments later when owner authority catches up.
-    if (access.loaded) applyPanelAccess();
-    loadAccess(true).finally(() => scheduleApply(120));
+  function handleProfileLoaded(event) {
+    const panel = event?.target instanceof HTMLElement && event.target.classList.contains('rp-profile')
+      ? event.target
+      : document.querySelector('.rp-profile.open');
+
+    if (access.loaded) {
+      applyPanel(panel);
+      return;
+    }
+
+    loadAccess(false).then(() => applyPanel(panel));
   }
 
   const style = document.createElement('style');
@@ -164,23 +169,34 @@
   `;
   document.head.appendChild(style);
 
-  window.addEventListener('realplay:profile-loaded', refreshForProfile);
-  window.addEventListener('realplay:public-profile-loaded', refreshForProfile);
-  window.addEventListener('realplay:app-ready', refreshForProfile);
-  window.addEventListener('realplay:profile-art-updated', () => scheduleApply(30));
+  window.RealPlayProfileArtAccess = {
+    ready: () => loadAccess(false),
+    refresh: () => loadAccess(true),
+    snapshot: () => ({ ...access }),
+    canEditPanel,
+    canEditOwnProfile: () => Boolean(
+      access.loaded && access.canEditProfileArt && access.userId
+    ),
+    prepareOwnProfile: (panel) => {
+      if (!panel || panel.classList.contains('rp-public-player-profile')) return false;
+      stabilizeOwnProfile(panel);
+      return applyPanel(panel);
+    },
+    apply: applyPanelAccess,
+  };
+
+  window.addEventListener('realplay:profile-loaded', handleProfileLoaded);
+  window.addEventListener('realplay:public-profile-loaded', handleProfileLoaded);
+  window.addEventListener('realplay:app-ready', () => loadAccess(false).then(applyPanelAccess));
+  window.addEventListener('realplay:profile-art-updated', applyPanelAccess);
   window.addEventListener('storage', (event) => {
     if (event.key !== TOKEN_KEY) return;
-    access.loaded = false;
-    loadAccess(true).finally(() => scheduleApply(50));
+    access = { loaded: false, admin: false, userId: null, canEditProfileArt: false };
+    loadAccess(true).then(applyPanelAccess);
   });
 
-  const observer = new MutationObserver(() => scheduleApply(20));
-  observer.observe(document.documentElement, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['class', 'data-rp-profile-player-id', 'data-rp-public-player-id'],
-  });
-
-  loadAccess(true).finally(() => scheduleApply(40));
+  // Start the authority request as soon as this layer loads. Settings explicitly
+  // awaits this same promise before reopening ME, guaranteeing that Profile Art
+  // Studio and the working admin trigger use one stable account identity.
+  loadAccess(false);
 })();
