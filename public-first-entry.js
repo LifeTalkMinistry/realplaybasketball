@@ -23,4 +23,16 @@
     script.onerror = () => console.warn('[Real Play] Home schedule editor failed to load.');
     document.head.appendChild(script);
   }
+
+  // Game Control keeps its operational session data/functions, but the old
+  // Career Session card and + Open Next Session controls no longer belong on
+  // Setup now that the Home pencil owns schedule confirmation.
+  if (!window.__realPlayAdminSetupSessionCleanupLoaderInstalled) {
+    window.__realPlayAdminSetupSessionCleanupLoaderInstalled = true;
+    const script = document.createElement('script');
+    script.src = 'admin-setup-operational-session-hide.js?v=20260919-setup-cleanup-v1';
+    script.async = false;
+    script.onerror = () => console.warn('[Real Play] Admin Setup cleanup failed to load.');
+    document.head.appendChild(script);
+  }
 })();
