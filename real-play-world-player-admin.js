@@ -509,6 +509,10 @@
 
   async function refreshAdminDirectory() {
     if (syncBusy || !token()) return;
+    if (window.__realPlayAdminVerified !== true) {
+      isAdmin = false;
+      return;
+    }
     syncBusy = true;
     try {
       const data = await adminCall('list');
@@ -626,7 +630,6 @@
     });
     listObserver.observe(list, { childList: true });
 
-    refreshAdminDirectory();
     return true;
   }
 
@@ -639,7 +642,7 @@
   }
 
   window.addEventListener('focus', () => {
-    if (panel?.classList.contains('open') && !panel.querySelector('[data-world-view="players"]')?.hidden) {
+    if (window.__realPlayAdminVerified === true && panel?.classList.contains('open') && !panel.querySelector('[data-world-view="players"]')?.hidden) {
       refreshAdminDirectory();
     }
   });

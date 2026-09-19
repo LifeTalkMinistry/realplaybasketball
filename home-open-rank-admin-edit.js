@@ -431,6 +431,7 @@
   }
 
   function syncEditButton() {
+    admin = Boolean(token() && window.__realPlayAdminVerified === true);
     const homeCard = card();
     if (!homeCard) return false;
     let button = homeCard.querySelector('[data-rp-home-open-rank-edit]');
@@ -465,28 +466,9 @@
       syncEditButton();
       return false;
     }
-    if (!force && verifiedToken === auth) {
-      syncEditButton();
-      return admin;
-    }
 
     verifiedToken = auth;
-    try {
-      const response = await fetch(UPDATES_API_URL, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${auth}`,
-        },
-        body: JSON.stringify({ action: 'admin_status' }),
-        cache: 'no-store',
-      });
-      const data = await response.json().catch(() => ({}));
-      admin = Boolean(response.ok && data?.admin);
-    } catch (_error) {
-      admin = false;
-    }
+    admin = window.__realPlayAdminVerified === true;
     syncEditButton();
     return admin;
   }
@@ -502,22 +484,23 @@
       });
       bootObserver.observe(document.documentElement, { childList: true, subtree: true });
     }
-    await Promise.all([refreshOpenRankState(), verifyAdmin(true)]);
+    await refreshOpenRankState();
   }
 
   window.addEventListener('focus', () => {
     syncEditButton();
     refreshOpenRankState();
-    verifyAdmin();
   });
   window.addEventListener('storage', (event) => {
     if (event.key !== TOKEN_KEY) return;
     verifiedToken = '';
-    verifyAdmin(true);
+    admin = false;
+    syncEditButton();
   });
   window.addEventListener('realplay:visitorchange', () => {
     verifiedToken = '';
-    verifyAdmin(true);
+    admin = false;
+    syncEditButton();
   });
   window.addEventListener('realplay:home-schedule-changed', refreshOpenRankState);
   window.addEventListener('keydown', (event) => {

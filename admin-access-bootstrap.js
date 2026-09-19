@@ -57,14 +57,17 @@
     'admin-player-temp-password.js',
   ];
 
-  let verifiedAdmin = false;
+  let verifiedAdmin = Boolean(
+    window.__realPlayAdminVerified === true ||
+    window.RealPlayServerGate?.isAdminBypass?.() === true
+  );
   let loadingAdmin = false;
   let adminLoaded = false;
   let verifySequence = 0;
   let warmScheduled = false;
   let warmPromise = null;
 
-  window.__realPlayAdminVerified = false;
+  window.__realPlayAdminVerified = verifiedAdmin;
   window.__realPlayAdminAccessProbe = false;
 
   function token() {
@@ -322,14 +325,12 @@
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
     syncSettingsRow();
-    verifyAdmin();
   }
 
   window.addEventListener('realplay:settings-open', () => {
     syncSettingsRow();
     preloadAdminAssets();
     if (verifiedAdmin) scheduleAdminWarm();
-    else verifyAdmin();
   });
 
   window.addEventListener('storage', (event) => {
@@ -340,7 +341,6 @@
     warmScheduled = false;
     warmPromise = null;
     syncSettingsRow();
-    verifyAdmin();
   });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });

@@ -75,28 +75,9 @@
       lastToken = auth;
       return false;
     }
-    if (checkingAdmin) return admin;
-    if (admin && auth === lastToken) return true;
 
-    checkingAdmin = true;
     lastToken = auth;
-    try {
-      const response = await fetch(UPDATES_URL, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${auth}`,
-        },
-        body: JSON.stringify({ action: 'admin_status' }),
-        cache: 'no-store',
-      });
-      admin = response.ok;
-    } catch (_error) {
-      admin = false;
-    } finally {
-      checkingAdmin = false;
-    }
+    admin = window.__realPlayAdminVerified === true;
     return admin;
   }
 
@@ -436,10 +417,9 @@ This removes the session and its linked game data from Real Play.`)) return;
     refreshAuthorityAndDecorate();
   });
   window.addEventListener('realplay:admin-render', () => {
-    queueDecorate();
+    refreshAuthorityAndDecorate();
   });
 
   injectStyles();
   attachFeedObserver();
-  refreshAuthorityAndDecorate();
 })();

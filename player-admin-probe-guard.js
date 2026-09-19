@@ -4,23 +4,21 @@
 
   const nativeFetch = window.fetch.bind(window);
   const ADMIN_API_PREFIX = 'https://api.clarapmc.com/api/real-play/admin/';
+  const ADMIN_VERIFY_URL = `${ADMIN_API_PREFIX}career/control`;
 
   function adminContextRequested() {
     try {
       const rememberedAdmin = window.RealPlayServerGate?.isAdminBypass?.() === true;
-      return Boolean(
-        window.__realPlayAdminVerified ||
-        rememberedAdmin ||
-        window.__realPlayAdminAccessProbe ||
-        new URLSearchParams(window.location.search).get('admin') === '1'
-      );
+      return Boolean(window.__realPlayAdminVerified === true || rememberedAdmin);
     } catch (_error) {
-      return Boolean(
-        window.__realPlayAdminVerified ||
-        window.__realPlayAdminAccessProbe ||
-        new URLSearchParams(window.location.search).get('admin') === '1'
-      );
+      return window.__realPlayAdminVerified === true;
     }
+  }
+
+  function adminVerificationRequested(url, input, init) {
+    if (window.__realPlayAdminAccessProbe !== true || url !== ADMIN_VERIFY_URL) return false;
+    const method = String(init?.method || input?.method || 'GET').toUpperCase();
+    return method === 'GET';
   }
 
   window.fetch = function playerSafeFetch(input, init = {}) {
@@ -30,7 +28,7 @@
     // discover that they are not admins. A previously server-verified admin is
     // also accepted through RealPlayServerGate so Players long-hold management
     // is not accidentally downgraded while the admin bootstrap is refreshing.
-    if (url.startsWith(ADMIN_API_PREFIX) && !adminContextRequested()) {
+    if (url.startsWith(ADMIN_API_PREFIX) && !adminContextRequested() && !adminVerificationRequested(url, input, init)) {
       return Promise.resolve(new Response(JSON.stringify({
         admin: false,
         message: 'Admin access is not active in this player session.',
@@ -181,10 +179,6 @@
     open: openPlayersDirectory,
   };
 
-  // Start one bounded sync attempt during app boot as well. This covers Head
-  // Admin opening directly into Players or returning from a restored session.
-  syncPlayerAdminAccess({ reset: true });
-  window.addEventListener('realplay:app-ready', () => syncPlayerAdminAccess({ reset: true }));
   window.addEventListener('focus', () => {
     if (document.querySelector('[data-rp-simple-nav-item="players"][aria-current="page"]')) {
       syncPlayerAdminAccess({ reset: true });
