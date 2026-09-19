@@ -1,12 +1,13 @@
 (() => {
-  if (window.__realPlayProfileLinkedShareInstalled) return;
-  window.__realPlayProfileLinkedShareInstalled = true;
+  if (window.__realPlayProfileLinkedShareInstalledV110) return;
+  window.__realPlayProfileLinkedShareInstalledV110 = true;
 
   if (typeof navigator.share !== 'function') return;
 
   const nativeShare = navigator.share.bind(navigator);
   const PROFILE_SHARE_URL = /^https:\/\/api\.clarapmc\.com\/api\/real-play\/profile-share\/[a-f0-9]{40}(?:[?#].*)?$/i;
   const DIRECT_PROFILE_URL = /^https:\/\/joinrealplay\.com\/(?:\?player=\d+)?(?:#.*)?$/i;
+  const PREVIEW_VERSION = '20260920-image-only-v110';
 
   function isProfileImage(file) {
     if (!file) return false;
@@ -23,23 +24,26 @@
     return PROFILE_SHARE_URL.test(url) || DIRECT_PROFILE_URL.test(url);
   }
 
-  function linkedPayload(payload) {
-    const url = String(payload.url || '').trim();
-    const baseText = String(payload.text || '').trim();
-    const text = baseText.includes(url)
-      ? baseText
-      : [baseText, 'Open this player on Real Play:', url].filter(Boolean).join('\n');
+  function versionedPreviewUrl(value) {
+    const raw = String(value || '').trim();
+    if (!PROFILE_SHARE_URL.test(raw)) return raw;
+    try {
+      const url = new URL(raw);
+      url.searchParams.set('rp_preview', PREVIEW_VERSION);
+      return url.toString();
+    } catch (_error) {
+      return raw;
+    }
+  }
 
-    // Sharing a file and a URL together is not portable across native share
-    // targets. In particular, some iPhone/social targets keep only the PNG.
-    // Share the URL instead: the Real Play social-share endpoint serves the
-    // exact captured profile hero as Open Graph artwork to crawlers, while a
-    // real person who taps the card is redirected to the player profile.
-    return {
-      title: payload.title || 'Real Play Basketball',
-      text,
-      url,
-    };
+  function linkedPayload(payload) {
+    const url = versionedPreviewUrl(payload.url);
+
+    // Native share targets are inconsistent when a PNG and URL are supplied
+    // together. Share only the social URL here so Facebook can keep the exact
+    // captured hero clickable. The social document itself now owns the image,
+    // canonical joinrealplay.com destination, and deliberately minimal metadata.
+    return { url };
   }
 
   function share(payload) {
