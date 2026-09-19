@@ -6,12 +6,25 @@
   const TOKEN_KEY = 'real_play_access_token';
   const LONG_PRESS_MS = 620;
   const MOVE_CANCEL_PX = 14;
-  const CARD_WIDTH = 1080;
-  const CARD_HEIGHT = 1350;
+  const MIN_CAPTURE_SCALE = 2;
+  const MAX_CAPTURE_SCALE = 4;
+  const HTML2CANVAS_SOURCES = [
+    'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+    'https://html2canvas.hertzen.com/dist/html2canvas.min.js',
+  ];
+  const IGNORE_CAPTURE_SELECTOR = [
+    '[data-rp-profile-art-edit]',
+    '.rp-profile-art-edit-button',
+    '[data-rp-profile-share-ignore]',
+  ].join(',');
+
   const prepared = new WeakMap();
   const preparing = new WeakMap();
+  const captureCache = new WeakMap();
+  let html2canvasPromise = null;
   let press = null;
   let deepLinkHandled = false;
+  let captureSerial = 0;
 
   const positiveId = (value) => {
     const id = Number(value);
@@ -21,6 +34,8 @@
   const upper = (value) => clean(value).toUpperCase();
   const normalizeName = (value) => upper(value).replace(/\s+/g, ' ');
   const textOf = (root, selector) => clean(root?.querySelector(selector)?.textContent);
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -61,12 +76,7 @@
     const wins = match ? Number(match[1]) : 0;
     const losses = match ? Number(match[2]) : 0;
     const games = wins + losses;
-    return {
-      wins,
-      losses,
-      games,
-      winRate: games > 0 ? `${Math.round((wins / games) * 100)}%` : '—',
-    };
+    return { wins, losses, games, winRate: games > 0 ? `${Math.round((wins / games) * 100)}%` : '—' };
   }
 
   function panelData(panel) {
@@ -75,24 +85,24 @@
     const recordMeta = recordStats(record);
     const source = panel?.__realPlayPublicPlayer || panel?.__realPlayProfileState || {};
     const profile = source?.profile || source?.player || source || {};
+    const isVisitorPublic = Boolean(panel?.matches('[data-rp-visitor-public-profile]'));
     const isPublic = Boolean(panel?.matches('.rp-public-player-profile,[data-rp-public-profile],[data-rp-visitor-public-profile]'));
-    const directPublicId = isPublic ? positiveId(
-      panel?.dataset?.rpPublicPlayerId || source?.playerId || source?.userId
-    ) : null;
+    const canonicalSourceId = positiveId(
+      source?.playerId ?? source?.player_id ?? source?.publicPlayerId ?? source?.public_player_id ?? profile?.playerId ?? profile?.player_id
+    );
+    const directPublicId = isPublic
+      ? (canonicalSourceId || (isVisitorPublic ? positiveId(panel?.dataset?.rpPublicPlayerId) : null))
+      : null;
     const accountUserId = positiveId(
-      source?.accountUserId ?? source?.account_user_id ??
-      source?.profile?.user_id ?? source?.profile?.userId ??
-      source?.profile?.id ?? profile?.accountUserId ?? profile?.account_user_id
+      source?.accountUserId ?? source?.account_user_id ?? source?.userId ?? source?.user_id ??
+      source?.profile?.user_id ?? source?.profile?.userId ?? source?.profile?.id ??
+      profile?.accountUserId ?? profile?.account_user_id ?? (!isPublic ? panel?.dataset?.rpProfilePlayerId : null)
     );
     const jerseyText = textOf(hero, '.rp-profile-number strong') || '#—';
     const jerseyMatch = jerseyText.match(/\d+/);
     const jerseyNumber = jerseyMatch ? Number(jerseyMatch[0]) : null;
-    const artLayer = hero?.querySelector('.rp-premium-profile-art.is-ready') || hero?.querySelector('.rp-premium-profile-art');
-    const artImage = artLayer?.querySelector('img');
-    const badgeImage = hero?.querySelector('.rp-profile-badges img, .rp-profile-badge img');
     const passLabel = textOf(hero, '.rp-profile-identity-line b') || 'PLAYER PROFILE';
     const gamesText = textOf(hero, '.rp-profile-record small') || `${recordMeta.games} GAMES`;
-
     return {
       panel,
       hero,
@@ -109,9 +119,6 @@
       gamesText,
       winRate: recordMeta.winRate,
       passLabel,
-      artLayer,
-      artSrc: artImage?.currentSrc || artImage?.src || '',
-      badgeSrc: badgeImage?.currentSrc || badgeImage?.src || '',
     };
   }
 
@@ -168,265 +175,242 @@
     return url.toString();
   }
 
-  function roundedPath(ctx, x, y, w, h, r) {
-    const radius = Math.min(r, w / 2, h / 2);
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + w - radius, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-    ctx.lineTo(x + w, y + h - radius);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-    ctx.lineTo(x + radius, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-  }
-
-  function drawRoundedFill(ctx, x, y, w, h, r, fill, stroke = null, lineWidth = 1) {
-    roundedPath(ctx, x, y, w, h, r);
-    ctx.fillStyle = fill;
-    ctx.fill();
-    if (stroke) {
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = lineWidth;
-      ctx.stroke();
-    }
-  }
-
-  async function loadImage(src) {
-    const value = clean(src);
-    if (!value) return null;
-    let url = value;
-    try { url = new URL(value, window.location.href).href; } catch (_error) {}
-    return new Promise((resolve) => {
-      const image = new Image();
-      let settled = false;
-      const finish = (result) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        resolve(result);
-      };
-      if (!/^data:|^blob:/i.test(url)) image.crossOrigin = 'anonymous';
-      image.onload = () => finish(image);
-      image.onerror = () => finish(null);
-      const timer = setTimeout(() => finish(null), 3200);
-      image.src = url;
-      if (image.complete && image.naturalWidth > 0) finish(image);
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const existing = Array.from(document.scripts).find((script) => script.src === src);
+      if (existing) {
+        if (typeof window.html2canvas === 'function') return resolve(window.html2canvas);
+        existing.addEventListener('load', () => resolve(window.html2canvas), { once: true });
+        existing.addEventListener('error', reject, { once: true });
+        return;
+      }
+      const script = document.createElement('script');
+      script.dataset.rpHtml2canvasLoader = '1';
+      script.src = src;
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+      script.referrerPolicy = 'no-referrer';
+      script.addEventListener('load', () => {
+        if (typeof window.html2canvas === 'function') resolve(window.html2canvas);
+        else reject(new Error('DOM capture library did not initialize.'));
+      }, { once: true });
+      script.addEventListener('error', () => reject(new Error('DOM capture library could not load.')), { once: true });
+      document.head.appendChild(script);
     });
   }
 
-  function fitDisplayFont(ctx, text, maxWidth, startSize, minSize = 38) {
-    let size = startSize;
-    while (size > minSize) {
-      ctx.font = `italic 950 ${size}px Impact, Arial Narrow, Arial, sans-serif`;
-      if (ctx.measureText(text).width <= maxWidth) return size;
-      size -= 2;
+  function ensureHtml2Canvas() {
+    if (typeof window.html2canvas === 'function') return Promise.resolve(window.html2canvas);
+    if (html2canvasPromise) return html2canvasPromise;
+    html2canvasPromise = (async () => {
+      let lastError = null;
+      for (const src of HTML2CANVAS_SOURCES) {
+        try {
+          const capture = await loadScript(src);
+          if (typeof capture === 'function') return capture;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      throw lastError || new Error('DOM capture library is unavailable.');
+    })().catch((error) => {
+      html2canvasPromise = null;
+      throw error;
+    });
+    return html2canvasPromise;
+  }
+
+  async function waitForFonts() {
+    const ready = document.fonts?.ready;
+    if (!ready || typeof ready.then !== 'function') return;
+    await Promise.race([ready.catch(() => {}), delay(3000)]);
+  }
+
+  async function waitForImage(image, timeoutMs = 4500) {
+    if (!(image instanceof HTMLImageElement)) return;
+    const loaded = () => image.complete && image.naturalWidth > 0;
+    if (!loaded()) {
+      await Promise.race([
+        new Promise((resolve) => {
+          image.addEventListener('load', resolve, { once: true });
+          image.addEventListener('error', resolve, { once: true });
+        }),
+        delay(timeoutMs),
+      ]);
     }
-    ctx.font = `italic 950 ${minSize}px Impact, Arial Narrow, Arial, sans-serif`;
-    return minSize;
+    if (loaded() && typeof image.decode === 'function') {
+      await Promise.race([image.decode().catch(() => {}), delay(1600)]);
+    }
   }
 
-  function drawMetric(ctx, x, y, w, label, value, sub, accent = '#eef7ff') {
-    drawRoundedFill(ctx, x, y, w, 216, 30, 'rgba(3,9,16,.92)', 'rgba(91,216,255,.18)', 2);
-    ctx.fillStyle = '#74879a';
-    ctx.font = '900 21px Arial, sans-serif';
-    ctx.letterSpacing = '2px';
-    ctx.fillText(label, x + 30, y + 42);
-    ctx.fillStyle = accent;
-    ctx.font = '950 56px Impact, Arial Narrow, Arial, sans-serif';
-    ctx.fillText(value, x + 30, y + 113);
-    ctx.fillStyle = '#64778a';
-    ctx.font = '900 17px Arial, sans-serif';
-    ctx.fillText(sub, x + 30, y + 164);
+  function isSameOriginImage(src) {
+    if (!src || /^(?:data|blob):/i.test(src)) return true;
+    try { return new URL(src, window.location.href).origin === window.location.origin; } catch (_error) { return true; }
   }
 
-  function artTransform(data) {
-    const style = data.artLayer ? getComputedStyle(data.artLayer) : null;
-    const number = (name, fallback) => {
-      const parsed = parseFloat(style?.getPropertyValue(name));
-      return Number.isFinite(parsed) ? parsed : fallback;
-    };
+  async function prepareCrossOriginImages(hero) {
+    const replacements = new Map();
+    const cleanup = [];
+    const images = Array.from(hero.querySelectorAll('img'));
+    await Promise.all(images.map(async (image) => {
+      await waitForImage(image);
+      const src = image.currentSrc || image.src || '';
+      if (!src || isSameOriginImage(src)) return;
+      try {
+        const response = await fetch(src, {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'omit',
+          cache: 'no-store',
+          headers: { Accept: 'image/png,image/webp,image/*,*/*' },
+        });
+        if (!response.ok) return;
+        const blob = await response.blob();
+        if (!blob.size) return;
+        const objectUrl = URL.createObjectURL(blob);
+        const key = `rp-share-image-${Date.now()}-${++captureSerial}`;
+        image.dataset.rpShareCaptureImage = key;
+        replacements.set(key, objectUrl);
+        cleanup.push(() => {
+          delete image.dataset.rpShareCaptureImage;
+          URL.revokeObjectURL(objectUrl);
+        });
+      } catch (_error) {}
+    }));
     return {
-      x: number('--rp-art-x', 72),
-      y: number('--rp-art-y', 44),
-      scale: number('--rp-art-scale', 1.15),
-      opacity: number('--rp-art-opacity', 1),
+      replacements,
+      cleanup: () => cleanup.forEach((fn) => { try { fn(); } catch (_error) {} }),
     };
   }
 
-  async function renderCard(data, includeImages = true) {
-    const canvas = document.createElement('canvas');
-    canvas.width = CARD_WIDTH;
-    canvas.height = CARD_HEIGHT;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas is unavailable.');
-
-    const bg = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT);
-    bg.addColorStop(0, '#02070d');
-    bg.addColorStop(.52, '#03070c');
-    bg.addColorStop(1, '#070309');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-    const cyanGlow = ctx.createRadialGradient(130, 220, 20, 130, 220, 520);
-    cyanGlow.addColorStop(0, 'rgba(22,183,255,.17)');
-    cyanGlow.addColorStop(1, 'rgba(22,183,255,0)');
-    ctx.fillStyle = cyanGlow;
-    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-    const redGlow = ctx.createRadialGradient(1000, 360, 20, 1000, 360, 520);
-    redGlow.addColorStop(0, 'rgba(255,34,74,.17)');
-    redGlow.addColorStop(1, 'rgba(255,34,74,0)');
-    ctx.fillStyle = redGlow;
-    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-    const cardX = 54;
-    const cardY = 52;
-    const cardW = 972;
-    const cardH = 1170;
-    drawRoundedFill(ctx, cardX, cardY, cardW, cardH, 52, 'rgba(3,8,14,.84)', 'rgba(70,210,255,.48)', 3);
-
-    ctx.save();
-    roundedPath(ctx, cardX, cardY, cardW, cardH, 52);
-    ctx.clip();
-
-    if (includeImages && data.artSrc) {
-      const art = await loadImage(data.artSrc);
-      if (art) {
-        const t = artTransform(data);
-        const targetW = cardW * .72 * t.scale;
-        const targetH = targetW * (art.naturalHeight / Math.max(1, art.naturalWidth));
-        const centerX = cardX + cardW * (t.x / 100);
-        const centerY = cardY + cardH * (t.y / 100);
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, Math.min(1, t.opacity));
-        ctx.drawImage(art, centerX - targetW / 2, centerY - targetH / 2, targetW, targetH);
-        ctx.restore();
+  async function waitForHeroReady(hero) {
+    await Promise.all([ensureHtml2Canvas(), waitForFonts()]);
+    const artImage = hero.querySelector('.rp-premium-profile-art img');
+    if (artImage && !isSameOriginImage(artImage.currentSrc || artImage.src || '')) {
+      const deadline = Date.now() + 2200;
+      while (Date.now() < deadline) {
+        if (isSameOriginImage(artImage.currentSrc || artImage.src || '')) break;
+        if (artImage.dataset.rpShareCanvasReady === 'ready') break;
+        await delay(60);
       }
     }
+    await Promise.all(Array.from(hero.querySelectorAll('img')).map((image) => waitForImage(image)));
+    await nextFrame();
+  }
 
-    const leftShade = ctx.createLinearGradient(cardX, 0, cardX + cardW * .72, 0);
-    leftShade.addColorStop(0, 'rgba(2,7,13,.98)');
-    leftShade.addColorStop(.30, 'rgba(2,7,13,.82)');
-    leftShade.addColorStop(.58, 'rgba(2,7,13,.32)');
-    leftShade.addColorStop(1, 'rgba(2,7,13,0)');
-    ctx.fillStyle = leftShade;
-    ctx.fillRect(cardX, cardY, cardW, cardH);
-
-    const bottomShade = ctx.createLinearGradient(0, cardY + cardH * .52, 0, cardY + cardH);
-    bottomShade.addColorStop(0, 'rgba(2,7,13,0)');
-    bottomShade.addColorStop(.52, 'rgba(2,7,13,.60)');
-    bottomShade.addColorStop(1, 'rgba(2,7,13,.99)');
-    ctx.fillStyle = bottomShade;
-    ctx.fillRect(cardX, cardY, cardW, cardH);
-    ctx.restore();
-
-    ctx.fillStyle = '#4cdcff';
-    ctx.font = '900 22px Arial, sans-serif';
-    ctx.fillText('REAL PLAY PLAYER', 92, 110);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#718295';
-    ctx.font = '900 18px Arial, sans-serif';
-    ctx.fillText(upper(data.passLabel), 986, 110);
-    ctx.textAlign = 'left';
-
-    if (includeImages && data.badgeSrc) {
-      const badge = await loadImage(data.badgeSrc);
-      if (badge) {
-        const maxW = 270;
-        const maxH = 150;
-        const scale = Math.min(maxW / badge.naturalWidth, maxH / badge.naturalHeight, 1.7);
-        const w = badge.naturalWidth * scale;
-        const h = badge.naturalHeight * scale;
-        ctx.drawImage(badge, 86, 206, w, h);
-      }
+  function captureScale(hero) {
+    let scale = Math.min(MAX_CAPTURE_SCALE, Math.max(MIN_CAPTURE_SCALE, Number(window.devicePixelRatio) || 1));
+    const rect = hero.getBoundingClientRect();
+    const maxPixels = 24000000;
+    if (rect.width > 0 && rect.height > 0 && rect.width * rect.height * scale * scale > maxPixels) {
+      scale = Math.max(MIN_CAPTURE_SCALE, Math.min(scale, Math.sqrt(maxPixels / (rect.width * rect.height))));
     }
+    return scale;
+  }
 
-    const name = upper(data.playerName);
-    const jersey = upper(data.jerseyText || '#—');
-    const nameLine = `${jersey}  ${name}`;
-    fitDisplayFont(ctx, nameLine, 835, 78, 44);
-    ctx.fillStyle = '#f7fbff';
-    ctx.fillText(nameLine, 86, 720);
-
-    const jerseyWidth = ctx.measureText(`${jersey}  `).width;
-    ctx.fillStyle = '#45dcff';
-    ctx.fillText(jersey, 86, 720);
-    ctx.fillStyle = '#f7fbff';
-    const nameOnlyX = 86 + Math.max(0, jerseyWidth - ctx.measureText(jersey).width + ctx.measureText(jersey).width);
-    ctx.fillText(name, nameOnlyX, 720);
-
-    ctx.fillStyle = '#75879a';
-    ctx.font = '900 20px Arial, sans-serif';
-    ctx.fillText('LESS SCREEN. REAL POINTS.', 90, 766);
-
-    const metricY = 840;
-    const metricW = 215;
-    const gap = 18;
-    const metricX = 84;
-    drawMetric(ctx, metricX, metricY, metricW, 'OVR', data.ovr, 'OFFICIAL RATING', '#49ddff');
-    drawMetric(ctx, metricX + (metricW + gap), metricY, metricW, 'RANK', data.rank, 'OFFICIAL RANK');
-    drawMetric(ctx, metricX + 2 * (metricW + gap), metricY, metricW, 'RECORD', data.record, data.gamesText);
-    drawMetric(ctx, metricX + 3 * (metricW + gap), metricY, metricW, 'WIN RATE', data.winRate, 'CAREER', '#4ce0ff');
-
-    ctx.fillStyle = '#f1f7fc';
-    ctx.font = 'italic 950 40px Impact, Arial Narrow, Arial, sans-serif';
-    ctx.fillText('REAL PLAY BASKETBALL', 84, 1274);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#4bdcff';
-    ctx.font = '900 20px Arial, sans-serif';
-    ctx.fillText('JOINREALPLAY.COM', 996, 1270);
-    ctx.textAlign = 'left';
-
-    return canvas;
+  function captureSignature(data) {
+    const hero = data.hero;
+    const rect = hero?.getBoundingClientRect();
+    const art = hero?.querySelector('.rp-premium-profile-art');
+    const artStyle = art ? getComputedStyle(art) : null;
+    return [
+      data.playerName,
+      data.jerseyText,
+      data.ovr,
+      data.rank,
+      data.record,
+      data.winRate,
+      clean(hero?.innerText).replace(/\s+/g, ' '),
+      hero?.getAttribute('style') || '',
+      rect ? `${Math.round(rect.width * 10) / 10}x${Math.round(rect.height * 10) / 10}` : '',
+      artStyle?.getPropertyValue('--rp-art-x') || '',
+      artStyle?.getPropertyValue('--rp-art-y') || '',
+      artStyle?.getPropertyValue('--rp-art-scale') || '',
+      artStyle?.getPropertyValue('--rp-art-opacity') || '',
+      Array.from(hero?.querySelectorAll('img') || []).map((image) => image.currentSrc || image.src || '').join('~'),
+    ].join('|');
   }
 
   function canvasToBlob(canvas) {
     return new Promise((resolve, reject) => {
       try {
-        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Could not create share image.')), 'image/png', .96);
+        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Could not create profile PNG.')), 'image/png', 1);
       } catch (error) {
         reject(error);
       }
     });
   }
 
-  async function makeShareImage(data) {
+  async function captureHeroDom(panel, { allowArmedClone = false } = {}) {
+    if (!(panel instanceof HTMLElement) || !panel.classList.contains('open')) throw new Error('Player profile is not open.');
+    const data = panelData(panel);
+    const hero = data.hero;
+    if (!hero) throw new Error('Profile hero is unavailable.');
+    await waitForHeroReady(hero);
+    const localized = await prepareCrossOriginImages(hero);
+    const captureId = `rp-profile-capture-${Date.now()}-${++captureSerial}`;
+    hero.dataset.rpProfileShareCaptureTarget = captureId;
     try {
-      return await canvasToBlob(await renderCard(data, true));
-    } catch (_error) {
-      return canvasToBlob(await renderCard(data, false));
+      const html2canvas = await ensureHtml2Canvas();
+      const canvas = await html2canvas(hero, {
+        scale: captureScale(hero),
+        backgroundColor: null,
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        imageTimeout: 12000,
+        removeContainer: true,
+        windowWidth: document.documentElement.clientWidth,
+        windowHeight: document.documentElement.clientHeight,
+        ignoreElements: (element) => Boolean(element?.matches?.(IGNORE_CAPTURE_SELECTOR)),
+        onclone: (clonedDocument) => {
+          const cloneHero = clonedDocument.querySelector(`[data-rp-profile-share-capture-target="${captureId}"]`);
+          const clonePanel = cloneHero?.closest('.rp-profile');
+          if (allowArmedClone) clonePanel?.classList.remove('rp-profile-share-armed');
+          cloneHero?.querySelectorAll(IGNORE_CAPTURE_SELECTOR).forEach((node) => node.remove());
+          localized.replacements.forEach((objectUrl, key) => {
+            const cloneImage = cloneHero?.querySelector(`img[data-rp-share-capture-image="${key}"]`);
+            if (cloneImage) cloneImage.src = objectUrl;
+          });
+        },
+      });
+      return await canvasToBlob(canvas);
+    } finally {
+      delete hero.dataset.rpProfileShareCaptureTarget;
+      localized.cleanup();
     }
   }
 
-  function signature(data) {
-    return [data.playerName, data.jerseyText, data.ovr, data.rank, data.record, data.winRate, data.artSrc, data.badgeSrc].join('|');
+  function metadataSignature(data) {
+    return [data.playerName, data.jerseyText, data.ovr, data.rank, data.record, data.winRate, data.directPublicId, data.accountUserId].join('|');
   }
 
   async function preparePanel(panel, force = false) {
     if (!(panel instanceof HTMLElement) || !panel.classList.contains('open')) return null;
     const data = panelData(panel);
     if (!data.hero) return null;
-    const sig = signature(data);
+    const sig = metadataSignature(data);
     const current = prepared.get(panel);
     if (!force && current?.signature === sig) return current;
     const active = preparing.get(panel);
     if (!force && active?.signature === sig) return active.promise;
-
     const promise = (async () => {
-      const [publicPlayerId, blob] = await Promise.all([
-        resolvePublicPlayerId(data),
-        makeShareImage(data),
-      ]);
+      ensureHtml2Canvas().catch(() => {});
+      waitForFonts().catch(() => {});
+      const publicPlayerId = await resolvePublicPlayerId(data);
       const url = shareUrl(publicPlayerId);
       const safeName = normalizeName(data.playerName).replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'player';
-      const file = typeof File === 'function'
-        ? new File([blob], `real-play-${safeName}.png`, { type: 'image/png', lastModified: Date.now() })
-        : null;
       const title = `${data.jerseyText} ${data.playerName} | Real Play Basketball`;
       const text = `${data.jerseyText} ${data.playerName}\nOVR ${data.ovr} · RANK ${data.rank} · ${data.record} · ${data.winRate} WIN RATE\nLess Screen. Real Points.`;
-      const result = { signature: sig, data, publicPlayerId, url, blob, file, title, text };
+      const result = {
+        signature: sig,
+        data,
+        publicPlayerId,
+        url,
+        filename: `real-play-${safeName}-profile.png`,
+        title,
+        text,
+      };
       prepared.set(panel, result);
       preparing.delete(panel);
       return result;
@@ -434,8 +418,28 @@
       preparing.delete(panel);
       throw error;
     });
-
     preparing.set(panel, { signature: sig, promise });
+    return promise;
+  }
+
+  async function primeCapture(panel, allowArmedClone = false) {
+    const data = panelData(panel);
+    if (!data.hero) return null;
+    const sig = captureSignature(data);
+    const current = captureCache.get(panel);
+    if (current?.signature === sig && current?.blob) return current;
+    if (current?.signature === sig && current?.promise) return current.promise;
+    const promise = captureHeroDom(panel, { allowArmedClone })
+      .then((blob) => {
+        const result = { signature: sig, blob };
+        captureCache.set(panel, result);
+        return result;
+      })
+      .catch((error) => {
+        captureCache.delete(panel);
+        throw error;
+      });
+    captureCache.set(panel, { signature: sig, promise });
     return promise;
   }
 
@@ -456,42 +460,52 @@
     navigator.clipboard?.writeText?.(url).catch(() => {});
   }
 
-  function nativeShareNow(panel) {
-    const item = prepared.get(panel);
+  function makeFile(blob, filename) {
+    if (!blob || typeof File !== 'function') return null;
+    return new File([blob], filename || 'real-play-profile.png', { type: 'image/png', lastModified: Date.now() });
+  }
+
+  async function nativeShareNow(panel, primedCapture = null) {
+    let item = prepared.get(panel);
     if (!item) {
-      const data = panelData(panel);
-      const fallbackId = data.directPublicId;
-      const url = shareUrl(fallbackId);
-      if (navigator.share) {
-        navigator.share({ title: 'Real Play Basketball', text: `${data.jerseyText} ${data.playerName}\nLess Screen. Real Points.`, url })
-          .catch((error) => { if (error?.name !== 'AbortError') toast('SHARE COULD NOT OPEN. TRY AGAIN.'); });
+      try { item = await preparePanel(panel); } catch (_error) { item = null; }
+    }
+    const data = panelData(panel);
+    const fallbackUrl = shareUrl(data.directPublicId);
+    const url = item?.url || fallbackUrl;
+    const title = item?.title || 'Real Play Basketball';
+    const text = item?.text || `${data.jerseyText} ${data.playerName}\nLess Screen. Real Points.`;
+    const filename = item?.filename || 'real-play-profile.png';
+    let blob = null;
+    try {
+      const currentSig = captureSignature(data);
+      if (primedCapture?.blob && primedCapture.signature === currentSig) {
+        blob = primedCapture.blob;
       } else {
-        copyLink(url);
-        toast('PROFILE LINK COPIED.');
+        const fresh = await primeCapture(panel, false);
+        blob = fresh?.blob || null;
       }
-      preparePanel(panel).catch(() => {});
-      return;
-    }
-
+    } catch (_error) {}
+    const file = makeFile(blob, filename);
     if (navigator.share) {
-      const canShareFile = Boolean(item.file && navigator.canShare && (() => {
-        try { return navigator.canShare({ files: [item.file] }); } catch (_error) { return false; }
+      const canShareFile = Boolean(file && navigator.canShare && (() => {
+        try { return navigator.canShare({ files: [file] }); } catch (_error) { return false; }
       })());
-      const payload = canShareFile
-        ? { title: item.title, text: item.text, url: item.url, files: [item.file] }
-        : { title: item.title, text: item.text, url: item.url };
-      navigator.share(payload).catch((error) => {
+      const payload = canShareFile ? { title, text, url, files: [file] } : { title, text, url };
+      try {
+        await navigator.share(payload);
+        return;
+      } catch (error) {
         if (error?.name === 'AbortError') return;
-        copyLink(item.url);
-        if (item.blob) downloadBlob(item.blob, item.file?.name || 'real-play-profile.png');
-        toast('SHARE SHEET BLOCKED · CARD SAVED + LINK COPIED.', 2600);
-      });
-      return;
+        copyLink(url);
+        if (blob) downloadBlob(blob, filename);
+        toast(blob ? 'SHARE SHEET BLOCKED · PROFILE PNG SAVED + LINK COPIED.' : 'SHARE COULD NOT OPEN · PROFILE LINK COPIED.', 2800);
+        return;
+      }
     }
-
-    copyLink(item.url);
-    downloadBlob(item.blob, item.file?.name || 'real-play-profile.png');
-    toast('PROFILE CARD SAVED · LINK COPIED.', 2400);
+    copyLink(url);
+    if (blob) downloadBlob(blob, filename);
+    toast(blob ? 'PROFILE PNG SAVED · LINK COPIED.' : 'PROFILE LINK COPIED.', 2400);
   }
 
   function cancelPress() {
@@ -506,23 +520,30 @@
     if (!panel || panel.classList.contains('rp-profile-art-editing')) return;
     if (event.button !== undefined && event.button !== 0) return;
     if (event.target.closest('button,a,input,textarea,select,[role="button"]')) return;
-
     cancelPress();
     preparePanel(panel).catch(() => {});
-    press = {
+    waitForHeroReady(hero).catch(() => {});
+    const nextPress = {
       panel,
       hero,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
       armed: false,
-      timer: setTimeout(() => {
-        if (!press || press.panel !== panel) return;
-        press.armed = true;
-        panel.classList.add('rp-profile-share-armed');
-        try { navigator.vibrate?.(18); } catch (_error) {}
-      }, LONG_PRESS_MS),
+      capturePromise: null,
+      captureResult: null,
+      timer: null,
     };
+    nextPress.timer = setTimeout(() => {
+      if (press !== nextPress) return;
+      nextPress.armed = true;
+      panel.classList.add('rp-profile-share-armed');
+      nextPress.capturePromise = primeCapture(panel, true)
+        .then((result) => { nextPress.captureResult = result; return result; })
+        .catch(() => null);
+      try { navigator.vibrate?.(18); } catch (_error) {}
+    }, LONG_PRESS_MS);
+    press = nextPress;
   }
 
   function movePress(event) {
@@ -531,7 +552,7 @@
     if (distance > MOVE_CANCEL_PX) cancelPress();
   }
 
-  function endPress(event) {
+  async function endPress(event) {
     if (!press || event.pointerId !== press.pointerId) return;
     const current = press;
     const armed = current.armed;
@@ -539,10 +560,17 @@
     current.panel.classList.remove('rp-profile-share-armed');
     press = null;
     if (!armed) return;
-
     event.preventDefault();
     event.stopPropagation();
-    nativeShareNow(current.panel);
+    if (current.captureResult) {
+      nativeShareNow(current.panel, current.captureResult);
+      return;
+    }
+    let primedCapture = null;
+    if (current.capturePromise) {
+      try { primedCapture = await current.capturePromise; } catch (_error) {}
+    }
+    await nativeShareNow(current.panel, primedCapture);
   }
 
   function bindLongPress() {
@@ -561,7 +589,11 @@
 
   function warmOpenProfiles() {
     document.querySelectorAll('.rp-profile.open').forEach((panel) => {
-      setTimeout(() => preparePanel(panel, true).catch(() => {}), 120);
+      setTimeout(() => {
+        preparePanel(panel, true).catch(() => {});
+        const hero = panel.querySelector('.rp-profile-hero');
+        if (hero) waitForHeroReady(hero).catch(() => {});
+      }, 120);
     });
   }
 
@@ -573,7 +605,6 @@
       button.classList.toggle('active', selected);
       button.setAttribute('aria-current', selected ? 'page' : 'false');
     });
-
     const playersTab = document.querySelector('[data-rp-world] [data-world-tab="players"]');
     playersTab?.click();
     const deadline = Date.now() + 5500;
@@ -583,7 +614,7 @@
         row.click();
         return true;
       }
-      await new Promise((resolve) => setTimeout(resolve, 120));
+      await delay(120);
     }
     return false;
   }
@@ -593,7 +624,6 @@
     const playerId = positiveId(new URL(window.location.href).searchParams.get('player'));
     if (!playerId) return;
     deepLinkHandled = true;
-
     try {
       if (token() && window.RealPlayPlayers?.openProfile) {
         window.RealPlayPlayers.openProfile(playerId);
@@ -608,6 +638,7 @@
 
   installStyles();
   bindLongPress();
+  ensureHtml2Canvas().catch(() => {});
   window.addEventListener('realplay:profile-loaded', warmOpenProfiles);
   window.addEventListener('realplay:public-profile-loaded', warmOpenProfiles);
   window.addEventListener('realplay:profile-art-updated', warmOpenProfiles);
@@ -615,7 +646,6 @@
     warmOpenProfiles();
     setTimeout(handleDeepLink, 80);
   });
-
   if (document.documentElement.classList.contains('rp-shell-ready')) {
     warmOpenProfiles();
     setTimeout(handleDeepLink, 80);
@@ -623,11 +653,21 @@
 
   window.RealPlayProfileShare = {
     prepare: warmOpenProfiles,
-    shareOpenProfile: () => {
+    shareOpenProfile: async () => {
       const panel = document.querySelector('.rp-profile.open');
-      if (panel) {
-        preparePanel(panel).then(() => nativeShareNow(panel)).catch(() => toast('PROFILE SHARE IS NOT READY YET.'));
+      if (!panel) return;
+      try {
+        await preparePanel(panel);
+        await nativeShareNow(panel);
+      } catch (_error) {
+        toast('PROFILE SHARE IS NOT READY YET.');
       }
+    },
+    captureOpenHero: async () => {
+      const panel = document.querySelector('.rp-profile.open');
+      if (!panel) return null;
+      const result = await primeCapture(panel, false);
+      return result?.blob || null;
     },
   };
 })();
