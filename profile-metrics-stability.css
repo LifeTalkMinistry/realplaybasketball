@@ -31,3 +31,32 @@
   font-weight:850;
   letter-spacing:.06em;
 }
+
+/*
+  Profile-share capture compatibility
+  -----------------------------------
+  html2canvas does not composite backdrop-filter the same way as the browser.
+  On the live hero that blur is subtle, but during rasterization it can turn
+  the OVR surface blue and the Record/Win Rate surface red because each card
+  incorrectly bakes in the colored artwork behind it as an opaque rounded
+  plate. While the real hero is being captured, use a neutral pre-composited
+  surface for only those two problem cards. Rank is intentionally left alone
+  because its captured rendering already matches the live profile.
+
+  The hold prompt is interaction feedback, never profile artwork. Suppress its
+  pseudo-element before html2canvas clones computed styles so it cannot leak
+  into the PNG even on slower devices.
+*/
+.rp-profile-hero[data-rp-profile-share-capture-target] .rp-profile-ovr,
+.rp-profile-hero[data-rp-profile-share-capture-target] .rp-profile-record{
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  background:#040910!important;
+  border-color:rgba(255,255,255,.07)!important;
+  box-shadow:none!important;
+}
+
+.rp-profile-hero[data-rp-profile-share-capture-target]::after{
+  content:none!important;
+  display:none!important;
+}
