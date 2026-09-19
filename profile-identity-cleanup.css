@@ -283,3 +283,9 @@
 .rp-profile .rp-profile-hero .rp-profile-badge[data-rp-profile-recognition="captain_eligible"]{
   --rp-profile-badge-scale:1!important;
 }
+
+/* The rank explainer icon is intentionally removed from the profile hero. */
+.rp-profile .rp-profile-hero .rp-rank-info,
+.rp-profile .rp-profile-hero [data-rp-rank-info]{
+  display:none!important;
+}
