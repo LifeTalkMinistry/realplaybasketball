@@ -177,6 +177,21 @@
 
   function syncProfileArtAccess() {
     if (!profileArtRow) return;
+    const authority = window.RealPlayProfileArtAccess;
+    if (typeof authority?.snapshot === 'function') {
+      const state = authority.snapshot();
+      profileArtRow.hidden = !(
+        state?.loaded &&
+        state?.canEditProfileArt &&
+        positiveInteger(state?.userId) !== null
+      );
+      if (!state?.loaded && typeof authority.ready === 'function') {
+        authority.ready().then(syncProfileArtAccess).catch(() => {});
+      }
+      return;
+    }
+
+    // Compatibility fallback while the authority layer is still loading.
     profileArtRow.hidden = !document.querySelector('[data-rp-profile-art-edit]');
   }
 
@@ -269,7 +284,13 @@
     window.setTimeout(() => document.querySelector('[data-auth-open]')?.click(), 30);
   }
 
-  function openProfileArtStudio() {
+  async function openProfileArtStudio() {
+    const authority = window.RealPlayProfileArtAccess;
+    if (typeof authority?.ready !== 'function') return;
+
+    const access = await authority.ready().catch(() => null);
+    if (!access?.canEditProfileArt || positiveInteger(access?.userId) === null) return;
+
     closeSettings({ restoreFocus: false });
 
     let settled = false;
@@ -280,11 +301,20 @@
       const studio = window.RealPlayPremiumProfileArt;
       if (!profile || typeof studio?.editOpenProfile !== 'function') return;
 
+      // Use the same direct editor path as the working admin trigger, but first
+      // pin ME to the authenticated account id. This happens before the editor
+      // opens, so the premium-art WeakMap cannot be retargeted afterward.
+      if (typeof authority.prepareOwnProfile === 'function' && !authority.prepareOwnProfile(profile)) return;
+
       settled = true;
       window.removeEventListener('realplay:profile-loaded', handleProfileLoaded);
       if (fallbackTimer) window.clearTimeout(fallbackTimer);
       window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => studio.editOpenProfile());
+        window.requestAnimationFrame(() => {
+          authority.prepareOwnProfile?.(profile);
+          studio.editOpenProfile();
+          authority.apply?.();
+        });
       });
     };
 
@@ -292,9 +322,9 @@
     window.addEventListener('realplay:profile-loaded', handleProfileLoaded);
     window.RealPlayProfile?.open?.();
 
-    // The profile loader normally emits realplay:profile-loaded after replacing
-    // the profile DOM. This fallback only covers an already-settled/cached view.
-    fallbackTimer = window.setTimeout(openStudioAfterProfileRender, 1800);
+    // Cached/already-settled profile fallback. Authority was awaited above, so
+    // this fallback cannot open against an unresolved owner identity.
+    fallbackTimer = window.setTimeout(openStudioAfterProfileRender, 1200);
   }
 
   function logout() {
@@ -356,8 +386,8 @@
     if (event.target === panel) closeSettings();
   });
 
-  const profileArtObserver = new MutationObserver(syncProfileArtAccess);
-  profileArtObserver.observe(document.body, { childList: true, subtree: true });
+  window.addEventListener('realplay:profile-art-access-ready', syncProfileArtAccess);
+  window.addEventListener('realplay:settings-open', syncProfileArtAccess);
 
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !panel.classList.contains('open')) return;
