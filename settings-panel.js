@@ -10,8 +10,17 @@
   const menuList = document.querySelector('[data-rp-main-menu-list]');
   if (!menu || !settingsChoice) return;
 
+  const relocationStyle = document.createElement('style');
+  relocationStyle.dataset.rpProfileSettingsRelocation = 'true';
+  relocationStyle.textContent = `
+    .rp-profile-actions [data-rp-profile-manage-number]{display:none!important}
+    .rp-profile-actions{grid-template-columns:minmax(0,1fr)!important}
+    .rp-profile-art-edit-button{display:none!important}
+  `;
+  document.head.appendChild(relocationStyle);
+
   const settingsSummary = settingsChoice.querySelector('span');
-  if (settingsSummary) settingsSummary.textContent = 'MEMBERSHIP · COMMUNITY · ACCOUNT';
+  if (settingsSummary) settingsSummary.textContent = 'IDENTITY · MEMBERSHIP · COMMUNITY · ACCOUNT';
 
   const panel = document.createElement('div');
   panel.className = 'rp-settings-overlay';
@@ -40,6 +49,12 @@
       </div>
 
       <div class="rp-settings-list">
+        <button type="button" class="rp-settings-row" data-rp-settings-action="identity">
+          <span><strong>IDENTITY & NUMBER MANAGEMENT</strong><small>Manage your Real Play player name and number</small></span><b>→</b>
+        </button>
+        <button type="button" class="rp-settings-row" data-rp-settings-action="profile-art" data-rp-settings-profile-art hidden>
+          <span><strong>PROFILE ART STUDIO</strong><small>Upload or adjust premium player artwork</small></span><b>→</b>
+        </button>
         <button type="button" class="rp-settings-row" data-rp-settings-action="membership">
           <span><strong>MEMBERSHIP</strong><small>View status and membership access</small></span><b>→</b>
         </button>
@@ -78,6 +93,7 @@
   const playerIdButton = panel.querySelector('[data-rp-settings-player-id]');
   const playerIdNode = panel.querySelector('[data-rp-settings-player-id-value]');
   const playerIdCopyNode = panel.querySelector('[data-rp-settings-player-id-copy]');
+  const profileArtRow = panel.querySelector('[data-rp-settings-profile-art]');
   let currentPlayerId = null;
   let identityRequest = 0;
   let copyResetTimer = 0;
@@ -159,6 +175,11 @@
     refreshPlayerId();
   }
 
+  function syncProfileArtAccess() {
+    if (!profileArtRow) return;
+    profileArtRow.hidden = !document.querySelector('[data-rp-profile-art-edit]');
+  }
+
   async function copyPlayerId() {
     if (currentPlayerId === null) return;
     const text = String(currentPlayerId);
@@ -193,12 +214,14 @@
 
   function showMainSettings() {
     syncIdentity();
+    syncProfileArtAccess();
     if (mainPanel) mainPanel.hidden = false;
     if (communityPanel) communityPanel.hidden = true;
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-settings-open');
 
+    window.setTimeout(syncProfileArtAccess, 120);
     window.dispatchEvent(new CustomEvent('realplay:settings-open'));
   }
 
@@ -239,6 +262,28 @@
       document.querySelector('[data-auth-open]')?.click();
       window.setTimeout(() => document.querySelector('[data-auth-membership-card]')?.click(), 350);
     }, 20);
+  }
+
+  function openIdentityManagement() {
+    closeSettings({ restoreFocus: false });
+    window.setTimeout(() => document.querySelector('[data-auth-open]')?.click(), 30);
+  }
+
+  function openProfileArtStudio() {
+    closeSettings({ restoreFocus: false });
+    window.RealPlayProfile?.open?.();
+
+    let attempts = 0;
+    const tryOpen = () => {
+      const editButton = document.querySelector('[data-rp-profile] [data-rp-profile-art-edit]');
+      if (editButton) {
+        editButton.click();
+        return;
+      }
+      attempts += 1;
+      if (attempts < 40) window.setTimeout(tryOpen, 75);
+    };
+    window.setTimeout(tryOpen, 90);
   }
 
   function logout() {
@@ -288,7 +333,9 @@
   panel.querySelectorAll('[data-rp-settings-action]').forEach((button) => {
     button.addEventListener('click', () => {
       const action = button.dataset.rpSettingsAction;
-      if (action === 'membership') openMembership();
+      if (action === 'identity') openIdentityManagement();
+      else if (action === 'profile-art') openProfileArtStudio();
+      else if (action === 'membership') openMembership();
       else if (action === 'community') showCommunity();
       else if (action === 'logout') logout();
     });
@@ -297,6 +344,9 @@
   panel.addEventListener('click', (event) => {
     if (event.target === panel) closeSettings();
   });
+
+  const profileArtObserver = new MutationObserver(syncProfileArtAccess);
+  profileArtObserver.observe(document.body, { childList: true, subtree: true });
 
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !panel.classList.contains('open')) return;
