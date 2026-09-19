@@ -29,8 +29,10 @@
     if (target.closest?.('[data-rp-main-notice-close]')) return document.querySelector('[data-rp-main-notice]');
     if (target.closest?.('[data-rp-career-replay-close]')) return document.querySelector('[data-rp-career-replay]');
     if (target.closest?.('[data-updates-close]')) return document.querySelector('[data-rp-updates]');
+    if (target.closest?.('.rp-profile-settings-placeholder, [data-rp-profile-settings]')) return target.closest('[data-rp-profile], .rp-public-player-profile, [data-rp-public-profile]');
     if (target.closest?.('[data-rp-profile-close]')) return target.closest('[data-rp-profile], .rp-public-player-profile, [data-rp-public-profile]');
     if (target.closest?.('[data-rp-public-profile-close], [data-rp-player-profile-close]')) return target.closest('.rp-public-player-profile, [data-rp-public-profile]');
+    if (target.closest?.('[data-rp-ranking-back]')) return target.closest('[data-rp-ranking-games]');
     if (target.closest?.('[data-admin-exit]')) return document.querySelector('.rp-admin-control');
     return null;
   }
@@ -60,6 +62,7 @@
       document.querySelector('[data-rp-updates].open'),
       document.querySelector('[data-rp-profile].open'),
       document.querySelector('.rp-public-player-profile.open'),
+      document.querySelector('[data-rp-ranking-games].open'),
       document.querySelector('.rp-admin-control.open'),
     ].filter(Boolean);
     const activeSurface = surfaces.find((surface) => surface.contains(document.activeElement)) || surfaces[0];
