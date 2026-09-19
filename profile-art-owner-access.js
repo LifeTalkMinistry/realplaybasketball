@@ -27,19 +27,33 @@
     return null;
   }
 
+  function normalizeOwnProfileArtAuthority(panel) {
+    if (!panel || panel.classList.contains('rp-public-player-profile')) return;
+    if (!access.loaded || !access.userId) return;
+
+    // The ME profile can expose the permanent basketball Player ID here, but
+    // profile art is stored and authorized by the logged-in Real Play account.
+    // Force the art studio to target the authenticated account ID so owner
+    // access, uploads, saves and removals all use the same authority key.
+    const accountId = String(access.userId);
+    if (panel.dataset.rpProfilePlayerId !== accountId) {
+      panel.dataset.rpProfilePlayerId = accountId;
+    }
+  }
+
   function panelTargetId(panel) {
     if (!panel) return null;
-    const source = panel.classList.contains('rp-public-player-profile')
+    const isPublic = panel.classList.contains('rp-public-player-profile');
+    const source = isPublic
       ? (panel.__realPlayPublicPlayer || {})
       : (panel.__realPlayProfileState || {});
     const profile = source?.profile || source?.player || source || {};
 
-    // Public profiles intentionally expose accountUserId through
-    // data-rp-public-player-id for profile-art authority. Own profiles use the
-    // authenticated account/profile user id.
+    // Public profiles expose their owning account ID through
+    // data-rp-public-player-id. The signed-in ME profile is normalized above to
+    // the authenticated account ID before this function is used.
     return firstPositiveInteger(
-      panel.dataset?.rpPublicPlayerId,
-      panel.dataset?.rpProfilePlayerId,
+      isPublic ? panel.dataset?.rpPublicPlayerId : panel.dataset?.rpProfilePlayerId,
       source?.accountUserId,
       source?.account_user_id,
       source?.profile?.userId,
@@ -73,6 +87,7 @@
 
   function applyPanelAccess() {
     document.querySelectorAll('.rp-profile.open').forEach((panel) => {
+      normalizeOwnProfileArtAuthority(panel);
       const editable = canEditPanel(panel);
       panel.classList.toggle('rp-profile-art-owner-readonly', !editable);
       panel.classList.toggle('rp-profile-art-owner-editable', editable && !access.admin);
