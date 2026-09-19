@@ -284,8 +284,13 @@
   --rp-profile-badge-scale:1!important;
 }
 
-/* The rank explainer icon is intentionally removed from the profile hero. */
-.rp-profile .rp-profile-hero .rp-rank-info,
-.rp-profile .rp-profile-hero [data-rp-rank-info]{
+/*
+  The rank explainer belongs in the interactive player profile, but not in the
+  shared hero artwork. profile-share.js marks the authoritative hero with this
+  capture target only while html2canvas is rendering the PNG, so the normal
+  profile keeps the info button visible and usable.
+*/
+.rp-profile .rp-profile-hero[data-rp-profile-share-capture-target] .rp-rank-info,
+.rp-profile .rp-profile-hero[data-rp-profile-share-capture-target] [data-rp-rank-info]{
   display:none!important;
 }
