@@ -170,7 +170,7 @@
 
     const script = document.createElement('script');
     script.dataset.rpProfileShareLoader = 'true';
-    script.src = 'profile-share.js?v=20260919-profile-share-dom-capture-v3';
+    script.src = 'profile-share.js?v=20260919-profile-share-exact-social-v4';
     script.async = false;
     script.addEventListener('error', () => {
       console.warn('[Real Play] Profile sharing failed to load.');
