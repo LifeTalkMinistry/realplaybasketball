@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260919-profile-share-capture-v101';
+  const version = '20260919-rank-info-removal-v102';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -261,8 +261,7 @@
     'settings-panel.css',
     'auth-welcome-cleanup.css',
     'public-landing-cleanup.css',
-    'public-origin-center.css',
-    'public-carousel-center-force.css',
+    'public-origin-center-force.css',
     'public-founder-credit.css',
     'admin-courtside-live.css',
     'admin-shot-breakdown.css',
