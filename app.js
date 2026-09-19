@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260920-profile-art-unified-access-v107';
+  const version = '20260920-profile-art-player-upload-v108';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
