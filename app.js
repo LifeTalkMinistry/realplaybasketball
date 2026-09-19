@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260919-script-first-bootstrap-v104';
+  const version = '20260919-profile-art-studio-entry-v105';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
