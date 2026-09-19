@@ -104,8 +104,8 @@
   }
 
   function scheduleAdminWarm() {
-    preloadAdminAssets();
     if (!verifiedAdmin || adminLoaded || warmScheduled) return;
+    preloadAdminAssets();
     warmScheduled = true;
 
     const start = () => {
@@ -316,7 +316,6 @@
 
   function boot() {
     loadReplayAdminRoot();
-    preloadAdminAssets();
     const observer = new MutationObserver(() => {
       if (settingsList()) {
         syncSettingsRow();
@@ -329,7 +328,6 @@
 
   window.addEventListener('realplay:settings-open', () => {
     syncSettingsRow();
-    preloadAdminAssets();
     if (verifiedAdmin) scheduleAdminWarm();
   });
 
