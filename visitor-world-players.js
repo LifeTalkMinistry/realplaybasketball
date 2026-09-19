@@ -2,6 +2,8 @@
   if (window.__realPlayVisitorWorldPlayersInstalled) return;
   window.__realPlayVisitorWorldPlayersInstalled = true;
 
+  const API_BASE_URL = 'https://api.clarapmc.com';
+  const PROFILE_ART_REGISTRY_URL = 'assets/profile-art/registry.json';
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -19,6 +21,7 @@
   let profilePanel = null;
   let loadingPlayers = false;
   let loadingProfile = false;
+  let visitorArtRequest = 0;
 
   function world() {
     return document.querySelector('[data-rp-world]');
@@ -126,6 +129,7 @@
 
   function closeProfile() {
     if (!profilePanel) return;
+    visitorArtRequest += 1;
     const focused = document.activeElement;
     if (focused && profilePanel.contains(focused)) {
       try { focused.blur?.(); } catch (_error) {}
@@ -150,6 +154,118 @@
       || player?.public_pass?.pass_holder === true
       || tokenCount > 0;
     return passHolder ? `PASS HOLDER - TOKEN: ${tokenCount}` : 'PLAYER PROFILE';
+  }
+
+  function normalizeVisitorArt(raw) {
+    if (!raw || typeof raw !== 'object' || !String(raw.src || '').trim()) return null;
+    const finite = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+    return {
+      src: String(raw.src || '').trim(),
+      positionX: clamp(finite(raw.positionX ?? raw.position_x, 72), -50, 150),
+      positionY: clamp(finite(raw.positionY ?? raw.position_y, 44), -50, 150),
+      scale: clamp(finite(raw.scale, 1.15), 0.4, 4),
+      opacity: clamp(finite(raw.opacity, 1), 0, 1),
+      enabled: raw.enabled !== false,
+    };
+  }
+
+  function resolveVisitorArtSrc(art) {
+    const src = String(art?.src || '').trim();
+    if (!src) return '';
+    if (/^https?:\/\//i.test(src)) return src;
+    if (src.startsWith('/api/')) return `${API_BASE_URL}${src}`;
+    return src;
+  }
+
+  async function loadLegacyVisitorArt(accountUserId) {
+    try {
+      const response = await fetch(`${PROFILE_ART_REGISTRY_URL}?v=20260919-visitor-art-account-bridge-v1`, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      if (!response.ok) return null;
+      const data = await response.json().catch(() => ({}));
+      const rows = Array.isArray(data?.players) ? data.players : [];
+      const row = rows.find((candidate) => positiveId(candidate?.playerId ?? candidate?.player_id) === accountUserId);
+      return normalizeVisitorArt(row);
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  async function renderVisitorProfileArt(player) {
+    const requestId = ++visitorArtRequest;
+    const panel = profilePanel;
+    const hero = panel?.querySelector('.rp-profile-hero');
+    if (!panel || !hero || !panel.classList.contains('open')) return;
+
+    // Public directory identity uses the canonical/manual Player ID (RP-xxxxx),
+    // while premium art is stored against the claimed Real Play account ID.
+    // Use accountUserId only for artwork so replay/history keep their canonical ID.
+    const accountUserId = positiveId(player?.accountUserId ?? player?.account_user_id);
+    const existing = hero.querySelector('[data-rp-visitor-premium-profile-art]');
+    if (!accountUserId) {
+      existing?.remove();
+      return;
+    }
+
+    let art = null;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/real-play/profile-art?playerId=${encodeURIComponent(accountUserId)}`, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      if (response.ok) {
+        const data = await response.json().catch(() => ({}));
+        if (Object.prototype.hasOwnProperty.call(data, 'art') && data.art !== null) {
+          art = normalizeVisitorArt(data.art);
+        } else {
+          art = await loadLegacyVisitorArt(accountUserId);
+        }
+      } else {
+        art = await loadLegacyVisitorArt(accountUserId);
+      }
+    } catch (_error) {
+      art = await loadLegacyVisitorArt(accountUserId);
+    }
+
+    if (requestId !== visitorArtRequest || !panel.classList.contains('open')) return;
+    if (!art || art.enabled === false) {
+      existing?.remove();
+      return;
+    }
+
+    let layer = hero.querySelector('[data-rp-visitor-premium-profile-art]');
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.className = 'rp-premium-profile-art rp-visitor-premium-profile-art';
+      layer.dataset.rpVisitorPremiumProfileArt = 'true';
+      layer.setAttribute('aria-hidden', 'true');
+      layer.innerHTML = '<img alt="" draggable="false" /><span class="rp-premium-profile-art-atmosphere"></span>';
+      hero.insertBefore(layer, hero.firstChild);
+    }
+
+    layer.style.setProperty('--rp-art-x', `${art.positionX}%`);
+    layer.style.setProperty('--rp-art-y', `${art.positionY}%`);
+    layer.style.setProperty('--rp-art-scale', String(art.scale));
+    layer.style.setProperty('--rp-art-opacity', String(art.opacity));
+
+    const image = layer.querySelector('img');
+    const src = resolveVisitorArtSrc(art);
+    if (!image || !src) return;
+    layer.classList.remove('is-ready');
+    image.onload = () => {
+      if (requestId !== visitorArtRequest || !panel.classList.contains('open')) return;
+      layer.classList.add('is-ready');
+      panel.classList.add('has-rp-premium-profile-art');
+    };
+    image.onerror = () => {
+      if (requestId !== visitorArtRequest) return;
+      layer.classList.remove('is-ready');
+    };
+    image.src = src;
+    if (image.complete && image.naturalWidth > 0) image.onload();
   }
 
   function renderProfile(player) {
@@ -212,6 +328,10 @@
       window.dispatchEvent(new CustomEvent('realplay:public-profile-loaded', {
         detail: { playerId: loadedPlayerId, player },
       }));
+      // The public/canonical Player ID and account ID are intentionally different
+      // identity domains. Premium art is stored by account ID, so bridge only the
+      // art lookup while preserving the canonical ID for history and replay.
+      renderVisitorProfileArt(player);
       if (status) status.textContent = '';
     } catch (error) {
       if (status) status.textContent = error.message || 'Could not load this player profile.';
