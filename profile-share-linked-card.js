@@ -1,6 +1,6 @@
 (() => {
-  if (window.__realPlayProfileLinkedShareInstalledV111) return;
-  window.__realPlayProfileLinkedShareInstalledV111 = true;
+  if (window.__realPlayProfileLinkedShareInstalledV112) return;
+  window.__realPlayProfileLinkedShareInstalledV112 = true;
 
   const PUBLIC_APP_URL = 'https://joinrealplay.com/';
   const PROFILE_SHARE_URL = /^https:\/\/api\.clarapmc\.com\/api\/real-play\/profile-share\/[a-f0-9]{40}(?:[?#].*)?$/i;
@@ -39,9 +39,6 @@
     } catch (_error) {}
   }
 
-  // The profile-share publisher already knows the canonical public player id.
-  // Remember it when the snapshot upload begins so the native share handoff can
-  // use joinrealplay.com instead of exposing the API host to Facebook.
   if (typeof window.fetch === 'function') {
     const nativeFetch = window.fetch.bind(window);
     window.fetch = function realPlayShareDomainFetch(input, init) {
@@ -91,25 +88,37 @@
     return PROFILE_SHARE_URL.test(url) || DIRECT_PROFILE_URL.test(url);
   }
 
-  function directPayload(payload) {
-    const files = profileFiles(payload);
-    const suppliedUrl = String(payload.url || '').trim();
-    let url = DIRECT_PROFILE_URL.test(suppliedUrl) ? suppliedUrl : '';
-    if (!url) url = directProfileUrl(rememberedPlayerId());
+  function directUrlFor(payload) {
+    const suppliedUrl = String(payload?.url || '').trim();
+    if (DIRECT_PROFILE_URL.test(suppliedUrl)) return suppliedUrl;
+    return directProfileUrl(rememberedPlayerId());
+  }
 
-    // Facebook treats a URL share as a web-card and prints the source host under
-    // the image. For profile sharing we want the actual profile image as the post
-    // media, with the Real Play player URL carried in the post text. That keeps
-    // the artwork clean and ensures the only shared destination is joinrealplay.com.
-    return {
-      files,
-      text: url,
-    };
+  function copyProfileLink(url) {
+    if (!url) return;
+    window.__realPlayLastSharedProfileUrl = url;
+    try {
+      const result = navigator.clipboard?.writeText?.(url);
+      result?.catch?.(() => {});
+    } catch (_error) {}
+  }
+
+  function imageOnlyPayload(payload) {
+    const files = profileFiles(payload);
+    const url = directUrlFor(payload);
+
+    // A clickable Facebook link preview always renders Facebook-owned link
+    // chrome beneath the artwork. To keep the shared post visually identical
+    // to the Real Play profile card, hand Facebook only the PNG as post media.
+    // Preserve the canonical player destination by copying it to the clipboard
+    // at the same moment, ready to paste into a caption/message when desired.
+    copyProfileLink(url);
+    return { files };
   }
 
   function share(payload) {
     if (!shouldRewrite(payload)) return nativeShare(payload);
-    return nativeShare(directPayload(payload));
+    return nativeShare(imageOnlyPayload(payload));
   }
 
   let installed = false;
