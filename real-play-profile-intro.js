@@ -456,9 +456,6 @@
     bindHeroGestures(panel);
     updateEditorReadout(panel);
     renderArtLayer(panel);
-    if (!state.art) {
-      window.setTimeout(() => panel.querySelector('[data-rp-profile-art-file]')?.click(), 60);
-    }
   }
 
   function adjustDraft(panel, changes = {}) {
