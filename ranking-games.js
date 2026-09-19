@@ -500,6 +500,23 @@
 
   function close() {
     stopPolling();
+    const focused = document.activeElement;
+    if (focused && view.contains(focused)) {
+      try { focused.blur?.(); } catch (_error) {}
+      if (view.contains(document.activeElement)) {
+        const fallback = document.querySelector('[data-rp-simple-nav-item][aria-current="page"]')
+          || document.querySelector('[data-rp-main-action].slot-active')
+          || document.querySelector('[data-rp-simple-nav-item="home"]')
+          || document.querySelector('[data-rp-app]');
+        if (fallback && !view.contains(fallback) && typeof fallback.focus === 'function') {
+          const needsTabIndex = !fallback.matches('button, a[href], input, select, textarea, [tabindex]');
+          if (needsTabIndex) fallback.setAttribute('tabindex', '-1');
+          try { fallback.focus({ preventScroll: true }); }
+          catch (_error) { try { fallback.focus(); } catch (_innerError) {} }
+          if (needsTabIndex) fallback.removeAttribute('tabindex');
+        }
+      }
+    }
     view.classList.remove('open');
     view.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-ranking-open');
