@@ -275,10 +275,11 @@
 
     let attempts = 0;
     const tryOpen = () => {
-      const editButton = document.querySelector('[data-rp-profile] [data-rp-profile-art-edit]');
-      if (editButton) {
-        editButton.click();
-        return;
+      const profile = document.querySelector('[data-rp-profile].open');
+      const studio = window.RealPlayPremiumProfileArt;
+      if (profile && typeof studio?.editOpenProfile === 'function') {
+        studio.editOpenProfile();
+        if (profile.querySelector('[data-rp-profile-art-editor]')) return;
       }
       attempts += 1;
       if (attempts < 40) window.setTimeout(tryOpen, 75);
