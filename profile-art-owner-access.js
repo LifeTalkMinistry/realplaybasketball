@@ -13,6 +13,7 @@
   };
   let accessPromise = null;
   let refreshTimer = 0;
+  let syntheticStorageRefresh = false;
 
   function token() {
     return window.localStorage.getItem(TOKEN_KEY) || '';
@@ -89,8 +90,9 @@
 
   function refreshLegacyProfileArtGate() {
     // real-play-profile-intro.js historically cached a boolean "adminAccess".
-    // Re-fire its token-change hook so it rechecks the now owner-aware backend
+    // Re-fire only that listener so it rechecks the now owner-aware backend
     // access endpoint instead of keeping an old 403 result for the whole tab.
+    syntheticStorageRefresh = true;
     try {
       window.dispatchEvent(new StorageEvent('storage', {
         key: TOKEN_KEY,
@@ -103,6 +105,8 @@
         Object.defineProperty(event, 'key', { value: TOKEN_KEY });
         window.dispatchEvent(event);
       } catch (_ignored) {}
+    } finally {
+      syntheticStorageRefresh = false;
     }
   }
 
@@ -152,10 +156,7 @@
   }
 
   function refreshForProfile() {
-    loadAccess(true).finally(() => {
-      refreshLegacyProfileArtGate();
-      scheduleApply(120);
-    });
+    loadAccess(true).finally(() => scheduleApply(120));
   }
 
   const style = document.createElement('style');
@@ -171,7 +172,7 @@
   window.addEventListener('realplay:app-ready', refreshForProfile);
   window.addEventListener('realplay:profile-art-updated', () => scheduleApply(30));
   window.addEventListener('storage', (event) => {
-    if (event.key !== TOKEN_KEY) return;
+    if (event.key !== TOKEN_KEY || syntheticStorageRefresh) return;
     access.loaded = false;
     loadAccess(true).finally(() => scheduleApply(50));
   });
