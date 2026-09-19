@@ -11,4 +11,16 @@
   } else {
     window.localStorage.removeItem(VISITOR_KEY);
   }
+
+  // Home schedule editing is intentionally independent from Game Control.
+  // Load its lightweight authority on every shell; it exposes the pencil only
+  // after its own admin-status verification succeeds.
+  if (!window.__realPlayHomeScheduleLoaderInstalled) {
+    window.__realPlayHomeScheduleLoaderInstalled = true;
+    const script = document.createElement('script');
+    script.src = 'home-open-rank-admin-edit.js?v=20260919-home-schedule-authority-v1';
+    script.async = false;
+    script.onerror = () => console.warn('[Real Play] Home schedule editor failed to load.');
+    document.head.appendChild(script);
+  }
 })();
