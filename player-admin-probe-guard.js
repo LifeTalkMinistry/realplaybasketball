@@ -5,6 +5,7 @@
   const nativeFetch = window.fetch.bind(window);
   const ADMIN_API_PREFIX = 'https://api.clarapmc.com/api/real-play/admin/';
   const ADMIN_VERIFY_URL = `${ADMIN_API_PREFIX}career/control`;
+  const PROFILE_ART_API_PREFIX = `${ADMIN_API_PREFIX}profile-art`;
 
   function adminContextRequested() {
     try {
@@ -21,14 +22,27 @@
     return method === 'GET';
   }
 
+  function playerProfileArtRequest(url) {
+    // Profile Art Studio is player-owned now. These routes intentionally retain
+    // their historical /admin/profile-art path, but the backend authorizes a
+    // normal signed-in player for their own account and only requires admin
+    // authority when the target belongs to somebody else.
+    return url.startsWith(PROFILE_ART_API_PREFIX);
+  }
+
   window.fetch = function playerSafeFetch(input, init = {}) {
     const url = typeof input === 'string' ? input : input?.url || '';
 
-    // Normal player sessions should not touch admin-only endpoints just to
-    // discover that they are not admins. A previously server-verified admin is
-    // also accepted through RealPlayServerGate so Players long-hold management
-    // is not accidentally downgraded while the admin bootstrap is refreshing.
-    if (url.startsWith(ADMIN_API_PREFIX) && !adminContextRequested() && !adminVerificationRequested(url, input, init)) {
+    // Normal player sessions should not touch truly admin-only endpoints just to
+    // discover that they are not admins. Profile Art Studio is explicitly exempt:
+    // every authenticated player may upload/save/remove their OWN profile art,
+    // while the backend remains the authority for cross-player/admin editing.
+    if (
+      url.startsWith(ADMIN_API_PREFIX)
+      && !playerProfileArtRequest(url)
+      && !adminContextRequested()
+      && !adminVerificationRequested(url, input, init)
+    ) {
       return Promise.resolve(new Response(JSON.stringify({
         admin: false,
         message: 'Admin access is not active in this player session.',
