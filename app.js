@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260919-profile-art-owner-v100';
+  const version = '20260919-profile-share-capture-v101';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
