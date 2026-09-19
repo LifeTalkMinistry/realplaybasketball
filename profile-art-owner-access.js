@@ -147,6 +147,12 @@
   }
 
   function refreshForProfile() {
+    // The app-ready access check normally finishes before the shell is exposed.
+    // Apply that known authority synchronously when a profile opens so the
+    // premium-art layer sees the authenticated account ID on its first pass,
+    // instead of opening against the basketball Player ID and being torn down
+    // moments later when owner authority catches up.
+    if (access.loaded) applyPanelAccess();
     loadAccess(true).finally(() => scheduleApply(120));
   }
 
