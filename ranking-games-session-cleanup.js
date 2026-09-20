@@ -292,7 +292,7 @@
 /*
  * NEXT RANKING GAME session-status summary.
  * Replace the redundant "YOU'RE IN · SCHEDULED" line with a compact live view
- * of how the session is being secured: Play Token, GCash, Cash and Standby.
+ * of how the session is being filled: Play Token, Admin, GCash, Cash and Standby.
  */
 (() => {
   if (window.__realPlayRankingSessionStatusSummaryInstalled) return;
@@ -345,7 +345,7 @@
     }
     .rp-ranking-access-breakdown{
       display:grid;
-      grid-template-columns:repeat(4,minmax(0,1fr));
+      grid-template-columns:repeat(5,minmax(0,1fr));
       gap:0;
       border:1px solid rgba(83,145,181,.13);
       border-radius:11px;
@@ -380,13 +380,14 @@
       line-height:1;
     }
     .rp-ranking-access-breakdown .is-token strong{color:#75e9c5}
+    .rp-ranking-access-breakdown .is-admin strong{color:#69dff7}
     .rp-ranking-access-breakdown .is-standby strong{color:#b9a77d}
     @media(max-width:390px){
       .rp-ranking-access-summary-head span{font-size:.41rem}
       .rp-ranking-access-summary-head strong{font-size:.57rem}
-      .rp-ranking-access-breakdown span{font-size:.31rem;letter-spacing:.07em}
+      .rp-ranking-access-breakdown span{font-size:.29rem;letter-spacing:.045em}
       .rp-ranking-access-breakdown strong{font-size:.57rem}
-      .rp-ranking-access-breakdown div{padding-left:3px;padding-right:3px}
+      .rp-ranking-access-breakdown div{padding-left:2px;padding-right:2px}
     }
   `;
   document.head.appendChild(style);
@@ -417,11 +418,12 @@
     summary.hidden = true;
     summary.innerHTML = `
       <div class="rp-ranking-access-summary-head">
-        <span>SECURED SPOTS</span>
-        <strong data-rp-ranking-access-total>00/00 SECURED</strong>
+        <span>SESSION SPOTS</span>
+        <strong data-rp-ranking-access-total>00/00 FILLED</strong>
       </div>
       <div class="rp-ranking-access-breakdown" aria-label="Session access breakdown">
         <div class="is-token"><span>TOKEN</span><strong data-rp-ranking-access-token>0</strong></div>
+        <div class="is-admin"><span>ADMIN</span><strong data-rp-ranking-access-admin>0</strong></div>
         <div><span>GCASH</span><strong data-rp-ranking-access-gcash>0</strong></div>
         <div><span>CASH</span><strong data-rp-ranking-access-cash>0</strong></div>
         <div class="is-standby"><span>STANDBY</span><strong data-rp-ranking-access-standby>0</strong></div>
@@ -435,6 +437,7 @@
 
   function ownAccessLabel(entry) {
     if (entry?.entryType === 'token') return 'TOKEN';
+    if (entry?.entryType === 'admin_priority' || entry?.paymentStatus === 'admin_priority') return 'ADMIN';
     if (entry?.paymentStatus === 'gcash_submitted') return 'GCASH';
     if (entry?.paymentStatus === 'cash_due') return 'CASH';
     if (entry?.entryType === 'standby') return 'FREE STANDBY';
@@ -496,12 +499,13 @@
       ? Math.min(standby, Math.max(capacity - secured, 0))
       : standby;
     const overflowStandby = Math.max(standby - mainStandby, 0);
-    const securedCapacityCount = secured + mainStandby;
+    const filledCount = secured + mainStandby;
 
     summary.querySelector('[data-rp-ranking-access-total]').textContent = capacity
-      ? `${pad(securedCapacityCount)}/${pad(capacity)} SECURED`
-      : `${pad(securedCapacityCount)} SECURED`;
+      ? `${pad(filledCount)}/${pad(capacity)} FILLED`
+      : `${pad(filledCount)} FILLED`;
     summary.querySelector('[data-rp-ranking-access-token]').textContent = String(tokenSecured);
+    summary.querySelector('[data-rp-ranking-access-admin]').textContent = String(adminPrioritySecured);
     summary.querySelector('[data-rp-ranking-access-gcash]').textContent = String(gcashSecured);
     summary.querySelector('[data-rp-ranking-access-cash]').textContent = String(cashSecured);
     summary.querySelector('[data-rp-ranking-access-standby]').textContent = String(mainStandby);
