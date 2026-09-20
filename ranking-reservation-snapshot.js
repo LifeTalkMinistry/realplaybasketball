@@ -222,16 +222,16 @@
       node.textContent = nextText;
     };
 
-    const tokenCount = source.querySelector('[data-rp-ranking-secured] [data-rp-ranking-secured-count]');
-    if (tokenCount) {
-      const parts = String(tokenCount.textContent || '').match(/\d+/g) || [];
+    const securedCount = source.querySelector('[data-rp-ranking-secured] [data-rp-ranking-secured-count]');
+    if (securedCount) {
+      const parts = String(securedCount.textContent || '').match(/\d+/g) || [];
       const current = snapshotInteger(parts[0]);
       const capacity = snapshotInteger(parts[1]);
       if (current !== null) {
         const paddedCurrent = String(current).padStart(2, '0');
         replaceText(
-          tokenCount,
-          capacity !== null ? `${paddedCurrent}/${capacity} Token Users` : `${paddedCurrent} Token Users`
+          securedCount,
+          capacity !== null ? `${paddedCurrent}/${capacity} Secured Players` : `${paddedCurrent} Secured Players`
         );
       }
     }
