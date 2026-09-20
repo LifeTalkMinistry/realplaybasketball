@@ -5,10 +5,13 @@
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
   const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
+  const CURRENT_RANKING_SESSION_URL = `${API_BASE_URL}/api/real-play/career/session`;
   let enforcing = false;
   let enforceQueued = false;
   let homeRefreshTimer = 0;
   let homeLoading = false;
+  let configuredHomeCapacity = 16;
+  let availabilityRequestId = 0;
   const observedAuthorityTargets = new WeakSet();
 
   const esc = (value) => String(value ?? '')
@@ -241,36 +244,90 @@
       : '<small>MAIN ANNOUNCEMENT</small><h2>NO MAIN ANNOUNCEMENT.</h2><p>Important Real Play updates will appear here.</p>';
   }
 
+  function parseOpenRankCapacity(update) {
+    const metadata = update?.metadata || {};
+    const directCap = Number(metadata.capacity ?? update?.capacity);
+    if (Number.isFinite(directCap) && directCap > 0) return Math.round(directCap);
+    const bodyCap = Number(String(update?.body || '').match(/\b(\d{1,3})\s+PLAYER\s+CAP\b/i)?.[1]);
+    return Number.isFinite(bodyCap) && bodyCap > 0 ? Math.round(bodyCap) : 16;
+  }
+
+  function renderConfiguredOpenRankCapacity() {
+    const node = homeRoot()?.querySelector('[data-rp-home-open-rank-capacity]');
+    if (!node) return;
+    node.textContent = `${configuredHomeCapacity} PLAYER CAP`;
+  }
+
+  function renderOpenRankAvailability(session) {
+    const node = homeRoot()?.querySelector('[data-rp-home-open-rank-capacity]');
+    if (!node || !session || typeof session !== 'object') return false;
+
+    const capacity = Number(session.capacity);
+    const confirmedCount = Number(session.confirmedCount ?? session.confirmed_count);
+    if (!Number.isFinite(capacity) || capacity <= 0) return false;
+    if (!Number.isFinite(confirmedCount) || confirmedCount < 0) return false;
+
+    const spotsLeft = Math.max(0, Math.round(capacity) - Math.round(confirmedCount));
+    node.textContent = `${spotsLeft} ${spotsLeft === 1 ? 'SPOT' : 'SPOTS'} LEFT`;
+    return true;
+  }
+
+  async function refreshOpenRankAvailability() {
+    const requestId = ++availabilityRequestId;
+    renderConfiguredOpenRankCapacity();
+
+    const auth = localStorage.getItem(TOKEN_KEY) || '';
+    const node = homeRoot()?.querySelector('[data-rp-home-open-rank-capacity]');
+    if (!node || !auth) return;
+
+    try {
+      const response = await fetch(CURRENT_RANKING_SESSION_URL, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${auth}`,
+        },
+        cache: 'no-store',
+      });
+      if (requestId !== availabilityRequestId) return;
+      if (!response.ok) throw new Error(`Could not load current Ranking session (${response.status}).`);
+
+      const data = await response.json().catch(() => ({}));
+      if (requestId !== availabilityRequestId) return;
+      if (!renderOpenRankAvailability(data?.session || null)) renderConfiguredOpenRankCapacity();
+    } catch (_error) {
+      if (requestId === availabilityRequestId) renderConfiguredOpenRankCapacity();
+    }
+  }
+
   function renderOpenRank(update) {
     const root = homeRoot();
     if (!root) return;
 
     const title = root.querySelector('[data-rp-home-open-rank-title]');
     const meta = root.querySelector('[data-rp-home-open-rank-meta]');
-    const capacity = root.querySelector('[data-rp-home-open-rank-capacity]');
 
     if (!update) {
+      configuredHomeCapacity = 16;
       if (title) title.textContent = 'SUNDAY OPEN RANKING';
       if (meta) meta.textContent = 'EVERY SUNDAY · 8:00 PM – 11:00 PM';
-      if (capacity) capacity.textContent = '16 PLAYER CAP';
+      renderConfiguredOpenRankCapacity();
       return;
     }
 
     const when = formatEvent(update.event_at || update.eventAt);
     const location = String(update.location_name || update.locationName || '').trim();
-    const metadata = update?.metadata || {};
-    const directCap = Number(metadata.capacity ?? update.capacity);
-    const bodyCap = Number(String(update.body || '').match(/\b(\d{1,3})\s+PLAYER\s+CAP\b/i)?.[1]);
-    const cap = Number.isFinite(directCap) && directCap > 0 ? directCap : bodyCap;
+    configuredHomeCapacity = parseOpenRankCapacity(update);
 
     if (title) title.textContent = String(update.title || 'SUNDAY OPEN RANKING').toUpperCase();
     if (meta) meta.textContent = [when, location].filter(Boolean).join(' · ') || 'SUNDAY · 8:00 PM – 11:00 PM';
-    if (capacity) capacity.textContent = Number.isFinite(cap) && cap > 0 ? `${Math.round(cap)} PLAYER CAP` : '16 PLAYER CAP';
+    renderConfiguredOpenRankCapacity();
   }
 
   async function refreshHomeCommandCenter() {
     if (!installHomeCommandCenter() || homeLoading) return;
     homeLoading = true;
+    availabilityRequestId += 1;
+    renderConfiguredOpenRankCapacity();
 
     const access = homeRoot()?.querySelector('[data-rp-simple-access]');
     if (access) access.textContent = localStorage.getItem(TOKEN_KEY) ? 'PLAYER' : 'PUBLIC';
@@ -306,6 +363,8 @@
     } finally {
       homeLoading = false;
     }
+
+    refreshOpenRankAvailability();
   }
 
   function enforce() {
@@ -380,6 +439,8 @@
   window.addEventListener('storage', refreshHomeCommandCenter);
   window.addEventListener('realplay:visitorchange', refreshHomeCommandCenter);
   window.addEventListener('realplay:home-schedule-changed', refreshHomeCommandCenter);
+  window.addEventListener('realplay:ranking-session-changed', refreshOpenRankAvailability);
+  window.addEventListener('realplay:ranking-entry-updated', refreshOpenRankAvailability);
 
   homeRefreshTimer = window.setInterval(() => {
     if (!document.hidden && activeRoute() === 'home') refreshHomeCommandCenter();

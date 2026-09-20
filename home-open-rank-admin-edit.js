@@ -189,13 +189,10 @@
     if (!root) return;
     const title = root.querySelector('[data-rp-home-open-rank-title]');
     const meta = root.querySelector('[data-rp-home-open-rank-meta]');
-    const capacity = root.querySelector('[data-rp-home-open-rank-capacity]');
     const nextTitle = String(currentOverride.title || 'SUNDAY OPEN RANKING').toUpperCase();
     const nextMeta = openRankMeta(currentOverride) || 'SUNDAY · 8:00 PM – 11:00 PM';
-    const nextCapacity = `${parseCapacity(currentOverride)} PLAYER CAP`;
     if (title && title.textContent !== nextTitle) title.textContent = nextTitle;
     if (meta && meta.textContent !== nextMeta) meta.textContent = nextMeta;
-    if (capacity && capacity.textContent !== nextCapacity) capacity.textContent = nextCapacity;
   }
 
   function queueRenderOverride() {

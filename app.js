@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260920-profile-art-player-upload-v108';
+  const version = '20260920-home-live-spots-single-writer-v109';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
