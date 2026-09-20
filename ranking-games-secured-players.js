@@ -341,8 +341,8 @@
     roster.hidden = true;
     roster.innerHTML = `
       <div class="rp-ranking-secured-head">
-        <span>TOKEN USERS</span>
-        <strong data-rp-ranking-secured-count>0 TOKEN USERS</strong>
+        <span>SECURED PLAYERS</span>
+        <strong data-rp-ranking-secured-count>0 SECURED PLAYERS</strong>
       </div>
       <div class="rp-ranking-secured-list" data-rp-ranking-secured-list></div>
     `;
@@ -372,8 +372,8 @@
     roster.hidden = false;
     if (countNode) {
       countNode.textContent = Number.isFinite(capacity) && capacity > 0
-        ? `${count} / ${capacity} TOKEN USERS`
-        : `${count} TOKEN USERS`;
+        ? `${count} / ${capacity} SECURED PLAYERS`
+        : `${count} SECURED PLAYERS`;
     }
     if (!list) return;
 
@@ -381,7 +381,7 @@
     if (!players.length) {
       const empty = document.createElement('p');
       empty.className = 'rp-ranking-secured-empty';
-      empty.textContent = 'NO TOKEN USERS YET';
+      empty.textContent = 'NO SECURED PLAYERS YET';
       list.appendChild(empty);
       return;
     }
