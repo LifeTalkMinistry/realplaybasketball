@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260920-home-spots-access-authority-v110';
+  const version = '20260920-open-rank-admin-count-authority-v111';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
