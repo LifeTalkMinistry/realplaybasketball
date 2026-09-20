@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260920-home-live-spots-single-writer-v109';
+  const version = '20260920-home-spots-access-authority-v110';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 

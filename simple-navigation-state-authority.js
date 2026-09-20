@@ -5,7 +5,7 @@
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
   const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
-  const CURRENT_RANKING_SESSION_URL = `${API_BASE_URL}/api/real-play/career/session`;
+  const CURRENT_RANKING_ACCESS_URL = `${API_BASE_URL}/api/real-play/career/access`;
   let enforcing = false;
   let enforceQueued = false;
   let homeRefreshTimer = 0;
@@ -258,16 +258,29 @@
     node.textContent = `${configuredHomeCapacity} PLAYER CAP`;
   }
 
-  function renderOpenRankAvailability(session) {
+  function count(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : 0;
+  }
+
+  function renderOpenRankAvailability(state) {
     const node = homeRoot()?.querySelector('[data-rp-home-open-rank-capacity]');
-    if (!node || !session || typeof session !== 'object') return false;
+    if (!node || !state || typeof state !== 'object') return false;
 
-    const capacity = Number(session.capacity);
-    const confirmedCount = Number(session.confirmedCount ?? session.confirmed_count);
-    if (!Number.isFinite(capacity) || capacity <= 0) return false;
-    if (!Number.isFinite(confirmedCount) || confirmedCount < 0) return false;
+    const session = state?.session;
+    const counts = state?.counts || {};
+    if (!session || typeof session !== 'object') return false;
 
-    const spotsLeft = Math.max(0, Math.round(capacity) - Math.round(confirmedCount));
+    const capacityRaw = Number(session.capacity);
+    const capacity = Number.isFinite(capacityRaw) && capacityRaw > 0 ? Math.trunc(capacityRaw) : 0;
+    if (!capacity) return false;
+
+    const secured = count(counts.secured);
+    const standby = count(counts.standby);
+    const mainStandby = Math.min(standby, Math.max(capacity - secured, 0));
+    const filled = Math.min(capacity, secured + mainStandby);
+    const spotsLeft = Math.max(0, capacity - filled);
+
     node.textContent = `${spotsLeft} ${spotsLeft === 1 ? 'SPOT' : 'SPOTS'} LEFT`;
     return true;
   }
@@ -281,7 +294,7 @@
     if (!node || !auth) return;
 
     try {
-      const response = await fetch(CURRENT_RANKING_SESSION_URL, {
+      const response = await fetch(CURRENT_RANKING_ACCESS_URL, {
         headers: {
           Accept: 'application/json',
           Authorization: `Bearer ${auth}`,
@@ -289,11 +302,11 @@
         cache: 'no-store',
       });
       if (requestId !== availabilityRequestId) return;
-      if (!response.ok) throw new Error(`Could not load current Ranking session (${response.status}).`);
+      if (!response.ok) throw new Error(`Could not load current Ranking access (${response.status}).`);
 
       const data = await response.json().catch(() => ({}));
       if (requestId !== availabilityRequestId) return;
-      if (!renderOpenRankAvailability(data?.session || null)) renderConfiguredOpenRankCapacity();
+      if (!renderOpenRankAvailability(data)) renderConfiguredOpenRankCapacity();
     } catch (_error) {
       if (requestId === availabilityRequestId) renderConfiguredOpenRankCapacity();
     }
