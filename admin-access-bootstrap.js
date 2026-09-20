@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260917-temp-password-v31';
+  const ADMIN_ASSET_VERSION = '20260921-audit-stamp-filter-v32';
   const REPLAY_ADMIN_ROOT_VERSION = '20260915-replay-editor-root-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
@@ -45,6 +45,7 @@
     'admin-recorded-scoring-cancel.js',
     'admin-recorded-scoring.js',
     'admin-recorded-scoring-youtube.js',
+    'admin-recorded-scoring-stamp-filter.js',
     'admin-recorded-scoring-youtube-keyboard.js',
     'admin-recorded-scoring-desktop.js',
     'admin-recorded-scoring-lock.js',
