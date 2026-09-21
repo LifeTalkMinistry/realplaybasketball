@@ -89,42 +89,9 @@
     button.addEventListener('click', enter);
   }
 
-  function openPublicPlayersFromPrimaryNav() {
-    const panel = document.querySelector('[data-rp-world]');
-    if (!panel) {
-      window.RealPlayWorld?.open?.();
-    } else if (!panel.classList.contains('open')) {
-      window.RealPlayWorld?.open?.();
-    }
-
-    document.querySelectorAll('[data-rp-simple-nav-item]').forEach((button) => {
-      const selected = button.dataset.rpSimpleNavItem === 'players';
-      button.classList.toggle('active', selected);
-      button.setAttribute('aria-current', selected ? 'page' : 'false');
-    });
-
-    window.setTimeout(() => {
-      const playersTab = document.querySelector('[data-rp-world] [data-world-tab="players"]');
-      if (playersTab) playersTab.click();
-    }, 40);
-  }
-
-  // PLAYERS is a public directory. The simple bottom-nav historically called
-  // the authenticated player loader directly, which opened the login modal on
-  // a 401 even though visitor-mode already has a public players/profile API.
-  // Intercept only this public route and hand it to the visitor players view.
-  document.addEventListener('click', (event) => {
-    if (!isActive()) return;
-    const playersNav = event.target.closest('[data-rp-simple-nav-item="players"]');
-    if (!playersNav) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-    closeGate();
-    openPublicPlayersFromPrimaryNav();
-  }, true);
-
+  // Participation-only main-menu actions remain account-gated before any
+  // feature is requested. Public World/Players/Chats are handled by the normal
+  // navigation path after the World feature has been loaded on demand.
   document.addEventListener('click', (event) => {
     if (!isActive()) return;
     const mainAction = event.target.closest('[data-rp-main-action]');
@@ -173,9 +140,6 @@
     }
   }
 
-  // Every explicit logout path ultimately activates the same data-auth-logout
-  // control. Wait until the existing auth handler clears the token, then move
-  // the user directly into the public Home experience.
   document.addEventListener('click', (event) => {
     const logout = event.target.closest?.('[data-auth-logout]');
     if (!logout) return;
@@ -201,14 +165,6 @@
     openAuth,
   };
 
-  // Visitor-only ownership entry: holding an unclaimed player row opens a
-  // focused account + claim flow. Keep it separate from Admin's long-hold player
-  // controls so the two gestures can coexist without sharing authority.
-  if (!document.querySelector('script[data-rp-visitor-player-claim-loader]')) {
-    const script = document.createElement('script');
-    script.dataset.rpVisitorPlayerClaimLoader = '1';
-    script.src = 'visitor-player-claim.js?v=20260917-visitor-claim-v3';
-    script.async = false;
-    document.head.appendChild(script);
-  }
+  // Visitor player claiming is World-owned now. The World feature loader brings
+  // it in only when the public directory is actually requested.
 })();
