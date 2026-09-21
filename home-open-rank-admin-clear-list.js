@@ -71,6 +71,8 @@
       .rp-home-open-rank-clear-confirm-card strong{display:block;margin-right:38px;color:#f7f9fb;font:950 1rem/1.15 var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);font-style:italic;letter-spacing:.025em}
       .rp-home-open-rank-clear-confirm-card p{margin:10px 0 15px;color:#91a2b1;font:700 .66rem/1.5 system-ui,sans-serif}
       .rp-home-open-rank-clear-close{position:absolute;top:12px;right:12px;width:32px;height:32px;display:grid;place-items:center;padding:0;border:1px solid rgba(255,255,255,.09);border-radius:50%;background:#0b1119;color:#a9bbc9;font:800 1rem/1 system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+      .rp-home-open-rank-clear-result{min-height:18px;margin:-3px 0 12px!important;color:#5adfb9!important;font:800 .58rem/1.35 system-ui,sans-serif!important;letter-spacing:.02em}
+      .rp-home-open-rank-clear-result.error{color:#ff9a9a!important}
       .rp-home-open-rank-clear-confirm-button{width:100%;min-height:46px;border:1px solid rgba(65,210,255,.44);border-radius:11px;background:linear-gradient(180deg,#117ca5,#095a7d);color:#fff;font:950 .61rem/1 var(--rp-display,Arial,sans-serif);font-style:italic;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;pointer-events:auto;touch-action:manipulation}
       .rp-home-open-rank-clear-confirm-button:disabled{opacity:.5;cursor:wait}
       @media(max-width:420px){.rp-home-open-rank-edit-clear-list{min-width:34px;width:34px;padding:0}.rp-home-open-rank-edit-clear-list span{display:none}.rp-home-open-rank-edit-head{gap:8px}}
@@ -80,6 +82,13 @@
 
   function getConfirm() {
     return mountedBackdrop?.querySelector('[data-rp-home-open-rank-clear-confirm]') || null;
+  }
+
+  function setConfirmStatus(message = '', isError = false) {
+    const node = getConfirm()?.querySelector('[data-rp-home-open-rank-clear-result]');
+    if (!node) return;
+    node.textContent = message;
+    node.classList.toggle('error', Boolean(isError));
   }
 
   function hideConfirm() {
@@ -106,7 +115,7 @@
     if (deleteButton) deleteButton.disabled = clearing;
     if (confirmButton) {
       confirmButton.disabled = clearing;
-      confirmButton.textContent = clearing ? 'CLEARING…' : 'CLEAR PLAYER LIST';
+      if (clearing) confirmButton.textContent = 'CLEARING…';
     }
   }
 
@@ -115,18 +124,28 @@
     event?.stopPropagation?.();
     if (clearing) return;
 
-    // Close the confirmation immediately so the tap always has visible feedback.
-    hideConfirm();
     setClearing(true);
+    setConfirmStatus('Clearing the current player list…');
     editorStatus('Clearing current Ranking Game player list…');
 
     try {
       const result = await clearSchedule();
-      editorStatus(result?.message || 'Current Ranking Game player list cleared.');
+
+      // Verify against the same authoritative roster endpoint the Open Rank screen uses.
+      const roster = await fetchRoster();
+      const remaining = Math.max(0, Number(roster?.confirmedCount || 0))
+        + Math.max(0, Number(roster?.standbyCount || 0));
+      if (remaining > 0) {
+        throw new Error(`Clear did not finish: ${remaining} player${remaining === 1 ? '' : 's'} still remain in this session.`);
+      }
+
+      const successMessage = result?.message || 'Current Ranking Game player list cleared.';
+      setConfirmStatus('PLAYER LIST CLEARED.');
+      editorStatus(successMessage);
 
       const detail = {
         source: 'home-open-rank-admin-clear-list',
-        sessionId: result?.session?.id || null,
+        sessionId: result?.session?.id || roster?.sessionId || null,
         removedPlayers: Number(result?.removedPlayers || 0),
         releasedTokens: Number(result?.releasedTokens || 0),
       };
@@ -134,10 +153,11 @@
       window.dispatchEvent(new CustomEvent('realplay:ranking-entry-updated', { detail }));
       try { window.RealPlayRankingGames?.refresh?.(); } catch (_error) {}
 
-      // Return the admin to Home after the successful destructive action.
-      window.setTimeout(closeEditor, 180);
+      window.setTimeout(closeEditor, 420);
     } catch (error) {
-      editorStatus(error?.message || 'Unable to clear the current player list.', true);
+      const message = error?.message || 'Unable to clear the current player list.';
+      setConfirmStatus(message, true);
+      editorStatus(message, true);
     } finally {
       setClearing(false);
     }
@@ -170,6 +190,7 @@
       const action = confirm.querySelector('[data-rp-home-open-rank-clear-confirm-button]');
       if (title) title.textContent = `CLEAR ${total} PLAYER${total === 1 ? '' : 'S'}?`;
       if (action) action.textContent = `CLEAR ${total} PLAYER${total === 1 ? '' : 'S'}`;
+      setConfirmStatus('');
       confirm.hidden = false;
       editorStatus('');
       window.setTimeout(() => action?.focus({ preventScroll: true }), 0);
@@ -210,6 +231,7 @@
           <small>CLEAR CURRENT PLAYER LIST</small>
           <strong id="rp-home-open-rank-clear-title">CLEAR ALL PLAYERS?</strong>
           <p>Removes everyone from Secured, Standby, and Overflow for the current Ranking Game only. The schedule, completed games, stats, OVR, and player history stay untouched. Eligible committed Play Tokens are returned.</p>
+          <p class="rp-home-open-rank-clear-result" data-rp-home-open-rank-clear-result aria-live="polite"></p>
           <button type="button" class="rp-home-open-rank-clear-confirm-button" data-rp-home-open-rank-clear-confirm-button>CLEAR PLAYER LIST</button>
         </section>`;
       backdrop.appendChild(confirm);
