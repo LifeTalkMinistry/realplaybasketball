@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260921-public-replay-session-authority-v113';
+  const version = '20260921-takeover-ui-v114';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
