@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260920-admin-as-token-access-v112';
+  const version = '20260921-public-replay-session-authority-v113';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
