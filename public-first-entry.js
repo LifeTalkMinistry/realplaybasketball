@@ -12,6 +12,19 @@
     window.localStorage.removeItem(VISITOR_KEY);
   }
 
+  // Full-screen announcements are a reusable public canvas. The frontend is
+  // intentionally backend-ready: today a missing endpoint quietly means there
+  // is no active takeover; later the public/admin endpoints only need to supply
+  // and store the media payload without another UI rewrite.
+  if (!window.__realPlayTakeoverLoaderInstalled) {
+    window.__realPlayTakeoverLoaderInstalled = true;
+    const script = document.createElement('script');
+    script.src = 'takeover-announcement.js?v=20260921-takeover-ui-v1';
+    script.async = false;
+    script.onerror = () => console.warn('[Real Play] Takeover announcement UI failed to load.');
+    document.head.appendChild(script);
+  }
+
   // Home schedule editing is intentionally independent from Game Control.
   // Load its lightweight authority on every shell; it exposes the pencil only
   // after its own admin-status verification succeeds.
