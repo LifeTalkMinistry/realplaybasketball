@@ -66,14 +66,14 @@
       .rp-home-open-rank-edit-clear-list svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
       .rp-home-open-rank-edit-clear-list:active{transform:scale(.96)}
       .rp-home-open-rank-edit-clear-list + .rp-home-open-rank-edit-delete{margin-left:0}
-      .rp-home-open-rank-clear-confirm{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,2,5,.8);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
+      .rp-home-open-rank-clear-confirm{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,2,5,.8);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);pointer-events:auto;touch-action:manipulation}
       .rp-home-open-rank-clear-confirm[hidden]{display:none!important}
-      .rp-home-open-rank-clear-confirm-card{width:min(100%,430px);box-sizing:border-box;padding:18px;border:1px solid rgba(73,216,255,.24);border-radius:18px;background:linear-gradient(180deg,#0c151d,#07090e);box-shadow:0 24px 70px rgba(0,0,0,.62)}
+      .rp-home-open-rank-clear-confirm-card{width:min(100%,430px);box-sizing:border-box;padding:18px;border:1px solid rgba(73,216,255,.24);border-radius:18px;background:linear-gradient(180deg,#0c151d,#07090e);box-shadow:0 24px 70px rgba(0,0,0,.62);pointer-events:auto}
       .rp-home-open-rank-clear-confirm-card small{display:block;margin-bottom:7px;color:#55dcff;font:950 .5rem/1.2 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
       .rp-home-open-rank-clear-confirm-card strong{display:block;color:#f7f9fb;font:950 1rem/1.15 var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);font-style:italic;letter-spacing:.025em}
       .rp-home-open-rank-clear-confirm-card p{margin:10px 0 15px;color:#91a2b1;font:700 .66rem/1.5 system-ui,sans-serif}
-      .rp-home-open-rank-clear-confirm-actions{display:grid;grid-template-columns:1fr 1.2fr;gap:8px}
-      .rp-home-open-rank-clear-confirm-actions button{min-height:44px;border-radius:11px;font:950 .58rem/1 var(--rp-display,Arial,sans-serif);font-style:italic;letter-spacing:.075em;text-transform:uppercase;cursor:pointer}
+      .rp-home-open-rank-clear-confirm-actions{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1.2fr;gap:8px}
+      .rp-home-open-rank-clear-confirm-actions button{min-height:44px;border-radius:11px;font:950 .58rem/1 var(--rp-display,Arial,sans-serif);font-style:italic;letter-spacing:.075em;text-transform:uppercase;cursor:pointer;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
       .rp-home-open-rank-clear-keep{border:1px solid rgba(255,255,255,.09);background:#0b1119;color:#9dafbe}
       .rp-home-open-rank-clear-confirm-button{border:1px solid rgba(65,210,255,.4);background:linear-gradient(180deg,#117ca5,#095a7d);color:#fff}
       .rp-home-open-rank-clear-confirm-button:disabled{opacity:.5;cursor:wait}
@@ -119,11 +119,6 @@
           </div>
         </section>`;
       backdrop.appendChild(confirm);
-      confirm.querySelector('[data-rp-home-open-rank-clear-keep]')?.addEventListener('click', closeClearConfirm);
-      confirm.querySelector('[data-rp-home-open-rank-clear-confirm-button]')?.addEventListener('click', clearCurrentList);
-      confirm.addEventListener('click', (event) => {
-        if (event.target === confirm && !clearing) closeClearConfirm();
-      });
     }
 
     mountedBackdrop = backdrop;
@@ -210,6 +205,34 @@
     }
   }
 
+  function handleConfirmClick(event) {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+
+    const keep = target.closest('[data-rp-home-open-rank-clear-keep]');
+    if (keep) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeClearConfirm();
+      return;
+    }
+
+    const clear = target.closest('[data-rp-home-open-rank-clear-confirm-button]');
+    if (clear) {
+      event.preventDefault();
+      event.stopPropagation();
+      clearCurrentList();
+      return;
+    }
+
+    const confirm = target.closest('[data-rp-home-open-rank-clear-confirm]');
+    if (confirm && event.target === confirm && !clearing) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeClearConfirm();
+    }
+  }
+
   function mount() {
     ensureStyles();
     const backdrop = document.querySelector('[data-rp-home-open-rank-editor]');
@@ -232,6 +255,7 @@
   });
   mountObserver.observe(document.documentElement, { childList: true, subtree: true });
 
+  document.addEventListener('click', handleConfirmClick, true);
   document.addEventListener('click', (event) => {
     if (!event.target.closest?.('[data-rp-home-open-rank-edit]')) return;
     window.setTimeout(mount, 0);
@@ -240,7 +264,7 @@
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     const confirm = mountedBackdrop?.querySelector('[data-rp-home-open-rank-clear-confirm]');
-    if (confirm && !confirm.hidden && !clearing) confirm.hidden = true;
+    if (confirm && !confirm.hidden && !clearing) closeClearConfirm();
   });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, { once: true });
