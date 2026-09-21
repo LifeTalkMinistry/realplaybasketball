@@ -7,13 +7,6 @@
     document.head.appendChild(script);
   }
 
-  if (!document.querySelector('link[href="support.css"]')) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'support.css';
-    document.head.appendChild(link);
-  }
-
   if (!document.querySelector('link[href^="profile-ownership.css"]')) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -21,11 +14,23 @@
     document.head.appendChild(link);
   }
 
-  // Independent Open Rank enhancement. It waits for the ranking view to mount,
-  // so loading it here keeps the guide available without extending app.js boot.
-  loadScript('ranking-spot-priority.js?v=20260916-spot-priority-v1');
+  // Ranking resources are feature-owned now. Do not start them from the auth
+  // shell; OPEN RANKING requests them through window.RealPlayFeatures.
 
   const supportGrid = document.querySelector('#support .support-grid');
+  let supportRequested = false;
+
+  function ensureSupport() {
+    if (supportRequested) return;
+    supportRequested = true;
+    if (!document.querySelector('link[href="support.css"]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'support.css';
+      document.head.appendChild(link);
+    }
+    loadScript('support.js');
+  }
   if (supportGrid) {
     supportGrid.classList.add('support-grid-live');
     supportGrid.innerHTML = `
@@ -161,13 +166,14 @@
         </div>`;
   }
 
+  supportGrid?.addEventListener('pointerdown', ensureSupport, { once: true, passive: true });
+  supportGrid?.addEventListener('focusin', ensureSupport, { once: true });
+
   loadScript('auth-account-name-bridge.js?v=20260907-ownership-disputes-v1', () => {
     loadScript('auth-ownership-core.js?v=20260907-ownership-disputes-v1', () => {
       loadScript('auth-ownership-disputes.js?v=20260907-ownership-disputes-v1', () => {
         loadScript('profile-experience.js', () => {
-          loadScript('player-identity-manager.js?v=20260917-name-number-v1', () => {
-            loadScript('support.js', () => loadScript('support-admin.js'));
-          });
+          loadScript('player-identity-manager.js?v=20260917-name-number-v1');
         });
       });
     });
