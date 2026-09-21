@@ -7,12 +7,66 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
+  const ADMIN_ASSET_VERSION = '20260921-audit-stamp-filter-v32';
+  const REPLAY_ADMIN_ROOT_VERSION = '20260915-replay-editor-root-v1';
+  const ADMIN_CSS = [
+    'admin-game-control.css',
+    'admin-launcher-mobile-fix.css',
+    'admin-game-control-simplify.css',
+    'admin-courtside-live.css',
+    'admin-shot-breakdown.css',
+    'admin-game-rules.css',
+    'admin-player-ownership.css',
+    'admin-membership-review.css',
+    'admin-recorded-scoring.css',
+    'admin-recorded-scoring-draft.css',
+    'admin-recorded-scoring-score-confirmation.css',
+    'admin-recorded-scoring-youtube.css',
+    'admin-recorded-scoring-desktop.css',
+    'real-play-admin-brand-overrides.css',
+  ];
+  const ADMIN_SCRIPTS = [
+    'admin-recorded-input-stability.js',
+    'admin-score-sync.js',
+    'admin-game-control.js',
+    'admin-session-start.js',
+    'admin-game-control-simplify.js',
+    'admin-player-search.js',
+    'admin-player-ownership.js',
+    'admin-membership-review.js',
+    'admin-courtside-live.js',
+    'admin-game-rules.js',
+    'admin-recorded-start-submit-fix.js',
+    'admin-recorded-scoring-draft-guard.js',
+    'admin-recorded-scoring-assist-link.js',
+    'admin-recorded-scoring-score-confirmation.js',
+    'admin-recorded-scoring-draft.js',
+    'admin-recorded-scoring-mobile-workspace.js',
+    'admin-recorded-scoring-cancel.js',
+    'admin-recorded-scoring.js',
+    'admin-recorded-scoring-youtube.js',
+    'admin-recorded-scoring-stamp-filter.js',
+    'admin-recorded-scoring-youtube-keyboard.js',
+    'admin-recorded-scoring-desktop.js',
+    'admin-recorded-scoring-lock.js',
+    'admin-game-entry-mode.js',
+    'admin-session-picker.js',
+    'admin-score-dom-sync.js',
+    'admin-season-control.js',
+    'admin-season-players.js',
+    'admin-membership-token-control.js',
+    'admin-player-temp-password.js',
+  ];
 
   let verifiedAdmin = Boolean(
     window.__realPlayAdminVerified === true ||
     window.RealPlayServerGate?.isAdminBypass?.() === true
   );
+  let loadingAdmin = false;
+  let adminLoaded = false;
   let verifySequence = 0;
+  let warmScheduled = false;
+  let warmPromise = null;
 
   window.__realPlayAdminVerified = verifiedAdmin;
   window.__realPlayAdminAccessProbe = false;
@@ -31,6 +85,77 @@
 
   function hasKnownHeadAdminIdentity() {
     return HEAD_ADMIN_EMAILS.has(settingsEmail());
+  }
+
+  function preloadAsset(href, as) {
+    const absoluteNeedle = href.split('?')[0];
+    const exists = [...document.querySelectorAll('link[rel="preload"]')]
+      .some((link) => String(link.href || '').includes(absoluteNeedle));
+    if (exists) return;
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = as;
+    link.href = `${href}?v=${ADMIN_ASSET_VERSION}`;
+    document.head.appendChild(link);
+  }
+
+  function preloadAdminAssets() {
+    ADMIN_CSS.forEach((href) => preloadAsset(href, 'style'));
+    ADMIN_SCRIPTS.forEach((src) => preloadAsset(src, 'script'));
+  }
+
+  function scheduleAdminWarm() {
+    if (!verifiedAdmin || adminLoaded || warmScheduled) return;
+    preloadAdminAssets();
+    warmScheduled = true;
+
+    const start = () => {
+      if (!verifiedAdmin || adminLoaded) return;
+      warmPromise = ensureAdminLoaded().catch((error) => {
+        console.warn('[Real Play] Admin background warmup did not finish.', error);
+        return false;
+      });
+    };
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(start, { timeout: 800 });
+    } else {
+      window.setTimeout(start, 120);
+    }
+  }
+
+  async function verifyAdmin() {
+    const sequence = ++verifySequence;
+    const auth = token();
+    if (!auth) {
+      verifiedAdmin = false;
+      window.__realPlayAdminVerified = false;
+      syncSettingsRow();
+      return false;
+    }
+
+    window.__realPlayAdminAccessProbe = true;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/real-play/admin/career/control`, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${auth}` },
+        cache: 'no-store',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (sequence !== verifySequence) return verifiedAdmin;
+      verifiedAdmin = Boolean(response.ok && data?.admin);
+    } catch (_error) {
+      if (sequence !== verifySequence) return verifiedAdmin;
+      verifiedAdmin = false;
+    } finally {
+      if (sequence === verifySequence) {
+        window.__realPlayAdminAccessProbe = false;
+      }
+    }
+
+    window.__realPlayAdminVerified = verifiedAdmin;
+    syncSettingsRow();
+    if (verifiedAdmin) scheduleAdminWarm();
+    return verifiedAdmin;
   }
 
   function settingsList() {
@@ -73,59 +198,80 @@
     if (arrow) arrow.textContent = busy ? '…' : '→';
   }
 
-  async function verifyAdmin() {
-    const sequence = ++verifySequence;
-    const auth = token();
-    if (!auth) {
-      verifiedAdmin = false;
-      window.__realPlayAdminVerified = false;
-      syncSettingsRow();
-      return false;
-    }
+  function loadCss(href) {
+    return new Promise((resolve) => {
+      const existing = [...document.querySelectorAll('link[rel="stylesheet"]')].find((link) => String(link.href || '').includes(href));
+      if (existing) return resolve(true);
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = `${href}?v=${ADMIN_ASSET_VERSION}`;
+      link.onload = () => resolve(true);
+      link.onerror = () => resolve(false);
+      document.head.appendChild(link);
+    });
+  }
 
-    window.__realPlayAdminAccessProbe = true;
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/real-play/admin/career/control`, {
-        headers: { Accept: 'application/json', Authorization: `Bearer ${auth}` },
-        cache: 'no-store',
-      });
-      const data = await response.json().catch(() => ({}));
-      if (sequence !== verifySequence) return verifiedAdmin;
-      verifiedAdmin = Boolean(response.ok && data?.admin);
-    } catch (_error) {
-      if (sequence !== verifySequence) return verifiedAdmin;
-      verifiedAdmin = false;
-    } finally {
-      if (sequence === verifySequence) window.__realPlayAdminAccessProbe = false;
-    }
+  function loadScript(src) {
+    return new Promise((resolve) => {
+      const existing = [...document.scripts].find((script) => String(script.src || '').includes(src));
+      if (existing) return resolve(true);
+      const script = document.createElement('script');
+      script.src = `${src}?v=${ADMIN_ASSET_VERSION}`;
+      script.async = false;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.head.appendChild(script);
+    });
+  }
 
-    window.__realPlayAdminVerified = verifiedAdmin;
-    syncSettingsRow();
-    return verifiedAdmin;
+  function loadReplayAdminRoot() {
+    if (window.__realPlayReplayAdminEditRootInstalled) return;
+    if ([...document.scripts].some((script) => String(script.src || '').includes('career-game-replay-admin-root.js'))) return;
+    const script = document.createElement('script');
+    script.src = `career-game-replay-admin-root.js?v=${REPLAY_ADMIN_ROOT_VERSION}`;
+    script.async = false;
+    script.onerror = () => console.error('[Real Play] Replay admin root failed to load.');
+    document.head.appendChild(script);
   }
 
   async function ensureAdminLoaded() {
-    if (!verifiedAdmin && !(await verifyAdmin())) {
-      throw new Error('Real Play could not verify Head Admin access for this session.');
+    if (adminLoaded) return true;
+    if (loadingAdmin) {
+      while (loadingAdmin) await new Promise((resolve) => setTimeout(resolve, 25));
+      return adminLoaded;
     }
 
-    const loader = window.RealPlayFeatures;
-    if (typeof loader?.ensure !== 'function') {
-      throw new Error('Real Play Admin loader is not available for this session.');
+    loadingAdmin = true;
+    try {
+      preloadAdminAssets();
+      await Promise.all(ADMIN_CSS.map(loadCss));
+      for (const src of ADMIN_SCRIPTS) {
+        const ok = await loadScript(src);
+        if (!ok) throw new Error(`Unable to load ${src}`);
+      }
+      adminLoaded = true;
+      return true;
+    } finally {
+      loadingAdmin = false;
     }
-
-    await loader.ensure('admin');
-    await window.__realPlayRefreshAdminGameControl?.();
-    return true;
   }
 
   window.__realPlayVerifyAdminAccess = verifyAdmin;
-  window.__realPlayEnsureAdminLoaded = ensureAdminLoaded;
+  window.__realPlayEnsureAdminLoaded = async () => {
+    if (!verifiedAdmin && !(await verifyAdmin())) {
+      throw new Error('Real Play could not verify Head Admin access for this session.');
+    }
+    const loaded = await ensureAdminLoaded();
+    if (!loaded) throw new Error('Real Play Admin tools could not finish loading.');
+    await window.__realPlayRefreshAdminGameControl?.();
+    return true;
+  };
 
   async function openAdmin() {
     setAdminRowBusy(true);
     try {
-      await ensureAdminLoaded();
+      if (warmPromise) await warmPromise;
+      await window.__realPlayEnsureAdminLoaded();
     } catch (error) {
       setAdminRowBusy(false);
       window.alert(error?.message || 'Real Play could not verify Head Admin access for this session. Please sign in again and retry.');
@@ -158,7 +304,9 @@
         opened = window.__realPlayOpenAdminGameControl?.();
       }
 
-      if (!opened) throw new Error('Admin tools loaded but Game Control did not open.');
+      if (!opened) {
+        throw new Error('Admin tools loaded but Game Control did not open.');
+      }
     } catch (error) {
       console.error('[Real Play] Unable to open admin tools.', error);
       window.alert('Unable to open Real Play Admin right now. Please try again.');
@@ -168,6 +316,7 @@
   }
 
   function boot() {
+    loadReplayAdminRoot();
     const observer = new MutationObserver(() => {
       if (settingsList()) {
         syncSettingsRow();
@@ -178,13 +327,18 @@
     syncSettingsRow();
   }
 
-  window.addEventListener('realplay:settings-open', syncSettingsRow);
+  window.addEventListener('realplay:settings-open', () => {
+    syncSettingsRow();
+    if (verifiedAdmin) scheduleAdminWarm();
+  });
 
   window.addEventListener('storage', (event) => {
     if (event.key !== TOKEN_KEY) return;
     verifySequence += 1;
     verifiedAdmin = false;
     window.__realPlayAdminVerified = false;
+    warmScheduled = false;
+    warmPromise = null;
     syncSettingsRow();
   });
 

@@ -7,6 +7,19 @@
   if (window.__realPlayHomeCommandRoutingFixInstalled) return;
   window.__realPlayHomeCommandRoutingFixInstalled = true;
 
+  function loadHomePaymentAdmin() {
+    if (window.__realPlayHomePaymentAdminInstalled) return;
+    if (document.querySelector('script[data-rp-home-payment-admin-loader]')) return;
+
+    const script = document.createElement('script');
+    script.src = 'home-payment-admin.js?v=20260916-payment-admin-v1';
+    script.async = true;
+    script.dataset.rpHomePaymentAdminLoader = '1';
+    document.head.appendChild(script);
+  }
+
+  loadHomePaymentAdmin();
+
   function routeLegacy(action) {
     const button = document.querySelector(`[data-rp-main-action="${action}"]`);
     if (!button) return false;
@@ -19,30 +32,29 @@
     return true;
   }
 
-  function requestFeature(name, label, open) {
-    const loader = window.RealPlayFeatures;
-    if (typeof loader?.request === 'function') {
-      loader.request(name, open, { label, channel: 'home-command' });
-      return true;
-    }
-    open?.();
-    return false;
-  }
-
   function openUpdates() {
-    requestFeature('updates', 'UPDATES', () => window.RealPlayUpdates?.open?.());
+    if (window.RealPlayUpdates?.open) {
+      window.RealPlayUpdates.open();
+      return;
+    }
+    routeLegacy('updates');
   }
 
   function openRanking() {
-    requestFeature('ranking', 'OPEN RANKING', () => window.RealPlayRankingGames?.open?.());
+    if (window.RealPlayRankingGames?.open) {
+      window.RealPlayRankingGames.open();
+      return;
+    }
+    routeLegacy('ranking');
   }
 
   function openThreeVThree() {
-    requestFeature('3v3', '3V3', () => {
-      const trigger = document.querySelector('[data-rp-enter-3v3]');
-      if (trigger) trigger.click();
-      else routeLegacy('3v3');
-    });
+    const trigger = document.querySelector('[data-rp-enter-3v3]');
+    if (trigger) {
+      trigger.click();
+      return;
+    }
+    routeLegacy('3v3');
   }
 
   document.addEventListener('click', (event) => {
