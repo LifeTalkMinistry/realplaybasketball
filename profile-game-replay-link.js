@@ -29,8 +29,10 @@
     return Array.isArray(rows) ? rows : [];
   }
 
+  // A replay route is keyed by the canonical career session id. A generic
+  // object id is not interchangeable with that relationship key.
   function sessionIdFrom(game) {
-    const id = Number(game?.sessionId ?? game?.session_id ?? game?.id ?? 0);
+    const id = Number(game?.sessionId ?? game?.session_id ?? 0);
     return Number.isSafeInteger(id) && id > 0 ? id : null;
   }
 
@@ -42,6 +44,52 @@
   function cachedSessionIdFrom(card) {
     const id = Number(card?.dataset?.rpProfileGameSession || 0);
     return Number.isSafeInteger(id) && id > 0 ? id : null;
+  }
+
+  function normalizeText(value) {
+    return String(value ?? '').trim().replace(/\s+/g, ' ').toUpperCase();
+  }
+
+  function visibleGameLabel(card) {
+    return normalizeText(card?.querySelector('.rp-profile-game-main strong')?.textContent);
+  }
+
+  function gameLabels(game) {
+    return [
+      game?.displayLabel,
+      game?.display_label,
+      game?.officialGameId,
+      game?.official_game_id,
+      game?.label,
+      game?.title,
+    ].map(normalizeText).filter(Boolean);
+  }
+
+  function visibleScore(card) {
+    const score = card?.querySelector('.rp-profile-game-score');
+    if (!score) return null;
+
+    const labels = [...score.querySelectorAll('span')].map((node) => normalizeText(node.textContent));
+    const values = [...score.querySelectorAll('strong')].map((node) => Number(String(node.textContent || '').trim()));
+    if (labels.length < 2 || values.length < 2) return null;
+
+    const result = { west: null, east: null };
+    labels.forEach((label, index) => {
+      if (!Number.isFinite(values[index])) return;
+      if (label.includes('WEST')) result.west = values[index];
+      if (label.includes('EAST')) result.east = values[index];
+    });
+
+    return Number.isFinite(result.west) && Number.isFinite(result.east) ? result : null;
+  }
+
+  function gameScoreMatches(game, score) {
+    if (!score) return true;
+    const west = Number(game?.westScore ?? game?.west_score);
+    const east = Number(game?.eastScore ?? game?.east_score);
+    return Number.isFinite(west) && Number.isFinite(east)
+      && west === score.west
+      && east === score.east;
   }
 
   function visibleOpenRankNumberFrom(card) {
@@ -59,12 +107,34 @@
 
   function resolveCanonicalSessionId(games, card, index) {
     const rows = Array.isArray(games) ? games : [];
+    const canonicalRows = rows.filter((game) => sessionIdFrom(game));
+
     const openRankNumber = visibleOpenRankNumberFrom(card);
     if (openRankNumber) {
-      const match = rows.find((game) => openRankNumberFrom(game) === openRankNumber);
-      const id = sessionIdFrom(match);
-      if (id) return id;
+      const matches = canonicalRows.filter((game) => openRankNumberFrom(game) === openRankNumber);
+      if (matches.length === 1) return sessionIdFrom(matches[0]);
     }
+
+    // Public history can be filtered, preview-limited, or re-rendered. Resolve
+    // the clicked card by its visible game identity before ever trusting its
+    // current list position.
+    const label = visibleGameLabel(card);
+    const score = visibleScore(card);
+    if (label) {
+      const exact = canonicalRows.filter((game) => gameLabels(game).includes(label) && gameScoreMatches(game, score));
+      if (exact.length === 1) return sessionIdFrom(exact[0]);
+
+      const labelOnly = canonicalRows.filter((game) => gameLabels(game).includes(label));
+      if (labelOnly.length === 1) return sessionIdFrom(labelOnly[0]);
+    }
+
+    if (score) {
+      const scoreOnly = canonicalRows.filter((game) => gameScoreMatches(game, score));
+      if (scoreOnly.length === 1) return sessionIdFrom(scoreOnly[0]);
+    }
+
+    // Index is only a last-resort compatibility path, and it can only resolve
+    // a row that already carries an explicit canonical session id.
     return index >= 0 ? sessionIdFrom(rows[index]) : null;
   }
 
@@ -175,8 +245,16 @@
 
   async function handleGameCard(card) {
     if (!card || resolving) return;
+
+    const publicProfile = card.closest('[data-rp-public-profile], [data-rp-visitor-public-profile], .rp-public-player-profile');
+    const publicArchive = card.closest('[data-rp-public-history-overlay]');
+    const isPublicGame = Boolean(publicProfile || publicArchive);
+
+    // A private/own-profile card may use its already-resolved canonical session.
+    // Public cards are always re-resolved against that player's canonical game
+    // list so stale DOM data or a generic result id can never route the replay.
     const immediateId = cachedSessionIdFrom(card);
-    if (immediateId) {
+    if (immediateId && !isPublicGame) {
       openResolvedCard(card, immediateId);
       return;
     }
@@ -187,9 +265,8 @@
     resolving = true;
     setCardBusy(card, true);
     try {
-      const publicProfile = card.closest('[data-rp-public-profile], [data-rp-visitor-public-profile], .rp-public-player-profile');
-      const games = publicProfile
-        ? await loadPublicGames(publicPlayerIdFrom(publicProfile))
+      const games = isPublicGame
+        ? await loadPublicGames(publicProfile ? publicPlayerIdFrom(publicProfile) : currentPublicPlayerId)
         : await loadOwnGames();
       const id = resolveCanonicalSessionId(games, card, index);
       if (!id) throw new Error('This game does not have a verified game page yet.');
