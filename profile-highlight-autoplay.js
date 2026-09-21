@@ -16,7 +16,7 @@
   function loadConsistencyLayer() {
     if (window.__realPlayHighlightConsistencyInstalled || document.querySelector('script[data-rp-highlight-consistency-loader]')) return;
     const script = document.createElement('script');
-    script.src = 'profile-highlight-consistency.js?v=20260918-canonical-highlight-v1';
+    script.src = 'profile-highlight-consistency.js?v=20260921-canonical-highlight-v2';
     script.async = false;
     script.dataset.rpHighlightConsistencyLoader = '1';
     script.onerror = () => console.warn('[Real Play] Highlight consistency layer could not load.');
@@ -183,9 +183,9 @@
 
     watchMountedMedia(root);
 
-    // One rule everywhere: no playback until the selected highlight timestamp
-    // has been confirmed. This applies to ME, authenticated public profiles,
-    // visitor profiles, archive history, Android, and iPhone.
+    // Autoplay waits until the selected highlight timestamp is confirmed.
+    // The canonical seek layer owns pre-seek blocking; this helper must never
+    // force-pause a user's playback after they press Play.
     if (!seekReady(root)) return;
 
     const video = root.querySelector('[data-rp-highlight-media] video');
@@ -239,13 +239,11 @@
     const playerState = data?.info?.playerState ?? (data?.event === 'onStateChange' ? data?.info : undefined);
 
     if (Number(playerState) === 1) {
-      if (!seekReady(root)) {
-        // Defensive stop: even if YouTube internally autoplays from 0:00,
-        // immediately pause until the canonical seek has landed.
-        sendYouTube(frame, 'pauseVideo');
-        youtubePlaying.delete(frame);
-        return;
-      }
+      // Do not send pauseVideo here. A PLAYING message can race with the final
+      // seek-ready flag, and force-pausing at this layer made the visible Play
+      // button immediately pause again. The canonical seek wrapper already
+      // prevents playback before the target timestamp is ready.
+      if (!seekReady(root)) return;
       youtubePlaying.add(frame);
       fadeLoading(root);
     } else if (Number.isFinite(Number(playerState))) {
