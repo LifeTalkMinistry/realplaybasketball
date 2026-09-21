@@ -319,79 +319,48 @@
     if (noticeButton) noticeButton.textContent = 'GOT IT';
   }
 
-  function openThreeVThree(attempt = 0) {
-    const trigger = document.querySelector('[data-rp-enter-3v3]');
-    if (trigger) {
-      trigger.click();
-      return;
+  function requestFeature(name, label, onReady) {
+    const loader = window.RealPlayFeatures;
+    if (typeof loader?.request === 'function') {
+      return loader.request(name, onReady, { label, channel: 'main-menu' });
     }
-    if (attempt < 8) {
-      window.setTimeout(() => openThreeVThree(attempt + 1), 100);
-      return;
-    }
-    showNotice({
-      kicker: '3V3',
-      title: 'LOADING REAL PLAY 3V3.',
-      copy: 'The Beta Season game layer is still loading. Try 3V3 again in a moment.',
+    try { onReady?.(); } catch (_error) {}
+    return Promise.resolve(false);
+  }
+
+  function openThreeVThree() {
+    requestFeature('3v3', '3V3', () => {
+      const trigger = document.querySelector('[data-rp-enter-3v3]');
+      if (trigger) trigger.click();
+      else showNotice({ kicker: '3V3', title: '3V3 IS UNAVAILABLE.', copy: 'The Beta Season game layer could not open.' });
     });
   }
 
-  function openRankingGames(attempt = 0) {
-    if (window.RealPlayRankingGames?.open) {
-      window.RealPlayRankingGames.open();
-      return;
-    }
-    if (attempt < 8) {
-      window.setTimeout(() => openRankingGames(attempt + 1), 100);
-      return;
-    }
-    showNotice({
-      kicker: 'RANKING GAMES',
-      title: 'RANKING GAMES ARE LOADING.',
-      copy: 'The East vs West ranking layer is still loading. Try Ranking Games again in a moment.',
+  function openRankingGames() {
+    requestFeature('ranking', 'OPEN RANKING', () => {
+      if (window.RealPlayRankingGames?.open) window.RealPlayRankingGames.open();
+      else showNotice({ kicker: 'OPEN RANKING', title: 'OPEN RANKING IS UNAVAILABLE.', copy: 'The ranking layer loaded without its open authority.' });
     });
   }
 
   function openWorld() {
-    if (window.RealPlayWorld?.open) {
-      window.RealPlayWorld.open();
-      return;
-    }
-    const trigger = document.querySelector('[data-rp-nav="world"], [data-rp-action="world"]');
-    if (trigger) {
-      trigger.click();
-      return;
-    }
-    showNotice({
-      kicker: 'REAL PLAY WORLD',
-      title: 'WORLD IS LOADING.',
-      copy: 'The community layer is still loading. Try World again in a moment.',
+    requestFeature('world', 'WORLD', () => {
+      if (window.RealPlayWorld?.open) window.RealPlayWorld.open();
+      else showNotice({ kicker: 'REAL PLAY WORLD', title: 'WORLD IS UNAVAILABLE.', copy: 'The community layer loaded without its open authority.' });
     });
   }
 
   function openProfile() {
-    if (window.RealPlayProfile?.open) {
-      window.RealPlayProfile.open();
-      return;
-    }
-    showNotice({
-      kicker: 'REAL PLAY PROFILE',
-      title: 'PROFILE IS LOADING.',
-      copy: 'Your player profile layer is still loading. Try Profile again in a moment.',
+    requestFeature('profile', 'PROFILE', () => {
+      if (window.RealPlayProfile?.open) window.RealPlayProfile.open();
+      else showNotice({ kicker: 'REAL PLAY PROFILE', title: 'PROFILE IS UNAVAILABLE.', copy: 'The player profile layer loaded without its open authority.' });
     });
   }
 
   function openSettings() {
-    const playerName = String(lobby.querySelector('[data-rp-name]')?.textContent || 'REAL PLAY PLAYER').trim();
-    const email = String(document.querySelector('[data-auth-account-email]')?.textContent || '').trim();
-    const identity = email ? `${playerName} · ${email}` : playerName;
-
-    showNotice({
-      kicker: 'ACCOUNT',
-      title: 'SETTINGS',
-      copy: identity,
-      button: 'LOG OUT',
-      action: 'logout',
+    requestFeature('settings', 'SETTINGS', () => {
+      const active = items[activeIndex];
+      if (active?.dataset.rpMainAction === 'settings') active.click();
     });
   }
 
@@ -421,11 +390,13 @@
         copy: 'Full-court 5V5 is visible in the Real Play roadmap, but 3V3 remains the active Beta Season format for now.',
       });
     } else if (action === 'updates') {
-      if (window.RealPlayUpdates?.open) window.RealPlayUpdates.open();
-      else showNotice({
-        kicker: 'REAL PLAY UPDATES',
-        title: 'THE UPDATE CENTER.',
-        copy: 'Official schedules, game results, club announcements and Beta Season changes will live here as Real Play grows.',
+      requestFeature('updates', 'UPDATES', () => {
+        if (window.RealPlayUpdates?.open) window.RealPlayUpdates.open();
+        else showNotice({
+          kicker: 'REAL PLAY UPDATES',
+          title: 'UPDATES ARE UNAVAILABLE.',
+          copy: 'The update center loaded without its open authority.',
+        });
       });
     } else if (action === 'world') {
       openWorld();

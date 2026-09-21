@@ -126,31 +126,40 @@
       return;
     }
 
-    if (tab === 'players') {
-      if (!forcePlayersView(panel) && attempt < 14) {
-        window.setTimeout(() => activateWorldTab(tab, attempt + 1), 60);
-      }
-      return;
-    }
-
+    // Use the existing World tab control first. Visitor World owns a capture
+    // handler for PLAYERS so it can route to the public endpoint without a 401.
     const trigger = panel.querySelector(`[data-world-tab="${tab}"]`);
     if (trigger) {
       trigger.click();
       updateWorldTitle(tab);
       return;
     }
+
+    if (tab === 'players' && forcePlayersView(panel)) return;
     if (attempt < 14) window.setTimeout(() => activateWorldTab(tab, attempt + 1), 60);
   }
 
+  function requestFeature(name, label, onReady, channel = 'primary-nav') {
+    const loader = window.RealPlayFeatures;
+    if (typeof loader?.request === 'function') {
+      return loader.request(name, onReady, { label, channel });
+    }
+    try { onReady?.(); } catch (_error) {}
+    return Promise.resolve(false);
+  }
+
   function openWorldTab(tab) {
-    closePrimaryLayers('world');
-    if (window.RealPlayWorld?.open) window.RealPlayWorld.open();
-    else document.querySelector('[data-rp-main-action="world"]')?.click();
-    setActive(tab === 'players' ? 'players' : tab === 'chats' ? 'chats' : 'world');
-    window.setTimeout(() => activateWorldTab(tab), 30);
+    const target = tab === 'players' ? 'players' : tab === 'chats' ? 'chats' : 'world';
+    requestFeature('world', target.toUpperCase(), () => {
+      closePrimaryLayers('world');
+      window.RealPlayWorld?.open?.();
+      setActive(target);
+      window.requestAnimationFrame(() => activateWorldTab(tab));
+    });
   }
 
   function openHome() {
+    window.RealPlayFeatures?.cancel?.('primary-nav');
     closePrimaryLayers();
     document.body.classList.remove('rp-simple-subview');
     setActive('home');
@@ -179,26 +188,33 @@
   }
 
   function openMe() {
+    // Account requirement remains the first gate. Profile resources are not
+    // requested for visitors who have not chosen to create/sign in.
     if (!requireAccount('Create your player to unlock your own OVR, stats, game history, membership and settings.')) return;
-    closePrimaryLayers('profile');
-    setActive('me');
-    window.RealPlayProfile?.open?.();
-    window.setTimeout(() => {
-      syncMeHeader();
-      ensureProfileSettingsButton();
-    }, 50);
+    requestFeature('profile', 'PROFILE', () => {
+      closePrimaryLayers('profile');
+      setActive('me');
+      window.RealPlayProfile?.open?.();
+      window.requestAnimationFrame(() => {
+        syncMeHeader();
+        ensureProfileSettingsButton();
+      });
+    });
   }
 
   function openSettingsFromMe() {
-    const legacy = document.querySelector('[data-rp-main-action="settings"]');
-    if (!legacy) {
-      document.querySelector('[data-auth-open]')?.click();
-      return;
-    }
-    const alreadyActive = legacy.classList.contains('slot-active');
-    legacy.classList.add('slot-active');
-    legacy.click();
-    if (!alreadyActive) window.setTimeout(() => legacy.classList.remove('slot-active'), 0);
+    if (!requireAccount('Create an account or log in to manage membership, identity and account settings.')) return;
+    requestFeature('settings', 'SETTINGS', () => {
+      const legacy = document.querySelector('[data-rp-main-action="settings"]');
+      if (!legacy) {
+        document.querySelector('[data-auth-open]')?.click();
+        return;
+      }
+      const alreadyActive = legacy.classList.contains('slot-active');
+      legacy.classList.add('slot-active');
+      legacy.click();
+      if (!alreadyActive) window.setTimeout(() => legacy.classList.remove('slot-active'), 0);
+    });
   }
 
   function ensureProfileSettingsButton() {
@@ -246,14 +262,12 @@
         <span><small>OFFICIAL FEED</small><strong>SCHEDULES · RESULTS · ANNOUNCEMENTS</strong></span><b>→</b>
       </button>`;
     root.appendChild(section);
-    section.querySelector('[data-rp-simple-next]')?.addEventListener('click', () => {
+    const openUpdates = () => {
       setActive('home');
-      window.RealPlayUpdates?.open?.();
-    });
-    section.querySelector('[data-rp-simple-updates]')?.addEventListener('click', () => {
-      setActive('home');
-      window.RealPlayUpdates?.open?.();
-    });
+      requestFeature('updates', 'UPDATES', () => window.RealPlayUpdates?.open?.(), 'home-action');
+    };
+    section.querySelector('[data-rp-simple-next]')?.addEventListener('click', openUpdates);
+    section.querySelector('[data-rp-simple-updates]')?.addEventListener('click', openUpdates);
     return true;
   }
 
