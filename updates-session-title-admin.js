@@ -194,17 +194,21 @@
     const heading = card?.querySelector('.rp-update-session-name-row > h2, :scope > h2');
     if (!card || !heading) return;
 
+    const resultCard = isResultCard(card);
     const current = titleParts(heading.textContent);
-    const proposed = window.prompt('Edit the Real Play session name:', current.base);
+    const proposed = window.prompt(
+      resultCard ? 'Edit the result display name:' : 'Edit the Real Play session name:',
+      current.base
+    );
     if (proposed === null) return;
     const title = proposed.trim();
 
     if (!title) {
-      window.alert('Session name cannot be empty.');
+      window.alert(resultCard ? 'Result name cannot be empty.' : 'Session name cannot be empty.');
       return;
     }
     if (title.length > 100) {
-      window.alert('Keep the session name within 100 characters.');
+      window.alert('Keep the name within 100 characters.');
       return;
     }
 
@@ -215,6 +219,13 @@
     button.textContent = 'SAVING…';
 
     try {
+      // Completed results use the dedicated presentation-only title field. This
+      // deliberately accepts normal text (letters, numbers, spaces, punctuation)
+      // without touching the permanent Open Rank number or official game identity.
+      const payload = resultCard
+        ? { action: 'set-result-display-title', sessionId, displayTitle: title }
+        : { action: 'rename-session', sessionId, title };
+
       const response = await fetch(CONTROL_URL, {
         method: 'POST',
         headers: {
@@ -222,22 +233,18 @@
           'Content-Type': 'application/json',
           Authorization: `Bearer ${auth}`,
         },
-        body: JSON.stringify({
-          action: 'rename-session',
-          sessionId,
-          title,
-        }),
+        body: JSON.stringify(payload),
         cache: 'no-store',
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(data?.message || data?.error || 'Could not rename this session.');
+        throw new Error(
+          data?.message
+          || data?.error
+          || (resultCard ? 'Could not change this result name.' : 'Could not rename this session.')
+        );
       }
 
-      // A custom title must stop being treated as an auto-number-owned heading.
-      // Otherwise open-rank-auto-id.js can immediately rewrite it back to the
-      // previous numbered label before the refreshed backend payload arrives.
-      delete card.dataset.rpOfficialOpenRankNumber;
       heading.textContent = `${title}${current.suffix}`;
       button.textContent = 'SAVED ✓';
       await refreshOpenRankIdentity();
@@ -245,7 +252,10 @@
         if (button.isConnected) button.textContent = 'NAME ✎';
       }, 1200);
     } catch (error) {
-      window.alert(error.message || 'Could not rename this session.');
+      window.alert(
+        error.message
+        || (resultCard ? 'Could not change this result name.' : 'Could not rename this session.')
+      );
       button.textContent = previousText;
     } finally {
       button.disabled = false;
