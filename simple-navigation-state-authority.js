@@ -6,10 +6,14 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
   const CURRENT_RANKING_ACCESS_URL = `${API_BASE_URL}/api/real-play/career/access`;
+  const HOME_REFRESH_MIN_MS = 15_000;
+  const HOME_RATE_LIMIT_BACKOFF_MS = 60_000;
   let enforcing = false;
   let enforceQueued = false;
   let homeRefreshTimer = 0;
   let homeLoading = false;
+  let lastHomeRefreshAt = 0;
+  let homeRefreshBlockedUntil = 0;
   let configuredHomeCapacity = 16;
   let availabilityRequestId = 0;
   const observedAuthorityTargets = new WeakSet();
@@ -338,7 +342,13 @@
 
   async function refreshHomeCommandCenter() {
     if (!installHomeCommandCenter() || homeLoading) return;
+
+    const requestStartedAt = Date.now();
+    if (requestStartedAt < homeRefreshBlockedUntil) return;
+    if (lastHomeRefreshAt && requestStartedAt - lastHomeRefreshAt < HOME_REFRESH_MIN_MS) return;
+
     homeLoading = true;
+    lastHomeRefreshAt = requestStartedAt;
     availabilityRequestId += 1;
     renderConfiguredOpenRankCapacity();
 
@@ -350,7 +360,16 @@
         headers: { Accept: 'application/json' },
         cache: 'no-store',
       });
+      if (response.status === 429) {
+        const retryAfterSeconds = Number(response.headers.get('Retry-After'));
+        const retryAfterMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+          ? retryAfterSeconds * 1000
+          : HOME_RATE_LIMIT_BACKOFF_MS;
+        homeRefreshBlockedUntil = Date.now() + Math.max(HOME_RATE_LIMIT_BACKOFF_MS, retryAfterMs);
+        throw new Error('Real Play Home refresh is rate limited.');
+      }
       if (!response.ok) throw new Error('Could not load Real Play Home.');
+      homeRefreshBlockedUntil = 0;
 
       const data = await response.json().catch(() => ({}));
       const updates = Array.isArray(data?.updates) ? data.updates : [];
@@ -449,7 +468,9 @@
       refreshHomeCommandCenter();
     }
   });
-  window.addEventListener('storage', refreshHomeCommandCenter);
+  window.addEventListener('storage', (event) => {
+    if (event.key === TOKEN_KEY || event.key === null) refreshHomeCommandCenter();
+  });
   window.addEventListener('realplay:visitorchange', refreshHomeCommandCenter);
   window.addEventListener('realplay:home-schedule-changed', refreshHomeCommandCenter);
   window.addEventListener('realplay:ranking-session-changed', refreshOpenRankAvailability);
