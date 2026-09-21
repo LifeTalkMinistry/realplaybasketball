@@ -19,9 +19,22 @@
   if (!window.__realPlayTakeoverLoaderInstalled) {
     window.__realPlayTakeoverLoaderInstalled = true;
     const script = document.createElement('script');
-    script.src = 'takeover-announcement.js?v=20260921-takeover-ui-v1';
+    script.src = 'takeover-announcement.js?v=20260921-takeover-ui-v2';
     script.async = false;
     script.onerror = () => console.warn('[Real Play] Takeover announcement UI failed to load.');
+    document.head.appendChild(script);
+  }
+
+  // Backend-free local launch testing lets Head Admin experience the takeover
+  // exactly as it will appear on app open. The selected image/video is stored
+  // only in this browser and is consumed on the next reload; nothing is
+  // published to other users until the real backend endpoints are connected.
+  if (!window.__realPlayTakeoverLocalTestLoaderInstalled) {
+    window.__realPlayTakeoverLocalTestLoaderInstalled = true;
+    const script = document.createElement('script');
+    script.src = 'takeover-local-test.js?v=20260921-takeover-local-test-v1';
+    script.async = false;
+    script.onerror = () => console.warn('[Real Play] Local takeover test helper failed to load.');
     document.head.appendChild(script);
   }
 
