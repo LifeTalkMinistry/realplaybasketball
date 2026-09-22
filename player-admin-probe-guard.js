@@ -223,4 +223,15 @@
     script.onerror = () => console.error('[Real Play] Admin rank status controls failed to load.');
     document.head.appendChild(script);
   }
+
+  // CAPTAIN ELIGIBLE is rank-dependent, not a permanent earned award. Keep it
+  // synchronized with the same canonical official-rank state used by Players.
+  if (!document.querySelector('script[data-rp-rank-recognition-sync-loader]')) {
+    const script = document.createElement('script');
+    script.dataset.rpRankRecognitionSyncLoader = '1';
+    script.src = 'real-play-rank-recognition-sync.js?v=20260922-rank-recognition-sync-v1';
+    script.async = false;
+    script.onerror = () => console.error('[Real Play] Rank recognition sync failed to load.');
+    document.head.appendChild(script);
+  }
 })();
