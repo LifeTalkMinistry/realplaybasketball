@@ -211,4 +211,16 @@
     script.onerror = () => console.error('[Real Play] Player claim controls failed to load.');
     document.head.appendChild(script);
   }
+
+  // Head Admin can manually move an inactive ranked player back to UNRANKED
+  // without touching OVR, stats, wins/losses, or game history. Keep this as a
+  // separate additive layer so the existing player-management sheet stays stable.
+  if (!document.querySelector('script[data-rp-admin-rank-status-loader]')) {
+    const script = document.createElement('script');
+    script.dataset.rpAdminRankStatusLoader = '1';
+    script.src = 'real-play-admin-rank-status.js?v=20260922-admin-rank-status-v1';
+    script.async = false;
+    script.onerror = () => console.error('[Real Play] Admin rank status controls failed to load.');
+    document.head.appendChild(script);
+  }
 })();
