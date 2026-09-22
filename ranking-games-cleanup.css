@@ -141,3 +141,76 @@
   color:#c27a86;
   font-weight:950;
 }
+
+/* Team reservation capacity now lives in the existing session strip directly
+ * under the TEAM RESERVATION title. Keep the live counts dynamic; only their
+ * presentation is moved out of the inner team board. */
+.rp-ranking-next.rp-team-reservation-enabled .rp-ranking-session{
+  position:relative;
+  min-height:36px;
+  padding:0!important;
+  overflow:visible;
+}
+.rp-ranking-next.rp-team-reservation-enabled .rp-session-teams{
+  position:relative;
+}
+.rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-head{
+  position:relative;
+  height:0;
+  min-height:0;
+  margin:0;
+  padding:0;
+}
+.rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity{
+  position:absolute;
+  z-index:2;
+  top:-61px;
+  left:-13px;
+  right:-13px;
+  height:36px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  padding:0 14px;
+  border:0!important;
+  border-radius:0;
+  background:transparent!important;
+  text-align:center;
+  pointer-events:none;
+}
+.rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity strong,
+.rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity span{
+  display:inline-flex;
+  align-items:center;
+  margin:0;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
+  font-style:italic;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+.rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity strong{
+  color:#f5fbff;
+  font-size:.72rem;
+}
+.rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity strong::after{
+  content:"|";
+  margin:0 11px;
+  color:#456274;
+  font-style:normal;
+}
+.rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity span{
+  color:#67dcf5;
+  font-size:.62rem;
+}
+.rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-intro{
+  margin-top:0;
+}
+@media(max-width:390px){
+  .rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity strong{font-size:.66rem}
+  .rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity span{font-size:.56rem}
+  .rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity strong::after{margin:0 8px}
+}
