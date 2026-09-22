@@ -75,6 +75,7 @@
 .rp-team-sheet-head h3{margin:0;color:#f7fbff;font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);font-size:1.18rem;font-style:italic;font-weight:950;line-height:1;text-transform:uppercase}
 .rp-team-sheet-close{width:36px;height:36px;padding:0;border:1px solid rgba(255,255,255,.11);border-radius:50%;background:rgba(255,255,255,.035);color:#b8c7d2;font:800 1rem/1 Arial,sans-serif;cursor:pointer}
 .rp-team-field{display:block;margin-top:10px}
+.rp-team-field[hidden]{display:none!important}
 .rp-team-field span{display:block;margin:0 0 6px 2px;color:#748a9c;font:900 .43rem/1 Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase}
 .rp-team-field input{width:100%;box-sizing:border-box;min-height:46px;padding:0 12px;border:1px solid rgba(86,161,196,.22);border-radius:11px;background:#030b12;color:#eef9ff;outline:none;font:850 .78rem/1 Arial,sans-serif}
 .rp-team-field input:focus{border-color:rgba(73,216,249,.58);box-shadow:0 0 0 3px rgba(73,216,249,.07)}
