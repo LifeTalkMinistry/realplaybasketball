@@ -131,26 +131,30 @@
     const controls = document.querySelector('[data-world-player-sort]');
     if (!controls) return null;
     let button = controls.querySelector('[data-rp-inactive-sort]');
-    if (button) return button;
 
-    button = document.createElement('button');
-    button.type = 'button';
-    button.dataset.rpInactiveSort = 'true';
-    button.setAttribute('aria-pressed', 'false');
-    button.innerHTML = '<span>INACTIVE OVR</span><b></b>';
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.rpInactiveSort = 'true';
+      button.setAttribute('aria-pressed', 'false');
+      button.innerHTML = '<span>INACTIVE OVR</span><b></b>';
 
-    const unranked = controls.querySelector('[data-player-sort="unranked"]');
-    if (unranked?.nextSibling) controls.insertBefore(button, unranked.nextSibling);
-    else if (unranked) controls.appendChild(button);
-    else controls.prepend(button);
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        inactiveMode = true;
+        void refreshAuthority(true).then(scheduleApply);
+        scheduleApply();
+      });
+    }
 
-    button.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      inactiveMode = true;
-      void refreshAuthority(true).then(scheduleApply);
-      scheduleApply();
-    });
+    const jersey = controls.querySelector('[data-player-sort="jersey"]');
+    if (jersey) {
+      if (jersey.nextElementSibling !== button) jersey.insertAdjacentElement('afterend', button);
+    } else if (controls.lastElementChild !== button) {
+      controls.appendChild(button);
+    }
+
     return button;
   }
 
