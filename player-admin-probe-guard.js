@@ -213,14 +213,25 @@
   }
 
   // Head Admin can manually move a ranked player back to UNRANKED without
-  // touching OVR, stats, wins/losses, or game history. Keep this as a separate
-  // additive layer so the existing player-management sheet stays stable.
+  // touching OVR, stats, wins/losses, or game history. This remains separate
+  // from the automatic 30-day INACTIVE state.
   if (!document.querySelector('script[data-rp-admin-rank-status-loader]')) {
     const script = document.createElement('script');
     script.dataset.rpAdminRankStatusLoader = '1';
-    script.src = 'real-play-admin-rank-status.js?v=20260922-admin-rank-status-v2';
+    script.src = 'real-play-admin-rank-status.js?v=20260922-admin-rank-status-v3';
     script.async = false;
     script.onerror = () => console.error('[Real Play] Admin rank status controls failed to load.');
+    document.head.appendChild(script);
+  }
+
+  // INACTIVE is a dedicated competitive population. Inactive players retain OVR
+  // and history, but are removed from active Rank/stat/recognition leaderboards.
+  if (!document.querySelector('script[data-rp-inactive-player-state-loader]')) {
+    const script = document.createElement('script');
+    script.dataset.rpInactivePlayerStateLoader = '1';
+    script.src = 'real-play-inactive-player-state.js?v=20260922-inactive-player-state-v1';
+    script.async = false;
+    script.onerror = () => console.error('[Real Play] Inactive player state controls failed to load.');
     document.head.appendChild(script);
   }
 
