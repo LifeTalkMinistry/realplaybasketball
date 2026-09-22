@@ -6,6 +6,14 @@
   const STORE_NAME = 'drafts';
   const RECORD_KEY = 'next-launch';
   const PENDING_KEY = 'real_play_takeover_local_test_pending';
+  const API_BASE_URL = 'https://api.clarapmc.com';
+  const ADMIN_ENDPOINT = `${API_BASE_URL}/api/real-play/admin/takeover`;
+  const TOKEN_KEY = 'real_play_access_token';
+
+  let adminSyncInstalled = false;
+  let adminClassObserver = null;
+  let statusObserver = null;
+  let adminRefreshTimer = 0;
 
   function clean(value, max = 500) {
     return String(value ?? '').trim().slice(0, max);
@@ -16,6 +24,149 @@
     if (!node) return;
     node.textContent = message || '';
     node.className = `rp-takeover-status${kind ? ` ${kind}` : ''}`;
+  }
+
+  function normalizeServerTakeover(payload) {
+    const source = payload?.takeover ?? payload?.announcement ?? payload?.data ?? payload ?? {};
+    return {
+      campaignId: clean(source.campaignId ?? source.campaign_id ?? source.version ?? source.id, 160),
+      active: source.active === true || String(source.active ?? '').toLowerCase() === 'true',
+      mediaType: clean(source.mediaType ?? source.media_type ?? source.type, 20).toLowerCase() === 'video' ? 'video' : 'image',
+      mediaUrl: clean(source.mediaUrl ?? source.media_url ?? source.url, 1600),
+      fit: clean(source.fit ?? source.objectFit, 20).toLowerCase() === 'cover' ? 'cover' : 'contain',
+      label: clean(source.label ?? source.kicker, 60),
+      alt: clean(source.alt ?? source.description, 180) || 'Real Play announcement',
+      loop: source.loop !== false && String(source.loop ?? 'true').toLowerCase() !== 'false',
+    };
+  }
+
+  function renderSavedTakeover(itemInput) {
+    const admin = document.querySelector('[data-rp-takeover-admin]');
+    if (!admin) return false;
+    const item = normalizeServerTakeover(itemInput);
+    if (!item.campaignId && !item.mediaUrl) return false;
+
+    const idInput = admin.querySelector('[data-rp-takeover-id]');
+    const typeInput = admin.querySelector('[data-rp-takeover-type]');
+    const fitInput = admin.querySelector('[data-rp-takeover-fit]');
+    const fileInput = admin.querySelector('[data-rp-takeover-file]');
+    const urlInput = admin.querySelector('[data-rp-takeover-url]');
+    const labelInput = admin.querySelector('[data-rp-takeover-label-input]');
+    const altInput = admin.querySelector('[data-rp-takeover-alt]');
+    const activeInput = admin.querySelector('[data-rp-takeover-active]');
+    const loopInput = admin.querySelector('[data-rp-takeover-loop]');
+    const previewBox = admin.querySelector('[data-rp-takeover-preview-box]');
+
+    if (idInput) idInput.value = item.campaignId || '';
+    if (typeInput) typeInput.value = item.mediaType;
+    if (fitInput) fitInput.value = item.fit;
+    if (urlInput) urlInput.value = item.mediaUrl || '';
+    if (labelInput) labelInput.value = item.label || '';
+    if (altInput) altInput.value = item.alt === 'Real Play announcement' ? '' : item.alt;
+    if (activeInput) activeInput.checked = item.active;
+    if (loopInput) loopInput.checked = item.loop;
+
+    // Browsers intentionally do not allow repopulating a file input after navigation.
+    // The authoritative saved media is restored through its backend media URL instead.
+    if (fileInput) fileInput.value = '';
+
+    if (previewBox) {
+      previewBox.innerHTML = '';
+      if (!item.mediaUrl) {
+        previewBox.innerHTML = '<div class="rp-takeover-preview-empty">NO SAVED MEDIA</div>';
+      } else {
+        const node = document.createElement(item.mediaType === 'video' ? 'video' : 'img');
+        node.src = item.mediaUrl;
+        node.style.objectFit = item.fit;
+        if (item.mediaType === 'video') {
+          node.muted = true;
+          node.playsInline = true;
+          node.loop = item.loop;
+          node.autoplay = true;
+          node.addEventListener('canplay', () => node.play().catch(() => {}), { once: true });
+        } else {
+          node.alt = item.alt;
+        }
+        node.addEventListener('error', () => {
+          previewBox.innerHTML = '<div class="rp-takeover-preview-empty">SAVED MEDIA COULD NOT BE LOADED</div>';
+        }, { once: true });
+        previewBox.appendChild(node);
+      }
+    }
+
+    return true;
+  }
+
+  async function loadSavedAdminTakeover({ quiet = false } = {}) {
+    const admin = document.querySelector('[data-rp-takeover-admin]');
+    if (!admin?.classList.contains('open')) return false;
+    const token = window.localStorage.getItem(TOKEN_KEY) || '';
+    if (!token) return false;
+
+    try {
+      const response = await fetch(ADMIN_ENDPOINT, {
+        method: 'GET',
+        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      if (!response.ok) return false;
+      const data = await response.json().catch(() => ({}));
+      const restored = renderSavedTakeover(data);
+      if (restored && !quiet) setStatus('Saved takeover loaded from server.', 'ok');
+      return restored;
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function queueAdminRefresh() {
+    if (adminRefreshTimer) window.clearTimeout(adminRefreshTimer);
+    adminRefreshTimer = window.setTimeout(() => {
+      loadSavedAdminTakeover().catch(() => {});
+    }, 180);
+  }
+
+  function installAdminPersistenceSync() {
+    if (adminSyncInstalled) return true;
+    const admin = document.querySelector('[data-rp-takeover-admin]');
+    if (!admin) return false;
+    adminSyncInstalled = true;
+
+    adminClassObserver = new MutationObserver(() => {
+      if (!admin.classList.contains('open')) return;
+      queueAdminRefresh();
+      window.setTimeout(() => loadSavedAdminTakeover({ quiet: true }), 550);
+    });
+    adminClassObserver.observe(admin, { attributes: true, attributeFilter: ['class'] });
+
+    const status = admin.querySelector('[data-rp-takeover-status]');
+    if (status) {
+      statusObserver = new MutationObserver(() => {
+        const text = clean(status.textContent, 240);
+        if (text === 'Current takeover loaded.' || text.startsWith('No backend takeover endpoint')) {
+          loadSavedAdminTakeover().catch(() => {});
+          return;
+        }
+
+        if (text === 'Takeover published. A new campaign/version will show again to everyone.') {
+          const active = Boolean(admin.querySelector('[data-rp-takeover-active]')?.checked);
+          if (!active) {
+            setStatus('Saved, but inactive. Turn on Active and publish again to show it on app open.', 'error');
+            return;
+          }
+
+          const campaignId = clean(admin.querySelector('[data-rp-takeover-id]')?.value, 160);
+          if (campaignId) {
+            try { window.localStorage.removeItem(`real_play_takeover_seen:${campaignId}`); } catch (_error) {}
+          }
+          setStatus('Takeover published and active. It will show on the next app open.', 'ok');
+        }
+      });
+      statusObserver.observe(status, { childList: true, characterData: true, subtree: true });
+    }
+
+    if (admin.classList.contains('open')) queueAdminRefresh();
+    return true;
   }
 
   function openDb() {
@@ -61,10 +212,10 @@
           value = request.result || null;
           store.delete(RECORD_KEY);
         };
-        request.onerror = () => reject(request.error || new Error('Unable to read local takeover test.'));
+        request.onerror = () => reject(request.error || new Error('Unable to read local test storage.'));
         tx.oncomplete = () => resolve(value);
-        tx.onerror = () => reject(tx.error || new Error('Unable to read local takeover test.'));
-        tx.onabort = () => reject(tx.error || new Error('Unable to read local takeover test.'));
+        tx.onerror = () => reject(tx.error || new Error('Unable to read local test storage.'));
+        tx.onabort = () => reject(tx.error || new Error('Unable to read local test storage.'));
       });
     } finally {
       db.close();
@@ -125,6 +276,7 @@
 
   function installButton() {
     const actions = document.querySelector('[data-rp-takeover-admin] .rp-takeover-actions');
+    installAdminPersistenceSync();
     if (!actions || actions.querySelector('[data-rp-takeover-test-launch]')) return Boolean(actions);
 
     const button = document.createElement('button');
@@ -188,6 +340,11 @@
       console.warn('[Real Play] Local takeover launch test could not run.', error);
     }
   }
+
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest?.('[data-rp-settings-action="takeover"]')) return;
+    window.setTimeout(queueAdminRefresh, 120);
+  }, true);
 
   const observer = new MutationObserver(() => installButton());
   observer.observe(document.documentElement, { childList: true, subtree: true });
