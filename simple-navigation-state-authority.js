@@ -16,6 +16,7 @@
   let homeRefreshBlockedUntil = 0;
   let configuredHomeCapacity = 16;
   let availabilityRequestId = 0;
+  let hasOpenRankAvailability = false;
   const observedAuthorityTargets = new WeakSet();
 
   const esc = (value) => String(value ?? '')
@@ -256,10 +257,11 @@
     return Number.isFinite(bodyCap) && bodyCap > 0 ? Math.round(bodyCap) : 16;
   }
 
-  function renderConfiguredOpenRankCapacity() {
+  function renderConfiguredOpenRankCapacity({ force = false } = {}) {
     const node = homeRoot()?.querySelector('[data-rp-home-open-rank-capacity]');
-    if (!node) return;
-    node.textContent = `${configuredHomeCapacity} PLAYER CAP`;
+    if (!node || (!force && hasOpenRankAvailability)) return;
+    const nextText = `${configuredHomeCapacity} PLAYER CAP`;
+    if (node.textContent !== nextText) node.textContent = nextText;
   }
 
   function count(value) {
@@ -284,18 +286,23 @@
     const mainStandby = Math.min(standby, Math.max(capacity - secured, 0));
     const filled = Math.min(capacity, secured + mainStandby);
     const spotsLeft = Math.max(0, capacity - filled);
+    const nextText = `${spotsLeft} ${spotsLeft === 1 ? 'SPOT' : 'SPOTS'} LEFT`;
 
-    node.textContent = `${spotsLeft} ${spotsLeft === 1 ? 'SPOT' : 'SPOTS'} LEFT`;
+    hasOpenRankAvailability = true;
+    if (node.textContent !== nextText) node.textContent = nextText;
     return true;
   }
 
   async function refreshOpenRankAvailability() {
     const requestId = ++availabilityRequestId;
-    renderConfiguredOpenRankCapacity();
-
     const auth = localStorage.getItem(TOKEN_KEY) || '';
     const node = homeRoot()?.querySelector('[data-rp-home-open-rank-capacity]');
-    if (!node || !auth) return;
+    if (!node) return;
+    if (!auth) {
+      hasOpenRankAvailability = false;
+      renderConfiguredOpenRankCapacity({ force: true });
+      return;
+    }
 
     try {
       const response = await fetch(CURRENT_RANKING_ACCESS_URL, {
@@ -310,9 +317,14 @@
 
       const data = await response.json().catch(() => ({}));
       if (requestId !== availabilityRequestId) return;
-      if (!renderOpenRankAvailability(data)) renderConfiguredOpenRankCapacity();
+      if (!renderOpenRankAvailability(data)) {
+        hasOpenRankAvailability = false;
+        renderConfiguredOpenRankCapacity({ force: true });
+      }
     } catch (_error) {
-      if (requestId === availabilityRequestId) renderConfiguredOpenRankCapacity();
+      if (requestId === availabilityRequestId && !hasOpenRankAvailability) {
+        renderConfiguredOpenRankCapacity({ force: true });
+      }
     }
   }
 
