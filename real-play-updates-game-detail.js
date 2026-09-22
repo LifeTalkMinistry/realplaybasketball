@@ -3,7 +3,7 @@
   window.__realPlayUpdatesGameDetailInstalled = true;
 
   const API_BASE_URL = 'https://api.clarapmc.com';
-  const TOKEN_KEY = 'real_play_access_token';
+  const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
   const hydrationRequests = new Map();
 
   function sessionIdFromCard(card) {
@@ -21,49 +21,6 @@
     document.body.appendChild(bridge);
     bridge.click();
     setTimeout(() => bridge.remove(), 0);
-  }
-
-  const num = (value) => {
-    const parsed = Number(value || 0);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
-
-  function shotSummary(player) {
-    const made = num(player?.onePtMade) + num(player?.twoPtMade);
-    const attempts = made + num(player?.onePtMiss) + num(player?.twoPtMiss);
-    return { fgPct: attempts > 0 ? made / attempts : 0 };
-  }
-
-  // Same Overall MVP authority used by career-game-replay-stats.js.
-  // Do not use the generic Updates metadata MVP field because that can be a
-  // team-level MVP rather than the game's Overall MVP.
-  function impactScore(player) {
-    return num(player?.pts)
-      + (num(player?.reb) * 1.2)
-      + (num(player?.ast) * 1.5)
-      + (num(player?.stl) * 2)
-      + (num(player?.blk) * 2)
-      - (num(player?.tov) * 1.5)
-      - (num(player?.foul) * 0.25);
-  }
-
-  function compareOverallMvp(a, b) {
-    const impactDiff = impactScore(b) - impactScore(a);
-    if (Math.abs(impactDiff) > 0.0001) return impactDiff;
-    const aShot = shotSummary(a);
-    const bShot = shotSummary(b);
-    if (bShot.fgPct !== aShot.fgPct) return bShot.fgPct - aShot.fgPct;
-    if (num(b?.pts) !== num(a?.pts)) return num(b?.pts) - num(a?.pts);
-    if (num(a?.tov) !== num(b?.tov)) return num(a?.tov) - num(b?.tov);
-    return String(a?.playerName || a?.player_name || '').localeCompare(String(b?.playerName || b?.player_name || ''));
-  }
-
-  function overallMvpName(payload) {
-    const players = Array.isArray(payload?.playerStats) ? payload.playerStats : [];
-    const valid = players.filter((player) => ['west', 'east'].includes(String(player?.team || '').toLowerCase()));
-    if (!valid.length) return '';
-    const winner = [...valid].sort(compareOverallMvp)[0];
-    return String(winner?.playerName || winner?.player_name || '').trim();
   }
 
   function ensureOverallMvpStyles() {
@@ -93,19 +50,26 @@
     block.setAttribute('aria-label', `Overall MVP: ${name}`);
   }
 
+  // One finalized game has one authoritative Game MVP. The backend builds the
+  // official result metadata from the canonical Game MVP service, so result
+  // cards must read that value instead of independently recalculating a winner
+  // from replay stats in the browser.
   async function fetchOverallMvp(sessionId) {
-    const accessToken = localStorage.getItem(TOKEN_KEY) || '';
-    const hasRealToken = Boolean(accessToken && accessToken !== '__REAL_PLAY_VISITOR_REPLAY__');
-    const url = hasRealToken
-      ? `${API_BASE_URL}/api/real-play/career/games/${sessionId}/replay`
-      : `${API_BASE_URL}/api/real-play/public/career/games/${sessionId}/replay`;
-    const response = await fetch(url, {
-      headers: { Accept: 'application/json', ...(hasRealToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+    const response = await fetch(PUBLIC_UPDATES_URL, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
       cache: 'no-store',
     });
     if (!response.ok) return '';
+
     const payload = await response.json().catch(() => ({}));
-    return overallMvpName(payload);
+    const updates = Array.isArray(payload?.updates) ? payload.updates : [];
+    const result = updates.find((item) => (
+      String(item?.category || '').toLowerCase() === 'result'
+      && Number(item?.metadata?.sessionId || 0) === Number(sessionId)
+    ));
+    const mvp = result?.metadata?.gameMvp || null;
+    return String(mvp?.playerName || mvp?.name || '').trim();
   }
 
   function hydrateCard(card) {
@@ -125,8 +89,8 @@
     request.then((name) => {
       if (name) setOverallMvp(card, name);
     }).catch(() => {
-      // Never fall back to the generic/team-MVP metadata. If the authoritative
-      // replay calculation cannot be loaded, the MVP strip stays hidden.
+      // Never replace the official MVP with a browser-side guess. If official
+      // result metadata cannot load, keep the MVP strip hidden until it can.
     }).finally(() => {
       if (!existing) hydrationRequests.delete(sessionId);
     });
