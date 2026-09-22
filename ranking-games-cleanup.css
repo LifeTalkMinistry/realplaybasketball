@@ -207,7 +207,7 @@
   font-size:.62rem;
 }
 .rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-intro{
-  margin-top:0;
+  display:none!important;
 }
 @media(max-width:390px){
   .rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity strong{font-size:.66rem}
