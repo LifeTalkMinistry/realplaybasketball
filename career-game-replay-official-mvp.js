@@ -30,9 +30,10 @@
 
   async function loadOfficialGameMvp(sessionId) {
     const token = localStorage.getItem(TOKEN_KEY) || '';
+    const hasRealToken = Boolean(token && token !== '__REAL_PLAY_VISITOR_REPLAY__');
     let response;
 
-    if (token) {
+    if (hasRealToken) {
       response = await fetch(UPDATES_URL, {
         method: 'POST',
         headers: {
