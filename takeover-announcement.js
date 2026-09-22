@@ -17,7 +17,7 @@
     .rp-takeover::before,.rp-takeover::after{content:"";position:absolute;inset:auto;pointer-events:none;filter:blur(70px);opacity:.28}
     .rp-takeover::before{width:42vw;height:42vw;max-width:520px;max-height:520px;left:-16vw;top:-12vw;background:#176bff;border-radius:50%}
     .rp-takeover::after{width:46vw;height:46vw;max-width:560px;max-height:560px;right:-18vw;bottom:-15vw;background:#ff294d;border-radius:50%}
-    .rp-takeover-canvas{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;background:rgba(2,3,6,.46)}
+    .rp-takeover-canvas{position:absolute;inset:0 0 90px 0;display:grid;place-items:center;overflow:hidden;background:rgba(2,3,6,.46)}
     .rp-takeover-media{position:relative;z-index:1;display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:var(--rp-takeover-fit,contain);object-position:center;background:transparent}
     .rp-takeover-cta:focus-visible{outline:3px solid #42d8ff;outline-offset:3px}
     .rp-takeover-label{position:absolute;z-index:3;left:max(14px,env(safe-area-inset-left));top:max(18px,env(safe-area-inset-top));max-width:calc(100vw - 90px);padding:8px 12px;border-radius:999px;background:rgba(2,3,6,.64);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -57,7 +57,7 @@
     .rp-takeover-deactivate-btn{grid-column:1/-1;background:rgba(255,41,77,.08);color:#ff7187;border-color:rgba(255,41,77,.28)!important}
     .rp-takeover-status{min-height:20px;margin:2px 0 0;color:#9aa9bc;font-size:.76rem;line-height:1.45}
     .rp-takeover-status.ok{color:#6ee7b7}.rp-takeover-status.error{color:#ff8798}
-    @media(max-width:560px){.rp-takeover-grid,.rp-takeover-actions{grid-template-columns:1fr}.rp-takeover-deactivate-btn{grid-column:auto}.rp-takeover-cta{bottom:max(16px,calc(env(safe-area-inset-bottom) + 12px));min-height:50px}}
+    @media(max-width:560px){.rp-takeover-grid,.rp-takeover-actions{grid-template-columns:1fr}.rp-takeover-deactivate-btn{grid-column:auto}.rp-takeover-canvas{bottom:80px}.rp-takeover-cta{bottom:max(16px,calc(env(safe-area-inset-bottom) + 12px));min-height:50px}}
   `;
   document.head.appendChild(style);
 
@@ -71,12 +71,15 @@
   takeover.className = 'rp-takeover';
   takeover.dataset.rpTakeover = 'true';
   takeover.setAttribute('aria-hidden', 'true');
+  takeover.setAttribute('role', 'dialog');
+  takeover.setAttribute('aria-modal', 'true');
+  takeover.setAttribute('aria-label', 'Real Play announcement');
   takeover.innerHTML = `
-    <div class="rp-takeover-canvas" role="dialog" aria-modal="true" aria-label="Real Play announcement">
+    <div class="rp-takeover-canvas">
       <span class="rp-takeover-label" data-rp-takeover-label hidden></span>
-      <button class="rp-takeover-cta" type="button" data-rp-takeover-cta>I Understand</button>
       <div class="rp-takeover-fallback" data-rp-takeover-fallback><strong>REAL PLAY</strong><span>ANNOUNCEMENT MEDIA UNAVAILABLE</span></div>
     </div>
+    <button class="rp-takeover-cta" type="button" data-rp-takeover-cta>I Understand</button>
   `;
   document.body.appendChild(takeover);
 
