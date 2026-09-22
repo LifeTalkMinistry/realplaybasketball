@@ -151,7 +151,7 @@
     } else {
       actions = `<div class="rp-session-team-actions" style="grid-template-columns:1fr 1fr">
         <button class="rp-session-team-action primary" type="button" data-rp-team-create ${busy ? 'disabled' : ''}>CREATE TEAM</button>
-        <button class="rp-session-team-action" type="button" data-rp-team-assign ${busy ? 'disabled' : ''}>ASSIGN ME</button>
+        <button class="rp-session-team-action" type="button" data-rp-team-random ${busy ? 'disabled' : ''}>RANDOM TEAM</button>
       </div>`;
     }
 
@@ -160,9 +160,8 @@
         <div><small>BUILD YOUR RUN</small><h3>TEAM RESERVATION</h3></div>
         <div class="rp-session-teams-capacity"><strong>${counts.confirmed}/${counts.capacity} PLAYERS</strong><span>${sub}</span></div>
       </div>
-      <p class="rp-session-teams-intro">Create your team, tap Join Team on a listed team, or let Real Play assign you to an open team that needs a player.</p>
       ${actions}${note}
-      ${teams.length ? `<div class="rp-session-team-list">${teams.map((team) => cardMarkup(team, mine)).join('')}</div>` : '<div class="rp-session-team-empty">NO TEAMS YET. CREATE THE FIRST TEAM OR TAP ASSIGN ME TO START AN OPEN ONE.</div>'}
+      ${teams.length ? `<div class="rp-session-team-list">${teams.map((team) => cardMarkup(team, mine)).join('')}</div>` : '<div class="rp-session-team-empty">NO TEAMS YET. CREATE THE FIRST TEAM OR TAP RANDOM TEAM TO LET REAL PLAY PLACE YOU.</div>'}
       <p class="rp-session-team-status${messageType ? ` ${messageType}` : ''}" aria-live="polite">${esc(message || (busy ? 'UPDATING TEAM…' : ''))}</p>`;
   }
 
@@ -252,7 +251,7 @@
           <button type="button" data-choice="private">PRIVATE TEAM<br><small>4-DIGIT CODE</small></button>
         </div>
         <label class="rp-team-field code" data-create-code hidden><span>CHOOSE YOUR 4-DIGIT CODE</span><input name="code" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" placeholder="1234"></label>
-        <p class="rp-team-sheet-note" data-create-note>Open teams can be joined directly and can receive players who tap Assign Me.</p>
+        <p class="rp-team-sheet-note" data-create-note>Open teams can be joined directly and can receive players who choose Random Team.</p>
         <button class="rp-team-sheet-submit" type="submit">CREATE TEAM & SAVE MY SPOT</button>
       </form>`, (overlay) => {
       let visibility = 'open';
@@ -264,7 +263,7 @@
         overlay.querySelectorAll('[data-choice]').forEach((item) => item.classList.toggle('is-selected', item === button));
         codeWrap.hidden = visibility !== 'private';
         form.elements.code.required = visibility === 'private';
-        note.textContent = visibility === 'private' ? 'Only players who know this 4-digit code can join your team.' : 'Open teams can be joined directly and can receive players who tap Assign Me.';
+        note.textContent = visibility === 'private' ? 'Only players who know this 4-digit code can join your team.' : 'Open teams can be joined directly and can receive players who choose Random Team.';
       }));
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -275,6 +274,19 @@
         if (await act({ action: 'create', name, visibility, code })) closeSheet(); else submit.disabled = false;
       });
       window.setTimeout(() => form.elements.name.focus(), 80);
+    });
+  }
+
+  function openRandomTeam() {
+    sheet(`${head('TEAM RESERVATION', 'RANDOM TEAM')}
+      <p class="rp-team-sheet-note">Your session spot is already reserved. Random Team only decides where Real Play places you. If an open team is missing a player, you will automatically be added there. If no team currently needs a player, Real Play will place you into an open team so your reservation stays organized.</p>
+      <button class="rp-team-sheet-submit" type="button" data-rp-random-confirm>I UNDERSTAND IT</button>`, (overlay) => {
+      const confirm = overlay.querySelector('[data-rp-random-confirm]');
+      confirm?.addEventListener('click', async () => {
+        confirm.disabled = true;
+        if (await act({ action: 'assign' })) closeSheet(); else confirm.disabled = false;
+      });
+      window.setTimeout(() => confirm?.focus(), 80);
     });
   }
 
@@ -327,7 +339,7 @@
     const el = event.target instanceof Element ? event.target : null;
     if (!el) return;
     if (el.closest('[data-rp-team-create]')) return void openCreate();
-    if (el.closest('[data-rp-team-assign]')) return void act({ action: 'assign' });
+    if (el.closest('[data-rp-team-random]')) return void openRandomTeam();
     if (el.closest('[data-rp-team-standby]')) return void joinStandby();
     const joinPrivate = el.closest('[data-rp-team-join-private]');
     if (joinPrivate) return void openCode(Number(joinPrivate.dataset.rpTeamJoinPrivate));
