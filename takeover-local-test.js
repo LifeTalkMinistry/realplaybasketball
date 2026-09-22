@@ -9,6 +9,7 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const ADMIN_ENDPOINT = `${API_BASE_URL}/api/real-play/admin/takeover`;
   const TOKEN_KEY = 'real_play_access_token';
+  const hadPendingLaunchTest = window.localStorage.getItem(PENDING_KEY) === '1';
 
   let adminSyncInstalled = false;
   let adminClassObserver = null;
@@ -159,7 +160,7 @@
           if (campaignId) {
             try { window.localStorage.removeItem(`real_play_takeover_seen:${campaignId}`); } catch (_error) {}
           }
-          setStatus('Takeover published and active. It will show on the next app open.', 'ok');
+          setStatus('Takeover published and active. It will show on every app open or refresh.', 'ok');
         }
       });
       statusObserver.observe(status, { childList: true, characterData: true, subtree: true });
@@ -341,6 +342,19 @@
     }
   }
 
+  async function showPublishedTakeoverOnEveryOpen() {
+    if (hadPendingLaunchTest) return;
+    const takeoverApi = await waitForTakeoverApi();
+    if (!takeoverApi?.load) return;
+    if (document.querySelector('[data-rp-takeover].open')) return;
+
+    try {
+      await takeoverApi.load({ force: true });
+    } catch (error) {
+      console.warn('[Real Play] Published takeover could not be shown on app open.', error);
+    }
+  }
+
   document.addEventListener('click', (event) => {
     if (!event.target.closest?.('[data-rp-settings-action="takeover"]')) return;
     window.setTimeout(queueAdminRefresh, 120);
@@ -351,7 +365,10 @@
   [0, 250, 700, 1500, 2600].forEach((delay) => window.setTimeout(installButton, delay));
   window.setTimeout(() => observer.disconnect(), 5000);
 
-  const start = () => window.setTimeout(runPendingLaunchTest, 120);
+  const start = () => {
+    window.setTimeout(runPendingLaunchTest, 120);
+    window.setTimeout(showPublishedTakeoverOnEveryOpen, 360);
+  };
   if (document.documentElement.classList.contains('rp-shell-ready')) start();
   else window.addEventListener('realplay:app-ready', start, { once: true });
 })();
