@@ -32,47 +32,40 @@
   letter-spacing:.06em;
 }
 
-/* Keep the share snapshot deterministic: no browser-only blur/compositing. */
-.rp-profile-hero[data-rp-profile-share-capture-target] .rp-profile-ovr,
-.rp-profile-hero[data-rp-profile-share-capture-target] .rp-profile-rank{
-  -webkit-backdrop-filter:none!important;
-  backdrop-filter:none!important;
-  background:#040910!important;
+/*
+  Concept 2 — premium four-card player deck
+  -----------------------------------------
+  The reference uses wide horizontal cards with a large circular icon on the
+  left and the label/value stacked on the right. On phone widths we preserve
+  those proportions as a 2 x 2 deck instead of crushing four cards into one
+  narrow row. At wider profile widths the same cards return to one row.
+*/
+.rp-profile-rating-row{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+  align-items:stretch!important;
+  margin-top:18px!important;
+  padding:0!important;
+  overflow:visible!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
   box-shadow:none!important;
 }
 
-.rp-profile-hero[data-rp-profile-share-capture-target] .rp-profile-record::before,
-.rp-profile-hero[data-rp-profile-share-capture-target] .rp-profile-record::after{
-  background:#040910!important;
-  box-shadow:none!important;
-}
-
-.rp-profile-hero[data-rp-profile-share-capture-target]::after{
+/* Kill any older decorative shell around the stat deck. */
+.rp-profile-rating-row::before,
+.rp-profile-rating-row::after{
   content:none!important;
   display:none!important;
 }
 
-/* The hero shows only the primary values; the removed captions stay hidden. */
 .rp-profile-rating-row .rp-profile-ovr > small,
 .rp-profile-rating-row .rp-profile-rank > small,
 .rp-profile-rating-row .rp-profile-record > small{
   display:none!important;
-}
-
-/*
-  Premium four-card stat deck — concept 2
-  ---------------------------------------
-  The DOM still owns three authoritative metric containers. Record + Win Rate
-  are split visually into two independent cards so no rating/record logic has
-  to move or be duplicated.
-*/
-.rp-profile-rating-row{
-  display:grid!important;
-  grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,2.08fr)!important;
-  gap:7px!important;
-  align-items:stretch!important;
-  margin-top:18px!important;
-  overflow:visible!important;
 }
 
 .rp-profile-ovr,
@@ -80,62 +73,45 @@
   position:relative!important;
   box-sizing:border-box!important;
   min-width:0!important;
-  min-height:94px!important;
-  padding:10px 9px 11px!important;
+  min-height:88px!important;
+  padding:11px 10px 10px!important;
   overflow:hidden!important;
   display:grid!important;
   grid-template-rows:auto minmax(0,1fr)!important;
   align-items:start!important;
-  border:1px solid rgba(159,184,207,.17)!important;
+  border:1px solid rgba(151,176,201,.20)!important;
   border-radius:17px!important;
-  background:
-    linear-gradient(145deg,rgba(14,24,36,.965),rgba(3,8,14,.985))!important;
+  background:linear-gradient(145deg,rgba(15,27,40,.97),rgba(3,8,14,.985))!important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.055),
-    inset 0 -14px 28px rgba(0,0,0,.12),
-    0 12px 28px rgba(0,0,0,.22)!important;
+    inset 0 -18px 30px rgba(0,0,0,.13),
+    0 10px 24px rgba(0,0,0,.22)!important;
   -webkit-backdrop-filter:none!important;
   backdrop-filter:none!important;
 }
 
-.rp-profile-ovr::after,
-.rp-profile-rank::after{
-  content:'';
-  position:absolute;
-  z-index:0;
-  left:13px;
-  right:13px;
-  bottom:0;
-  height:1px;
-  pointer-events:none;
-  background:linear-gradient(90deg,transparent,rgba(151,182,209,.22),transparent);
-}
-
 .rp-profile-ovr{
-  border-color:rgba(55,205,255,.36)!important;
+  border-color:rgba(48,205,255,.42)!important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.06),
-    inset 0 -14px 28px rgba(0,0,0,.12),
-    0 12px 28px rgba(0,0,0,.22),
-    0 7px 20px rgba(29,180,255,.07)!important;
+    inset 0 -18px 30px rgba(0,0,0,.13),
+    0 10px 24px rgba(0,0,0,.22),
+    0 6px 18px rgba(29,180,255,.08)!important;
 }
 
-.rp-profile-ovr::after{
-  background:linear-gradient(90deg,transparent,rgba(68,218,255,.9),transparent);
-}
-
-/* Record becomes a transparent two-card layout shell. */
+/* Record owns two values in the DOM; visually split it into two real cards. */
 .rp-profile-record{
   position:relative!important;
   box-sizing:border-box!important;
+  grid-column:1/-1!important;
   min-width:0!important;
-  min-height:94px!important;
+  min-height:88px!important;
   padding:0!important;
   overflow:visible!important;
   display:grid!important;
-  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
   grid-template-rows:auto minmax(0,1fr)!important;
-  column-gap:7px!important;
+  column-gap:8px!important;
   row-gap:0!important;
   align-items:start!important;
   border:0!important;
@@ -153,40 +129,31 @@
   z-index:0!important;
   top:0!important;
   bottom:0!important;
-  width:calc(50% - 3.5px)!important;
+  width:calc(50% - 4px)!important;
   box-sizing:border-box!important;
-  border:1px solid rgba(159,184,207,.17)!important;
+  border:1px solid rgba(151,176,201,.20)!important;
   border-radius:17px!important;
-  background:linear-gradient(145deg,rgba(14,24,36,.965),rgba(3,8,14,.985))!important;
+  background:linear-gradient(145deg,rgba(15,27,40,.97),rgba(3,8,14,.985))!important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.055),
-    inset 0 -14px 28px rgba(0,0,0,.12),
-    0 12px 28px rgba(0,0,0,.22)!important;
+    inset 0 -18px 30px rgba(0,0,0,.13),
+    0 10px 24px rgba(0,0,0,.22)!important;
   pointer-events:none!important;
 }
-
-.rp-profile-record::before{
-  left:0!important;
-}
-
+.rp-profile-record::before{left:0!important}
 .rp-profile-record::after{
   right:0!important;
-  border-color:rgba(255,75,99,.27)!important;
+  border-color:rgba(255,67,94,.36)!important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.05),
-    inset 0 -14px 28px rgba(0,0,0,.12),
-    0 12px 28px rgba(0,0,0,.22),
-    0 7px 20px rgba(255,53,82,.055)!important;
+    inset 0 -18px 30px rgba(0,0,0,.13),
+    0 10px 24px rgba(0,0,0,.22),
+    0 6px 18px rgba(255,53,82,.07)!important;
 }
+.rp-profile-record:not(:has(.rp-profile-win-rate))::before{width:100%!important}
+.rp-profile-record:not(:has(.rp-profile-win-rate))::after{display:none!important}
 
-.rp-profile-record:not(:has(.rp-profile-win-rate))::before{
-  width:100%!important;
-}
-.rp-profile-record:not(:has(.rp-profile-win-rate))::after{
-  display:none!important;
-}
-
-/* Shared label treatment: compact circular badge + label text. */
+/* Label + large circular icon, matching the second visual reference. */
 .rp-profile-rating-row .rp-profile-ovr > span,
 .rp-profile-rating-row .rp-profile-rank > span,
 .rp-profile-record > span:not(.rp-profile-win-rate-label),
@@ -197,12 +164,12 @@
   margin:0!important;
   display:flex!important;
   align-items:center!important;
-  gap:5px!important;
-  color:#8192a5!important;
-  font-size:.35rem!important;
+  gap:8px!important;
+  color:#8a99ac!important;
+  font-size:.40rem!important;
   font-weight:950!important;
   line-height:1!important;
-  letter-spacing:.065em!important;
+  letter-spacing:.075em!important;
   text-transform:uppercase!important;
   white-space:nowrap!important;
 }
@@ -211,69 +178,65 @@
 .rp-profile-rating-row .rp-profile-rank > span::before,
 .rp-profile-record > span:not(.rp-profile-win-rate-label)::before,
 .rp-profile-record > .rp-profile-win-rate-label::before{
-  box-sizing:border-box;
-  width:23px;
-  height:23px;
-  flex:0 0 23px;
-  display:grid;
-  place-items:center;
-  border:1px solid rgba(132,158,184,.24);
-  border-radius:50%;
-  color:#8a9eb2;
-  background:linear-gradient(180deg,rgba(12,22,33,.94),rgba(3,9,15,.96));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
-  font-family:Arial,sans-serif;
-  font-size:.55rem;
-  font-weight:900;
-  line-height:1;
-  letter-spacing:0;
+  box-sizing:border-box!important;
+  width:34px!important;
+  height:34px!important;
+  flex:0 0 34px!important;
+  display:grid!important;
+  place-items:center!important;
+  border:1px solid rgba(139,164,190,.28)!important;
+  border-radius:50%!important;
+  color:#c8d5e2!important;
+  background:radial-gradient(circle at 50% 42%,rgba(18,32,47,.98),rgba(3,9,15,.98))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.055),
+    0 4px 12px rgba(0,0,0,.22)!important;
+  font-family:Arial,sans-serif!important;
+  font-size:.82rem!important;
+  font-weight:900!important;
+  line-height:1!important;
+  letter-spacing:0!important;
 }
 
 .rp-profile-ovr > span::before{
-  content:'✦';
-  color:#47dcff;
-  border-color:rgba(64,210,255,.38);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 13px rgba(44,190,255,.08);
+  content:'★'!important;
+  color:#4addff!important;
+  border-color:rgba(55,208,255,.45)!important;
+  text-shadow:0 0 12px rgba(72,217,255,.35)!important;
 }
-
 .rp-profile-rank > span::before{
-  content:'▥';
-  color:#d6e2ec;
+  content:'♛'!important;
+  color:#edf5fb!important;
 }
-
 .rp-profile-record > span:not(.rp-profile-win-rate-label)::before{
-  content:'W/L';
-  color:#d6e2ec;
-  font-size:.31rem;
+  content:'▥'!important;
+  color:#d5e0ea!important;
 }
-
 .rp-profile-record > .rp-profile-win-rate-label::before{
-  content:'%';
-  color:#ff8295;
-  border-color:rgba(255,81,106,.34);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 0 13px rgba(255,55,86,.065);
+  content:'%'!important;
+  color:#ff8fa0!important;
+  border-color:rgba(255,77,104,.42)!important;
+  text-shadow:0 0 10px rgba(255,79,104,.18)!important;
 }
 
 .rp-profile-rating-row .rp-profile-ovr > span,
 .rp-profile-rating-row .rp-profile-rank > span{
   align-self:start!important;
 }
-
 .rp-profile-record > span:not(.rp-profile-win-rate-label){
   grid-column:1!important;
   grid-row:1!important;
-  padding:9px 7px 0 8px!important;
+  padding:11px 10px 0!important;
 }
-
 .rp-profile-record > .rp-profile-win-rate-label{
   grid-column:2!important;
   grid-row:1!important;
-  padding:9px 7px 0 8px!important;
+  padding:11px 10px 0!important;
   justify-self:stretch!important;
   text-align:left!important;
 }
 
-/* Values sit on one visual baseline and align beneath their label text. */
+/* Value is aligned under the label text, not under the icon. */
 .rp-profile-rating-row .rp-profile-ovr > strong,
 .rp-profile-rating-row .rp-profile-rank > strong,
 .rp-profile-record > strong:not(.rp-profile-win-rate),
@@ -293,126 +256,120 @@
 
 .rp-profile-rating-row .rp-profile-ovr > strong,
 .rp-profile-rating-row .rp-profile-rank > strong{
-  padding-left:28px!important;
-  font-size:1.27rem!important;
+  padding-left:42px!important;
+  font-size:1.42rem!important;
 }
-
 .rp-profile-ovr > strong{
-  color:#48d9ff!important;
-  text-shadow:0 0 20px rgba(72,217,255,.13);
+  color:#4adfff!important;
+  text-shadow:0 0 18px rgba(72,217,255,.18)!important;
 }
-
 .rp-profile-rank > strong{
-  color:#f5f8fb!important;
-  text-shadow:0 2px 10px rgba(0,0,0,.35);
+  color:#f4f8fc!important;
+  text-shadow:0 2px 10px rgba(0,0,0,.34)!important;
 }
-
 .rp-profile-record > strong:not(.rp-profile-win-rate){
   grid-column:1!important;
   grid-row:2!important;
-  padding:0 7px 11px 36px!important;
-  color:#f5f8fb!important;
-  font-size:1.05rem!important;
-  text-shadow:0 2px 10px rgba(0,0,0,.35);
+  padding:0 8px 11px 52px!important;
+  color:#f4f8fc!important;
+  font-size:1.25rem!important;
+  text-shadow:0 2px 10px rgba(0,0,0,.34)!important;
 }
-
 .rp-profile-record > .rp-profile-win-rate{
   grid-column:2!important;
   grid-row:2!important;
-  padding:0 7px 11px 36px!important;
-  color:#48d9ff!important;
-  font-size:1.05rem!important;
-  text-shadow:0 0 18px rgba(72,217,255,.12);
+  padding:0 8px 11px 52px!important;
+  color:#4adfff!important;
+  font-size:1.25rem!important;
+  text-shadow:0 0 18px rgba(72,217,255,.16)!important;
 }
-
 .rp-profile-record:not(:has(.rp-profile-win-rate)) > span:not(.rp-profile-win-rate-label),
 .rp-profile-record:not(:has(.rp-profile-win-rate)) > strong:not(.rp-profile-win-rate){
   grid-column:1/-1!important;
 }
 
-/* Keep the Rank explanation affordance integrated without shifting the content. */
+/* Existing Rank info button stays functional but is visually secondary. */
 .rp-profile-rating-row .rp-profile-rank .rp-rank-info,
 .rp-profile-rating-row .rp-profile-rank [data-rp-rank-info]{
   position:absolute!important;
-  top:7px!important;
-  right:7px!important;
+  top:8px!important;
+  right:8px!important;
   width:19px!important;
   height:19px!important;
   z-index:5!important;
   border-color:rgba(76,216,255,.34)!important;
-  background:rgba(3,13,21,.86)!important;
-  box-shadow:0 4px 12px rgba(0,0,0,.26)!important;
+  background:rgba(3,13,21,.9)!important;
+  box-shadow:0 4px 12px rgba(0,0,0,.24)!important;
+}
+.rp-profile-rating-row .rp-profile-rank > span{padding-right:17px!important}
+
+/* Share capture: use deterministic matte surfaces, never browser blur. */
+.rp-profile-hero[data-rp-profile-share-capture-target] .rp-profile-ovr,
+.rp-profile-hero[data-rp-profile-share-capture-target] .rp-profile-rank{
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  background:#040910!important;
+  box-shadow:none!important;
+}
+.rp-profile-hero[data-rp-profile-share-capture-target] .rp-profile-record::before,
+.rp-profile-hero[data-rp-profile-share-capture-target] .rp-profile-record::after{
+  background:#040910!important;
+  box-shadow:none!important;
+}
+.rp-profile-hero[data-rp-profile-share-capture-target]::after{
+  content:none!important;
+  display:none!important;
 }
 
-.rp-profile-rating-row .rp-profile-rank > span{
-  padding-right:17px!important;
+/* Four-across only when the profile is physically wide enough to preserve it. */
+@media(min-width:520px){
+  .rp-profile-rating-row{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  }
+  .rp-profile-record{
+    grid-column:3 / 5!important;
+  }
 }
 
 @media(max-width:340px){
-  .rp-profile-rating-row{
-    grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,2.1fr)!important;
-    gap:5px!important;
-  }
-
+  .rp-profile-rating-row{gap:6px!important}
   .rp-profile-ovr,
   .rp-profile-rank,
-  .rp-profile-record{
-    min-height:86px!important;
-  }
-
+  .rp-profile-record{min-height:82px!important}
   .rp-profile-ovr,
-  .rp-profile-rank{
-    padding:8px 6px 9px!important;
-    border-radius:14px!important;
-  }
-
+  .rp-profile-rank{padding:9px 8px!important;border-radius:15px!important}
+  .rp-profile-record{column-gap:6px!important}
   .rp-profile-record::before,
   .rp-profile-record::after{
-    width:calc(50% - 2.5px)!important;
-    border-radius:14px!important;
+    width:calc(50% - 3px)!important;
+    border-radius:15px!important;
   }
-
   .rp-profile-rating-row .rp-profile-ovr > span,
   .rp-profile-rating-row .rp-profile-rank > span,
   .rp-profile-record > span:not(.rp-profile-win-rate-label),
   .rp-profile-record > .rp-profile-win-rate-label{
-    gap:4px!important;
-    font-size:.29rem!important;
-    letter-spacing:.035em!important;
+    gap:6px!important;
+    font-size:.35rem!important;
   }
-
   .rp-profile-rating-row .rp-profile-ovr > span::before,
   .rp-profile-rating-row .rp-profile-rank > span::before,
   .rp-profile-record > span:not(.rp-profile-win-rate-label)::before,
   .rp-profile-record > .rp-profile-win-rate-label::before{
-    width:20px;
-    height:20px;
-    flex-basis:20px;
-    font-size:.48rem;
+    width:30px!important;
+    height:30px!important;
+    flex-basis:30px!important;
+    font-size:.72rem!important;
   }
-
   .rp-profile-record > span:not(.rp-profile-win-rate-label),
-  .rp-profile-record > .rp-profile-win-rate-label{
-    padding:8px 5px 0 6px!important;
-  }
-
+  .rp-profile-record > .rp-profile-win-rate-label{padding:9px 8px 0!important}
   .rp-profile-rating-row .rp-profile-ovr > strong,
   .rp-profile-rating-row .rp-profile-rank > strong{
-    padding-left:24px!important;
-    font-size:1.02rem!important;
+    padding-left:36px!important;
+    font-size:1.25rem!important;
   }
-
   .rp-profile-record > strong:not(.rp-profile-win-rate),
   .rp-profile-record > .rp-profile-win-rate{
-    padding:0 5px 10px 30px!important;
-    font-size:.88rem!important;
-  }
-
-  .rp-profile-rating-row .rp-profile-rank .rp-rank-info,
-  .rp-profile-rating-row .rp-profile-rank [data-rp-rank-info]{
-    top:6px!important;
-    right:5px!important;
-    width:18px!important;
-    height:18px!important;
+    padding:0 6px 10px 44px!important;
+    font-size:1.08rem!important;
   }
 }
