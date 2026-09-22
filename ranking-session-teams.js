@@ -107,8 +107,10 @@
         ? `<button type="button" data-rp-team-visibility="open" data-team-id="${Number(team.id)}">MAKE OPEN</button>`
         : `<button class="secondary" type="button" data-rp-team-private data-team-id="${Number(team.id)}">MAKE PRIVATE</button>`);
     }
-    if (!mine && team.visibility === 'open' && !complete) {
-      footer.push(`<button type="button" data-rp-team-join="${Number(team.id)}" ${busy ? 'disabled' : ''}>JOIN TEAM</button>`);
+    if (!mine && !complete) {
+      footer.push(team.visibility === 'private'
+        ? `<button type="button" data-rp-team-join-private="${Number(team.id)}" ${busy ? 'disabled' : ''}>JOIN TEAM</button>`
+        : `<button type="button" data-rp-team-join="${Number(team.id)}" ${busy ? 'disabled' : ''}>JOIN TEAM</button>`);
     }
     if (!footer.length && yours) footer.push('<span class="rp-session-team-code">YOUR TEAM</span>');
 
@@ -147,9 +149,8 @@
     } else if (counts.full && !secured()) {
       actions = `<div class="rp-session-team-actions"><button class="rp-session-team-action primary" type="button" data-rp-team-standby ${busy ? 'disabled' : ''}>JOIN STANDBY</button></div>`;
     } else {
-      actions = `<div class="rp-session-team-actions">
+      actions = `<div class="rp-session-team-actions" style="grid-template-columns:1fr 1fr">
         <button class="rp-session-team-action primary" type="button" data-rp-team-create ${busy ? 'disabled' : ''}>CREATE TEAM</button>
-        <button class="rp-session-team-action" type="button" data-rp-team-code ${busy ? 'disabled' : ''}>JOIN WITH CODE</button>
         <button class="rp-session-team-action" type="button" data-rp-team-assign ${busy ? 'disabled' : ''}>ASSIGN ME</button>
       </div>`;
     }
@@ -159,7 +160,7 @@
         <div><small>BUILD YOUR RUN</small><h3>TEAM RESERVATION</h3></div>
         <div class="rp-session-teams-capacity"><strong>${counts.confirmed}/${counts.capacity} PLAYERS</strong><span>${sub}</span></div>
       </div>
-      <p class="rp-session-teams-intro">Create your team, join a private team with its 4-digit code, or let Real Play assign you to an open team that needs a player.</p>
+      <p class="rp-session-teams-intro">Create your team, tap Join Team on a listed team, or let Real Play assign you to an open team that needs a player.</p>
       ${actions}${note}
       ${teams.length ? `<div class="rp-session-team-list">${teams.map((team) => cardMarkup(team, mine)).join('')}</div>` : '<div class="rp-session-team-empty">NO TEAMS YET. CREATE THE FIRST TEAM OR TAP ASSIGN ME TO START AN OPEN ONE.</div>'}
       <p class="rp-session-team-status${messageType ? ` ${messageType}` : ''}" aria-live="polite">${esc(message || (busy ? 'UPDATING TEAM…' : ''))}</p>`;
@@ -277,11 +278,16 @@
     });
   }
 
-  function openCode() {
-    sheet(`${head('PRIVATE TEAM', 'JOIN WITH CODE')}
+  function openCode(teamId = null) {
+    const team = teamId ? (snapshot?.teams || []).find((item) => Number(item.id) === Number(teamId)) : null;
+    const title = team?.name ? `JOIN ${team.name}` : 'JOIN PRIVATE TEAM';
+    const note = team?.name
+      ? `Enter the 4-digit code shared for ${team.name}. Your session spot is secured when the join succeeds.`
+      : 'Enter the 4-digit code your teammate shared. Your session spot is secured when the join succeeds.';
+    sheet(`${head('PRIVATE TEAM', title)}
       <form data-team-code-form>
         <label class="rp-team-field code"><span>4-DIGIT TEAM CODE</span><input name="code" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" placeholder="1234" required></label>
-        <p class="rp-team-sheet-note">Enter the code your teammate shared. Your session spot is secured when the join succeeds.</p>
+        <p class="rp-team-sheet-note">${esc(note)}</p>
         <button class="rp-team-sheet-submit" type="submit">JOIN TEAM & SAVE MY SPOT</button>
       </form>`, (overlay) => {
       const form = overlay.querySelector('[data-team-code-form]');
@@ -290,7 +296,7 @@
         const code = String(form.elements.code.value || '').replace(/\D/g, '').slice(0, 4);
         if (!/^\d{4}$/.test(code)) return;
         const submit = form.querySelector('[type="submit"]'); submit.disabled = true;
-        if (await act({ action: 'join_code', code })) closeSheet(); else submit.disabled = false;
+        if (await act({ action: 'join_code', code, ...(team ? { teamId: Number(team.id) } : {}) })) closeSheet(); else submit.disabled = false;
       });
       window.setTimeout(() => form.elements.code.focus(), 80);
     });
@@ -321,9 +327,10 @@
     const el = event.target instanceof Element ? event.target : null;
     if (!el) return;
     if (el.closest('[data-rp-team-create]')) return void openCreate();
-    if (el.closest('[data-rp-team-code]')) return void openCode();
     if (el.closest('[data-rp-team-assign]')) return void act({ action: 'assign' });
     if (el.closest('[data-rp-team-standby]')) return void joinStandby();
+    const joinPrivate = el.closest('[data-rp-team-join-private]');
+    if (joinPrivate) return void openCode(Number(joinPrivate.dataset.rpTeamJoinPrivate));
     const join = el.closest('[data-rp-team-join]');
     if (join) return void act({ action: 'join_open', teamId: Number(join.dataset.rpTeamJoin) });
     const makePrivate = el.closest('[data-rp-team-private]');
