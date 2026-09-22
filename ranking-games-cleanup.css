@@ -13,9 +13,14 @@
 .rp-ranking-session .rp-ranking-secured-player.is-you,.rp-ranking-session .rp-ranking-secured-player.is-you:not(:disabled){border-color:rgba(114,239,196,.28);background:linear-gradient(105deg,rgba(7,30,30,.98),rgba(3,16,22,.99) 58%,rgba(5,27,30,.97))}
 .rp-ranking-session .rp-ranking-secured-name{color:#f7fbff}.rp-ranking-session .rp-ranking-secured-label{color:#6f8499}.rp-ranking-session .rp-ranking-secured-value{color:#dbe7f0}.rp-ranking-session .rp-ranking-secured-stat.is-ovr .rp-ranking-secured-value{color:#fff}.rp-ranking-session .rp-ranking-secured-stat.is-winrate .rp-ranking-secured-value{color:#72efc4}.rp-ranking-session .rp-ranking-secured-stat.is-top-stats .rp-ranking-secured-value{color:#8fdcf3}
 
-/* The player-facing session is the weekly Sunday Open Ranking. */
+/* Open Rank is now dedicated to session scheduling and reservation. */
 .rp-ranking-next .rp-ranking-section-head h2{visibility:hidden!important}
-.rp-ranking-next .rp-ranking-section-head h2::after{content:"SUNDAY OPEN RANKING";display:block;visibility:visible!important}
+.rp-ranking-next .rp-ranking-section-head h2::after{content:"TEAM RESERVATION";display:block;visibility:visible!important}
+
+/* The main section header now owns the Team Reservation title, so the
+ * nested team board keeps only capacity, instructions and actions. */
+.rp-session-teams-head>div:first-child{display:none!important}
+.rp-session-teams-head{justify-content:flex-end!important}
 
 /* The secured total already appears inside SECURED SPOTS. Do not render a
  * second 04/16 badge in the section header; it collides with the title/icon. */
