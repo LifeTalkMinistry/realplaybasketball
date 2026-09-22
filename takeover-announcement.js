@@ -19,10 +19,13 @@
     .rp-takeover::after{width:46vw;height:46vw;max-width:560px;max-height:560px;right:-18vw;bottom:-15vw;background:#ff294d;border-radius:50%}
     .rp-takeover-canvas{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;background:rgba(2,3,6,.46)}
     .rp-takeover-media{position:relative;z-index:1;display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:var(--rp-takeover-fit,contain);object-position:center;background:transparent}
-    .rp-takeover-close{position:absolute;z-index:4;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));width:48px;height:48px;border-radius:999px;border:1px solid rgba(255,255,255,.78);background:rgba(3,5,10,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;font-size:31px;line-height:1;display:grid;place-items:center;cursor:pointer;box-shadow:0 10px 32px rgba(0,0,0,.38)}
-    .rp-takeover-close:focus-visible{outline:3px solid #42d8ff;outline-offset:3px}
+    .rp-takeover-close{position:absolute;z-index:5;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));width:48px;height:48px;border-radius:999px;border:1px solid rgba(255,255,255,.78);background:rgba(3,5,10,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;font-size:31px;line-height:1;display:grid;place-items:center;cursor:pointer;box-shadow:0 10px 32px rgba(0,0,0,.38)}
+    .rp-takeover-close:focus-visible,.rp-takeover-cta:focus-visible{outline:3px solid #42d8ff;outline-offset:3px}
     .rp-takeover-label{position:absolute;z-index:3;left:max(14px,env(safe-area-inset-left));top:max(18px,env(safe-area-inset-top));max-width:calc(100vw - 90px);padding:8px 12px;border-radius:999px;background:rgba(2,3,6,.64);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .rp-takeover-label[hidden]{display:none!important}
+    .rp-takeover-cta{position:absolute;z-index:5;left:50%;bottom:max(22px,calc(env(safe-area-inset-bottom) + 16px));transform:translateX(-50%);width:min(360px,calc(100vw - 36px));min-height:52px;padding:13px 22px;border:1px solid rgba(255,255,255,.34);border-radius:14px;background:linear-gradient(135deg,#176bff,#42d8ff);color:#03101b;font:inherit;font-size:.9rem;font-weight:950;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;box-shadow:0 14px 38px rgba(0,0,0,.42);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+    .rp-takeover-cta[hidden]{display:none!important}
+    .rp-takeover-cta:active{transform:translateX(-50%) translateY(1px)}
     .rp-takeover-fallback{position:relative;z-index:2;display:none;text-align:center;padding:28px;max-width:520px}
     .rp-takeover-fallback.show{display:block}
     .rp-takeover-fallback strong{display:block;font-size:clamp(1.7rem,7vw,3rem);font-style:italic;letter-spacing:.02em}
@@ -55,7 +58,7 @@
     .rp-takeover-deactivate-btn{grid-column:1/-1;background:rgba(255,41,77,.08);color:#ff7187;border-color:rgba(255,41,77,.28)!important}
     .rp-takeover-status{min-height:20px;margin:2px 0 0;color:#9aa9bc;font-size:.76rem;line-height:1.45}
     .rp-takeover-status.ok{color:#6ee7b7}.rp-takeover-status.error{color:#ff8798}
-    @media(max-width:560px){.rp-takeover-grid,.rp-takeover-actions{grid-template-columns:1fr}.rp-takeover-deactivate-btn{grid-column:auto}.rp-takeover-close{width:46px;height:46px}}
+    @media(max-width:560px){.rp-takeover-grid,.rp-takeover-actions{grid-template-columns:1fr}.rp-takeover-deactivate-btn{grid-column:auto}.rp-takeover-close{width:46px;height:46px}.rp-takeover-cta{bottom:max(16px,calc(env(safe-area-inset-bottom) + 12px));min-height:50px}}
   `;
   document.head.appendChild(style);
 
@@ -73,6 +76,7 @@
     <div class="rp-takeover-canvas" role="dialog" aria-modal="true" aria-label="Real Play announcement">
       <span class="rp-takeover-label" data-rp-takeover-label hidden></span>
       <button class="rp-takeover-close" type="button" data-rp-takeover-close aria-label="Close announcement">×</button>
+      <button class="rp-takeover-cta" type="button" data-rp-takeover-cta>I Understand</button>
       <div class="rp-takeover-fallback" data-rp-takeover-fallback><strong>REAL PLAY</strong><span>ANNOUNCEMENT MEDIA UNAVAILABLE</span></div>
     </div>
   `;
@@ -80,6 +84,7 @@
 
   const canvas = takeover.querySelector('.rp-takeover-canvas');
   const closeButton = takeover.querySelector('[data-rp-takeover-close]');
+  const ctaButton = takeover.querySelector('[data-rp-takeover-cta]');
   const labelNode = takeover.querySelector('[data-rp-takeover-label]');
   const fallbackNode = takeover.querySelector('[data-rp-takeover-fallback]');
 
@@ -93,7 +98,7 @@
         <button class="rp-takeover-admin-back" type="button" data-rp-takeover-admin-back aria-label="Back to settings">←</button>
         <div><small>ADMIN · FULL-SCREEN CANVAS</small><h2>TAKEOVER ANNOUNCEMENT</h2></div>
       </header>
-      <p class="rp-takeover-admin-note">The frontend canvas is ready now. Publishing will become live as soon as the backend endpoint stores the media and returns the active takeover payload.</p>
+      <p class="rp-takeover-admin-note">Upload the announcement creative, choose how it fits the screen, and set the acknowledgement button text shown at the bottom.</p>
       <form class="rp-takeover-admin-form" data-rp-takeover-form>
         <label class="rp-takeover-field"><span>Campaign / Version ID</span><input type="text" data-rp-takeover-id placeholder="example: september-special-01" maxlength="120"></label>
         <div class="rp-takeover-grid">
@@ -104,6 +109,7 @@
         <label class="rp-takeover-field"><span>Or Media URL</span><input type="url" data-rp-takeover-url placeholder="https://..."></label>
         <label class="rp-takeover-field"><span>Small Label (optional)</span><input type="text" data-rp-takeover-label-input placeholder="ANNOUNCEMENT" maxlength="60"></label>
         <label class="rp-takeover-field"><span>Accessibility Description</span><input type="text" data-rp-takeover-alt placeholder="Describe the announcement image or video" maxlength="180"></label>
+        <label class="rp-takeover-field"><span>CTA Button Text</span><input type="text" data-rp-takeover-cta-input placeholder="I Understand" maxlength="80"></label>
         <div class="rp-takeover-grid">
           <label class="rp-takeover-toggle"><span>Active</span><input type="checkbox" data-rp-takeover-active checked></label>
           <label class="rp-takeover-toggle"><span>Loop Video</span><input type="checkbox" data-rp-takeover-loop checked></label>
@@ -128,6 +134,7 @@
   const urlInput = admin.querySelector('[data-rp-takeover-url]');
   const labelInput = admin.querySelector('[data-rp-takeover-label-input]');
   const altInput = admin.querySelector('[data-rp-takeover-alt]');
+  const ctaInput = admin.querySelector('[data-rp-takeover-cta-input]');
   const activeInput = admin.querySelector('[data-rp-takeover-active]');
   const loopInput = admin.querySelector('[data-rp-takeover-loop]');
   const previewBox = admin.querySelector('[data-rp-takeover-preview-box]');
@@ -170,6 +177,7 @@
       label: clean(source.label ?? source.kicker, 60),
       alt: clean(source.alt ?? source.description, 180) || 'Real Play announcement',
       loop: bool(source.loop, true),
+      ctaText: clean(source.ctaText ?? source.cta_text, 80) || 'I Understand',
     };
   }
 
@@ -242,6 +250,10 @@
       labelNode.textContent = item.label || '';
       labelNode.hidden = !item.label;
     }
+    if (ctaButton) {
+      ctaButton.textContent = item.ctaText || 'I Understand';
+      ctaButton.hidden = false;
+    }
     takeover.classList.add('open');
     takeover.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-takeover-open');
@@ -267,14 +279,21 @@
   }
 
   closeButton?.addEventListener('click', close);
+  ctaButton?.addEventListener('click', close);
   takeover.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       event.preventDefault();
       return;
     }
     if (event.key === 'Tab') {
+      const focusable = [closeButton, ctaButton].filter((node) => node && !node.hidden);
+      if (!focusable.length) return;
       event.preventDefault();
-      closeButton?.focus({ preventScroll: true });
+      const currentIndex = focusable.indexOf(document.activeElement);
+      const nextIndex = event.shiftKey
+        ? (currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1)
+        : (currentIndex < 0 || currentIndex === focusable.length - 1 ? 0 : currentIndex + 1);
+      focusable[nextIndex]?.focus({ preventScroll: true });
     }
   });
   takeover.addEventListener('pointerdown', (event) => {
@@ -323,6 +342,7 @@
       label: clean(labelInput?.value, 60),
       alt: clean(altInput?.value, 180) || 'Real Play announcement',
       loop: Boolean(loopInput?.checked),
+      ctaText: clean(ctaInput?.value, 80) || 'I Understand',
     };
   }
 
@@ -357,6 +377,7 @@
     if (urlInput) urlInput.value = item.mediaUrl || '';
     if (labelInput) labelInput.value = item.label || '';
     if (altInput) altInput.value = item.alt === 'Real Play announcement' ? '' : item.alt || '';
+    if (ctaInput) ctaInput.value = item.ctaText || 'I Understand';
     if (activeInput) activeInput.checked = item.active !== false;
     if (loopInput) loopInput.checked = item.loop !== false;
     if (fileInput) fileInput.value = '';
@@ -369,7 +390,8 @@
       const response = await fetch(PUBLIC_ENDPOINT, { headers: { Accept: 'application/json' }, cache: 'no-store' });
       if (!response.ok) {
         if (idInput && !idInput.value) idInput.value = `announcement-${new Date().toISOString().slice(0,10)}`;
-        setStatus('No backend takeover endpoint yet. You can still prepare and preview the creative here.');
+        if (ctaInput && !ctaInput.value) ctaInput.value = 'I Understand';
+        setStatus('Unable to load the current takeover. You can still prepare and preview the creative here.');
         renderInlinePreview();
         return;
       }
@@ -377,7 +399,8 @@
       fillForm(data);
       setStatus('Current takeover loaded.', 'ok');
     } catch (_error) {
-      setStatus('Backend is not connected yet. The editor and preview are ready.');
+      if (ctaInput && !ctaInput.value) ctaInput.value = 'I Understand';
+      setStatus('Unable to load the current takeover right now. The editor and preview are still available.');
     }
   }
 
@@ -442,6 +465,7 @@
     body.set('label', draft.label);
     body.set('alt', draft.alt);
     body.set('loop', draft.loop ? 'true' : 'false');
+    body.set('ctaText', draft.ctaText);
     if (file) body.set('media', file, file.name);
     else body.set('mediaUrl', clean(urlInput.value, 1600));
 
@@ -455,7 +479,7 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         if (response.status === 404 || response.status === 405) {
-          setStatus('UI is complete; backend publishing is not connected yet.', 'error');
+          setStatus('Takeover publishing endpoint is unavailable right now.', 'error');
           return;
         }
         throw new Error(data?.message || `Publish failed (${response.status}).`);
@@ -485,7 +509,7 @@
       });
       if (!response.ok) {
         if (response.status === 404 || response.status === 405) {
-          setStatus('UI is complete; backend deactivation is not connected yet.', 'error');
+          setStatus('Takeover deactivation endpoint is unavailable right now.', 'error');
           return;
         }
         const data = await response.json().catch(() => ({}));
