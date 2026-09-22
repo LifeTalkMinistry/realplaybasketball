@@ -97,6 +97,11 @@
     const yours = Number(mine?.id || 0) === Number(team.id);
     const stateClass = complete ? 'complete' : team.visibility === 'private' ? 'private' : 'open';
     const stateText = complete ? 'COMPLETE' : team.visibility === 'private' ? 'PRIVATE TEAM · CODE REQUIRED' : 'OPEN TEAM · ANYONE CAN JOIN';
+    const titleMeta = complete
+      ? ''
+      : team.visibility === 'private'
+        ? `<button type="button" class="rp-session-team-lock" data-rp-team-private-info="${Number(team.id)}" aria-label="Why is this team private?" title="Why is this team private?">🔒</button>`
+        : '<span class="rp-session-team-inline-note">(Anyone can join)</span>';
     const footer = [];
 
     if (team.isCreator && team.visibility === 'private' && team.joinCode) {
@@ -116,7 +121,7 @@
 
     return `<article class="rp-session-team-card${yours ? ' is-yours' : ''}${complete ? ' is-complete' : ''}">
       <div class="rp-session-team-card-head">
-        <div class="rp-session-team-name"><strong>${esc(team.name || 'TEAM')}</strong><span class="${stateClass}">${team.visibility === 'private' && !complete ? '🔒 ' : ''}${stateText}</span></div>
+        <div class="rp-session-team-name"><strong>${esc(team.name || 'TEAM')}${titleMeta}</strong><span class="${stateClass}">${stateText}</span></div>
         <div class="rp-session-team-count"><b>${count}</b>/${TEAM_SIZE}</div>
       </div>
       <div class="rp-session-team-members">${memberMarkup(team)}</div>
@@ -290,6 +295,22 @@
     });
   }
 
+  function openPrivateTeamInfo(teamId) {
+    const team = (snapshot?.teams || []).find((item) => Number(item.id) === Number(teamId));
+    if (!team) return;
+    const members = Array.isArray(team.members) ? team.members : [];
+    const creator = members.find((member) => Boolean(member?.isCreator ?? member?.is_creator));
+    const creatorName = creator?.name || 'the team creator';
+
+    sheet(`${head('TEAM RESERVATION', 'PRIVATE TEAM')}
+      <p class="rp-team-sheet-note"><strong>Created by ${esc(creatorName)}</strong><br><br>This team is locked because the creator made it private.<br><br>If you want to join, connect with <strong>${esc(creatorName)}</strong> and ask for the 4-digit team code. You can message them through Real Play chat to get the code.</p>
+      <button class="rp-team-sheet-submit" type="button" data-rp-private-info-confirm>GOT IT</button>`, (overlay) => {
+      const confirm = overlay.querySelector('[data-rp-private-info-confirm]');
+      confirm?.addEventListener('click', closeSheet);
+      window.setTimeout(() => confirm?.focus(), 80);
+    });
+  }
+
   function openCode(teamId = null) {
     const team = teamId ? (snapshot?.teams || []).find((item) => Number(item.id) === Number(teamId)) : null;
     const title = team?.name ? `JOIN ${team.name}` : 'JOIN PRIVATE TEAM';
@@ -341,6 +362,8 @@
     if (el.closest('[data-rp-team-create]')) return void openCreate();
     if (el.closest('[data-rp-team-random]')) return void openRandomTeam();
     if (el.closest('[data-rp-team-standby]')) return void joinStandby();
+    const privateInfo = el.closest('[data-rp-team-private-info]');
+    if (privateInfo) return void openPrivateTeamInfo(Number(privateInfo.dataset.rpTeamPrivateInfo));
     const joinPrivate = el.closest('[data-rp-team-join-private]');
     if (joinPrivate) return void openCode(Number(joinPrivate.dataset.rpTeamJoinPrivate));
     const join = el.closest('[data-rp-team-join]');
