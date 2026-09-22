@@ -208,3 +208,130 @@
   line-height:inherit;
   vertical-align:baseline;
 }
+
+/* Interactive team header metadata. */
+.rp-session-team-name strong{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.rp-session-team-name:has(>span.open) strong::after,
+.rp-session-team-name:has(>span.private) strong::after{
+  content:none!important;
+}
+.rp-session-team-inline-note{
+  display:inline!important;
+  margin:0!important;
+  color:#69dff6!important;
+  font-family:inherit!important;
+  font-size:1em!important;
+  font-style:inherit!important;
+  font-weight:inherit!important;
+  letter-spacing:inherit!important;
+  line-height:inherit!important;
+  text-transform:none!important;
+  white-space:nowrap;
+}
+.rp-session-team-lock{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  width:24px;
+  height:24px;
+  margin:0;
+  padding:0;
+  border:1px solid rgba(246,198,75,.24);
+  border-radius:50%;
+  background:rgba(246,198,75,.07);
+  color:#f6c64b;
+  font:inherit;
+  font-size:.78em;
+  font-style:normal;
+  line-height:1;
+  cursor:pointer;
+  appearance:none;
+  -webkit-appearance:none;
+  transition:transform .14s ease,border-color .14s ease,background .14s ease;
+}
+.rp-session-team-lock:hover{
+  border-color:rgba(246,198,75,.42);
+  background:rgba(246,198,75,.12);
+}
+.rp-session-team-lock:active{transform:scale(.94)}
+
+/* Private-team explanation uses the same centered premium treatment as Random Team. */
+.rp-team-sheet-overlay:has([data-rp-private-info-confirm]){
+  align-items:center;
+  padding:22px 18px;
+  background:rgba(0,4,9,.84);
+  backdrop-filter:blur(14px) saturate(115%);
+  -webkit-backdrop-filter:blur(14px) saturate(115%);
+}
+.rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet{
+  width:min(calc(100% - 8px),480px);
+  max-height:min(78vh,560px);
+  box-sizing:border-box;
+  overflow:auto;
+  padding:26px 24px 24px;
+  border:1px solid rgba(78,213,244,.30);
+  border-radius:24px;
+  background:
+    radial-gradient(circle at 50% -28%,rgba(59,209,243,.13),transparent 44%),
+    linear-gradient(180deg,#071721 0%,#040d14 55%,#03090e 100%);
+  box-shadow:0 30px 90px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.045);
+  transform:translateY(16px) scale(.97);
+}
+.rp-team-sheet-overlay.is-open:has([data-rp-private-info-confirm]) .rp-team-sheet{
+  transform:translateY(0) scale(1);
+}
+.rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet-grab{display:none}
+.rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet-head{
+  align-items:flex-start;
+  margin-bottom:18px;
+}
+.rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet-head small{
+  margin-bottom:7px;
+  font-size:.52rem;
+  letter-spacing:.14em;
+}
+.rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet-head h3{
+  font-size:1.62rem;
+  letter-spacing:.025em;
+}
+.rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet-close{
+  width:40px;
+  height:40px;
+  flex:0 0 40px;
+  border-color:rgba(103,171,199,.20);
+  background:rgba(255,255,255,.035);
+  color:#c7d8e2;
+}
+.rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet-note{
+  margin:0;
+  color:#9aafbd;
+  font:700 .76rem/1.62 Arial,sans-serif;
+  letter-spacing:.005em;
+}
+.rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet-note strong{
+  color:#eef9ff;
+  font-weight:900;
+}
+.rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet-submit{
+  min-height:54px;
+  margin-top:22px;
+  border-radius:13px;
+  border-color:rgba(77,218,249,.45);
+  background:linear-gradient(180deg,rgba(10,78,101,.96),rgba(4,37,53,.99));
+  box-shadow:0 12px 28px rgba(9,101,131,.16),inset 0 1px 0 rgba(255,255,255,.05);
+  color:#82eaff;
+  font-size:.68rem;
+  letter-spacing:.085em;
+}
+@media(max-width:390px){
+  .rp-team-sheet-overlay:has([data-rp-private-info-confirm]){padding:18px 14px}
+  .rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet{width:100%;padding:23px 20px 21px;border-radius:22px}
+  .rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet-head h3{font-size:1.42rem}
+  .rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet-note{font-size:.72rem;line-height:1.58}
+  .rp-team-sheet-overlay:has([data-rp-private-info-confirm]) .rp-team-sheet-submit{min-height:52px}
+}
