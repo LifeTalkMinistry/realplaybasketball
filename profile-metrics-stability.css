@@ -60,3 +60,10 @@
   content:none!important;
   display:none!important;
 }
+
+/* Keep the profile hero focused on the primary OVR, rank, and record values. */
+.rp-profile-rating-row .rp-profile-ovr > small,
+.rp-profile-rating-row .rp-profile-rank > small,
+.rp-profile-rating-row .rp-profile-record > small{
+  display:none!important;
+}
