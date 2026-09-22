@@ -172,3 +172,24 @@
   .rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet-note{font-size:.72rem;line-height:1.58}
   .rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet-submit{min-height:52px}
 }
+
+/* Compact team headers: availability is shown beside the team name instead of
+ * on a second metadata row. */
+.rp-session-team-name>span{display:none!important}
+.rp-session-team-name:has(>span.open) strong::after{
+  content:" (Anyone can join)";
+  color:#69dff6;
+  font-family:Arial,sans-serif;
+  font-size:.48em;
+  font-style:normal;
+  font-weight:800;
+  letter-spacing:.01em;
+  text-transform:none;
+}
+.rp-session-team-name:has(>span.private) strong::after{
+  content:" \1F512";
+  font-family:Arial,sans-serif;
+  font-size:.70em;
+  font-style:normal;
+  text-transform:none;
+}
