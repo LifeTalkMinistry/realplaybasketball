@@ -118,3 +118,76 @@ body.rp-settings-open{overflow:hidden}
   .rp-settings-identity-copy>span{font-size:.7rem}
 }
 @media(min-width:700px){.rp-settings-overlay{align-items:center}}
+
+/* Full-screen announcement: premium centered takeover card instead of a screen-filling canvas. */
+.rp-takeover{
+  box-sizing:border-box!important;
+  padding:max(18px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))!important;
+  background:rgba(0,3,8,.74)!important;
+  backdrop-filter:blur(8px) saturate(.9)!important;
+  -webkit-backdrop-filter:blur(8px) saturate(.9)!important;
+}
+.rp-takeover.open{
+  display:grid!important;
+  place-items:center!important;
+}
+.rp-takeover::before,.rp-takeover::after{
+  opacity:.16!important;
+}
+.rp-takeover-canvas{
+  position:relative!important;
+  inset:auto!important;
+  width:min(90vw,430px)!important;
+  height:min(78dvh,720px)!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  box-sizing:border-box!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  border-radius:24px!important;
+  background:#03060b!important;
+  box-shadow:0 26px 80px rgba(0,0,0,.64),0 0 0 1px rgba(66,216,255,.05) inset!important;
+}
+.rp-takeover-media{
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:var(--rp-takeover-fit,contain)!important;
+  object-position:center!important;
+  background:#03060b!important;
+}
+.rp-takeover-close{
+  top:14px!important;
+  right:14px!important;
+  width:44px!important;
+  height:44px!important;
+  border-color:rgba(255,255,255,.72)!important;
+  background:rgba(3,5,10,.78)!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.34)!important;
+}
+.rp-takeover-label{
+  top:14px!important;
+  left:14px!important;
+  max-width:calc(100% - 86px)!important;
+}
+.rp-takeover-fallback{
+  padding:24px!important;
+}
+@media(max-width:480px){
+  .rp-takeover-canvas{
+    width:min(91vw,410px)!important;
+    height:min(76dvh,680px)!important;
+    border-radius:21px!important;
+  }
+}
+@media(max-height:700px){
+  .rp-takeover{
+    padding-block:12px!important;
+  }
+  .rp-takeover-canvas{
+    height:82dvh!important;
+  }
+}
