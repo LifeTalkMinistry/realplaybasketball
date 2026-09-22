@@ -83,6 +83,20 @@
     );
   }
 
+  function playerRankingStatus(player) {
+    const value = String(
+      player?.rankingStatus
+      || player?.competitiveStatus
+      || player?.ranking?.rankingStatus
+      || player?.ranking?.status
+      || ''
+    ).trim().toLowerCase();
+    if (value === 'inactive' || player?.inactive === true) return 'inactive';
+    if (value === 'ranked') return 'ranked';
+    if (value === 'unranked') return 'unranked';
+    return rankingEligible(player) ? 'ranked' : 'unranked';
+  }
+
   function updateIdentity(player) {
     const activeSheet = sheet();
     if (!activeSheet || !player) return;
@@ -92,8 +106,13 @@
     const status = String(player.status || player.memberStatus || player.accountStatus || 'active').toUpperCase();
     const ovr = player.ovr === null || player.ovr === undefined ? null : Number(player.ovr);
     const rank = Number(player.rank || 0);
-    const ranked = rankingEligible(player) && Number.isFinite(rank) && rank > 0;
-    const rankLabel = ranked ? `RANK #${rank}` : 'UNRANKED';
+    const competitiveStatus = playerRankingStatus(player);
+    const ranked = competitiveStatus === 'ranked' && rankingEligible(player) && Number.isFinite(rank) && rank > 0;
+    const rankLabel = competitiveStatus === 'inactive'
+      ? 'INACTIVE'
+      : ranked
+        ? `RANK #${rank}`
+        : 'UNRANKED';
     const ovrLabel = Number.isFinite(ovr) ? ` · ${ovr} OVR` : '';
     identityStatus.textContent = `${status} · ${rankLabel}${ovrLabel}`;
   }
@@ -107,6 +126,8 @@
     updateIdentity(player);
 
     const manuallyUnranked = Boolean(player.manualUnranked);
+    const inactive = playerRankingStatus(player) === 'inactive';
+    if (inactive && !manuallyUnranked) return;
     if (!manuallyUnranked && !rankingEligible(player)) return;
 
     const button = document.createElement('button');
@@ -176,8 +197,8 @@
 
     const approved = window.confirm(
       restoring
-        ? `Remove the manual unrank override for ${playerName}? Their existing OVR and game history stay unchanged. Their current Rank will still follow the normal activity rules.`
-        : `Make ${playerName} UNRANKED? ${ovrText} Only their official Rank is removed.`
+        ? `Remove the manual unrank override for ${playerName}? Their existing OVR and game history stay unchanged. Their current status will still follow the normal activity rules.`
+        : `Make ${playerName} UNRANKED manually? ${ovrText} This is separate from the automatic INACTIVE status.`
     );
     if (!approved) return;
 
@@ -202,6 +223,7 @@
 
       try { window.RealPlayPlayerAdmin?.refresh?.(); } catch (_error) {}
       try { window.RealPlayPlayers?.refresh?.(); } catch (_error) {}
+      try { window.RealPlayInactivePlayers?.refresh?.(); } catch (_error) {}
     } catch (error) {
       button.disabled = false;
       button.textContent = oldText;
@@ -210,4 +232,14 @@
   }, true);
 
   queueEnhance();
+})();
+
+(() => {
+  if (document.querySelector('script[data-rp-inactive-player-state-loader]')) return;
+  const script = document.createElement('script');
+  script.dataset.rpInactivePlayerStateLoader = '1';
+  script.src = 'real-play-inactive-player-state.js?v=20260922-inactive-player-state-v1';
+  script.async = false;
+  script.onerror = () => console.error('[Real Play] Inactive player state controls failed to load.');
+  document.head.appendChild(script);
 })();
