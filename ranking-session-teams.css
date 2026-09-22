@@ -193,3 +193,18 @@
   font-style:normal;
   text-transform:none;
 }
+
+/* Keep the inline team qualifier visually aligned with the team name. */
+.rp-session-team-name:has(>span.open) strong::after{
+  font-family:inherit;
+  font-size:1em;
+  font-style:inherit;
+  font-weight:inherit;
+  line-height:inherit;
+  vertical-align:baseline;
+}
+.rp-session-team-name:has(>span.private) strong::after{
+  font-size:1em;
+  line-height:inherit;
+  vertical-align:baseline;
+}
