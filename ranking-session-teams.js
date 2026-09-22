@@ -2,7 +2,7 @@
   if (window.__realPlaySessionTeamsInstalled) return;
   window.__realPlaySessionTeamsInstalled = true;
 
-  const API_BASE_URL = 'https://api.clarapmc.com';
+  const API = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
   const TEAM_SIZE = 4;
   const POLL_MS = 4000;
@@ -12,31 +12,22 @@
   let roster = null;
   let loading = false;
   let busy = false;
-  let pollTimer = null;
-  let statusMessage = '';
-  let statusType = '';
+  let message = '';
+  let messageType = '';
 
-  function token() {
-    return localStorage.getItem(TOKEN_KEY) || '';
-  }
-
-  function escapeHtml(value) {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
+  const authToken = () => localStorage.getItem(TOKEN_KEY) || '';
+  const esc = (value) => String(value ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 
   async function api(path, options = {}) {
-    const auth = token();
-    if (!auth) throw new Error('Sign in to reserve a team.');
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    const token = authToken();
+    if (!token) throw new Error('Sign in to reserve a team.');
+    const response = await fetch(`${API}${path}`, {
       method: options.method || 'GET',
       headers: {
         Accept: 'application/json',
-        Authorization: `Bearer ${auth}`,
+        Authorization: `Bearer ${token}`,
         ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       },
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
@@ -52,289 +43,177 @@
     return data;
   }
 
-  function rankingView() {
-    return document.querySelector('[data-rp-ranking-games]');
-  }
-
-  function rankingSection() {
-    return rankingView()?.querySelector('.rp-ranking-next') || null;
-  }
-
-  function isViewOpen() {
-    const view = rankingView();
-    return Boolean(view && (view.classList.contains('open') || view.getAttribute('aria-hidden') === 'false'));
+  function view() { return document.querySelector('[data-rp-ranking-games]'); }
+  function section() { return view()?.querySelector('.rp-ranking-next') || null; }
+  function viewIsOpen() {
+    const node = view();
+    return Boolean(node && (node.classList.contains('open') || node.getAttribute('aria-hidden') === 'false'));
   }
 
   function ensureBoard() {
     if (board?.isConnected) return board;
-    const section = rankingSection();
-    const sessionCard = section?.querySelector('[data-rp-ranking-session]');
-    if (!section || !sessionCard) return null;
-
+    const host = section();
+    const card = host?.querySelector('[data-rp-ranking-session]');
+    if (!host || !card) return null;
     board = document.createElement('section');
     board.className = 'rp-session-teams';
     board.dataset.rpSessionTeams = 'true';
     board.hidden = true;
-    sessionCard.insertAdjacentElement('afterend', board);
+    card.insertAdjacentElement('afterend', board);
     return board;
   }
 
-  function currentTeam() {
+  function players() { return Array.isArray(roster?.players) ? roster.players : []; }
+  function standbyPlayers() { return Array.isArray(roster?.standbyPlayers) ? roster.standbyPlayers : []; }
+  function isYou(player) { return Boolean(player?.isYou ?? player?.is_you); }
+  function secured() { return players().some(isYou); }
+  function standby() { return standbyPlayers().some(isYou); }
+  function myTeam() {
     const id = Number(snapshot?.myTeamId || 0);
     return (snapshot?.teams || []).find((team) => Number(team.id) === id) || null;
   }
-
-  function rosterPlayers() {
-    return Array.isArray(roster?.players) ? roster.players : [];
-  }
-
-  function standbyPlayers() {
-    return Array.isArray(roster?.standbyPlayers) ? roster.standbyPlayers : [];
-  }
-
-  function isYou(player) {
-    return Boolean(player?.isYou ?? player?.is_you);
-  }
-
-  function userIsSecured() {
-    return rosterPlayers().some(isYou);
-  }
-
-  function userIsStandby() {
-    return standbyPlayers().some(isYou);
-  }
-
-  function counts() {
+  function tally() {
     const capacity = Number(roster?.capacity ?? snapshot?.session?.capacity ?? 16) || 16;
     const confirmed = Number(roster?.confirmedCount ?? roster?.confirmed_count ?? 0) || 0;
-    const standby = Number(roster?.standbyCount ?? roster?.standby_count ?? standbyPlayers().length) || 0;
-    return {
-      capacity,
-      confirmed,
-      standby,
-      spotsLeft: Math.max(0, capacity - confirmed),
-      full: confirmed >= capacity,
-    };
+    const standbyCount = Number(roster?.standbyCount ?? roster?.standby_count ?? standbyPlayers().length) || 0;
+    return { capacity, confirmed, standbyCount, full: confirmed >= capacity, left: Math.max(0, capacity - confirmed) };
   }
 
-  function setStatus(message = '', type = '') {
-    statusMessage = String(message || '');
-    statusType = type;
-    render();
-  }
-
-  function teamMemberMarkup(team) {
+  function memberMarkup(team) {
     const members = Array.isArray(team.members) ? team.members.slice(0, TEAM_SIZE) : [];
-    const items = [];
-
-    members.forEach((member) => {
-      const tag = member.isYou ? 'YOU' : member.isCreator ? 'CREATOR' : '';
-      items.push(`
-        <div class="rp-session-team-member">
-          <strong>${escapeHtml(member.name || 'REAL PLAY PLAYER')}</strong>
-          ${tag ? `<em>${tag}</em>` : ''}
-        </div>`);
+    const html = members.map((member) => {
+      const label = member.isYou ? 'YOU' : member.isCreator ? 'CREATOR' : '';
+      return `<div class="rp-session-team-member"><strong>${esc(member.name || 'REAL PLAY PLAYER')}</strong>${label ? `<em>${label}</em>` : ''}</div>`;
     });
-
-    for (let index = members.length; index < TEAM_SIZE; index += 1) {
-      items.push(`
-        <div class="rp-session-team-member empty">
-          <strong>${team.visibility === 'private' ? 'INVITED SPOT' : 'OPEN SPOT'}</strong>
-        </div>`);
+    while (html.length < TEAM_SIZE) {
+      html.push(`<div class="rp-session-team-member empty"><strong>${team.visibility === 'private' ? 'INVITED SPOT' : 'OPEN SPOT'}</strong></div>`);
     }
-
-    return items.join('');
+    return html.join('');
   }
 
-  function teamCardMarkup(team, myTeam) {
+  function cardMarkup(team, mine) {
     const count = Math.min(TEAM_SIZE, Number(team.memberCount ?? team.members?.length ?? 0) || 0);
     const complete = count >= TEAM_SIZE;
-    const yours = Number(myTeam?.id || 0) === Number(team.id);
-    const canJoin = !myTeam && team.visibility === 'open' && !complete;
+    const yours = Number(mine?.id || 0) === Number(team.id);
     const stateClass = complete ? 'complete' : team.visibility === 'private' ? 'private' : 'open';
     const stateText = complete ? 'COMPLETE' : team.visibility === 'private' ? 'PRIVATE TEAM · CODE REQUIRED' : 'OPEN TEAM · ANYONE CAN JOIN';
-    const footerParts = [];
+    const footer = [];
 
     if (team.isCreator && team.visibility === 'private' && team.joinCode) {
-      footerParts.push(`<div class="rp-session-team-code">TEAM CODE <b>${escapeHtml(team.joinCode)}</b></div>`);
+      footer.push(`<div class="rp-session-team-code">TEAM CODE <b>${esc(team.joinCode)}</b></div>`);
     }
-
     if (team.isCreator && !complete) {
-      if (team.visibility === 'private') {
-        footerParts.push(`<button type="button" data-rp-team-visibility="open" data-team-id="${Number(team.id)}">MAKE OPEN</button>`);
-      } else {
-        footerParts.push(`<button class="secondary" type="button" data-rp-team-private data-team-id="${Number(team.id)}">MAKE PRIVATE</button>`);
-      }
+      footer.push(team.visibility === 'private'
+        ? `<button type="button" data-rp-team-visibility="open" data-team-id="${Number(team.id)}">MAKE OPEN</button>`
+        : `<button class="secondary" type="button" data-rp-team-private data-team-id="${Number(team.id)}">MAKE PRIVATE</button>`);
     }
-
-    if (canJoin) {
-      footerParts.push(`<button type="button" data-rp-team-join="${Number(team.id)}" ${busy ? 'disabled' : ''}>JOIN TEAM</button>`);
+    if (!mine && team.visibility === 'open' && !complete) {
+      footer.push(`<button type="button" data-rp-team-join="${Number(team.id)}" ${busy ? 'disabled' : ''}>JOIN TEAM</button>`);
     }
+    if (!footer.length && yours) footer.push('<span class="rp-session-team-code">YOUR TEAM</span>');
 
-    if (!footerParts.length && yours) {
-      footerParts.push('<span class="rp-session-team-code">YOUR TEAM</span>');
-    }
-
-    return `
-      <article class="rp-session-team-card${yours ? ' is-yours' : ''}${complete ? ' is-complete' : ''}">
-        <div class="rp-session-team-card-head">
-          <div class="rp-session-team-name">
-            <strong>${escapeHtml(team.name || 'TEAM')}</strong>
-            <span class="${stateClass}">${team.visibility === 'private' && !complete ? '🔒 ' : ''}${stateText}</span>
-          </div>
-          <div class="rp-session-team-count"><b>${count}</b>/${TEAM_SIZE}</div>
-        </div>
-        <div class="rp-session-team-members">${teamMemberMarkup(team)}</div>
-        ${footerParts.length ? `<div class="rp-session-team-card-foot">${footerParts.join('')}</div>` : ''}
-      </article>`;
+    return `<article class="rp-session-team-card${yours ? ' is-yours' : ''}${complete ? ' is-complete' : ''}">
+      <div class="rp-session-team-card-head">
+        <div class="rp-session-team-name"><strong>${esc(team.name || 'TEAM')}</strong><span class="${stateClass}">${team.visibility === 'private' && !complete ? '🔒 ' : ''}${stateText}</span></div>
+        <div class="rp-session-team-count"><b>${count}</b>/${TEAM_SIZE}</div>
+      </div>
+      <div class="rp-session-team-members">${memberMarkup(team)}</div>
+      ${footer.length ? `<div class="rp-session-team-card-foot">${footer.join('')}</div>` : ''}
+    </article>`;
   }
 
   function render() {
     const node = ensureBoard();
-    const section = rankingSection();
-    if (!node || !section) return;
-
+    const host = section();
+    if (!node || !host) return;
     if (!snapshot?.session) {
       node.hidden = true;
-      section.classList.remove('rp-team-reservation-enabled');
+      host.classList.remove('rp-team-reservation-enabled');
       return;
     }
 
-    section.classList.add('rp-team-reservation-enabled');
+    host.classList.add('rp-team-reservation-enabled');
     node.hidden = false;
-
-    const tally = counts();
-    const myTeam = currentTeam();
-    const isSecured = userIsSecured();
-    const isStandby = userIsStandby();
+    const counts = tally();
+    const mine = myTeam();
     const teams = Array.isArray(snapshot.teams) ? snapshot.teams : [];
 
     let actions = '';
-    let myNote = '';
-
-    if (myTeam) {
-      myNote = `<p class="rp-session-team-my-note">YOUR TEAM · ${escapeHtml(myTeam.name)} · ${Number(myTeam.memberCount || 0)}/${TEAM_SIZE}</p>`;
-    } else if (isStandby && !isSecured) {
-      myNote = '<p class="rp-session-team-my-note">YOU’RE ON STANDBY. IF A SESSION SPOT OPENS, YOU’LL MOVE IN AUTOMATICALLY.</p>';
-    } else if (tally.full && !isSecured) {
-      actions = `
-        <div class="rp-session-team-actions">
-          <button class="rp-session-team-action primary" type="button" data-rp-team-standby ${busy ? 'disabled' : ''}>JOIN STANDBY</button>
-        </div>`;
+    let note = '';
+    if (mine) {
+      note = `<p class="rp-session-team-my-note">YOUR TEAM · ${esc(mine.name)} · ${Number(mine.memberCount || 0)}/${TEAM_SIZE}</p>`;
+    } else if (standby() && !secured()) {
+      note = '<p class="rp-session-team-my-note">YOU’RE ON STANDBY. IF A SESSION SPOT OPENS, YOU’LL MOVE IN AUTOMATICALLY.</p>';
+    } else if (counts.full && !secured()) {
+      actions = `<div class="rp-session-team-actions"><button class="rp-session-team-action primary" type="button" data-rp-team-standby ${busy ? 'disabled' : ''}>JOIN STANDBY</button></div>`;
     } else {
-      actions = `
-        <div class="rp-session-team-actions">
-          <button class="rp-session-team-action primary" type="button" data-rp-team-create ${busy ? 'disabled' : ''}>CREATE TEAM</button>
-          <button class="rp-session-team-action" type="button" data-rp-team-code ${busy ? 'disabled' : ''}>JOIN WITH CODE</button>
-          <button class="rp-session-team-action" type="button" data-rp-team-assign ${busy ? 'disabled' : ''}>ASSIGN ME</button>
-        </div>`;
+      actions = `<div class="rp-session-team-actions">
+        <button class="rp-session-team-action primary" type="button" data-rp-team-create ${busy ? 'disabled' : ''}>CREATE TEAM</button>
+        <button class="rp-session-team-action" type="button" data-rp-team-code ${busy ? 'disabled' : ''}>JOIN WITH CODE</button>
+        <button class="rp-session-team-action" type="button" data-rp-team-assign ${busy ? 'disabled' : ''}>ASSIGN ME</button>
+      </div>`;
     }
 
-    const capacityLabel = tally.full
-      ? `${tally.confirmed}/${tally.capacity} PLAYERS`
-      : `${tally.confirmed}/${tally.capacity} PLAYERS`;
-    const capacitySub = tally.full
-      ? (tally.standby > 0 ? `FULL · ${tally.standby} STANDBY` : 'SESSION FULL')
-      : `${tally.spotsLeft} SPOT${tally.spotsLeft === 1 ? '' : 'S'} LEFT`;
-
-    node.innerHTML = `
-      <div class="rp-session-teams-head">
-        <div>
-          <small>BUILD YOUR RUN</small>
-          <h3>TEAM RESERVATION</h3>
-        </div>
-        <div class="rp-session-teams-capacity">
-          <strong>${capacityLabel}</strong>
-          <span>${capacitySub}</span>
-        </div>
+    const sub = counts.full ? (counts.standbyCount ? `FULL · ${counts.standbyCount} STANDBY` : 'SESSION FULL') : `${counts.left} SPOT${counts.left === 1 ? '' : 'S'} LEFT`;
+    node.innerHTML = `<div class="rp-session-teams-head">
+        <div><small>BUILD YOUR RUN</small><h3>TEAM RESERVATION</h3></div>
+        <div class="rp-session-teams-capacity"><strong>${counts.confirmed}/${counts.capacity} PLAYERS</strong><span>${sub}</span></div>
       </div>
       <p class="rp-session-teams-intro">Create your team, join a private team with its 4-digit code, or let Real Play assign you to an open team that needs a player.</p>
-      ${actions}
-      ${myNote}
-      ${teams.length
-        ? `<div class="rp-session-team-list">${teams.map((team) => teamCardMarkup(team, myTeam)).join('')}</div>`
-        : '<div class="rp-session-team-empty">NO TEAMS YET. CREATE THE FIRST TEAM OR TAP ASSIGN ME TO START AN OPEN ONE.</div>'}
-      <p class="rp-session-team-status${statusType ? ` ${statusType}` : ''}" aria-live="polite">${escapeHtml(statusMessage || (busy ? 'UPDATING TEAM…' : ''))}</p>
-    `;
+      ${actions}${note}
+      ${teams.length ? `<div class="rp-session-team-list">${teams.map((team) => cardMarkup(team, mine)).join('')}</div>` : '<div class="rp-session-team-empty">NO TEAMS YET. CREATE THE FIRST TEAM OR TAP ASSIGN ME TO START AN OPEN ONE.</div>'}
+      <p class="rp-session-team-status${messageType ? ` ${messageType}` : ''}" aria-live="polite">${esc(message || (busy ? 'UPDATING TEAM…' : ''))}</p>`;
   }
 
   async function loadRoster() {
-    try {
-      roster = await api('/api/real-play/career/session-roster');
-    } catch (_error) {
-      roster = null;
-    }
+    try { roster = await api('/api/real-play/career/session-roster'); }
+    catch (_error) { roster = null; }
   }
 
   async function refresh({ quiet = false } = {}) {
-    if (loading || busy || !token()) return;
-    if (!ensureBoard()) return;
+    if (loading || busy || !authToken() || !ensureBoard()) return;
     loading = true;
     try {
-      const data = await api('/api/real-play/career/session-teams');
-      snapshot = data || null;
+      snapshot = await api('/api/real-play/career/session-teams');
       await loadRoster();
-      if (!quiet) {
-        statusMessage = '';
-        statusType = '';
-      }
+      if (!quiet) { message = ''; messageType = ''; }
       render();
     } catch (error) {
-      if (error.status === 401) return;
-      // Do not hide the original reservation UI unless the new backend is live.
-      rankingSection()?.classList.remove('rp-team-reservation-enabled');
+      if (error.status !== 401 && !quiet) console.warn('[Real Play] Team reservation unavailable.', error);
+      section()?.classList.remove('rp-team-reservation-enabled');
       if (board) board.hidden = true;
-      if (!quiet) console.warn('[Real Play] Team reservation unavailable.', error);
-    } finally {
-      loading = false;
-    }
+    } finally { loading = false; }
   }
 
-  async function postTeamAction(body) {
+  async function act(body) {
     if (busy) return false;
-    busy = true;
-    statusMessage = '';
-    statusType = '';
-    render();
+    busy = true; message = ''; messageType = ''; render();
     try {
-      const data = await api('/api/real-play/career/session-teams', {
-        method: 'POST',
-        body,
-      });
-      snapshot = data || snapshot;
+      snapshot = await api('/api/real-play/career/session-teams', { method: 'POST', body });
       await loadRoster();
-      statusMessage = data?.message || 'TEAM UPDATED.';
-      statusType = 'success';
+      message = snapshot?.message || 'TEAM UPDATED.';
+      messageType = 'success';
       try { window.dispatchEvent(new CustomEvent('realplay:ranking-session-changed')); } catch (_error) {}
       return true;
     } catch (error) {
-      statusMessage = error.message || 'Unable to update your team.';
-      statusType = 'error';
+      message = error.message || 'Unable to update your team.';
+      messageType = 'error';
       await loadRoster();
       return false;
-    } finally {
-      busy = false;
-      render();
-    }
+    } finally { busy = false; render(); }
   }
 
   async function joinStandby() {
     if (busy) return;
-    busy = true;
-    render();
+    busy = true; render();
     try {
-      const data = await api('/api/real-play/career/access', { method: 'POST', body: {} });
-      statusMessage = data?.message || 'YOU ARE ON STANDBY.';
-      statusType = data?.entry?.status === 'secured' ? 'success' : '';
+      const result = await api('/api/real-play/career/access', { method: 'POST', body: {} });
+      message = result?.message || 'STANDBY UPDATED.';
+      messageType = result?.entry?.status === 'secured' ? 'success' : '';
       await loadRoster();
       try { window.dispatchEvent(new CustomEvent('realplay:ranking-session-changed')); } catch (_error) {}
-    } catch (error) {
-      statusMessage = error.message || 'Unable to join standby.';
-      statusType = 'error';
-    } finally {
-      busy = false;
-      render();
-    }
+    } catch (error) { message = error.message || 'Unable to join standby.'; messageType = 'error'; }
+    finally { busy = false; render(); }
   }
 
   function closeSheet() {
@@ -345,228 +224,126 @@
     window.setTimeout(() => overlay.remove(), 180);
   }
 
-  function mountSheet(innerHtml, onMount) {
+  function head(kicker, title) {
+    return `<div class="rp-team-sheet-grab" aria-hidden="true"></div><div class="rp-team-sheet-head"><div><small>${esc(kicker)}</small><h3>${esc(title)}</h3></div><button class="rp-team-sheet-close" type="button" aria-label="Close" data-rp-team-sheet-close>×</button></div>`;
+  }
+
+  function sheet(html, setup) {
     document.querySelector('[data-rp-team-sheet]')?.remove();
     const overlay = document.createElement('div');
     overlay.className = 'rp-team-sheet-overlay';
     overlay.dataset.rpTeamSheet = 'true';
     overlay.setAttribute('aria-hidden', 'true');
-    overlay.innerHTML = `<section class="rp-team-sheet" role="dialog" aria-modal="true">${innerHtml}</section>`;
+    overlay.innerHTML = `<section class="rp-team-sheet" role="dialog" aria-modal="true">${html}</section>`;
     document.body.appendChild(overlay);
     overlay.querySelector('[data-rp-team-sheet-close]')?.addEventListener('click', closeSheet);
-    overlay.addEventListener('click', (event) => {
-      if (event.target === overlay) closeSheet();
-    });
-    onMount?.(overlay);
-    requestAnimationFrame(() => {
-      overlay.setAttribute('aria-hidden', 'false');
-      overlay.classList.add('is-open');
-    });
-    return overlay;
+    overlay.addEventListener('click', (event) => { if (event.target === overlay) closeSheet(); });
+    setup?.(overlay);
+    requestAnimationFrame(() => { overlay.setAttribute('aria-hidden', 'false'); overlay.classList.add('is-open'); });
   }
 
-  function sheetHead(kicker, title) {
-    return `
-      <div class="rp-team-sheet-grab" aria-hidden="true"></div>
-      <div class="rp-team-sheet-head">
-        <div><small>${escapeHtml(kicker)}</small><h3>${escapeHtml(title)}</h3></div>
-        <button class="rp-team-sheet-close" type="button" aria-label="Close" data-rp-team-sheet-close>×</button>
-      </div>`;
-  }
-
-  function openCreateSheet() {
-    const overlay = mountSheet(`
-      ${sheetHead('SUNDAY OPEN RANK', 'CREATE TEAM')}
-      <form data-rp-team-create-form>
-        <label class="rp-team-field">
-          <span>TEAM NAME</span>
-          <input name="name" maxlength="24" autocomplete="off" placeholder="e.g. RAVENS" required />
-        </label>
+  function openCreate() {
+    sheet(`${head('SUNDAY OPEN RANK', 'CREATE TEAM')}
+      <form data-team-create-form>
+        <label class="rp-team-field"><span>TEAM NAME</span><input name="name" maxlength="24" autocomplete="off" placeholder="e.g. RAVENS" required></label>
         <div class="rp-team-visibility" role="group" aria-label="Who can join">
-          <button type="button" class="is-selected" data-rp-team-visibility-choice="open">OPEN TEAM<br><small>ANYONE CAN JOIN</small></button>
-          <button type="button" data-rp-team-visibility-choice="private">PRIVATE TEAM<br><small>4-DIGIT CODE</small></button>
+          <button type="button" class="is-selected" data-choice="open">OPEN TEAM<br><small>ANYONE CAN JOIN</small></button>
+          <button type="button" data-choice="private">PRIVATE TEAM<br><small>4-DIGIT CODE</small></button>
         </div>
-        <label class="rp-team-field code" data-rp-team-create-code hidden>
-          <span>CHOOSE YOUR 4-DIGIT CODE</span>
-          <input name="code" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" placeholder="1234" />
-        </label>
-        <p class="rp-team-sheet-note" data-rp-team-create-note>Open teams can be joined directly and can receive players who tap Assign Me.</p>
+        <label class="rp-team-field code" data-create-code hidden><span>CHOOSE YOUR 4-DIGIT CODE</span><input name="code" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" placeholder="1234"></label>
+        <p class="rp-team-sheet-note" data-create-note>Open teams can be joined directly and can receive players who tap Assign Me.</p>
         <button class="rp-team-sheet-submit" type="submit">CREATE TEAM & SAVE MY SPOT</button>
-      </form>`,
-      (sheet) => {
-        let visibility = 'open';
-        const form = sheet.querySelector('[data-rp-team-create-form]');
-        const codeField = sheet.querySelector('[data-rp-team-create-code]');
-        const codeInput = form?.elements?.code;
-        const note = sheet.querySelector('[data-rp-team-create-note]');
-
-        sheet.querySelectorAll('[data-rp-team-visibility-choice]').forEach((button) => {
-          button.addEventListener('click', () => {
-            visibility = button.dataset.rpTeamVisibilityChoice === 'private' ? 'private' : 'open';
-            sheet.querySelectorAll('[data-rp-team-visibility-choice]').forEach((item) => {
-              item.classList.toggle('is-selected', item === button);
-            });
-            const isPrivate = visibility === 'private';
-            codeField.hidden = !isPrivate;
-            if (codeInput) codeInput.required = isPrivate;
-            if (note) note.textContent = isPrivate
-              ? 'Only players who know this 4-digit code can join your team.'
-              : 'Open teams can be joined directly and can receive players who tap Assign Me.';
-          });
-        });
-
-        form?.addEventListener('submit', async (event) => {
-          event.preventDefault();
-          const name = String(form.elements.name?.value || '').trim();
-          const code = String(form.elements.code?.value || '').replace(/\D/g, '').slice(0, 4);
-          const submit = form.querySelector('[type="submit"]');
-          if (visibility === 'private' && !/^\d{4}$/.test(code)) {
-            form.elements.code?.focus();
-            return;
-          }
-          if (submit) submit.disabled = true;
-          const ok = await postTeamAction({ action: 'create', name, visibility, code });
-          if (ok) closeSheet();
-          else if (submit) submit.disabled = false;
-        });
-
-        window.setTimeout(() => form?.elements?.name?.focus(), 80);
-      }
-    );
-    return overlay;
+      </form>`, (overlay) => {
+      let visibility = 'open';
+      const form = overlay.querySelector('[data-team-create-form]');
+      const codeWrap = overlay.querySelector('[data-create-code]');
+      const note = overlay.querySelector('[data-create-note]');
+      overlay.querySelectorAll('[data-choice]').forEach((button) => button.addEventListener('click', () => {
+        visibility = button.dataset.choice === 'private' ? 'private' : 'open';
+        overlay.querySelectorAll('[data-choice]').forEach((item) => item.classList.toggle('is-selected', item === button));
+        codeWrap.hidden = visibility !== 'private';
+        form.elements.code.required = visibility === 'private';
+        note.textContent = visibility === 'private' ? 'Only players who know this 4-digit code can join your team.' : 'Open teams can be joined directly and can receive players who tap Assign Me.';
+      }));
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const name = String(form.elements.name.value || '').trim();
+        const code = String(form.elements.code.value || '').replace(/\D/g, '').slice(0, 4);
+        if (visibility === 'private' && !/^\d{4}$/.test(code)) return form.elements.code.focus();
+        const submit = form.querySelector('[type="submit"]'); submit.disabled = true;
+        if (await act({ action: 'create', name, visibility, code })) closeSheet(); else submit.disabled = false;
+      });
+      window.setTimeout(() => form.elements.name.focus(), 80);
+    });
   }
 
-  function openJoinCodeSheet() {
-    mountSheet(`
-      ${sheetHead('PRIVATE TEAM', 'JOIN WITH CODE')}
-      <form data-rp-team-code-form>
-        <label class="rp-team-field code">
-          <span>4-DIGIT TEAM CODE</span>
-          <input name="code" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" placeholder="1234" required />
-        </label>
-        <p class="rp-team-sheet-note">Enter the code your teammate shared with you. Your session spot is secured when the join succeeds.</p>
+  function openCode() {
+    sheet(`${head('PRIVATE TEAM', 'JOIN WITH CODE')}
+      <form data-team-code-form>
+        <label class="rp-team-field code"><span>4-DIGIT TEAM CODE</span><input name="code" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" placeholder="1234" required></label>
+        <p class="rp-team-sheet-note">Enter the code your teammate shared. Your session spot is secured when the join succeeds.</p>
         <button class="rp-team-sheet-submit" type="submit">JOIN TEAM & SAVE MY SPOT</button>
-      </form>`,
-      (sheet) => {
-        const form = sheet.querySelector('[data-rp-team-code-form]');
-        form?.addEventListener('submit', async (event) => {
-          event.preventDefault();
-          const code = String(form.elements.code?.value || '').replace(/\D/g, '').slice(0, 4);
-          if (!/^\d{4}$/.test(code)) return;
-          const submit = form.querySelector('[type="submit"]');
-          if (submit) submit.disabled = true;
-          const ok = await postTeamAction({ action: 'join_code', code });
-          if (ok) closeSheet();
-          else if (submit) submit.disabled = false;
-        });
-        window.setTimeout(() => form?.elements?.code?.focus(), 80);
-      }
-    );
+      </form>`, (overlay) => {
+      const form = overlay.querySelector('[data-team-code-form]');
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const code = String(form.elements.code.value || '').replace(/\D/g, '').slice(0, 4);
+        if (!/^\d{4}$/.test(code)) return;
+        const submit = form.querySelector('[type="submit"]'); submit.disabled = true;
+        if (await act({ action: 'join_code', code })) closeSheet(); else submit.disabled = false;
+      });
+      window.setTimeout(() => form.elements.code.focus(), 80);
+    });
   }
 
-  function openMakePrivateSheet(teamId) {
+  function openPrivate(teamId) {
     const team = (snapshot?.teams || []).find((item) => Number(item.id) === Number(teamId));
     if (!team) return;
-    mountSheet(`
-      ${sheetHead('TEAM ACCESS', 'MAKE PRIVATE')}
-      <form data-rp-team-private-form>
-        <label class="rp-team-field code">
-          <span>CHOOSE A 4-DIGIT CODE</span>
-          <input name="code" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" placeholder="1234" required />
-        </label>
+    sheet(`${head('TEAM ACCESS', 'MAKE PRIVATE')}
+      <form data-team-private-form>
+        <label class="rp-team-field code"><span>CHOOSE A 4-DIGIT CODE</span><input name="code" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" placeholder="1234" required></label>
         <p class="rp-team-sheet-note">Once private, only players with this code can fill the remaining spots.</p>
-        <button class="rp-team-sheet-submit" type="submit">MAKE ${escapeHtml(team.name)} PRIVATE</button>
-      </form>`,
-      (sheet) => {
-        const form = sheet.querySelector('[data-rp-team-private-form]');
-        form?.addEventListener('submit', async (event) => {
-          event.preventDefault();
-          const code = String(form.elements.code?.value || '').replace(/\D/g, '').slice(0, 4);
-          if (!/^\d{4}$/.test(code)) return;
-          const submit = form.querySelector('[type="submit"]');
-          if (submit) submit.disabled = true;
-          const ok = await postTeamAction({ action: 'set_visibility', teamId: Number(teamId), visibility: 'private', code });
-          if (ok) closeSheet();
-          else if (submit) submit.disabled = false;
-        });
-        window.setTimeout(() => form?.elements?.code?.focus(), 80);
-      }
-    );
+        <button class="rp-team-sheet-submit" type="submit">MAKE ${esc(team.name)} PRIVATE</button>
+      </form>`, (overlay) => {
+      const form = overlay.querySelector('[data-team-private-form]');
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const code = String(form.elements.code.value || '').replace(/\D/g, '').slice(0, 4);
+        if (!/^\d{4}$/.test(code)) return;
+        const submit = form.querySelector('[type="submit"]'); submit.disabled = true;
+        if (await act({ action: 'set_visibility', teamId: Number(teamId), visibility: 'private', code })) closeSheet(); else submit.disabled = false;
+      });
+      window.setTimeout(() => form.elements.code.focus(), 80);
+    });
   }
 
   document.addEventListener('click', (event) => {
-    const element = event.target instanceof Element ? event.target : null;
-    if (!element) return;
-
-    if (element.closest('[data-rp-team-create]')) {
-      event.preventDefault();
-      openCreateSheet();
-      return;
-    }
-    if (element.closest('[data-rp-team-code]')) {
-      event.preventDefault();
-      openJoinCodeSheet();
-      return;
-    }
-    if (element.closest('[data-rp-team-assign]')) {
-      event.preventDefault();
-      postTeamAction({ action: 'assign' });
-      return;
-    }
-    if (element.closest('[data-rp-team-standby]')) {
-      event.preventDefault();
-      joinStandby();
-      return;
-    }
-
-    const join = element.closest('[data-rp-team-join]');
-    if (join) {
-      event.preventDefault();
-      postTeamAction({ action: 'join_open', teamId: Number(join.dataset.rpTeamJoin) });
-      return;
-    }
-
-    const makePrivate = element.closest('[data-rp-team-private]');
-    if (makePrivate) {
-      event.preventDefault();
-      openMakePrivateSheet(Number(makePrivate.dataset.teamId));
-      return;
-    }
-
-    const visibility = element.closest('[data-rp-team-visibility]');
-    if (visibility) {
-      event.preventDefault();
-      postTeamAction({
-        action: 'set_visibility',
-        teamId: Number(visibility.dataset.teamId),
-        visibility: visibility.dataset.rpTeamVisibility === 'private' ? 'private' : 'open',
-      });
-    }
+    const el = event.target instanceof Element ? event.target : null;
+    if (!el) return;
+    if (el.closest('[data-rp-team-create]')) return void openCreate();
+    if (el.closest('[data-rp-team-code]')) return void openCode();
+    if (el.closest('[data-rp-team-assign]')) return void act({ action: 'assign' });
+    if (el.closest('[data-rp-team-standby]')) return void joinStandby();
+    const join = el.closest('[data-rp-team-join]');
+    if (join) return void act({ action: 'join_open', teamId: Number(join.dataset.rpTeamJoin) });
+    const makePrivate = el.closest('[data-rp-team-private]');
+    if (makePrivate) return void openPrivate(Number(makePrivate.dataset.teamId));
+    const visibility = el.closest('[data-rp-team-visibility]');
+    if (visibility) return void act({ action: 'set_visibility', teamId: Number(visibility.dataset.teamId), visibility: visibility.dataset.rpTeamVisibility });
   });
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && document.querySelector('[data-rp-team-sheet]')) closeSheet();
-  });
-
-  window.addEventListener('realplay:ranking-session-changed', () => {
-    window.setTimeout(() => refresh({ quiet: true }), 120);
-  });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeSheet(); });
+  window.addEventListener('realplay:ranking-session-changed', () => window.setTimeout(() => refresh({ quiet: true }), 120));
   window.addEventListener('realplay:app-ready', () => refresh({ quiet: true }));
-  window.addEventListener('storage', (event) => {
-    if (event.key === TOKEN_KEY) refresh({ quiet: true });
+  window.addEventListener('storage', (event) => { if (event.key === TOKEN_KEY) refresh({ quiet: true }); });
+
+  const mountObserver = new MutationObserver(() => {
+    if (board?.isConnected) return;
+    if (ensureBoard() && authToken()) refresh({ quiet: true });
   });
+  mountObserver.observe(document.documentElement, { childList: true, subtree: true });
 
-  const observer = new MutationObserver(() => {
-    if (!ensureBoard()) return;
-    if (token()) refresh({ quiet: true });
-  });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-
-  pollTimer = window.setInterval(() => {
-    if (!token() || !isViewOpen()) return;
-    refresh({ quiet: true });
-  }, POLL_MS);
-
+  window.setInterval(() => { if (authToken() && viewIsOpen()) refresh({ quiet: true }); }, POLL_MS);
   ensureBoard();
-  if (token()) refresh({ quiet: true });
+  if (authToken()) refresh({ quiet: true });
 })();
