@@ -97,3 +97,78 @@
   .rp-team-sheet{border-bottom:1px solid rgba(69,211,245,.28);border-radius:24px}
 }
 @media(prefers-reduced-motion:reduce){.rp-team-sheet-overlay,.rp-team-sheet{transition:none!important}}
+
+/* Random Team is a deliberate confirmation, not a bottom sheet. Keep the other
+ * create/join sheets unchanged while presenting this one as a centered modal. */
+.rp-team-sheet-overlay:has([data-rp-random-confirm]){
+  align-items:center;
+  padding:22px 18px;
+  background:rgba(0,4,9,.84);
+  backdrop-filter:blur(14px) saturate(115%);
+  -webkit-backdrop-filter:blur(14px) saturate(115%);
+}
+.rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet{
+  width:min(calc(100% - 8px),480px);
+  max-height:min(78vh,560px);
+  box-sizing:border-box;
+  overflow:auto;
+  padding:26px 24px 24px;
+  border:1px solid rgba(78,213,244,.30);
+  border-radius:24px;
+  background:
+    radial-gradient(circle at 50% -28%,rgba(59,209,243,.13),transparent 44%),
+    linear-gradient(180deg,#071721 0%,#040d14 55%,#03090e 100%);
+  box-shadow:0 30px 90px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.045);
+  transform:translateY(16px) scale(.97);
+}
+.rp-team-sheet-overlay.is-open:has([data-rp-random-confirm]) .rp-team-sheet{
+  transform:translateY(0) scale(1);
+}
+.rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet-grab{
+  display:none;
+}
+.rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet-head{
+  align-items:flex-start;
+  margin-bottom:18px;
+}
+.rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet-head small{
+  margin-bottom:7px;
+  font-size:.52rem;
+  letter-spacing:.14em;
+}
+.rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet-head h3{
+  font-size:1.62rem;
+  letter-spacing:.025em;
+}
+.rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet-close{
+  width:40px;
+  height:40px;
+  flex:0 0 40px;
+  border-color:rgba(103,171,199,.20);
+  background:rgba(255,255,255,.035);
+  color:#c7d8e2;
+}
+.rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet-note{
+  margin:0;
+  color:#9aafbd;
+  font:700 .76rem/1.62 Arial,sans-serif;
+  letter-spacing:.005em;
+}
+.rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet-submit{
+  min-height:54px;
+  margin-top:22px;
+  border-radius:13px;
+  border-color:rgba(77,218,249,.45);
+  background:linear-gradient(180deg,rgba(10,78,101,.96),rgba(4,37,53,.99));
+  box-shadow:0 12px 28px rgba(9,101,131,.16),inset 0 1px 0 rgba(255,255,255,.05);
+  color:#82eaff;
+  font-size:.68rem;
+  letter-spacing:.085em;
+}
+@media(max-width:390px){
+  .rp-team-sheet-overlay:has([data-rp-random-confirm]){padding:18px 14px}
+  .rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet{width:100%;padding:23px 20px 21px;border-radius:22px}
+  .rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet-head h3{font-size:1.42rem}
+  .rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet-note{font-size:.72rem;line-height:1.58}
+  .rp-team-sheet-overlay:has([data-rp-random-confirm]) .rp-team-sheet-submit{min-height:52px}
+}
