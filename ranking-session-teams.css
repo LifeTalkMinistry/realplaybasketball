@@ -1,0 +1,99 @@
+.rp-ranking-next.rp-team-reservation-enabled [data-rp-ranking-session-action],
+.rp-ranking-next.rp-team-reservation-enabled [data-rp-spot-priority],
+.rp-ranking-next.rp-team-reservation-enabled [data-rp-ranking-access-summary],
+.rp-ranking-next.rp-team-reservation-enabled [data-rp-ranking-secured],
+.rp-ranking-next.rp-team-reservation-enabled [data-rp-ranking-standby-roster],
+.rp-ranking-next.rp-team-reservation-enabled [data-rp-ranking-entry-actions]{
+  display:none!important;
+}
+
+.rp-session-teams{
+  margin-top:12px;
+  padding:13px;
+  border:1px solid rgba(65,207,242,.18);
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(5,17,27,.88),rgba(2,8,13,.96));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 10px 28px rgba(0,0,0,.18);
+  color:#eef8ff;
+}
+.rp-session-teams[hidden]{display:none!important}
+.rp-session-teams-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.rp-session-teams-head small{display:block;margin:0 0 4px;color:#60dcf5;font:950 .46rem/1 Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.rp-session-teams-head h3{margin:0;color:#f8fbff;font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);font-size:1.22rem;font-style:italic;font-weight:950;letter-spacing:.02em;line-height:1;text-transform:uppercase}
+.rp-session-teams-capacity{flex:0 0 auto;padding:7px 9px;border:1px solid rgba(83,218,249,.18);border-radius:10px;background:rgba(47,190,226,.06);text-align:right}
+.rp-session-teams-capacity strong{display:block;color:#eafaff;font:950 .72rem/1 Arial,sans-serif}
+.rp-session-teams-capacity span{display:block;margin-top:4px;color:#6f8da1;font:900 .40rem/1 Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.rp-session-teams-intro{margin:9px 0 0;color:#8196a7;font:650 .59rem/1.45 Arial,sans-serif}
+
+.rp-session-team-actions{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:7px;margin-top:12px}
+.rp-session-team-action{min-height:42px;padding:0 8px;border:1px solid rgba(79,154,193,.22);border-radius:11px;background:linear-gradient(180deg,rgba(8,25,38,.88),rgba(3,12,20,.96));color:#d9e8f2;font:950 .50rem/1 Arial,sans-serif;letter-spacing:.055em;text-transform:uppercase;cursor:pointer;appearance:none;-webkit-appearance:none}
+.rp-session-team-action.primary{border-color:rgba(69,216,250,.46);background:linear-gradient(180deg,rgba(9,60,80,.92),rgba(4,29,43,.98));color:#73e6ff;box-shadow:0 7px 20px rgba(20,171,214,.08)}
+.rp-session-team-action:disabled{opacity:.38;cursor:not-allowed}
+.rp-session-team-action:active:not(:disabled){transform:scale(.985)}
+.rp-session-team-my-note{margin:11px 0 0;padding:9px 10px;border:1px solid rgba(80,225,190,.18);border-radius:11px;background:rgba(26,119,97,.075);color:#8ee9d0;font:850 .55rem/1.4 Arial,sans-serif;text-align:center}
+
+.rp-session-team-list{display:grid;gap:9px;margin-top:12px}
+.rp-session-team-card{overflow:hidden;border:1px solid rgba(92,145,176,.16);border-radius:14px;background:linear-gradient(155deg,rgba(7,20,30,.96),rgba(3,10,16,.98))}
+.rp-session-team-card.is-yours{border-color:rgba(74,220,255,.42);box-shadow:inset 0 0 0 1px rgba(72,211,244,.055),0 8px 24px rgba(16,145,183,.07)}
+.rp-session-team-card.is-complete{border-color:rgba(82,223,179,.23)}
+.rp-session-team-card-head{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:11px 11px 8px}
+.rp-session-team-name{min-width:0}
+.rp-session-team-name strong{display:block;overflow:hidden;color:#f5fbff;font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);font-size:.93rem;font-style:italic;font-weight:950;line-height:1.05;letter-spacing:.02em;text-overflow:ellipsis;text-transform:uppercase;white-space:nowrap}
+.rp-session-team-name span{display:flex;align-items:center;gap:5px;margin-top:5px;color:#72899b;font:900 .43rem/1 Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.rp-session-team-name span.open{color:#69dff6}
+.rp-session-team-name span.private{color:#c5aee9}
+.rp-session-team-name span.complete{color:#79e3c1}
+.rp-session-team-count{flex:0 0 auto;color:#eaf7ff;font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);font-size:.98rem;font-style:italic;font-weight:950}
+.rp-session-team-count b{color:#65e2fa;font-weight:950}
+
+.rp-session-team-members{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 10px 10px}
+.rp-session-team-member{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:34px;padding:0 8px;border:1px solid rgba(103,150,178,.11);border-radius:9px;background:rgba(255,255,255,.018)}
+.rp-session-team-member strong{overflow:hidden;color:#dce9f2;font:850 .52rem/1 Arial,sans-serif;text-overflow:ellipsis;white-space:nowrap}
+.rp-session-team-member em{flex:0 0 auto;color:#56dff7;font:950 .36rem/1 Arial,sans-serif;font-style:normal;letter-spacing:.06em;text-transform:uppercase}
+.rp-session-team-member.empty{border-style:dashed;background:transparent}
+.rp-session-team-member.empty strong{color:#4e6474;font-weight:800}
+
+.rp-session-team-card-foot{display:flex;align-items:center;justify-content:flex-end;gap:7px;padding:9px 10px;border-top:1px solid rgba(96,147,174,.10);background:rgba(2,8,13,.36)}
+.rp-session-team-code{margin-right:auto;display:flex;align-items:center;gap:7px;color:#788fa1;font:850 .43rem/1 Arial,sans-serif;letter-spacing:.07em;text-transform:uppercase}
+.rp-session-team-code b{padding:5px 8px;border:1px solid rgba(189,153,235,.25);border-radius:7px;background:rgba(96,55,139,.11);color:#d8c3f5;font:950 .72rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.13em}
+.rp-session-team-card-foot button{min-height:32px;padding:0 10px;border:1px solid rgba(72,207,240,.24);border-radius:8px;background:rgba(8,40,55,.82);color:#71def5;font:950 .43rem/1 Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;appearance:none;-webkit-appearance:none}
+.rp-session-team-card-foot button.secondary{border-color:rgba(151,125,192,.20);background:rgba(51,31,75,.45);color:#c5b3df}
+.rp-session-team-card-foot button:disabled{opacity:.38;cursor:not-allowed}
+
+.rp-session-team-empty{margin-top:12px;padding:16px 12px;border:1px dashed rgba(78,151,184,.18);border-radius:13px;color:#637c8e;font:750 .55rem/1.45 Arial,sans-serif;text-align:center}
+.rp-session-team-status{min-height:18px;margin:10px 2px 0;color:#71899b;font:800 .50rem/1.4 Arial,sans-serif;text-align:center}
+.rp-session-team-status.success{color:#77e1c0}
+.rp-session-team-status.error{color:#ff8f9f}
+
+.rp-team-sheet-overlay{position:fixed;inset:0;z-index:2147483500;display:flex;align-items:flex-end;justify-content:center;padding:14px 10px 0;background:rgba(0,3,7,.78);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s ease,visibility .18s ease}
+.rp-team-sheet-overlay.is-open{opacity:1;visibility:visible;pointer-events:auto}
+.rp-team-sheet{width:min(100%,430px);padding:9px 14px calc(16px + env(safe-area-inset-bottom));border:1px solid rgba(69,211,245,.28);border-bottom:0;border-radius:24px 24px 0 0;background:linear-gradient(180deg,#071721,#03080d);box-shadow:0 -22px 65px rgba(0,0,0,.55);transform:translateY(24px);transition:transform .18s ease}
+.rp-team-sheet-overlay.is-open .rp-team-sheet{transform:translateY(0)}
+.rp-team-sheet-grab{width:50px;height:4px;margin:1px auto 9px;border-radius:999px;background:rgba(144,171,190,.32)}
+.rp-team-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}
+.rp-team-sheet-head small{display:block;margin-bottom:4px;color:#60dcf5;font:950 .44rem/1 Arial,sans-serif;letter-spacing:.11em;text-transform:uppercase}
+.rp-team-sheet-head h3{margin:0;color:#f7fbff;font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);font-size:1.18rem;font-style:italic;font-weight:950;line-height:1;text-transform:uppercase}
+.rp-team-sheet-close{width:36px;height:36px;padding:0;border:1px solid rgba(255,255,255,.11);border-radius:50%;background:rgba(255,255,255,.035);color:#b8c7d2;font:800 1rem/1 Arial,sans-serif;cursor:pointer}
+.rp-team-field{display:block;margin-top:10px}
+.rp-team-field span{display:block;margin:0 0 6px 2px;color:#748a9c;font:900 .43rem/1 Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.rp-team-field input{width:100%;box-sizing:border-box;min-height:46px;padding:0 12px;border:1px solid rgba(86,161,196,.22);border-radius:11px;background:#030b12;color:#eef9ff;outline:none;font:850 .78rem/1 Arial,sans-serif}
+.rp-team-field input:focus{border-color:rgba(73,216,249,.58);box-shadow:0 0 0 3px rgba(73,216,249,.07)}
+.rp-team-field.code input{text-align:center;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:1.3rem;letter-spacing:.25em}
+.rp-team-visibility{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+.rp-team-visibility button{min-height:50px;padding:7px;border:1px solid rgba(90,147,177,.18);border-radius:11px;background:rgba(4,14,22,.78);color:#71889a;font:950 .50rem/1.25 Arial,sans-serif;letter-spacing:.055em;text-transform:uppercase;cursor:pointer}
+.rp-team-visibility button.is-selected{border-color:rgba(71,215,248,.48);background:rgba(11,64,83,.72);color:#77e6fd}
+.rp-team-sheet-note{margin:10px 2px 0;color:#657c8e;font:700 .52rem/1.45 Arial,sans-serif}
+.rp-team-sheet-submit{width:100%;min-height:46px;margin-top:13px;border:1px solid rgba(74,221,253,.46);border-radius:11px;background:linear-gradient(180deg,rgba(9,67,87,.96),rgba(4,31,45,.99));color:#79e8ff;font:950 .57rem/1 Arial,sans-serif;letter-spacing:.075em;text-transform:uppercase;cursor:pointer}
+.rp-team-sheet-submit:disabled{opacity:.45;cursor:not-allowed}
+
+@media(max-width:390px){
+  .rp-session-teams{padding:11px}
+  .rp-session-team-actions{grid-template-columns:1fr 1fr}
+  .rp-session-team-action.primary{grid-column:1/-1}
+  .rp-session-team-members{grid-template-columns:1fr}
+}
+@media(min-width:700px){
+  .rp-team-sheet-overlay{align-items:center;padding:18px}
+  .rp-team-sheet{border-bottom:1px solid rgba(69,211,245,.28);border-radius:24px}
+}
+@media(prefers-reduced-motion:reduce){.rp-team-sheet-overlay,.rp-team-sheet{transition:none!important}}
