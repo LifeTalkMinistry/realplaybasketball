@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260921-takeover-ui-v114';
+  const version = '20260921-session-teams-v115';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -227,6 +227,7 @@
     'main-menu.css',
     'ranking-games.css',
     'ranking-games-cleanup.css',
+    'ranking-session-teams.css',
     'three-v-three-beta.css',
     'three-v-three-secure-spot.css',
     'three-v-three-refinement.css',
@@ -379,6 +380,7 @@
       'ranking-games-standby-players.js',
       'ranking-games-info-toggle.js',
       'ranking-games-session-cleanup.js',
+      'ranking-session-teams.js',
       'ranking-spot-priority.js',
       'ranking-reservation-snapshot.js',
       'overlay-focus-release.js',
