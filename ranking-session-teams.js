@@ -279,7 +279,7 @@
 
   function openRandomTeam() {
     sheet(`${head('TEAM RESERVATION', 'RANDOM TEAM')}
-      <p class="rp-team-sheet-note">Your session spot is already reserved. Random Team only decides where Real Play places you. If an open team is missing a player, you will automatically be added there. If no team currently needs a player, Real Play will place you into an open team so your reservation stays organized.</p>
+      <p class="rp-team-sheet-note">You’ll be placed in an Open Team with other players who don’t have a team yet.<br><br>If another team is short a player, Random Team players will be prioritized to fill those open spots first.<br><br>Any remaining Random Team players will stay together in the Open Team.</p>
       <button class="rp-team-sheet-submit" type="button" data-rp-random-confirm>I UNDERSTAND IT</button>`, (overlay) => {
       const confirm = overlay.querySelector('[data-rp-random-confirm]');
       confirm?.addEventListener('click', async () => {
