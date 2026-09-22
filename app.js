@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260921-session-teams-v115';
+  const version = '20260921-session-teams-v116';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
