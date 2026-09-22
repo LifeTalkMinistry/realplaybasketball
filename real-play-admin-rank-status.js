@@ -91,9 +91,11 @@
 
     const status = String(player.status || player.memberStatus || player.accountStatus || 'active').toUpperCase();
     const ovr = player.ovr === null || player.ovr === undefined ? null : Number(player.ovr);
-    if (player.manualUnranked) {
-      identityStatus.textContent = `${status} · UNRANKED${Number.isFinite(ovr) ? ` · ${ovr} OVR` : ''}`;
-    }
+    const rank = Number(player.rank || 0);
+    const ranked = rankingEligible(player) && Number.isFinite(rank) && rank > 0;
+    const rankLabel = ranked ? `RANK #${rank}` : 'UNRANKED';
+    const ovrLabel = Number.isFinite(ovr) ? ` · ${ovr} OVR` : '';
+    identityStatus.textContent = `${status} · ${rankLabel}${ovrLabel}`;
   }
 
   function renderRankAction(player) {
@@ -174,15 +176,15 @@
 
     const approved = window.confirm(
       restoring
-        ? `Restore ${playerName} to normal ranking eligibility? Their existing OVR and game history stay unchanged.`
-        : `Make ${playerName} UNRANKED because of inactivity? ${ovrText} Only their official Rank is removed.`
+        ? `Remove the manual unrank override for ${playerName}? Their existing OVR and game history stay unchanged. Their current Rank will still follow the normal activity rules.`
+        : `Make ${playerName} UNRANKED? ${ovrText} Only their official Rank is removed.`
     );
     if (!approved) return;
 
     button.disabled = true;
     const oldText = button.textContent;
     button.textContent = restoring ? 'RESTORING…' : 'MOVING TO UNRANKED…';
-    sheetStatus(restoring ? 'Restoring rank eligibility…' : 'Moving player to Unranked…');
+    sheetStatus(restoring ? 'Removing manual unrank override…' : 'Moving player to Unranked…');
 
     try {
       const data = await adminCall(action, {
@@ -196,7 +198,7 @@
         playerId: selectedPlayerId,
       };
       renderRankAction(selectedState);
-      sheetStatus(data?.message || (restoring ? 'Rank eligibility restored.' : 'Player is now Unranked.'), 'success');
+      sheetStatus(data?.message || (restoring ? 'Manual unrank override removed.' : 'Player is now Unranked.'), 'success');
 
       try { window.RealPlayPlayerAdmin?.refresh?.(); } catch (_error) {}
       try { window.RealPlayPlayers?.refresh?.(); } catch (_error) {}
