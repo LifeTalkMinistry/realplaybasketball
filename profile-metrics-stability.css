@@ -42,8 +42,9 @@
 /*
   Clean premium stat deck
   -----------------------
-  Four cards stay on one row. Decorative metric emblems are intentionally
-  removed so the labels and numbers carry the hierarchy by themselves.
+  Four cards stay on one row. Decorative metric emblems remain removed.
+  The label/value block is deliberately larger now so each card feels filled,
+  not like a small stat floating inside an oversized panel.
 */
 .rp-profile-rating-row{
   position:relative!important;
@@ -69,11 +70,13 @@
   position:relative!important;
   box-sizing:border-box!important;
   min-width:0!important;
-  min-height:82px!important;
-  padding:0!important;
+  min-height:88px!important;
+  padding:0 5px!important;
   overflow:hidden!important;
   display:grid!important;
-  grid-template-rows:auto minmax(0,1fr)!important;
+  grid-template-rows:auto auto!important;
+  align-content:center!important;
+  row-gap:6px!important;
   border:1px solid rgba(151,177,202,.19)!important;
   border-radius:15px!important;
   background:linear-gradient(145deg,rgba(14,25,38,.965),rgba(3,8,14,.985))!important;
@@ -98,14 +101,15 @@
   position:relative!important;
   box-sizing:border-box!important;
   min-width:0!important;
-  min-height:82px!important;
+  min-height:88px!important;
   padding:0!important;
   overflow:visible!important;
   display:grid!important;
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  grid-template-rows:auto minmax(0,1fr)!important;
+  grid-template-rows:auto auto!important;
+  align-content:center!important;
   column-gap:6px!important;
-  row-gap:0!important;
+  row-gap:6px!important;
   border:0!important;
   border-radius:0!important;
   background:transparent!important;
@@ -144,7 +148,7 @@
 .rp-profile-record:not(:has(.rp-profile-win-rate))::before{width:100%!important}
 .rp-profile-record:not(:has(.rp-profile-win-rate))::after{display:none!important}
 
-/* Remove the decorative circular emblems completely. */
+/* Decorative metric emblems stay completely removed. */
 .rp-profile-rating-row .rp-profile-ovr > span::before,
 .rp-profile-rating-row .rp-profile-rank > span::before,
 .rp-profile-record > span:not(.rp-profile-win-rate-label)::before,
@@ -153,7 +157,7 @@
   display:none!important;
 }
 
-/* Labels sit immediately above their values for a cleaner hierarchy. */
+/* Larger label block: still restrained, but no longer lost inside the card. */
 .rp-profile-rating-row .rp-profile-ovr > span,
 .rp-profile-rating-row .rp-profile-rank > span,
 .rp-profile-record > span:not(.rp-profile-win-rate-label),
@@ -162,13 +166,13 @@
   z-index:2!important;
   min-width:0!important;
   margin:0!important;
-  padding:34px 4px 0!important;
+  padding:0 3px!important;
   display:block!important;
   color:#8998aa!important;
-  font-size:.32rem!important;
+  font-size:.39rem!important;
   font-weight:950!important;
   line-height:1!important;
-  letter-spacing:.065em!important;
+  letter-spacing:.06em!important;
   text-transform:uppercase!important;
   white-space:nowrap!important;
   text-align:center!important;
@@ -177,6 +181,7 @@
 .rp-profile-record > span:not(.rp-profile-win-rate-label){grid-column:1!important;grid-row:1!important}
 .rp-profile-record > .rp-profile-win-rate-label{grid-column:2!important;grid-row:1!important}
 
+/* Main values now occupy the card visually instead of sitting small at bottom. */
 .rp-profile-rating-row .rp-profile-ovr > strong,
 .rp-profile-rating-row .rp-profile-rank > strong,
 .rp-profile-record > strong:not(.rp-profile-win-rate),
@@ -185,14 +190,14 @@
   z-index:2!important;
   min-width:0!important;
   margin:0!important;
-  padding:2px 4px 11px!important;
-  align-self:end!important;
+  padding:0 2px!important;
+  align-self:center!important;
   justify-self:stretch!important;
   font-family:var(--rp-display,Arial,sans-serif)!important;
-  font-size:1.13rem!important;
+  font-size:1.38rem!important;
   font-weight:950!important;
   line-height:.9!important;
-  letter-spacing:-.01em!important;
+  letter-spacing:-.015em!important;
   white-space:nowrap!important;
   text-align:center!important;
 }
@@ -255,8 +260,10 @@
   .rp-profile-rating-row{gap:9px!important}
   .rp-profile-ovr,
   .rp-profile-rank,
-  .rp-profile-record{min-height:102px!important}
-  .rp-profile-record{column-gap:9px!important}
+  .rp-profile-record{min-height:108px!important}
+  .rp-profile-ovr,
+  .rp-profile-rank{padding-inline:8px!important;row-gap:7px!important}
+  .rp-profile-record{column-gap:9px!important;row-gap:7px!important}
   .rp-profile-record::before,
   .rp-profile-record::after{width:calc(50% - 4.5px)!important;border-radius:18px!important}
   .rp-profile-ovr,
@@ -265,20 +272,21 @@
   .rp-profile-rating-row .rp-profile-rank > span,
   .rp-profile-record > span:not(.rp-profile-win-rate-label),
   .rp-profile-record > .rp-profile-win-rate-label{
-    padding:43px 8px 0!important;
-    font-size:.42rem!important;
+    font-size:.48rem!important;
   }
   .rp-profile-rating-row .rp-profile-ovr > strong,
   .rp-profile-rating-row .rp-profile-rank > strong,
   .rp-profile-record > strong:not(.rp-profile-win-rate),
   .rp-profile-record > .rp-profile-win-rate{
-    padding:3px 8px 15px!important;
-    font-size:1.48rem!important;
+    font-size:1.72rem!important;
   }
 }
 
 @media(max-width:360px){
   .rp-profile-rating-row{gap:4px!important}
+  .rp-profile-ovr,
+  .rp-profile-rank,
+  .rp-profile-record{min-height:82px!important}
   .rp-profile-record{column-gap:4px!important}
   .rp-profile-record::before,
   .rp-profile-record::after{width:calc(50% - 2px)!important}
@@ -286,14 +294,12 @@
   .rp-profile-rating-row .rp-profile-rank > span,
   .rp-profile-record > span:not(.rp-profile-win-rate-label),
   .rp-profile-record > .rp-profile-win-rate-label{
-    padding-inline:2px!important;
-    font-size:.28rem!important;
+    font-size:.32rem!important;
   }
   .rp-profile-rating-row .rp-profile-ovr > strong,
   .rp-profile-rating-row .rp-profile-rank > strong,
   .rp-profile-record > strong:not(.rp-profile-win-rate),
   .rp-profile-record > .rp-profile-win-rate{
-    padding-inline:2px!important;
-    font-size:1rem!important;
+    font-size:1.12rem!important;
   }
 }
