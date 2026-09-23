@@ -22,8 +22,23 @@
     window.RealPlayVisitor?.enter?.();
   }
 
-  function menu() {
-    return document.querySelector('[data-rp-main-menu]');
+  function viewHost() {
+    return document.querySelector('[data-rp-current-view-host]');
+  }
+
+  function ensureViewHost() {
+    const lobby = document.querySelector('[data-rp-lobby]');
+    if (!lobby) return null;
+    const existing = viewHost();
+    if (existing) return existing;
+
+    const host = document.createElement('main');
+    host.className = 'rp-current-view-host';
+    host.dataset.rpCurrentViewHost = 'true';
+    const playerStrip = lobby.querySelector('.rp-player-strip');
+    if (playerStrip) playerStrip.insertAdjacentElement('afterend', host);
+    else lobby.appendChild(host);
+    return host;
   }
 
   function nav() {
@@ -191,9 +206,8 @@
   }
 
   function installHome() {
-    const root = menu();
+    const root = ensureViewHost();
     if (!root || root.querySelector('[data-rp-simple-home]')) return Boolean(root);
-    root.classList.add('rp-simple-menu');
     const section = document.createElement('section');
     section.className = 'rp-simple-home';
     section.dataset.rpSimpleHome = 'true';
@@ -239,7 +253,7 @@
 
   function install() {
     if (installed) return true;
-    if (!document.querySelector('[data-rp-app]') || !menu()) return false;
+    if (!document.querySelector('[data-rp-app]') || !ensureViewHost()) return false;
     ensurePublicEntry();
     if (!installHome() || !installNav()) return false;
     installed = true;
