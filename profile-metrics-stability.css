@@ -222,6 +222,23 @@
   text-shadow:0 0 16px rgba(72,217,255,.16)!important;
 }
 
+/* The Record nodes come from the base profile markup and can inherit legacy
+   relative offsets from older profile styles. Make their first visual card
+   mathematically own the entire first grid column, just like Win Rate owns
+   the second one. */
+.rp-profile-record > span:not(.rp-profile-win-rate-label),
+.rp-profile-record > strong:not(.rp-profile-win-rate){
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  transform:none!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  justify-self:stretch!important;
+  text-align:center!important;
+}
+
 /* Win Rate is injected by the profile enhancement layer. Neutralize any
    legacy offsets so it shares the exact same grid baseline as Record. */
 .rp-profile-record > .rp-profile-win-rate-label,
@@ -231,11 +248,14 @@
   bottom:auto!important;
   left:auto!important;
   transform:none!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  justify-self:stretch!important;
+  text-align:center!important;
 }
 .rp-profile-record > .rp-profile-win-rate{
   display:block!important;
   align-self:center!important;
-  justify-self:stretch!important;
   vertical-align:baseline!important;
 }
 
@@ -320,46 +340,4 @@
   .rp-profile-record > .rp-profile-win-rate{
     font-size:1.12rem!important;
   }
-}
-
-/* Final Win Rate lock: both pieces occupy the exact same full second-column
-   width, so the label is centered directly above the percentage on every
-   viewport regardless of legacy enhancement-layer sizing/alignment rules. */
-.rp-profile-record > .rp-profile-win-rate-label{
-  grid-column:2!important;
-  grid-row:1!important;
-  position:relative!important;
-  width:100%!important;
-  max-width:none!important;
-  min-width:0!important;
-  box-sizing:border-box!important;
-  justify-self:stretch!important;
-  align-self:end!important;
-  margin:0!important;
-  padding:0 2px!important;
-  top:auto!important;
-  right:auto!important;
-  bottom:auto!important;
-  left:auto!important;
-  transform:none!important;
-  text-align:center!important;
-}
-.rp-profile-record > .rp-profile-win-rate{
-  grid-column:2!important;
-  grid-row:2!important;
-  position:relative!important;
-  width:100%!important;
-  max-width:none!important;
-  min-width:0!important;
-  box-sizing:border-box!important;
-  justify-self:stretch!important;
-  align-self:start!important;
-  margin:0!important;
-  padding:2px 2px 0!important;
-  top:auto!important;
-  right:auto!important;
-  bottom:auto!important;
-  left:auto!important;
-  transform:none!important;
-  text-align:center!important;
 }
