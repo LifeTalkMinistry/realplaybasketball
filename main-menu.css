@@ -1,10 +1,3 @@
-body.rp-lobby-active .rp-lobby-head,
-body.rp-lobby-active .rp-mode-stage,
-body.rp-lobby-active .rp-quick-row,
-body.rp-lobby-active .rp-bottom-nav{
-  display:none!important;
-}
-
 body.rp-lobby-active .rp-app{
   min-height:100svh;
   padding-bottom:0!important;
