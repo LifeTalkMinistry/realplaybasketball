@@ -74,6 +74,18 @@
     attributeFilter: ['data-recognition-type'],
   });
 
+  // Keep profile badge ownership synchronized with the same current authority
+  // used by the Players directory. The cache-busted loader prevents stale
+  // profile recognition code from surviving a deploy in the browser cache.
+  if (!window.__realPlayRankRecognitionSyncInstalled
+    && !document.querySelector('script[data-rp-rank-recognition-sync-loader]')) {
+    const syncScript = document.createElement('script');
+    syncScript.dataset.rpRankRecognitionSyncLoader = '1';
+    syncScript.src = 'real-play-rank-recognition-sync.js?v=20260923-profile-recognition-authority-v2';
+    syncScript.async = false;
+    document.head.appendChild(syncScript);
+  }
+
   // Load the dedicated 4v4 preference OVR/profile-link enhancement. Keeping the
   // feature in its own file lets the team-formation UI stay independent from
   // the recognition artwork compatibility code above.
