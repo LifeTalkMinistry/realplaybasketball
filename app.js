@@ -4,8 +4,8 @@
   html.classList.add('js', 'rp-shell-booting');
 
   // Startup has only three visible states:
-  // loading -> fully initialized shell, loading -> explicit failure, or loading stays up.
-  // Never expose a partially initialized/clickable shell.
+  // loading -> usable core shell, loading -> explicit critical failure, then
+  // progressive enhancement continues without owning the boot gate.
   const bootStyle = document.createElement('style');
   bootStyle.id = 'rp-shell-boot-style';
   bootStyle.textContent = `
@@ -113,6 +113,13 @@
   shellReadyObserver.observe(document.documentElement, { childList: true, subtree: true });
 
   function showBootFailure(message, error) {
+    // Once the usable shell is visible, an optional enhancement is never
+    // allowed to throw the player back onto the black loading/failure screen.
+    if (shellReady) {
+      console.error(`[Real Play] ${message || 'Optional startup layer failed.'}`, error || '');
+      return;
+    }
+
     clearStaticBootFallback();
     shellReadyObserver?.disconnect();
     shellReadyObserver = null;
@@ -147,7 +154,7 @@
   }
 
   // Every script request must settle so one optional network request cannot
-  // permanently trap the app on the loading screen.
+  // permanently trap startup or the later enhancement chain.
   function loadScript(href, timeoutMs = 6000) {
     return new Promise((resolve) => {
       const script = document.createElement('script');
@@ -275,6 +282,18 @@
     'world-results.css',
   ];
 
+  // Only these first-frame styles are allowed to participate in the boot gate.
+  // All feature-specific CSS loads after the usable Home/navigation shell is up.
+  const criticalStylesheetHrefs = new Set([
+    'mobile-lobby.css',
+    'mobile-entry.css',
+    'public-landing.css',
+    'public-landing-cleanup.css',
+    'mobile-shell-fix.css',
+    'main-menu.css',
+    'simple-navigation.css',
+  ]);
+
   (async () => {
     const guardLoaded = await loadScript('auth-session-guard.js', 5000);
     const entryLoaded = await loadScript('public-first-entry.js', 5000);
@@ -290,19 +309,14 @@
     }
 
     await loadScript('legacy-bottom-nav-removal.js', 3500);
-
-    // Build the shell while it is still fully hidden and non-interactive.
     await loadScript('main-menu-fast-snap-bootstrap.js', 3500);
+
     const mainMenuLoaded = await loadScript('main-menu.js', 6500);
     const simpleNavLoaded = await loadScript('simple-navigation.js', 6500);
-    const navAuthorityLoaded = await loadScript('simple-navigation-state-authority.js', 6500);
 
     if (!mainMenuLoaded || !simpleNavLoaded) {
       showBootFailure('Critical Real Play navigation failed to initialize.');
       return;
-    }
-    if (!navAuthorityLoaded) {
-      console.warn('[Real Play] Navigation authority layer did not load; base navigation remains available.');
     }
 
     if (!hasNewShell()) {
@@ -313,9 +327,29 @@
       }
     }
 
-    // These layers used to load AFTER the shell was exposed. That allowed users
-    // to tap controls while later scripts were still moving/replacing UI. Keep
-    // the existing loading screen up until every startup layer has settled.
+    // First usable frame: wait only for the handful of CSS files that define
+    // entry visibility plus Home/navigation structure. Optional product layers
+    // must never keep the player on LOADING.
+    const criticalStyleResults = await Promise.all(
+      [...criticalStylesheetHrefs].map((href) => addStylesheet(href, 3500))
+    );
+    criticalStyleResults.forEach((loaded, index) => {
+      if (!loaded) console.warn(`[Real Play] Critical shell stylesheet did not settle at index ${index}.`);
+    });
+
+    bootResourcesReady = true;
+    if (!revealNewShell()) {
+      showBootFailure('Real Play core shell is unavailable.');
+      return;
+    }
+
+    // Home schedule authority enhances an already-visible shell. If it is slow
+    // or unavailable, base Home/navigation remains usable.
+    const navAuthorityLoaded = await loadScript('simple-navigation-state-authority.js', 6500);
+    if (!navAuthorityLoaded) {
+      console.warn('[Real Play] Navigation authority layer did not load; base navigation remains available.');
+    }
+
     const enhancements = [
       'public-landing.js',
       'home-why-real-play.js',
@@ -406,23 +440,23 @@
       if (!loaded) console.warn(`[Real Play] Optional layer failed to load: ${href}`);
     }
 
-    // Load behavior-critical JavaScript before fanning out cold-cache CSS requests.
-    // This prevents optional stylesheets from starving auth/settings/navigation scripts.
-    const stylesheetLoads = stylesheetHrefs.map((href) => addStylesheet(href));
+    const remainingStyles = stylesheetHrefs.filter((href) => !criticalStylesheetHrefs.has(href));
+    const stylesheetLoads = remainingStyles.map((href) => addStylesheet(href));
     const stylesheetResults = await Promise.all(stylesheetLoads);
     stylesheetResults.forEach((loaded, index) => {
       if (!loaded) console.warn(`[Real Play] Optional stylesheet failed to settle at index ${index}.`);
     });
 
-    // Give fonts/images and two paint frames a chance to settle so the first
-    // tappable frame is already the final layout, not an intermediate layout.
     await waitForVisualStability();
 
-    bootResourcesReady = true;
-    if (!revealNewShell()) {
-      showBootFailure('Real Play finished loading but the final shell is unavailable.');
-    }
+    try {
+      window.dispatchEvent(new CustomEvent('realplay:enhancements-ready'));
+    } catch (_error) {}
   })().catch((error) => {
+    if (shellReady) {
+      console.error('[Real Play] Progressive enhancement startup stopped after the core shell was ready.', error);
+      return;
+    }
     showBootFailure('Startup stopped on an unexpected error.', error);
   });
 })();
