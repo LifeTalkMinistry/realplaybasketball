@@ -31,29 +31,49 @@
     return Number.isSafeInteger(rank) && rank > 0;
   }
 
-  function playerId(player) {
-    return String(player?.playerId ?? player?.userId ?? player?.id ?? '').trim();
+  function positiveIdString(value) {
+    const id = Number(value);
+    return Number.isSafeInteger(id) && id > 0 ? String(id) : '';
   }
 
-  function sourcePlayerId(source) {
+  function playerId(player) {
+    return positiveIdString(player?.playerId ?? player?.userId ?? player?.id);
+  }
+
+  function accountPlayerId(player) {
+    return positiveIdString(
+      player?.accountUserId
+      ?? player?.account_user_id
+      ?? player?.userAccountId
+      ?? player?.user_account_id
+    );
+  }
+
+  function sourcePlayerIds(source) {
     const candidates = [
       source?.playerId,
       source?.userId,
       source?.id,
+      source?.accountUserId,
+      source?.account_user_id,
       source?.player?.playerId,
       source?.player?.userId,
       source?.player?.id,
+      source?.player?.accountUserId,
+      source?.player?.account_user_id,
       source?.profile?.playerId,
       source?.profile?.player_id,
       source?.profile?.userId,
       source?.profile?.user_id,
       source?.profile?.id,
+      source?.profile?.accountUserId,
+      source?.profile?.account_user_id,
     ];
-    for (const value of candidates) {
-      const id = Number(value);
-      if (Number.isSafeInteger(id) && id > 0) return String(id);
-    }
-    return '';
+    return [...new Set(candidates.map(positiveIdString).filter(Boolean))];
+  }
+
+  function sourcePlayerId(source) {
+    return sourcePlayerIds(source)[0] || '';
   }
 
   function profileSource(profile) {
@@ -111,36 +131,38 @@
     });
   }
 
-  function matchingAuthorityPlayer(profile) {
+  function profileExplicitIds(profile) {
     const source = profileSource(profile);
-    const explicitId = String(
-      profile?.dataset?.rpPublicPlayerId
-      || profile?.dataset?.rpProfilePlayerId
-      || sourcePlayerId(source)
-      || ''
-    ).trim();
+    return [...new Set([
+      positiveIdString(profile?.dataset?.rpPublicPlayerId),
+      positiveIdString(profile?.dataset?.rpProfilePlayerId),
+      ...sourcePlayerIds(source),
+    ].filter(Boolean))];
+  }
 
-    if (explicitId && authorityById.has(explicitId)) return authorityById.get(explicitId);
+  function uniqueAuthorityPlayers() {
+    return [...new Set(authorityById.values())];
+  }
+
+  function matchingAuthorityPlayer(profile) {
+    const explicitIds = profileExplicitIds(profile);
+    for (const explicitId of explicitIds) {
+      if (authorityById.has(explicitId)) return authorityById.get(explicitId);
+    }
 
     const wantedName = normalizeName(profile?.querySelector('.rp-profile-name h1')?.textContent);
     if (!wantedName) return null;
-    const matches = [...authorityById.values()].filter((player) => normalizeName(
+    const matches = uniqueAuthorityPlayers().filter((player) => normalizeName(
       player?.playerName || player?.player_name || player?.name
     ) === wantedName);
     return matches.length === 1 ? matches[0] : null;
   }
 
   function matchingWorldRow(profile) {
-    const source = profileSource(profile);
-    const explicitId = String(
-      profile?.dataset?.rpPublicPlayerId
-      || profile?.dataset?.rpProfilePlayerId
-      || sourcePlayerId(source)
-      || ''
-    ).trim();
+    const explicitIds = profileExplicitIds(profile);
     const rows = [...document.querySelectorAll('.rp-world-player-row')];
 
-    if (explicitId) {
+    for (const explicitId of explicitIds) {
       const byId = rows.find((row) => String(row?.dataset?.worldPlayerId || '').trim() === explicitId);
       if (byId) return byId;
     }
@@ -177,8 +199,14 @@
         const data = await window.RealPlayWorld.community('players');
         const next = new Map();
         (Array.isArray(data?.players) ? data.players : []).forEach((player) => {
-          const id = playerId(player);
-          if (id) next.set(id, player);
+          // World rows are keyed by canonical basketball identity, while some
+          // profile surfaces still carry the registered account id. Index the
+          // exact same authority object under both namespaces so either surface
+          // resolves to the same player instead of keeping stale recognitions.
+          const canonicalId = playerId(player);
+          const accountId = accountPlayerId(player);
+          if (canonicalId) next.set(canonicalId, player);
+          if (accountId) next.set(accountId, player);
         });
         authorityById = next;
         authorityLoadedAt = Date.now();
