@@ -321,8 +321,6 @@
     'main-menu-cinematic.css',
     'main-menu-ball-background.css',
     'main-menu-card-premium.css',
-    'main-menu-physics.css',
-    'main-menu-fast-snap.css',
     'settings-panel.css',
     'auth-welcome-cleanup.css',
     'public-landing-cleanup.css',
@@ -390,12 +388,9 @@
     }
 
     await loadScript('legacy-bottom-nav-removal.js', 3500);
-    await loadScript('main-menu-fast-snap-bootstrap.js', 3500);
 
-    const mainMenuLoaded = await loadScript('main-menu.js', 6500);
     const simpleNavLoaded = await loadScript('simple-navigation.js', 6500);
-
-    if (!mainMenuLoaded || !simpleNavLoaded) {
+    if (!simpleNavLoaded) {
       showBootFailure('Critical Real Play navigation failed to initialize.');
       return;
     }
@@ -423,9 +418,8 @@
       return;
     }
 
-    // Preserve the historical dependency order. Everything through the current
-    // Open Ranking reservation stack loads behind the gate; admin/deep support
-    // continues progressively after the player-facing UI is revealed.
+    // Everything through the current Open Ranking reservation stack loads
+    // behind the gate; admin/deep support continues progressively afterward.
     const firstInteractionEnhancements = [
       'public-landing.js',
       'home-why-real-play.js',
@@ -433,6 +427,7 @@
       'public-founder-credit.js',
       'home-future-4v4-preview.js',
       'home-future-4v4-card-cleanup.js',
+      'home-payment-admin.js',
       'login-landing-fix.js',
       'persistent-session-fix.js',
       'visitor-replay-access.js',
@@ -477,9 +472,6 @@
       'real-play-world-player-bar-vector.js',
       'real-play-world-player-admin.js',
       'real-play-player-claim.js',
-      'main-menu-fast-snap-restore.js',
-      'main-menu-touch-lite.js',
-      'main-menu-desktop-input-fix.js',
       'player-number-recovery.js',
       'player-identity-manager.js',
       'ranking-games.js',
@@ -487,6 +479,7 @@
       'ranking-games-standby-players.js',
       'ranking-games-info-toggle.js',
       'ranking-games-session-cleanup.js',
+      'ranking-team-support-tiers.js',
       'ranking-session-teams.js',
       'ranking-spot-priority.js',
       'ranking-reservation-snapshot.js',
