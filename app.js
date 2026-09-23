@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260922-admin-rank-status-v117';
+  const version = '20260923-profile-hero-contract-v119';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
