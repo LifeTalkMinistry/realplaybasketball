@@ -12,9 +12,28 @@
     document.head.appendChild(supportStyle);
   }
 
+  // The shared team sheet is intentionally a bottom sheet. The support funnel
+  // is not: give it its own overlay/card mechanics, matching the centered rank
+  // explainer pattern instead of fighting the shared bottom-sheet CSS.
+  if (!document.querySelector('link[data-rp-team-support-center-style]')) {
+    const centerStyle = document.createElement('link');
+    centerStyle.rel = 'stylesheet';
+    centerStyle.href = 'ranking-team-support-center-force.css?v=20260923-team-support-rank-center-v1';
+    centerStyle.dataset.rpTeamSupportCenterStyle = 'true';
+    document.head.appendChild(centerStyle);
+  }
+
+  if (!document.querySelector('script[data-rp-team-support-center-force]')) {
+    const centerForce = document.createElement('script');
+    centerForce.src = 'ranking-team-support-center-force.js?v=20260923-team-support-rank-center-v1';
+    centerForce.async = false;
+    centerForce.dataset.rpTeamSupportCenterForce = 'true';
+    document.head.appendChild(centerForce);
+  }
+
   if (!document.querySelector('script[data-rp-team-support-tiers-loader]')) {
     const supportTiers = document.createElement('script');
-    supportTiers.src = 'ranking-team-support-tiers.js?v=20260923-team-support-funnel-v3';
+    supportTiers.src = 'ranking-team-support-tiers.js?v=20260923-team-support-funnel-v4';
     supportTiers.async = false;
     supportTiers.dataset.rpTeamSupportTiersLoader = 'true';
     document.head.appendChild(supportTiers);
