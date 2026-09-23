@@ -204,3 +204,18 @@
     opacity: .86;
   }
 }
+
+/* Startup reassurance: mission.css is part of the static head, so this copy is
+   available throughout the long boot without changing loader behavior. */
+html.rp-shell-booting:not(.rp-shell-failed) body::after {
+  content: 'BASKETBALL  ·  LOADING\A\A APPLYING THE LATEST UPDATES\A This may take a little longer than usual.\A Thank you for your patience.' !important;
+  top: calc(45% + 58px) !important;
+  width: min(86vw, 380px) !important;
+  color: #42d8ff !important;
+  font-family: Arial, sans-serif !important;
+  font-size: .56rem !important;
+  font-weight: 900 !important;
+  letter-spacing: .10em !important;
+  line-height: 1.7 !important;
+  white-space: pre-line !important;
+}
