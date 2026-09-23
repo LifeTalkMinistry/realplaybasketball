@@ -8,3 +8,22 @@
 .rp-entry-mode-badge{
   display:none!important;
 }
+
+/* Keep player hero geometry consistent whether a verified recognition badge
+   is present or not. Badge profiles already consume this recognition band;
+   no-badge profiles reserve the same space so names and metrics do not jump. */
+.rp-profile.open:not(.has-rp-profile-badges) .rp-profile-hero .rp-profile-player{
+  margin-top:96px!important;
+}
+
+@media(max-width:420px){
+  .rp-profile.open:not(.has-rp-profile-badges) .rp-profile-hero .rp-profile-player{
+    margin-top:90px!important;
+  }
+}
+
+@media(max-width:355px){
+  .rp-profile.open:not(.has-rp-profile-badges) .rp-profile-hero .rp-profile-player{
+    margin-top:82px!important;
+  }
+}
