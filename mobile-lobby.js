@@ -50,7 +50,6 @@
 
   body.insertBefore(app, body.firstChild);
 
-  const authOpen = document.querySelector('[data-auth-open]');
   const accountView = document.querySelector('[data-auth-view="account"]');
   const authName = document.querySelector('[data-auth-account-name]');
   const authNumber = document.querySelector('[data-auth-player-number]');
@@ -124,13 +123,7 @@
   }
 
   function openAuth(view) {
-    if (!authOpen) return;
-    authOpen.click();
-    if (!view) return;
-    window.setTimeout(() => {
-      const tab = document.querySelector(`[data-auth-tab="${view}"]`);
-      if (tab) tab.click();
-    }, 20);
+    window.RealPlayAuth?.open?.(view || '');
   }
 
   function requireAccount(reason = 'Create your Real Play player to use this feature.') {
