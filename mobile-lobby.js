@@ -45,37 +45,7 @@
         </div>
         <div class="rp-player-rating"><strong data-rp-ovr>UNRANKED</strong><span data-rp-rating-label>COMPLETE PLACEMENT</span></div>
       </section>
-
-      <section class="rp-lobby-head" aria-label="Choose game mode">
-        <span>PLAY</span>
-        <h1>Choose your game.</h1>
-      </section>
-
-      <section class="rp-mode-stage" aria-label="Game modes">
-        <div class="rp-mode-track" data-rp-mode-track>
-          <article class="rp-mode-card rp-mode-career" data-mode="Career Mode"><div class="rp-mode-art" aria-hidden="true"></div><div class="rp-mode-card-content"><div class="rp-mode-type">RANKED</div><h2>Career</h2><p>Build your official Real Play career through verified competitive games.</p><div class="rp-mode-meta">OVR · PTS/AST/REB · W/L · MVP</div><button class="rp-play-button" type="button" data-rp-select-mode="Career Mode">PLAY CAREER <span>→</span></button></div></article>
-          <article class="rp-mode-card rp-mode-open" data-mode="Open Game"><div class="rp-mode-art" aria-hidden="true"></div><div class="rp-mode-card-content"><div class="rp-mode-type">CASUAL OFFICIAL PLAY</div><h2>Open</h2><p>Show up and play official Real Play basketball without ranking pressure.</p><div class="rp-mode-meta">PLAY TIME · NO OVR · NO MVP</div><button class="rp-play-button" type="button" data-rp-select-mode="Open Game">PLAY OPEN <span>→</span></button></div></article>
-          <article class="rp-mode-card rp-mode-placement" data-mode="Placement"><div class="rp-mode-art" aria-hidden="true"></div><div class="rp-mode-card-content"><div class="rp-mode-type">GET YOUR FIRST OVR</div><h2>Placement</h2><p>Complete official placement games so Real Play can establish your competitive level.</p><div class="rp-mode-meta">UNRANKED → OVR · VERIFIED</div><button class="rp-play-button" type="button" data-rp-select-mode="Placement">START PLACEMENT <span>→</span></button></div></article>
-          <article class="rp-mode-card rp-mode-practice" data-mode="Self-Practice"><div class="rp-mode-art" aria-hidden="true"></div><div class="rp-mode-card-content"><div class="rp-mode-type">VERIFIED PLAY TIME</div><h2>Practice</h2><p>Record legitimate basketball participation outside organized competitive games.</p><div class="rp-mode-meta">PLAY TIME ONLY · NO OVR</div><button class="rp-play-button" type="button" data-rp-select-mode="Self-Practice">START PRACTICE <span>→</span></button></div></article>
-        </div>
-        <div class="rp-mode-tabs" data-rp-dots aria-label="Choose game mode"></div>
-      </section>
-
-      <section class="rp-quick-row" aria-label="Quick access">
-        <button class="rp-quick" type="button" data-rp-action="career"><strong>MY CAREER</strong><span>Stats, OVR & history</span></button>
-        <button class="rp-quick" type="button" data-rp-action="schedule"><strong>SESSIONS</strong><span>Find your next run</span></button>
-        <button class="rp-quick" type="button" data-rp-action="profile"><strong>PLAYER</strong><span>Identity & number</span></button>
-      </section>
     </div>
-
-    <nav class="rp-bottom-nav" data-rp-bottom-nav aria-label="App navigation">
-      <button class="rp-nav-item active" type="button" data-rp-nav="play"><span>◉</span>PLAY</button>
-      <button class="rp-nav-item" type="button" data-rp-nav="career"><span>▰</span>CAREER</button>
-      <button class="rp-nav-item" type="button" data-rp-nav="player"><span>●</span>PROFILE</button>
-      <button class="rp-nav-item" type="button" data-rp-nav="more"><span>•••</span>MORE</button>
-    </nav>
-
-    <div class="rp-sheet-backdrop" data-rp-sheet aria-hidden="true"><section class="rp-sheet" role="dialog" aria-modal="true" aria-labelledby="rp-sheet-title"><div class="rp-sheet-handle"></div><small data-rp-sheet-kicker>REAL PLAY</small><h3 id="rp-sheet-title" data-rp-sheet-title>COME PLAY.</h3><p data-rp-sheet-copy>Official locations and sessions will appear here when confirmed.</p><div class="rp-sheet-actions"><button class="rp-sheet-primary" type="button" data-rp-sheet-primary>OPEN PLAYER PROFILE</button><button class="rp-sheet-secondary" type="button" data-rp-sheet-close>CLOSE</button></div></section></div>
   `;
 
   body.insertBefore(app, body.firstChild);
@@ -90,15 +60,6 @@
   const playerOvr = app.querySelector('[data-rp-ovr]');
   const playerLabel = app.querySelector('[data-rp-player-label]');
   const ratingLabel = app.querySelector('[data-rp-rating-label]');
-  const bottomNav = app.querySelector('[data-rp-bottom-nav]');
-  const track = app.querySelector('[data-rp-mode-track]');
-  const cards = [...app.querySelectorAll('.rp-mode-card')];
-  const dotsWrap = app.querySelector('[data-rp-dots]');
-  const sheet = app.querySelector('[data-rp-sheet]');
-  const sheetKicker = app.querySelector('[data-rp-sheet-kicker]');
-  const sheetTitle = app.querySelector('[data-rp-sheet-title]');
-  const sheetCopy = app.querySelector('[data-rp-sheet-copy]');
-  const sheetPrimary = app.querySelector('[data-rp-sheet-primary]');
   const TOKEN_KEY = 'real_play_access_token';
   const VISITOR_KEY = 'real_play_visitor_mode';
   const API_BASE_URL = 'https://api.clarapmc.com';
@@ -142,7 +103,6 @@
     app.classList.toggle('rp-guest', !insideApp);
     body.classList.toggle('rp-guest-active', !insideApp);
     body.classList.toggle('rp-visitor-active', visitor);
-    if (bottomNav) bottomNav.style.display = insideApp ? 'grid' : 'none';
 
     if (visitor) {
       playerName.textContent = 'VISITOR';
@@ -188,71 +148,21 @@
     openAuth();
   }
 
-  function openSheet(mode, kind = 'mode') {
-    if (kind === 'mode') {
-      sheetKicker.textContent = mode.toUpperCase();
-      sheetTitle.textContent = mode === 'Self-Practice' ? 'PUT IN REAL TIME.' : 'FIND YOUR NEXT RUN.';
-      sheetCopy.textContent = mode === 'Self-Practice' ? 'Self-Practice creates verified Play Time only. Competitive stats and OVR stay separate.' : `${mode} sessions will appear here as soon as official Real Play locations and schedules are published.`;
-    } else if (kind === 'career') {
-      sheetKicker.textContent = 'MY CAREER'; sheetTitle.textContent = 'THE COURT BUILDS THIS.'; sheetCopy.textContent = 'Your verified games, OVR, stats, W/L, MVP history and highlights will live here.';
-    } else if (kind === 'schedule') {
-      sheetKicker.textContent = 'UPCOMING SESSIONS'; sheetTitle.textContent = 'YOUR NEXT REAL PLAY.'; sheetCopy.textContent = 'Official court, date, time, mode and available player slots will appear here when confirmed.';
-    } else {
-      sheetKicker.textContent = 'REAL PLAY'; sheetTitle.textContent = 'MORE IS COMING.'; sheetCopy.textContent = 'Membership, locations, support, transport and additional Real Play systems belong here without distracting from Play.';
-    }
-    sheet.classList.add('open'); sheet.setAttribute('aria-hidden', 'false');
+  app.querySelector('[data-rp-entry-login]')?.addEventListener('click', () => openAuth('login'));
+  app.querySelector('[data-rp-entry-create]')?.addEventListener('click', () => openAuth('signup'));
+  profileChip?.addEventListener('click', openProfile);
+
+  syncPlayer();
+  if (accountView) {
+    const observer = new MutationObserver(syncPlayer);
+    observer.observe(accountView, { attributes: true, attributeFilter: ['hidden'] });
   }
-
-  function closeSheet(){ sheet.classList.remove('open'); sheet.setAttribute('aria-hidden','true'); }
-
-  const modeLabels = ['CAREER','OPEN','PLACEMENT','PRACTICE'];
-  cards.forEach((card,index)=>{
-    const tab=document.createElement('button');
-    tab.type='button';
-    tab.className=`rp-mode-tab${index===0?' active':''}`;
-    tab.textContent=modeLabels[index];
-    tab.setAttribute('aria-label',`Show ${card.dataset.mode}`);
-    tab.addEventListener('click',()=>track?.scrollTo({left:card.offsetLeft-track.offsetLeft,behavior:'smooth'}));
-    dotsWrap.appendChild(tab);
+  [authName, authNumber].forEach((node) => {
+    if (!node) return;
+    const observer = new MutationObserver(syncPlayer);
+    observer.observe(node, { childList: true, characterData: true, subtree: true });
   });
-
-  function syncDots(){
-    if(!track)return;
-    const center=track.scrollLeft+track.clientWidth/2;
-    let active=0,best=Infinity;
-    cards.forEach((card,index)=>{const d=Math.abs(card.offsetLeft+card.offsetWidth/2-center);if(d<best){best=d;active=index;}});
-    [...dotsWrap.children].forEach((dot,index)=>dot.classList.toggle('active',index===active));
-  }
-
-  track?.addEventListener('scroll',syncDots,{passive:true});
-  app.querySelector('[data-rp-entry-login]')?.addEventListener('click',()=>openAuth('login'));
-  app.querySelector('[data-rp-entry-create]')?.addEventListener('click',()=>openAuth('signup'));
-  profileChip?.addEventListener('click',openProfile);
-  app.querySelectorAll('[data-rp-select-mode]').forEach(button=>button.addEventListener('click',()=>{
-    if (requireAccount('Create your Real Play player to join official games and build your basketball record.')) return;
-    openSheet(button.dataset.rpSelectMode);
-  }));
-  app.querySelectorAll('[data-rp-action]').forEach(button=>button.addEventListener('click',()=>{
-    const action=button.dataset.rpAction;
-    if (action==='profile') return openProfile();
-    if (requireAccount(action === 'career' ? 'Create your player to build a Real Play career.' : 'Create your player to reserve and join Real Play sessions.')) return;
-    openSheet('',action);
-  }));
-  app.querySelectorAll('[data-rp-nav]').forEach(button=>button.addEventListener('click',()=>{
-    const action=button.dataset.rpNav;
-    if(action==='play') return track?.scrollTo({left:0,behavior:'smooth'});
-    if(action==='player') return openProfile();
-    if(action==='career' && requireAccount('Create your player to unlock your career, OVR and official history.')) return;
-    openSheet('',action==='career'?'career':'more');
-  }));
-  app.querySelector('[data-rp-sheet-close]')?.addEventListener('click',closeSheet);
-  sheet?.addEventListener('click',event=>{if(event.target===sheet)closeSheet();});
-  sheetPrimary?.addEventListener('click',()=>{closeSheet();openProfile();});
-
-  syncPlayer(); syncDots();
-  if(accountView){const observer=new MutationObserver(syncPlayer);observer.observe(accountView,{attributes:true,attributeFilter:['hidden']});}
-  [authName,authNumber].forEach(node=>{if(!node)return;const observer=new MutationObserver(syncPlayer);observer.observe(node,{childList:true,characterData:true,subtree:true});});
-  window.addEventListener('focus',()=>{ syncPlayer(); refreshPlayerIdentity(); });
-  window.addEventListener('storage',syncPlayer);
-  window.addEventListener('realplay:visitorchange',syncPlayer);
+  window.addEventListener('focus', () => { syncPlayer(); refreshPlayerIdentity(); });
+  window.addEventListener('storage', syncPlayer);
+  window.addEventListener('realplay:visitorchange', syncPlayer);
 })();
