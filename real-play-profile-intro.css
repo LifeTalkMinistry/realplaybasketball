@@ -7,9 +7,44 @@
 */
 
 .rp-profile .rp-profile-hero{
+  --rp-profile-hero-band:90px;
   position:relative!important;
   isolation:isolate!important;
   overflow:hidden!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:auto var(--rp-profile-hero-band) auto auto!important;
+  row-gap:0!important;
+}
+
+/*
+  PROFILE HERO STRUCTURAL CONTRACT
+  --------------------------------------------------------------------------
+  The working profile design has a reserved recognition/art band between the
+  top identity line and the player-name row. That band is layout structure,
+  not optional badge content. Keeping it as an explicit hero grid row prevents
+  any player state, renderer, missing badge host, or asynchronous badge update
+  from collapsing the card and pulling the identity/stats upward.
+*/
+.rp-profile .rp-profile-hero > .rp-profile-identity-line{
+  grid-column:1!important;
+  grid-row:1!important;
+}
+
+.rp-profile .rp-profile-hero > .rp-profile-badges{
+  grid-column:1!important;
+  grid-row:2!important;
+}
+
+.rp-profile .rp-profile-hero > .rp-profile-player{
+  grid-column:1!important;
+  grid-row:3!important;
+  margin-top:4px!important;
+}
+
+.rp-profile .rp-profile-hero > .rp-profile-rating-row{
+  grid-column:1!important;
+  grid-row:4!important;
 }
 
 .rp-profile .rp-profile-hero-glow{
@@ -37,7 +72,8 @@
   text-align:left!important;
 }
 
-.rp-profile.has-rp-profile-badges .rp-profile-hero .rp-profile-player{
+.rp-profile.has-rp-profile-badges .rp-profile-hero .rp-profile-player,
+.rp-profile .rp-profile-hero > .rp-profile-player{
   margin-top:4px!important;
 }
 
@@ -458,6 +494,10 @@
 }
 
 @media(max-width:420px){
+  .rp-profile .rp-profile-hero{
+    --rp-profile-hero-band:86px;
+  }
+
   .rp-profile .rp-profile-hero .rp-profile-badges{
     width:57%!important;
     max-width:57%!important;
@@ -510,6 +550,10 @@
 }
 
 @media(max-width:355px){
+  .rp-profile .rp-profile-hero{
+    --rp-profile-hero-band:80px;
+  }
+
   .rp-profile .rp-profile-hero .rp-profile-badges{
     width:56%!important;
     max-width:56%!important;
