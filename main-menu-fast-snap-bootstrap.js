@@ -4,9 +4,17 @@
 
   // Load the optional post-team support prompt early so it can establish the
   // player's initial team state before any create/join action happens.
+  if (!document.querySelector('link[data-rp-team-support-modal-style]')) {
+    const supportStyle = document.createElement('link');
+    supportStyle.rel = 'stylesheet';
+    supportStyle.href = 'ranking-team-support-modal-refine.css?v=20260923-team-support-modal-center-v1';
+    supportStyle.dataset.rpTeamSupportModalStyle = 'true';
+    document.head.appendChild(supportStyle);
+  }
+
   if (!document.querySelector('script[data-rp-team-support-tiers-loader]')) {
     const supportTiers = document.createElement('script');
-    supportTiers.src = 'ranking-team-support-tiers.js?v=20260923-team-support-funnel-v2';
+    supportTiers.src = 'ranking-team-support-tiers.js?v=20260923-team-support-funnel-v3';
     supportTiers.async = false;
     supportTiers.dataset.rpTeamSupportTiersLoader = 'true';
     document.head.appendChild(supportTiers);
