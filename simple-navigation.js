@@ -3,7 +3,6 @@
   window.__realPlaySimpleNavigationInstalled = true;
 
   const TOKEN_KEY = 'real_play_access_token';
-  const PUBLIC_UPDATES_URL = 'https://api.clarapmc.com/api/real-play/public/updates';
   const NAV_ITEMS = [
     { id: 'home', label: 'HOME', icon: '⌂' },
     { id: 'world', label: 'WORLD', icon: '◎' },
@@ -13,29 +12,9 @@
   ];
 
   let active = 'home';
-  let homeRefreshTimer = null;
   let installed = false;
 
   const hasAccount = () => Boolean(localStorage.getItem(TOKEN_KEY));
-  const esc = (value) => String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-
-  function formatEvent(value) {
-    const date = new Date(value || 0);
-    if (!value || Number.isNaN(date.getTime())) return '';
-    return new Intl.DateTimeFormat('en-PH', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZone: 'Asia/Manila',
-    }).format(date).toUpperCase();
-  }
 
   function ensurePublicEntry() {
     if (hasAccount()) return;
@@ -47,12 +26,14 @@
     return document.querySelector('[data-rp-main-menu]');
   }
 
-  function simpleHome() {
-    return document.querySelector('[data-rp-simple-home]');
-  }
-
   function nav() {
     return document.querySelector('[data-rp-simple-nav]');
+  }
+
+  function requestHomeRefresh() {
+    try {
+      window.dispatchEvent(new CustomEvent('realplay:home-schedule-changed'));
+    } catch (_error) {}
   }
 
   function setActive(next) {
@@ -154,7 +135,7 @@
     closePrimaryLayers();
     document.body.classList.remove('rp-simple-subview');
     setActive('home');
-    refreshHome();
+    requestHomeRefresh();
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
@@ -190,15 +171,11 @@
   }
 
   function openSettingsFromMe() {
-    const legacy = document.querySelector('[data-rp-main-action="settings"]');
-    if (!legacy) {
-      document.querySelector('[data-auth-open]')?.click();
+    if (window.RealPlaySettings?.open) {
+      window.RealPlaySettings.open();
       return;
     }
-    const alreadyActive = legacy.classList.contains('slot-active');
-    legacy.classList.add('slot-active');
-    legacy.click();
-    if (!alreadyActive) window.setTimeout(() => legacy.classList.remove('slot-active'), 0);
+    document.querySelector('[data-auth-open]')?.click();
   }
 
   function ensureProfileSettingsButton() {
@@ -220,40 +197,7 @@
     const section = document.createElement('section');
     section.className = 'rp-simple-home';
     section.dataset.rpSimpleHome = 'true';
-    section.innerHTML = `
-      <header class="rp-simple-home-head">
-        <div><small>REAL PLAY BASKETBALL</small><h1>HOME</h1></div>
-        <span data-rp-simple-access>PUBLIC</span>
-      </header>
-      <section class="rp-simple-next" data-rp-simple-next>
-        <small>NEXT REAL PLAY</small>
-        <h2>CHECKING THE COURT...</h2>
-        <p>Official schedules will appear here.</p>
-      </section>
-      <section class="rp-simple-home-grid">
-        <article data-rp-simple-announcement>
-          <small>ANNOUNCEMENT</small>
-          <strong>REAL PLAY IS LIVE.</strong>
-          <p>Official community announcements will appear here.</p>
-        </article>
-        <article data-rp-simple-result>
-          <small>LATEST RESULT</small>
-          <strong>NO RESULT YET.</strong>
-          <p>Finalized games will appear here.</p>
-        </article>
-      </section>
-      <button class="rp-simple-home-updates" type="button" data-rp-simple-updates>
-        <span><small>OFFICIAL FEED</small><strong>SCHEDULES · RESULTS · ANNOUNCEMENTS</strong></span><b>→</b>
-      </button>`;
     root.appendChild(section);
-    section.querySelector('[data-rp-simple-next]')?.addEventListener('click', () => {
-      setActive('home');
-      window.RealPlayUpdates?.open?.();
-    });
-    section.querySelector('[data-rp-simple-updates]')?.addEventListener('click', () => {
-      setActive('home');
-      window.RealPlayUpdates?.open?.();
-    });
     return true;
   }
 
@@ -283,64 +227,6 @@
     return true;
   }
 
-  function resultLabel(update) {
-    const west = Number(update?.metadata?.westScore);
-    const east = Number(update?.metadata?.eastScore);
-    if (Number.isFinite(west) && Number.isFinite(east)) return `WEST ${west} · ${east} EAST`;
-    return String(update?.title || 'FINAL RESULT').trim();
-  }
-
-  async function refreshHome() {
-    const root = simpleHome();
-    if (!root) return;
-    const access = root.querySelector('[data-rp-simple-access]');
-    if (access) access.textContent = hasAccount() ? 'PLAYER' : 'PUBLIC';
-
-    try {
-      const response = await fetch(PUBLIC_UPDATES_URL, { headers: { Accept: 'application/json' }, cache: 'no-store' });
-      if (!response.ok) throw new Error('Could not load public updates.');
-      const data = await response.json().catch(() => ({}));
-      const updates = Array.isArray(data?.updates) ? data.updates : [];
-      const now = Date.now();
-      const schedules = updates
-        .filter((item) => item?.category === 'schedule')
-        .map((item) => ({ item, time: Date.parse(item.event_at || item.eventAt || '') }))
-        .filter((entry) => Number.isFinite(entry.time) && entry.time >= now - 60_000)
-        .sort((a, b) => a.time - b.time);
-      const next = schedules[0]?.item || null;
-      const announcement = updates.find((item) => item?.category === 'announcement' && item?.pinned)
-        || updates.find((item) => item?.category === 'announcement')
-        || null;
-      const result = updates.find((item) => item?.category === 'result') || null;
-
-      const nextNode = root.querySelector('[data-rp-simple-next]');
-      if (nextNode) {
-        const when = formatEvent(next?.event_at || next?.eventAt);
-        const location = String(next?.location_name || next?.locationName || '').trim();
-        nextNode.innerHTML = next
-          ? `<small>NEXT REAL PLAY</small><h2>${esc(next.title || 'OFFICIAL SESSION')}</h2><p>${esc([when, location].filter(Boolean).join(' · ') || 'Open the official feed for details.')}</p>`
-          : '<small>NEXT REAL PLAY</small><h2>TO BE ANNOUNCED.</h2><p>The next official schedule will appear here as soon as it is published.</p>';
-      }
-
-      const announcementNode = root.querySelector('[data-rp-simple-announcement]');
-      if (announcementNode) {
-        announcementNode.innerHTML = announcement
-          ? `<small>${announcement.pinned ? 'PINNED ANNOUNCEMENT' : 'ANNOUNCEMENT'}</small><strong>${esc(announcement.title || 'REAL PLAY UPDATE')}</strong><p>${esc(announcement.body || 'Open the official feed for the full update.')}</p>`
-          : '<small>ANNOUNCEMENT</small><strong>NO NEW ANNOUNCEMENT.</strong><p>Official community announcements will appear here.</p>';
-      }
-
-      const resultNode = root.querySelector('[data-rp-simple-result]');
-      if (resultNode) {
-        resultNode.innerHTML = result
-          ? `<small>LATEST RESULT</small><strong>${esc(resultLabel(result))}</strong><p>${esc(result.title || 'Official game result')}</p>`
-          : '<small>LATEST RESULT</small><strong>NO RESULT YET.</strong><p>Finalized Real Play games will appear here.</p>';
-      }
-    } catch (_error) {
-      const nextNode = root.querySelector('[data-rp-simple-next]');
-      if (nextNode) nextNode.innerHTML = '<small>NEXT REAL PLAY</small><h2>HOME IS READY.</h2><p>Open the official feed to check schedules and announcements.</p>';
-    }
-  }
-
   function syncLayerClose(event) {
     if (event.target.closest('[data-world-close], [data-rp-profile-close]')) {
       window.setTimeout(() => setActive('home'), 0);
@@ -359,10 +245,6 @@
     installed = true;
     document.body.classList.add('rp-simple-navigation-active');
     setActive('home');
-    refreshHome();
-    homeRefreshTimer = window.setInterval(() => {
-      if (!document.hidden && active === 'home') refreshHome();
-    }, 60_000);
 
     const profileObserver = new MutationObserver(() => {
       ensureProfileSettingsButton();
@@ -374,18 +256,11 @@
     document.addEventListener('click', syncLayerClose, true);
     window.addEventListener('focus', () => {
       ensurePublicEntry();
-      if (active === 'home') refreshHome();
       if (active === 'me') syncMeHeader();
       ensureProfileSettingsButton();
     });
-    window.addEventListener('storage', () => {
-      ensurePublicEntry();
-      refreshHome();
-    });
-    window.addEventListener('realplay:visitorchange', refreshHome);
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && active === 'home') refreshHome();
-    });
+    window.addEventListener('storage', ensurePublicEntry);
+    window.addEventListener('realplay:visitorchange', ensurePublicEntry);
     return true;
   }
 
@@ -396,16 +271,12 @@
     observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 
-  window.addEventListener('beforeunload', () => {
-    if (homeRefreshTimer) window.clearInterval(homeRefreshTimer);
-  });
-
   window.RealPlaySimpleNavigation = {
     home: openHome,
     world: () => openWorldTab('world'),
     players: () => openWorldTab('players'),
     chats: () => openWorldTab('chats'),
     me: openMe,
-    refreshHome,
+    refreshHome: requestHomeRefresh,
   };
 })();

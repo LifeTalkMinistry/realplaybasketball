@@ -5,11 +5,6 @@
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
 
-  const menu = document.querySelector('[data-rp-main-menu]');
-  const settingsChoice = document.querySelector('[data-rp-main-action="settings"]');
-  const menuList = document.querySelector('[data-rp-main-menu-list]');
-  if (!menu || !settingsChoice) return;
-
   const relocationStyle = document.createElement('style');
   relocationStyle.dataset.rpProfileSettingsRelocation = 'true';
   relocationStyle.textContent = `
@@ -19,9 +14,6 @@
   `;
   document.head.appendChild(relocationStyle);
 
-  const settingsSummary = settingsChoice.querySelector('span');
-  if (settingsSummary) settingsSummary.textContent = 'IDENTITY · MEMBERSHIP · COMMUNITY · ACCOUNT';
-
   const panel = document.createElement('div');
   panel.className = 'rp-settings-overlay';
   panel.dataset.rpSettingsOverlay = 'true';
@@ -29,7 +21,7 @@
   panel.innerHTML = `
     <section class="rp-settings-panel" data-rp-settings-main role="dialog" aria-modal="true" aria-labelledby="rp-settings-title">
       <header class="rp-settings-head">
-        <button class="rp-settings-back" type="button" data-rp-settings-back aria-label="Back to Real Play menu">←</button>
+        <button class="rp-settings-back" type="button" data-rp-settings-back aria-label="Back to Real Play">←</button>
         <div>
           <small>ACCOUNT</small>
           <h2 id="rp-settings-title">SETTINGS</h2>
@@ -240,6 +232,12 @@
     window.dispatchEvent(new CustomEvent('realplay:settings-open'));
   }
 
+  function restoreSettingsFocus() {
+    const target = document.querySelector('[data-rp-simple-settings]')
+      || document.querySelector('[data-rp-simple-nav-item="me"]');
+    try { target?.focus?.({ preventScroll: true }); } catch (_error) {}
+  }
+
   function closeSettings({ restoreFocus = true } = {}) {
     const active = document.activeElement;
 
@@ -255,9 +253,7 @@
     if (mainPanel) mainPanel.hidden = false;
     if (communityPanel) communityPanel.hidden = true;
 
-    if (restoreFocus) {
-      window.setTimeout(() => settingsChoice.focus({ preventScroll: true }), 30);
-    }
+    if (restoreFocus) window.setTimeout(restoreSettingsFocus, 30);
   }
 
   function showCommunity() {
@@ -338,20 +334,6 @@
     window.location.reload();
   }
 
-  function interceptSettingsSelection(event) {
-    if (!settingsChoice.classList.contains('slot-active')) return false;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    showMainSettings();
-    return true;
-  }
-
-  document.addEventListener('click', (event) => {
-    const target = event.target.closest?.('[data-rp-main-action="settings"]');
-    if (!target) return;
-    interceptSettingsSelection(event);
-  }, true);
-
   document.addEventListener('click', (event) => {
     const target = event.target.closest?.('.rp-profile-settings-placeholder, [data-rp-profile-settings]');
     if (!target) return;
@@ -359,12 +341,6 @@
     event.stopImmediatePropagation();
     window.RealPlayProfile?.close?.();
     window.setTimeout(showMainSettings, 30);
-  }, true);
-
-  menuList?.addEventListener('keydown', (event) => {
-    if ((event.key === 'Enter' || event.key === ' ') && settingsChoice.classList.contains('slot-active')) {
-      interceptSettingsSelection(event);
-    }
   }, true);
 
   playerIdButton?.addEventListener('click', copyPlayerId);
@@ -394,4 +370,10 @@
     if (communityPanel && !communityPanel.hidden) showMainSettings();
     else closeSettings();
   });
+
+  window.RealPlaySettings = {
+    open: showMainSettings,
+    close: closeSettings,
+    isOpen: () => panel.classList.contains('open'),
+  };
 })();
