@@ -4,11 +4,17 @@
 
   const TOKEN_KEY = 'real_play_access_token';
   const API_URL = 'https://api.clarapmc.com/api/real-play/admin/player';
+  const LIST_TTL_MS = 15_000;
+  const DEFAULT_429_BACKOFF_MS = 60_000;
 
   let selectedPlayerId = null;
   let selectedState = null;
   let stateRequestId = 0;
   let enhanceQueued = false;
+  let listPromise = null;
+  let cachedPlayers = [];
+  let cachedPlayersAt = 0;
+  let rateLimitedUntil = 0;
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -40,8 +46,44 @@
       cache: 'no-store',
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data?.message || data?.error || 'Player rank action failed.');
+    if (!response.ok) {
+      const error = new Error(data?.message || data?.error || 'Player rank action failed.');
+      error.status = response.status;
+      error.code = data?.code || '';
+      if (response.status === 429) {
+        const retryAfterSeconds = Number(response.headers.get('Retry-After'));
+        rateLimitedUntil = Date.now() + (
+          Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+            ? retryAfterSeconds * 1000
+            : DEFAULT_429_BACKOFF_MS
+        );
+      }
+      throw error;
+    }
     return data;
+  }
+
+  async function loadDirectoryPlayers({ force = false } = {}) {
+    const now = Date.now();
+    if (now < rateLimitedUntil) return cachedPlayers;
+    if (!force && cachedPlayersAt && now - cachedPlayersAt < LIST_TTL_MS) return cachedPlayers;
+    if (listPromise) return listPromise;
+
+    listPromise = (async () => {
+      try {
+        const data = await adminCall('list');
+        cachedPlayers = Array.isArray(data?.players) ? data.players : [];
+        cachedPlayersAt = Date.now();
+        return cachedPlayers;
+      } catch (error) {
+        // Keep any last known directory while rate limited or temporarily offline.
+        return cachedPlayers;
+      } finally {
+        listPromise = null;
+      }
+    })();
+
+    return listPromise;
   }
 
   function rowPlayerId(target) {
@@ -56,6 +98,7 @@
     if (selectedPlayerId !== id) {
       selectedPlayerId = id;
       selectedState = null;
+      stateRequestId += 1;
     }
   }
 
@@ -143,16 +186,14 @@
   async function loadSelectedState() {
     if (!selectedPlayerId || !adminContextActive() || !sheet()) return;
     const requestId = ++stateRequestId;
-    try {
-      const data = await adminCall('list');
-      if (requestId !== stateRequestId || !sheet()) return;
-      const players = Array.isArray(data?.players) ? data.players : [];
-      selectedState = players.find((player) => Number(player?.playerId ?? player?.userId) === selectedPlayerId) || null;
-      if (selectedState) renderRankAction(selectedState);
-    } catch (_error) {
-      // The base admin sheet remains fully usable if this optional rank control
-      // cannot load. Do not replace its own status/error handling.
-    }
+    const wantedPlayerId = selectedPlayerId;
+    const players = await loadDirectoryPlayers();
+    if (requestId !== stateRequestId || !sheet() || selectedPlayerId !== wantedPlayerId) return;
+
+    selectedState = players.find(
+      (player) => Number(player?.playerId ?? player?.userId) === wantedPlayerId
+    ) || null;
+    if (selectedState) renderRankAction(selectedState);
   }
 
   function enhance() {
@@ -164,6 +205,9 @@
       renderRankAction(selectedState);
       return;
     }
+
+    // loadDirectoryPlayers() deduplicates every in-flight list request and keeps
+    // a short cache. DOM mutations can no longer create a request storm.
     void loadSelectedState();
   }
 
@@ -173,12 +217,15 @@
     window.requestAnimationFrame(enhance);
   }
 
-  const observer = new MutationObserver(queueEnhance);
+  // Child changes are enough: opening/rendering the admin sheet changes its
+  // contents. Watching every class mutation used to retrigger LIST requests for
+  // unrelated UI animations and ultimately exhausted the backend rate limit.
+  const observer = new MutationObserver((mutations) => {
+    if (mutations.some((mutation) => mutation.type === 'childList')) queueEnhance();
+  });
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
-    attributes: true,
-    attributeFilter: ['class'],
   });
 
   document.addEventListener('click', async (event) => {
@@ -218,6 +265,12 @@
         userId: selectedPlayerId,
         playerId: selectedPlayerId,
       };
+      cachedPlayers = cachedPlayers.map((player) => (
+        Number(player?.playerId ?? player?.userId) === selectedPlayerId
+          ? { ...player, ...selectedState }
+          : player
+      ));
+      cachedPlayersAt = Date.now();
       renderRankAction(selectedState);
       sheetStatus(data?.message || (restoring ? 'Manual unrank override removed.' : 'Player is now Unranked.'), 'success');
 
