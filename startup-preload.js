@@ -72,6 +72,7 @@
     'ranking-games-standby-players.js',
     'ranking-games-info-toggle.js',
     'ranking-games-session-cleanup.js',
+    'ranking-team-support-center-force.js',
     'ranking-team-support-tiers.js',
     'ranking-session-teams.js',
     'ranking-spot-priority.js',
