@@ -3,6 +3,7 @@
 @import url('home-why-real-play.css?v=20260923-profile-hero-contract-v119');
 @import url('public-founder-credit.css?v=20260923-profile-hero-contract-v119');
 
+.rp-topbar{display:none!important}
 body.rp-lobby-active .rp-entry{display:none}
 .rp-app.rp-guest{min-height:100vh;padding:0}
 .rp-app.rp-guest::before{opacity:.12}
