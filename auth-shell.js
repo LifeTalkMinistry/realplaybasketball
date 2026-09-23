@@ -1,4 +1,49 @@
 (() => {
+  let pendingOpenView = null;
+  let pendingOpenTimer = 0;
+
+  function openAuth(view = '') {
+    const normalizedView = String(view || '').trim();
+    if (typeof window.__realPlayOpenAuth === 'function') {
+      window.__realPlayOpenAuth(normalizedView || undefined);
+      pendingOpenView = null;
+      return true;
+    }
+
+    pendingOpenView = normalizedView;
+    if (pendingOpenTimer) return false;
+
+    let attempts = 0;
+    const retry = () => {
+      pendingOpenTimer = 0;
+      if (typeof window.__realPlayOpenAuth === 'function') {
+        const nextView = pendingOpenView;
+        pendingOpenView = null;
+        window.__realPlayOpenAuth(nextView || undefined);
+        return;
+      }
+      attempts += 1;
+      if (attempts >= 120) return;
+      pendingOpenTimer = window.setTimeout(retry, 50);
+    };
+    pendingOpenTimer = window.setTimeout(retry, 0);
+    return false;
+  }
+
+  function closeAuth() {
+    const close = document.querySelector('[data-auth-close]');
+    if (close) {
+      close.click();
+      return true;
+    }
+    return false;
+  }
+
+  window.RealPlayAuth = {
+    open: openAuth,
+    close: closeAuth,
+  };
+
   if (document.querySelector('[data-auth-overlay]')) return;
 
   const overlay = document.createElement('div');
