@@ -6,6 +6,7 @@
   const ADMIN_API_PREFIX = 'https://api.clarapmc.com/api/real-play/admin/';
   const ADMIN_VERIFY_URL = `${ADMIN_API_PREFIX}career/control`;
   const PROFILE_ART_API_PREFIX = `${ADMIN_API_PREFIX}profile-art`;
+  const ADMIN_SYNC_MIN_MS = 5_000;
 
   function adminContextRequested() {
     try {
@@ -67,6 +68,7 @@
   */
   let adminSyncTimer = 0;
   let adminSyncAttempts = 0;
+  let lastAdminSyncAt = 0;
 
   function syncPlayerAdminAccess({ reset = false } = {}) {
     if (reset) adminSyncAttempts = 0;
@@ -76,6 +78,9 @@
     const playerAdmin = window.RealPlayPlayerAdmin;
     if (adminContextRequested() && typeof playerAdmin?.refresh === 'function') {
       adminSyncAttempts = 0;
+      const now = Date.now();
+      if (lastAdminSyncAt && now - lastAdminSyncAt < ADMIN_SYNC_MIN_MS) return true;
+      lastAdminSyncAt = now;
       try { playerAdmin.refresh(); } catch (_error) {}
       return true;
     }
@@ -218,7 +223,7 @@
   if (!document.querySelector('script[data-rp-admin-rank-status-loader]')) {
     const script = document.createElement('script');
     script.dataset.rpAdminRankStatusLoader = '1';
-    script.src = 'real-play-admin-rank-status.js?v=20260922-admin-rank-status-v3';
+    script.src = 'real-play-admin-rank-status.js?v=20260923-admin-rank-status-v4';
     script.async = false;
     script.onerror = () => console.error('[Real Play] Admin rank status controls failed to load.');
     document.head.appendChild(script);
@@ -240,7 +245,7 @@
   if (!document.querySelector('script[data-rp-rank-recognition-sync-loader]')) {
     const script = document.createElement('script');
     script.dataset.rpRankRecognitionSyncLoader = '1';
-    script.src = 'real-play-rank-recognition-sync.js?v=20260922-rank-recognition-sync-v1';
+    script.src = 'real-play-rank-recognition-sync.js?v=20260923-rank-recognition-sync-v3';
     script.async = false;
     script.onerror = () => console.error('[Real Play] Rank recognition sync failed to load.');
     document.head.appendChild(script);
