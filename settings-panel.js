@@ -367,7 +367,7 @@
 
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !panel.classList.contains('open')) return;
-    if (communityPanel && !communityPanel.hidden) showCommunity();
+    if (communityPanel && !communityPanel.hidden) showMainSettings();
     else closeSettings();
   });
 
