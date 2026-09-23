@@ -81,7 +81,7 @@
     && !document.querySelector('script[data-rp-rank-recognition-sync-loader]')) {
     const syncScript = document.createElement('script');
     syncScript.dataset.rpRankRecognitionSyncLoader = '1';
-    syncScript.src = 'real-play-rank-recognition-sync.js?v=20260923-profile-recognition-authority-v3';
+    syncScript.src = 'real-play-rank-recognition-sync.js?v=20260923-profile-recognition-authority-v4';
     syncScript.async = false;
     document.head.appendChild(syncScript);
   }
