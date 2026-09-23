@@ -2,7 +2,9 @@
   if (window.__realPlayRankRecognitionSyncInstalled) return;
   window.__realPlayRankRecognitionSyncInstalled = true;
 
+  const AUTHORITY_TTL_MS = 60_000;
   const CAPTAIN_TYPE = 'captain_eligible';
+  const CAPTAIN_RANK_LIMIT = 4;
   const KNOWN_RECOGNITION_TYPES = new Set([
     'most_overall_mvp',
     'most_team_mvp',
@@ -10,10 +12,18 @@
     'best_rebounder',
     CAPTAIN_TYPE,
   ]);
+
   let scheduled = false;
+  let authorityLoadedAt = 0;
+  let authorityPromise = null;
+  let authorityById = new Map();
 
   function normalizeType(value) {
     return String(value || '').trim().toLowerCase();
+  }
+
+  function normalizeName(value) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
   }
 
   function isPositiveRank(value) {
@@ -21,11 +31,8 @@
     return Number.isSafeInteger(rank) && rank > 0;
   }
 
-  function trimCaptainFromBadges(owner) {
-    if (!Array.isArray(owner?.__realPlayBadges)) return [];
-    const next = owner.__realPlayBadges.filter((badge) => normalizeType(badge?.type) !== CAPTAIN_TYPE);
-    owner.__realPlayBadges = next;
-    return next;
+  function playerId(player) {
+    return String(player?.playerId ?? player?.userId ?? player?.id ?? '').trim();
   }
 
   function sourcePlayerId(source) {
@@ -49,14 +56,78 @@
     return '';
   }
 
-  function normalizeName(value) {
-    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
-  }
-
   function profileSource(profile) {
     return profile?.classList?.contains('rp-public-player-profile')
       ? profile.__realPlayPublicPlayer
       : profile.__realPlayProfileState;
+  }
+
+  function nestedRecognitionSources(source) {
+    if (!source || typeof source !== 'object') return [];
+    return [source, source?.player, source?.profile, source?.career, source?.careerStats].filter(Boolean);
+  }
+
+  function authorityRecognitionTypes(player) {
+    const allowed = new Set();
+    nestedRecognitionSources(player).forEach((candidate) => {
+      ['badges', 'recognitions'].forEach((key) => {
+        if (!Array.isArray(candidate?.[key])) return;
+        candidate[key].forEach((badge) => {
+          const type = normalizeType(badge?.type);
+          if (KNOWN_RECOGNITION_TYPES.has(type)) allowed.add(type);
+        });
+      });
+    });
+
+    const rankCandidates = [
+      player?.rank,
+      player?.career?.rank,
+      player?.careerStats?.rank,
+      player?.ranking?.rank,
+      player?.profile?.rank,
+    ];
+    const rank = rankCandidates.map(Number).find((value) => Number.isSafeInteger(value) && value > 0) || null;
+    if (rank && rank <= CAPTAIN_RANK_LIMIT) allowed.add(CAPTAIN_TYPE);
+    else allowed.delete(CAPTAIN_TYPE);
+
+    return allowed;
+  }
+
+  function trimCaptainFromBadges(owner) {
+    if (!Array.isArray(owner?.__realPlayBadges)) return [];
+    const next = owner.__realPlayBadges.filter((badge) => normalizeType(badge?.type) !== CAPTAIN_TYPE);
+    owner.__realPlayBadges = next;
+    return next;
+  }
+
+  function trimKnownRecognitions(candidate, allowedTypes) {
+    if (!candidate || typeof candidate !== 'object') return;
+    ['badges', 'recognitions'].forEach((key) => {
+      if (!Array.isArray(candidate[key])) return;
+      candidate[key] = candidate[key].filter((badge) => {
+        const type = normalizeType(badge?.type);
+        return !KNOWN_RECOGNITION_TYPES.has(type) || allowedTypes.has(type);
+      });
+    });
+  }
+
+  function matchingAuthorityPlayer(profile) {
+    const source = profileSource(profile);
+    const explicitId = String(
+      profile?.dataset?.rpPublicPlayerId
+      || profile?.dataset?.rpProfilePlayerId
+      || sourcePlayerId(source)
+      || ''
+    ).trim();
+
+    if (explicitId && authorityById.has(explicitId)) return authorityById.get(explicitId);
+
+    const wantedName = normalizeName(profile?.querySelector('.rp-profile-name h1')?.textContent);
+    if (!wantedName) return null;
+    const matches = [...authorityById.values()].filter((player) => normalizeName(
+      player?.playerName || player?.player_name || player?.name
+    ) === wantedName);
+    return matches.length === 1 ? matches[0] : null;
   }
 
   function matchingWorldRow(profile) {
@@ -82,24 +153,10 @@
     return matches.length === 1 ? matches[0] : null;
   }
 
-  function trimKnownRecognitions(candidate, allowedTypes) {
-    if (!candidate || typeof candidate !== 'object') return;
-    ['badges', 'recognitions'].forEach((key) => {
-      if (!Array.isArray(candidate[key])) return;
-      candidate[key] = candidate[key].filter((badge) => {
-        const type = normalizeType(badge?.type);
-        return !KNOWN_RECOGNITION_TYPES.has(type) || allowedTypes.has(type);
-      });
-    });
-  }
-
-  function syncProfileSourceToWorld(profile, authoritativeBadges) {
-    if (!Array.isArray(authoritativeBadges)) return null;
-    const allowedTypes = new Set(authoritativeBadges.map((badge) => normalizeType(badge?.type)).filter(Boolean));
+  function syncProfileSource(profile, allowedTypes) {
+    if (!(allowedTypes instanceof Set)) return;
     const source = profileSource(profile);
-    [source, source?.player, source?.profile, source?.career, source?.careerStats]
-      .filter(Boolean)
-      .forEach((candidate) => trimKnownRecognitions(candidate, allowedTypes));
+    nestedRecognitionSources(source).forEach((candidate) => trimKnownRecognitions(candidate, allowedTypes));
 
     if (Array.isArray(profile.__realPlayBadges)) {
       profile.__realPlayBadges = profile.__realPlayBadges.filter((badge) => {
@@ -107,8 +164,34 @@
         return !KNOWN_RECOGNITION_TYPES.has(type) || allowedTypes.has(type);
       });
     }
+  }
 
-    return allowedTypes;
+  async function loadAuthority(force = false) {
+    const now = Date.now();
+    if (!force && authorityLoadedAt && now - authorityLoadedAt < AUTHORITY_TTL_MS) return authorityById;
+    if (authorityPromise) return authorityPromise;
+    if (typeof window.RealPlayWorld?.community !== 'function') return authorityById;
+
+    authorityPromise = (async () => {
+      try {
+        const data = await window.RealPlayWorld.community('players');
+        const next = new Map();
+        (Array.isArray(data?.players) ? data.players : []).forEach((player) => {
+          const id = playerId(player);
+          if (id) next.set(id, player);
+        });
+        authorityById = next;
+        authorityLoadedAt = Date.now();
+      } catch (_error) {
+        // Keep the last known authority. DOM-row fallback still protects the UI.
+      } finally {
+        authorityPromise = null;
+        scheduleSync();
+      }
+      return authorityById;
+    })();
+
+    return authorityPromise;
   }
 
   function syncFeaturedCount(row, badges) {
@@ -131,11 +214,6 @@
 
   function syncRow(row) {
     if (!(row instanceof HTMLElement)) return;
-
-    // The filter/ranking layer writes data-official-rank from the canonical
-    // backend rank authority. Once that attribute exists, an empty value means
-    // the player is currently UNRANKED even if the recognition layer still has
-    // a short-lived cached copy of their old rank.
     if (!row.hasAttribute('data-official-rank')) return;
     if (isPositiveRank(row.dataset.officialRank)) return;
 
@@ -150,9 +228,6 @@
       return;
     }
 
-    // Captain eligibility is the lowest-priority recognition. If another badge
-    // is featured, keep that badge but remove the stale captain from its +count
-    // and from the details collection opened from this row.
     syncFeaturedCount(row, badges);
   }
 
@@ -163,38 +238,51 @@
     return /UNRANKED/i.test(label);
   }
 
-  function syncProfile(profile) {
-    if (!(profile instanceof HTMLElement)) return;
-
-    // The Players directory is the current recognition authority. A profile may
-    // still carry an older badge array in its own response, so reconcile that
-    // cached profile payload to the exact badge types owned by the matching
-    // World/Players row before the recognition renderer gets another pass.
-    const worldRow = matchingWorldRow(profile);
-    const authoritativeBadges = Array.isArray(worldRow?.__realPlayBadges)
-      ? worldRow.__realPlayBadges
-      : null;
-    const allowedTypes = syncProfileSourceToWorld(profile, authoritativeBadges);
-
+  function removeDisallowedProfileButtons(profile, allowedTypes) {
+    if (!(allowedTypes instanceof Set)) return;
     const strip = profile.querySelector('[data-rp-profile-badges]');
-    if (allowedTypes) {
-      strip?.querySelectorAll('[data-rp-profile-recognition]').forEach((button) => {
-        const type = normalizeType(button.dataset.rpProfileRecognition);
-        if (KNOWN_RECOGNITION_TYPES.has(type) && !allowedTypes.has(type)) button.remove();
-      });
-    }
-
-    // Keep the existing explicit UNRANKED protection as a fallback when the
-    // matching Players row has not rendered yet.
-    if (profileExplicitlyUnranked(profile)) {
-      trimCaptainFromBadges(profile);
-      profile.__realPlayBadgeRank = null;
-      strip?.querySelector('[data-rp-profile-recognition="captain_eligible"]')?.remove();
-    }
-
+    strip?.querySelectorAll('[data-rp-profile-recognition]').forEach((button) => {
+      const type = normalizeType(button.dataset.rpProfileRecognition);
+      if (KNOWN_RECOGNITION_TYPES.has(type) && !allowedTypes.has(type)) button.remove();
+    });
     if (strip && !strip.querySelector('[data-rp-profile-recognition]')) {
       strip.remove();
       profile.classList.remove('has-rp-profile-badges');
+    }
+  }
+
+  function syncProfile(profile) {
+    if (!(profile instanceof HTMLElement)) return;
+
+    // Prefer the same current Players API authority used to build the directory.
+    // This still works after opening a profile, when the Players rows may no
+    // longer exist in the DOM. That was the gap that allowed stale MVP badges
+    // to survive on a player's profile.
+    const authorityPlayer = matchingAuthorityPlayer(profile);
+    let allowedTypes = authorityPlayer ? authorityRecognitionTypes(authorityPlayer) : null;
+
+    // Fast fallback while authority is loading: use the matching rendered row.
+    if (!allowedTypes) {
+      const worldRow = matchingWorldRow(profile);
+      if (Array.isArray(worldRow?.__realPlayBadges)) {
+        allowedTypes = new Set(worldRow.__realPlayBadges.map((badge) => normalizeType(badge?.type)).filter(Boolean));
+      }
+    }
+
+    if (allowedTypes) {
+      syncProfileSource(profile, allowedTypes);
+      removeDisallowedProfileButtons(profile, allowedTypes);
+    }
+
+    if (profileExplicitlyUnranked(profile)) {
+      trimCaptainFromBadges(profile);
+      profile.__realPlayBadgeRank = null;
+      const strip = profile.querySelector('[data-rp-profile-badges]');
+      strip?.querySelector('[data-rp-profile-recognition="captain_eligible"]')?.remove();
+      if (strip && !strip.querySelector('[data-rp-profile-recognition]')) {
+        strip.remove();
+        profile.classList.remove('has-rp-profile-badges');
+      }
     }
   }
 
@@ -202,6 +290,11 @@
     scheduled = false;
     document.querySelectorAll('.rp-world-player-row').forEach(syncRow);
     document.querySelectorAll('.rp-profile.open').forEach(syncProfile);
+
+    if (document.querySelector('.rp-profile.open')
+      && (!authorityLoadedAt || Date.now() - authorityLoadedAt >= AUTHORITY_TTL_MS)) {
+      loadAuthority();
+    }
   }
 
   function scheduleSync() {
@@ -230,9 +323,19 @@
     attributeFilter: ['data-official-rank', 'data-recognition-type', 'class'],
   });
 
-  window.addEventListener('realplay:profile-loaded', scheduleSync);
-  window.addEventListener('realplay:public-profile-loaded', scheduleSync);
-  window.addEventListener('focus', scheduleSync);
+  window.addEventListener('realplay:profile-loaded', () => {
+    loadAuthority(true);
+    scheduleSync();
+  });
+  window.addEventListener('realplay:public-profile-loaded', () => {
+    loadAuthority(true);
+    scheduleSync();
+  });
+  window.addEventListener('focus', () => {
+    if (document.querySelector('.rp-profile.open')) loadAuthority();
+    scheduleSync();
+  });
 
+  loadAuthority();
   scheduleSync();
 })();
