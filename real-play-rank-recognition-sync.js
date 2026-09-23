@@ -3,7 +3,18 @@
   window.__realPlayRankRecognitionSyncInstalled = true;
 
   const CAPTAIN_TYPE = 'captain_eligible';
+  const KNOWN_RECOGNITION_TYPES = new Set([
+    'most_overall_mvp',
+    'most_team_mvp',
+    'best_shooting',
+    'best_rebounder',
+    CAPTAIN_TYPE,
+  ]);
   let scheduled = false;
+
+  function normalizeType(value) {
+    return String(value || '').trim().toLowerCase();
+  }
 
   function isPositiveRank(value) {
     const rank = Number(value);
@@ -12,11 +23,92 @@
 
   function trimCaptainFromBadges(owner) {
     if (!Array.isArray(owner?.__realPlayBadges)) return [];
-    const next = owner.__realPlayBadges.filter((badge) => (
-      String(badge?.type || '').trim().toLowerCase() !== CAPTAIN_TYPE
-    ));
+    const next = owner.__realPlayBadges.filter((badge) => normalizeType(badge?.type) !== CAPTAIN_TYPE);
     owner.__realPlayBadges = next;
     return next;
+  }
+
+  function sourcePlayerId(source) {
+    const candidates = [
+      source?.playerId,
+      source?.userId,
+      source?.id,
+      source?.player?.playerId,
+      source?.player?.userId,
+      source?.player?.id,
+      source?.profile?.playerId,
+      source?.profile?.player_id,
+      source?.profile?.userId,
+      source?.profile?.user_id,
+      source?.profile?.id,
+    ];
+    for (const value of candidates) {
+      const id = Number(value);
+      if (Number.isSafeInteger(id) && id > 0) return String(id);
+    }
+    return '';
+  }
+
+  function normalizeName(value) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function profileSource(profile) {
+    return profile?.classList?.contains('rp-public-player-profile')
+      ? profile.__realPlayPublicPlayer
+      : profile.__realPlayProfileState;
+  }
+
+  function matchingWorldRow(profile) {
+    const source = profileSource(profile);
+    const explicitId = String(
+      profile?.dataset?.rpPublicPlayerId
+      || profile?.dataset?.rpProfilePlayerId
+      || sourcePlayerId(source)
+      || ''
+    ).trim();
+    const rows = [...document.querySelectorAll('.rp-world-player-row')];
+
+    if (explicitId) {
+      const byId = rows.find((row) => String(row?.dataset?.worldPlayerId || '').trim() === explicitId);
+      if (byId) return byId;
+    }
+
+    const wantedName = normalizeName(profile?.querySelector('.rp-profile-name h1')?.textContent);
+    if (!wantedName) return null;
+    const matches = rows.filter((row) => normalizeName(
+      row?.querySelector('.rp-world-player-name strong')?.textContent
+    ) === wantedName);
+    return matches.length === 1 ? matches[0] : null;
+  }
+
+  function trimKnownRecognitions(candidate, allowedTypes) {
+    if (!candidate || typeof candidate !== 'object') return;
+    ['badges', 'recognitions'].forEach((key) => {
+      if (!Array.isArray(candidate[key])) return;
+      candidate[key] = candidate[key].filter((badge) => {
+        const type = normalizeType(badge?.type);
+        return !KNOWN_RECOGNITION_TYPES.has(type) || allowedTypes.has(type);
+      });
+    });
+  }
+
+  function syncProfileSourceToWorld(profile, authoritativeBadges) {
+    if (!Array.isArray(authoritativeBadges)) return null;
+    const allowedTypes = new Set(authoritativeBadges.map((badge) => normalizeType(badge?.type)).filter(Boolean));
+    const source = profileSource(profile);
+    [source, source?.player, source?.profile, source?.career, source?.careerStats]
+      .filter(Boolean)
+      .forEach((candidate) => trimKnownRecognitions(candidate, allowedTypes));
+
+    if (Array.isArray(profile.__realPlayBadges)) {
+      profile.__realPlayBadges = profile.__realPlayBadges.filter((badge) => {
+        const type = normalizeType(badge?.type);
+        return !KNOWN_RECOGNITION_TYPES.has(type) || allowedTypes.has(type);
+      });
+    }
+
+    return allowedTypes;
   }
 
   function syncFeaturedCount(row, badges) {
@@ -48,7 +140,7 @@
     if (isPositiveRank(row.dataset.officialRank)) return;
 
     const badges = trimCaptainFromBadges(row);
-    const featuredType = String(row.dataset.recognitionType || '').trim().toLowerCase();
+    const featuredType = normalizeType(row.dataset.recognitionType);
 
     if (featuredType === CAPTAIN_TYPE) {
       row.querySelector('[data-rp-featured-recognition]')?.remove();
@@ -72,13 +164,33 @@
   }
 
   function syncProfile(profile) {
-    if (!(profile instanceof HTMLElement) || !profileExplicitlyUnranked(profile)) return;
+    if (!(profile instanceof HTMLElement)) return;
 
-    trimCaptainFromBadges(profile);
-    profile.__realPlayBadgeRank = null;
+    // The Players directory is the current recognition authority. A profile may
+    // still carry an older badge array in its own response, so reconcile that
+    // cached profile payload to the exact badge types owned by the matching
+    // World/Players row before the recognition renderer gets another pass.
+    const worldRow = matchingWorldRow(profile);
+    const authoritativeBadges = Array.isArray(worldRow?.__realPlayBadges)
+      ? worldRow.__realPlayBadges
+      : null;
+    const allowedTypes = syncProfileSourceToWorld(profile, authoritativeBadges);
 
     const strip = profile.querySelector('[data-rp-profile-badges]');
-    strip?.querySelector('[data-rp-profile-recognition="captain_eligible"]')?.remove();
+    if (allowedTypes) {
+      strip?.querySelectorAll('[data-rp-profile-recognition]').forEach((button) => {
+        const type = normalizeType(button.dataset.rpProfileRecognition);
+        if (KNOWN_RECOGNITION_TYPES.has(type) && !allowedTypes.has(type)) button.remove();
+      });
+    }
+
+    // Keep the existing explicit UNRANKED protection as a fallback when the
+    // matching Players row has not rendered yet.
+    if (profileExplicitlyUnranked(profile)) {
+      trimCaptainFromBadges(profile);
+      profile.__realPlayBadgeRank = null;
+      strip?.querySelector('[data-rp-profile-recognition="captain_eligible"]')?.remove();
+    }
 
     if (strip && !strip.querySelector('[data-rp-profile-recognition]')) {
       strip.remove();
