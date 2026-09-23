@@ -1,6 +1,8 @@
 (() => {
   const version = '20260923-profile-hero-contract-v119';
   const html = document.documentElement;
+  const bootStartedAt = performance.now();
+  const MIN_BOOT_DISPLAY_MS = 2400;
   html.classList.add('js', 'rp-shell-booting');
 
   // Startup has only three visible states:
@@ -91,9 +93,23 @@
     );
   }
 
+  function hasPrimaryInteractions() {
+    const navItems = document.querySelectorAll('[data-rp-simple-nav-item]');
+    return Boolean(
+      navItems.length === 5 &&
+      document.querySelector('[data-rp-simple-home][data-rp-home-command-center="true"]') &&
+      document.querySelector('[data-rp-home-save-slot]') &&
+      document.querySelector('[data-rp-home-whats-coming]') &&
+      window.RealPlayUpdates?.open &&
+      window.RealPlayWorld?.open &&
+      window.RealPlayProfile?.open &&
+      window.RealPlayRankingGames?.open
+    );
+  }
+
   function revealNewShell() {
     if (shellReady) return true;
-    if (!bootResourcesReady || !hasNewShell()) return false;
+    if (!bootResourcesReady || !hasNewShell() || !hasPrimaryInteractions()) return false;
 
     shellReady = true;
     clearStaticBootFallback();
@@ -184,6 +200,49 @@
   function nextPaint() {
     return new Promise((resolve) => {
       window.requestAnimationFrame(() => window.requestAnimationFrame(resolve));
+    });
+  }
+
+  async function waitForMinimumBootDisplay() {
+    const remaining = MIN_BOOT_DISPLAY_MS - (performance.now() - bootStartedAt);
+    if (remaining > 0) {
+      await new Promise((resolve) => window.setTimeout(resolve, remaining));
+    }
+  }
+
+  async function waitForHomeSettled(timeoutMs = 4500, quietMs = 500) {
+    const root = document.querySelector('[data-rp-simple-home]');
+    if (!root) return false;
+
+    return new Promise((resolve) => {
+      let done = false;
+      let quietTimer = 0;
+      let timeoutTimer = 0;
+
+      const finish = (value) => {
+        if (done) return;
+        done = true;
+        if (quietTimer) window.clearTimeout(quietTimer);
+        if (timeoutTimer) window.clearTimeout(timeoutTimer);
+        observer.disconnect();
+        resolve(value);
+      };
+
+      const armQuietWindow = () => {
+        if (quietTimer) window.clearTimeout(quietTimer);
+        quietTimer = window.setTimeout(() => finish(true), quietMs);
+      };
+
+      const observer = new MutationObserver(armQuietWindow);
+      observer.observe(root, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        characterData: true,
+      });
+
+      armQuietWindow();
+      timeoutTimer = window.setTimeout(() => finish(true), timeoutMs);
     });
   }
 
@@ -282,16 +341,40 @@
     'world-results.css',
   ];
 
-  // Only these first-frame styles are allowed to participate in the boot gate.
-  // All feature-specific CSS loads after the usable Home/navigation shell is up.
+  // The loading gate owns every stylesheet needed by the first interactive
+  // player-facing frame. Deep mode/admin styling remains progressive.
   const criticalStylesheetHrefs = new Set([
     'mobile-lobby.css',
+    'lobby-topbar-cleanup.css',
     'mobile-entry.css',
     'public-landing.css',
     'public-landing-cleanup.css',
     'mobile-shell-fix.css',
+    'mobile-lobby-cleanup.css',
     'main-menu.css',
     'simple-navigation.css',
+    'ranking-games.css',
+    'ranking-games-cleanup.css',
+    'ranking-session-teams.css',
+    'real-play-updates.css',
+    'real-play-updates-cleanup.css',
+    'real-play-updates-game-detail.css',
+    'real-play-world.css',
+    'real-play-world-chat-cleanup.css',
+    'real-play-profile.css',
+    'profile-identity-cleanup.css',
+    'real-play-profile-intro.css',
+    'real-play-profile-metrics.css',
+    'profile-metrics-stability.css',
+    'membership.css',
+    'settings-panel.css',
+    'auth-welcome-cleanup.css',
+    'public-founder-credit.css',
+    'visitor-mode.css',
+    'home-main-announcement-art.css',
+    'home-open-rank-art.css',
+    'home-why-real-play.css',
+    'world-results.css',
   ]);
 
   (async () => {
@@ -327,30 +410,25 @@
       }
     }
 
-    // First usable frame: wait only for the handful of CSS files that define
-    // entry visibility plus Home/navigation structure. Optional product layers
-    // must never keep the player on LOADING.
     const criticalStyleResults = await Promise.all(
-      [...criticalStylesheetHrefs].map((href) => addStylesheet(href, 3500))
+      [...criticalStylesheetHrefs].map((href) => addStylesheet(href, 4500))
     );
     criticalStyleResults.forEach((loaded, index) => {
       if (!loaded) console.warn(`[Real Play] Critical shell stylesheet did not settle at index ${index}.`);
     });
 
-    bootResourcesReady = true;
-    if (!revealNewShell()) {
-      showBootFailure('Real Play core shell is unavailable.');
+    // The authoritative Home state is part of readiness now, not a post-reveal
+    // enhancement. It installs the live Sunday session and Save My Slot action.
+    const navAuthorityLoaded = await loadScript('simple-navigation-state-authority.js', 6500);
+    if (!navAuthorityLoaded) {
+      showBootFailure('Home navigation authority failed to initialize.');
       return;
     }
 
-    // Home schedule authority enhances an already-visible shell. If it is slow
-    // or unavailable, base Home/navigation remains usable.
-    const navAuthorityLoaded = await loadScript('simple-navigation-state-authority.js', 6500);
-    if (!navAuthorityLoaded) {
-      console.warn('[Real Play] Navigation authority layer did not load; base navigation remains available.');
-    }
-
-    const enhancements = [
+    // Preserve the historical dependency order. Everything through the current
+    // Open Ranking reservation stack loads behind the gate; admin/deep support
+    // continues progressively after the player-facing UI is revealed.
+    const firstInteractionEnhancements = [
       'public-landing.js',
       'home-why-real-play.js',
       'visitor-mode.js',
@@ -417,6 +495,31 @@
       'ranking-session-teams.js',
       'ranking-spot-priority.js',
       'ranking-reservation-snapshot.js',
+    ];
+
+    for (const href of firstInteractionEnhancements) {
+      const loaded = await loadScript(href, 4500);
+      if (!loaded) console.warn(`[Real Play] First-interaction layer failed to load: ${href}`);
+    }
+
+    if (!hasPrimaryInteractions()) {
+      showBootFailure('Primary Real Play interactions failed to initialize.');
+      return;
+    }
+
+    // Let async Home schedule/capacity rendering and DOM decorators stop moving
+    // before the first visible frame. A bounded quiet window prevents a hang.
+    await waitForHomeSettled();
+    await waitForMinimumBootDisplay();
+    await nextPaint();
+
+    bootResourcesReady = true;
+    if (!revealNewShell()) {
+      showBootFailure('Real Play core shell is unavailable.');
+      return;
+    }
+
+    const deferredEnhancements = [
       'overlay-focus-release.js',
       'player-admin-probe-guard.js',
       'admin-live-stat-stability.js',
@@ -435,7 +538,7 @@
       'admin-live-refresh-fix.js',
     ];
 
-    for (const href of enhancements) {
+    for (const href of deferredEnhancements) {
       const loaded = await loadScript(href, 4500);
       if (!loaded) console.warn(`[Real Play] Optional layer failed to load: ${href}`);
     }
