@@ -140,8 +140,7 @@
 
   function openWorldTab(tab) {
     closePrimaryLayers('world');
-    if (window.RealPlayWorld?.open) window.RealPlayWorld.open();
-    else document.querySelector('[data-rp-main-action="world"]')?.click();
+    window.RealPlayWorld?.open?.();
     setActive(tab === 'players' ? 'players' : tab === 'chats' ? 'chats' : 'world');
     window.setTimeout(() => activateWorldTab(tab), 30);
   }
