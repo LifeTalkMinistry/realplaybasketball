@@ -59,6 +59,7 @@
 .rp-profile .rp-profile-hero:not(:has(> .rp-profile-badges))::before {
   content: '';
   display: block;
+  box-sizing: border-box;
   grid-column: 1 !important;
   grid-row: 2 !important;
   min-height: 82px;
