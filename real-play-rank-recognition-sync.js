@@ -201,6 +201,17 @@
     return nameMatches.length === 1 ? nameMatches[0] : null;
   }
 
+  function rowName(row) {
+    return normalizeName(row?.querySelector('.rp-world-player-name strong')?.textContent);
+  }
+
+  function rowMatchesProfile(row, profile) {
+    if (!(row instanceof HTMLElement)) return false;
+    const wantedName = displayedProfileName(profile);
+    if (!wantedName) return true;
+    return rowName(row) === wantedName;
+  }
+
   function matchingWorldRow(profile) {
     const source = profileSource(profile);
     const explicitCanonicalIds = [...new Set([
@@ -210,25 +221,30 @@
     ].filter(Boolean))];
     const rows = [...document.querySelectorAll('.rp-world-player-row')];
 
+    // IDs on older profile surfaces can be account IDs even when the Players
+    // row is keyed by canonical basketball ID. Never accept a numeric match by
+    // itself when the displayed player name says it is a different person.
     for (const explicitId of explicitCanonicalIds) {
-      const byId = rows.find((row) => String(row?.dataset?.worldPlayerId || '').trim() === explicitId);
+      const byId = rows.find((row) => (
+        String(row?.dataset?.worldPlayerId || '').trim() === explicitId
+        && rowMatchesProfile(row, profile)
+      ));
       if (byId) return byId;
     }
 
     const authorityPlayer = matchingAuthorityPlayer(profile);
     const authorityCanonicalId = playerId(authorityPlayer);
     if (authorityCanonicalId) {
-      const byAuthority = rows.find(
-        (row) => String(row?.dataset?.worldPlayerId || '').trim() === authorityCanonicalId
-      );
+      const byAuthority = rows.find((row) => (
+        String(row?.dataset?.worldPlayerId || '').trim() === authorityCanonicalId
+        && rowMatchesProfile(row, profile)
+      ));
       if (byAuthority) return byAuthority;
     }
 
     const wantedName = displayedProfileName(profile);
     if (!wantedName) return null;
-    const matches = rows.filter((row) => normalizeName(
-      row?.querySelector('.rp-world-player-name strong')?.textContent
-    ) === wantedName);
+    const matches = rows.filter((row) => rowName(row) === wantedName);
     return matches.length === 1 ? matches[0] : null;
   }
 
@@ -327,45 +343,85 @@
     return /UNRANKED/i.test(label);
   }
 
-  function removeDisallowedProfileButtons(profile, allowedTypes) {
+  function syncProfileButtons(profile, allowedTypes) {
     if (!(allowedTypes instanceof Set)) return;
     const strip = profile.querySelector('[data-rp-profile-badges]');
-    strip?.querySelectorAll('[data-rp-profile-recognition]').forEach((button) => {
+    if (!strip) return;
+
+    let visibleCount = 0;
+    strip.querySelectorAll('[data-rp-profile-recognition]').forEach((button) => {
       const type = normalizeType(button.dataset.rpProfileRecognition);
-      if (KNOWN_RECOGNITION_TYPES.has(type) && !allowedTypes.has(type)) button.remove();
+      const disallowed = KNOWN_RECOGNITION_TYPES.has(type) && !allowedTypes.has(type);
+
+      // Do not remove stale buttons. The legacy recognition renderer watches
+      // child-list mutations and can immediately rebuild a removed badge. Hide
+      // the button in place instead, while the source data is trimmed above.
+      button.hidden = disallowed;
+      if (disallowed) button.style.setProperty('display', 'none', 'important');
+      else {
+        button.style.removeProperty('display');
+        visibleCount += 1;
+      }
     });
-    if (strip && !strip.querySelector('[data-rp-profile-recognition]')) {
-      strip.remove();
-      profile.classList.remove('has-rp-profile-badges');
+
+    const hideStrip = visibleCount === 0;
+    strip.hidden = hideStrip;
+    if (hideStrip) strip.style.setProperty('display', 'none', 'important');
+    else strip.style.removeProperty('display');
+    profile.classList.toggle('has-rp-profile-badges', !hideStrip);
+  }
+
+  function allowedTypesFromWorldRow(row) {
+    if (!(row instanceof HTMLElement)) return null;
+
+    // __realPlayBadges is written by the live recognition renderer for the exact
+    // Players row. An empty array is authoritative: it means the row currently
+    // owns no recognition badge, which is exactly the condition the profile
+    // must mirror.
+    if (Array.isArray(row.__realPlayBadges)) {
+      return new Set(row.__realPlayBadges.map((badge) => normalizeType(badge?.type)).filter(Boolean));
     }
+
+    const featured = normalizeType(row.dataset.recognitionType);
+    if (featured && KNOWN_RECOGNITION_TYPES.has(featured)) return new Set([featured]);
+    return null;
   }
 
   function syncProfile(profile) {
     if (!(profile instanceof HTMLElement)) return;
 
-    const authorityPlayer = matchingAuthorityPlayer(profile);
-    let allowedTypes = authorityPlayer ? authorityRecognitionTypes(authorityPlayer) : null;
+    // The rendered Players row is the first authority because it is the exact
+    // UI the user is comparing the profile against. This also avoids allowing a
+    // stale recognition from a profile payload or an ambiguous account/canonical
+    // ID collision to survive on the profile.
+    const worldRow = matchingWorldRow(profile);
+    let allowedTypes = allowedTypesFromWorldRow(worldRow);
 
-    if (!allowedTypes) {
-      const worldRow = matchingWorldRow(profile);
-      if (Array.isArray(worldRow?.__realPlayBadges)) {
-        allowedTypes = new Set(worldRow.__realPlayBadges.map((badge) => normalizeType(badge?.type)).filter(Boolean));
-      }
+    // Fall back to the current Players API only when the row is not mounted.
+    if (!(allowedTypes instanceof Set)) {
+      const authorityPlayer = matchingAuthorityPlayer(profile);
+      allowedTypes = authorityPlayer ? authorityRecognitionTypes(authorityPlayer) : null;
     }
 
-    if (allowedTypes) {
+    if (allowedTypes instanceof Set) {
       syncProfileSource(profile, allowedTypes);
-      removeDisallowedProfileButtons(profile, allowedTypes);
+      syncProfileButtons(profile, allowedTypes);
     }
 
     if (profileExplicitlyUnranked(profile)) {
       trimCaptainFromBadges(profile);
       profile.__realPlayBadgeRank = null;
       const strip = profile.querySelector('[data-rp-profile-badges]');
-      strip?.querySelector('[data-rp-profile-recognition="captain_eligible"]')?.remove();
-      if (strip && !strip.querySelector('[data-rp-profile-recognition]')) {
-        strip.remove();
-        profile.classList.remove('has-rp-profile-badges');
+      const captain = strip?.querySelector('[data-rp-profile-recognition="captain_eligible"]');
+      if (captain) {
+        captain.hidden = true;
+        captain.style.setProperty('display', 'none', 'important');
+      }
+      if (strip) {
+        const visible = [...strip.querySelectorAll('[data-rp-profile-recognition]')].some((button) => !button.hidden);
+        strip.hidden = !visible;
+        if (!visible) strip.style.setProperty('display', 'none', 'important');
+        profile.classList.toggle('has-rp-profile-badges', visible);
       }
     }
   }
