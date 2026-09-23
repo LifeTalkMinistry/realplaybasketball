@@ -7,260 +7,53 @@
   <meta name="description" content="Real Play Basketball — a real-world basketball movement and player platform. Less Screen. Real Points." />
   <title>Real Play Basketball — Less Screen. Real Points.</title>
   <style id="rp-shell-static-boot-gate">
-    html.rp-shell-booting body{margin:0!important;min-height:100dvh!important;overflow:hidden!important;background:#020306!important}
-    html.rp-shell-booting body>*{visibility:hidden!important}
-    html.rp-shell-booting body::before,html.rp-shell-booting body::after{position:fixed;left:50%;z-index:2147483647;visibility:visible!important;pointer-events:none;transform:translateX(-50%);text-align:center;white-space:nowrap}
-    html.rp-shell-booting body::before{content:'REAL PLAY';top:45%;color:#f6f9ff;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:clamp(2rem,9vw,3.25rem);font-style:italic;font-weight:950;letter-spacing:.025em}
-    html.rp-shell-booting body::after{content:'BASKETBALL  ·  LOADING';top:calc(45% + 58px);color:#42d8ff;font-family:Arial,sans-serif;font-size:.56rem;font-weight:900;letter-spacing:.22em;animation:rpStaticBootPulse 1.1s ease-in-out infinite alternate}
+    *{box-sizing:border-box}
+    html{background:#020306}
+    body{margin:0;min-width:320px;min-height:100dvh;background:#020306;color:#f7f9fc;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+    button,a{-webkit-tap-highlight-color:transparent}
+    button{font:inherit}
+    img,svg{display:block;max-width:100%}
+
+    html.rp-shell-booting body{overflow:hidden!important;pointer-events:none!important;user-select:none!important}
+    html.rp-shell-booting body>*{visibility:hidden!important;pointer-events:none!important}
+    html.rp-shell-booting body::before,
+    html.rp-shell-booting body::after{position:fixed;left:50%;z-index:2147483647;visibility:visible!important;pointer-events:none;transform:translateX(-50%);text-align:center}
+    html.rp-shell-booting body::before{content:'REAL PLAY';top:45%;color:#f6f9ff;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:clamp(2rem,9vw,3.25rem);font-style:italic;font-weight:950;letter-spacing:.025em;white-space:nowrap}
+    html.rp-shell-booting:not(.rp-shell-failed) body::after{content:'BASKETBALL  ·  LOADING\A\A APPLYING THE LATEST UPDATES\A This may take a little longer than usual.\A Thank you for your patience.';top:calc(45% + 58px);width:min(86vw,380px);color:#42d8ff;font-family:Arial,sans-serif;font-size:.56rem;font-weight:900;letter-spacing:.10em;line-height:1.7;white-space:pre-line;animation:rpStaticBootPulse 1.1s ease-in-out infinite alternate}
+    html.rp-shell-booting.rp-shell-failed body::before,
+    html.rp-shell-booting.rp-shell-failed body::after{display:none!important}
     @keyframes rpStaticBootPulse{from{opacity:.38}to{opacity:1}}
-    @media(prefers-reduced-motion:reduce){html.rp-shell-booting body::after{animation:none;opacity:.78}}
+    @media(prefers-reduced-motion:reduce){html.rp-shell-booting body::after{animation:none!important;opacity:.78}}
+
+    .rp-static-failure{display:none}
+    html.rp-shell-booting.rp-shell-failed .rp-static-failure{position:fixed;inset:0;z-index:2147483647;display:grid!important;place-items:center;visibility:visible!important;pointer-events:auto!important;padding:24px;background:#020306}
+    .rp-static-failure-card{width:min(100%,420px);padding:28px 24px;border:1px solid rgba(255,123,140,.24);border-radius:20px;background:linear-gradient(155deg,#080c13,#03060b);box-shadow:0 28px 80px rgba(0,0,0,.55);text-align:center}
+    .rp-static-failure-card small{display:block;color:#ff7b8c;font-size:.58rem;font-weight:900;letter-spacing:.16em}
+    .rp-static-failure-card strong{display:block;margin:9px 0 10px;color:#f7fbff;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:2rem;font-style:italic;letter-spacing:.02em}
+    .rp-static-failure-card p{margin:0;color:#8293a6;font-size:.76rem;line-height:1.55}
+    .rp-static-failure-card button{width:100%;min-height:48px;margin-top:18px;border:1px solid rgba(66,216,255,.34);border-radius:12px;color:#031018;background:linear-gradient(135deg,#6be4ff,#35c8f4);font-size:.7rem;font-weight:950;letter-spacing:.09em;cursor:pointer}
   </style>
-  <script>window.__rpStaticBootFallback=setTimeout(function(){document.documentElement.classList.remove('rp-shell-booting')},8000);</script>
+  <script>window.__rpStaticBootFallback=setTimeout(function(){document.documentElement.classList.add('rp-shell-failed')},8000);</script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <link rel="manifest" href="site.webmanifest?v=20260906-main-menu-physics-v8" />
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="mission.css" />
+  <link rel="manifest" href="site.webmanifest?v=20260923-current-shell-v1" />
   <link rel="stylesheet" href="auth.css" />
-  <script src="auth-shell.js?v=20260923-phase3-auth-shell-v1" defer></script>
+  <script src="auth-shell.js?v=20260923-phase3-auth-shell-v2" defer></script>
   <script src="app.js?v=20260923-profile-hero-contract-v119" defer></script>
   <script src="profile-admin-account-info.js?v=20260923-profile-admin-account-info-v1" defer></script>
   <script src="profile-share-linked-card.js?v=20260920-profile-share-story-my-day-v110" defer></script>
-  <script src="auth.js?v=20260903-mobile-brand-space-v3" defer></script>
+  <script src="auth.js?v=20260923-auth-runtime-v2" defer></script>
   <script src="ranking-reservation-snapshot-standby-fit.js?v=20260918-snapshot-standby-fit-v98" defer></script>
   <script src="home-open-rank-admin-delete.js?v=20260921-home-schedule-delete-v1" defer></script>
   <script src="home-open-rank-admin-clear-list.js?v=20260921-home-schedule-clear-list-v3" defer></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
-
-  <header class="site-header" data-header>
-    <div class="app-header shell">
-      <a class="brand" href="#home" aria-label="Real Play Basketball home">
-        <span class="brand-main">REAL PLAY</span>
-        <span class="brand-sub">BASKETBALL</span>
-      </a>
-      <button class="account-button" type="button" data-auth-open aria-label="Open Real Play account">
-        <span class="account-dot"></span>
-        <span>PLAYER</span>
-      </button>
-      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button>
-        <span class="sr-only">Open menu</span>
-        <span></span><span></span><span></span>
-      </button>
-      <nav id="site-nav" class="site-nav" aria-label="Primary" data-nav>
-        <a href="#home">Home</a>
-        <a href="#play">Play</a>
-        <a href="#career">Career</a>
-        <a href="#mission">Mission</a>
-        <a href="#support">Support</a>
-        <a class="auth-nav-link" href="#account" data-auth-open>Log In</a>
-      </nav>
-    </div>
-  </header>
-
-  <main id="main">
-    <section class="mobile-home" id="home">
-      <div class="court-lines" aria-hidden="true">
-        <div class="court-circle"></div>
-        <div class="court-key"></div>
-      </div>
-
-      <div class="shell home-shell">
-        <div class="home-intro reveal">
-          <p class="eyebrow">REAL-WORLD BASKETBALL CAREER</p>
-          <h1>REAL PLAY<span>BASKETBALL</span></h1>
-          <p class="tagline">LESS SCREEN. <strong>REAL POINTS.</strong></p>
-          <p class="home-lede">Find a game, secure your spot, show up, play real basketball, and build a history that only the court can create.</p>
-        </div>
-
-        <section class="next-play-card reveal" aria-labelledby="next-play-title">
-          <div class="card-kicker-row">
-            <span class="live-pip"></span>
-            <p>YOUR NEXT REAL PLAY</p>
-          </div>
-          <div class="next-play-empty">
-            <span class="next-play-label">NEXT SESSION</span>
-            <h2 id="next-play-title">TO BE ANNOUNCED</h2>
-            <p>Official locations and schedules will appear here when confirmed.</p>
-          </div>
-          <a class="primary-action" href="#play">COME PLAY</a>
-        </section>
-
-        <div class="quick-stats reveal" aria-label="Real Play player system preview">
-          <article><span>PLAYER</span><strong>YOUR ID</strong></article>
-          <article><span>OVR</span><strong>UNRANKED</strong></article>
-          <article><span>PLAY TIME</span><strong>0h</strong></article>
-        </div>
-
-        <button class="profile-entry reveal" type="button" data-auth-open>
-          <span>
-            <small>YOUR REAL PLAY IDENTITY</small>
-            <strong>OPEN PLAYER PROFILE</strong>
-          </span>
-          <b>→</b>
-        </button>
-      </div>
+  <div class="rp-static-failure" role="alert" aria-live="assertive">
+    <section class="rp-static-failure-card">
+      <small>REAL PLAY BASKETBALL</small>
+      <strong>LOAD FAILED.</strong>
+      <p>The current Real Play app could not finish loading. Refresh to try again.</p>
+      <button type="button" onclick="window.location.reload()">REFRESH REAL PLAY</button>
     </section>
-
-    <section class="app-section play-section" id="play">
-      <div class="shell">
-        <div class="section-top reveal">
-          <p class="eyebrow">CHOOSE HOW YOU PLAY</p>
-          <h2>GET ON THE COURT.</h2>
-          <p>The mode determines what counts. You can simply play, establish your rating, compete for your career, or put in verified practice time.</p>
-        </div>
-
-        <div class="mode-grid">
-          <article class="mode-card mode-open reveal">
-            <div class="mode-number">01</div>
-            <div class="mode-copy">
-              <span>OPEN GAME</span>
-              <h3>JUST PLAY.</h3>
-              <p>Official Real Play basketball without competitive ranking pressure.</p>
-            </div>
-            <div class="mode-meta">PLAY TIME · NO OVR</div>
-          </article>
-
-          <article class="mode-card mode-placement reveal">
-            <div class="mode-number">02</div>
-            <div class="mode-copy">
-              <span>PLACEMENT</span>
-              <h3>FIND YOUR LEVEL.</h3>
-              <p>Competitive games used to establish an Unranked player’s first OVR.</p>
-            </div>
-            <div class="mode-meta">WORKING RULE · 5 GAMES</div>
-          </article>
-
-          <article class="mode-card mode-career featured reveal">
-            <div class="mode-number">03</div>
-            <div class="mode-copy">
-              <span>CAREER MODE</span>
-              <h3>BUILD YOUR CAREER.</h3>
-              <p>Verified games with official stats, wins and losses, OVR movement, monthly MVP impact, and permanent history.</p>
-            </div>
-            <div class="mode-meta">PTS · AST · REB · TO · W/L · OVR</div>
-          </article>
-
-          <article class="mode-card mode-practice reveal">
-            <div class="mode-number">04</div>
-            <div class="mode-copy">
-              <span>SELF-PRACTICE</span>
-              <h3>PUT IN REAL TIME.</h3>
-              <p>Verified personal basketball participation outside organized competitive games.</p>
-            </div>
-            <div class="mode-meta">PLAY TIME ONLY</div>
-          </article>
-        </div>
-
-        <div class="play-rule reveal">
-          <span>REAL PLAY RULE</span>
-          <strong>THE PLAYER CHOOSES THE MODE.<br>THE MODE DETERMINES WHAT COUNTS.</strong>
-        </div>
-      </div>
-    </section>
-
-    <section class="app-section career-section" id="career">
-      <div class="shell">
-        <div class="section-top reveal">
-          <p class="eyebrow">YOUR REAL PLAY CAREER</p>
-          <h2>THE PLAYER IS PERMANENT.</h2>
-          <p>East and West can change every game. Your player identity, OVR, Play Time, verified stats, highlights, and history stay with you.</p>
-        </div>
-
-        <div class="career-preview reveal">
-          <div class="career-player">
-            <span class="career-number">#--</span>
-            <div>
-              <small>REAL PLAY PLAYER</small>
-              <strong>YOUR CAREER STARTS ON THE COURT</strong>
-            </div>
-          </div>
-          <div class="career-stat-grid">
-            <article><span>OVR</span><strong>—</strong></article>
-            <article><span>PTS</span><strong>—</strong></article>
-            <article><span>AST</span><strong>—</strong></article>
-            <article><span>REB</span><strong>—</strong></article>
-            <article><span>W/L</span><strong>—</strong></article>
-            <article><span>PLAY TIME</span><strong>—</strong></article>
-          </div>
-          <button class="secondary-action" type="button" data-auth-open>OPEN MY PROFILE</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="app-section mission-section" id="mission">
-      <div class="shell mission-mobile">
-        <p class="eyebrow">WHY REAL PLAY EXISTS</p>
-        <h2>TECHNOLOGY SHOULD SEND YOU BACK TO THE COURT.</h2>
-        <p>Real Play is not anti-technology. The system organizes, records, preserves, and strengthens activity that happens in the physical world.</p>
-        <blockquote>
-          <strong>THE GAME HAPPENS ON THE COURT.</strong>
-          <span>THE SYSTEM RECORDS IT.</span>
-        </blockquote>
-        <p class="mission-note">Against excessive screen time. Not against technology.</p>
-      </div>
-    </section>
-
-    <section class="app-section impact-section" id="impact">
-      <div class="shell">
-        <div class="section-top compact reveal">
-          <p class="eyebrow">REAL-WORLD IMPACT</p>
-          <h2>COUNT WHAT ACTUALLY HAPPENS.</h2>
-        </div>
-        <div class="impact-grid" data-impact-grid aria-live="polite">
-          <article class="metric-card"><strong data-impact="players">—</strong><span>Players</span></article>
-          <article class="metric-card"><strong data-impact="games">—</strong><span>Games</span></article>
-          <article class="metric-card"><strong data-impact="hours">—</strong><span>Play Time</span></article>
-          <article class="metric-card"><strong data-impact="courts">—</strong><span>Courts</span></article>
-        </div>
-        <p class="data-status" data-impact-status>Loading public impact records…</p>
-      </div>
-    </section>
-
-    <section class="app-section fund-section" id="transparency">
-      <div class="shell">
-        <div class="section-top compact reveal">
-          <p class="eyebrow">COMMUNITY FUND</p>
-          <h2>SEE WHERE SUPPORT GOES.</h2>
-        </div>
-        <div class="fund-board reveal" aria-live="polite">
-          <div class="fund-board-head"><span>PUBLIC FUND POSITION</span><span data-ledger-asof>NO ENTRIES YET</span></div>
-          <div class="fund-totals">
-            <article><span>Total Support</span><strong data-total-support>₱0</strong></article>
-            <article class="highlight"><span>Put Into Play</span><strong data-put-into-play>₱0</strong></article>
-            <article><span>Available</span><strong data-available>₱0</strong></article>
-          </div>
-        </div>
-        <div class="ledger-list reveal" data-ledger-list>
-          <div class="empty-state"><span>00</span><h4>No public fund entries yet.</h4><p>Real transactions will appear here once officially recorded.</p></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="app-section support-section" id="support">
-      <div class="shell support-mobile">
-        <p class="eyebrow">SUPPORT REAL PLAY</p>
-        <h2>HELP CREATE MORE REASONS TO PLAY.</h2>
-        <p>Support can help fund court access, equipment, facilitators, youth programs, media, transportation, and more real basketball.</p>
-        <a class="secondary-action" href="mailto:?subject=Support%20Real%20Play%20Basketball">SUPPORT REAL PLAY</a>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="shell">
-      <a class="brand footer-brand" href="#home" aria-label="Real Play Basketball home"><span class="brand-main">REAL PLAY</span><span class="brand-sub">BASKETBALL</span></a>
-      <p>LESS SCREEN. REAL POINTS.</p>
-      <span>COME PLAY.</span>
-    </div>
-  </footer>
-
-  <nav class="mobile-tabbar" aria-label="Mobile app navigation">
-    <a href="#home" class="mobile-tab active"><span class="tab-icon">⌂</span><small>HOME</small></a>
-    <a href="#play" class="mobile-tab play-tab"><span class="tab-icon">●</span><small>PLAY</small></a>
-    <a href="#career" class="mobile-tab"><span class="tab-icon">▥</span><small>CAREER</small></a>
-    <button type="button" class="mobile-tab" data-auth-open><span class="tab-icon">◉</span><small>PROFILE</small></button>
-    <a href="#mission" class="mobile-tab"><span class="tab-icon">≡</span><small>MORE</small></a>
-  </nav>
+  </div>
 </body>
 </html>
