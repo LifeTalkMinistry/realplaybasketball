@@ -1,3 +1,8 @@
+@import url('home-main-announcement-art.css?v=20260923-profile-hero-contract-v119');
+@import url('home-open-rank-art.css?v=20260923-profile-hero-contract-v119');
+@import url('home-why-real-play.css?v=20260923-profile-hero-contract-v119');
+@import url('public-founder-credit.css?v=20260923-profile-hero-contract-v119');
+
 body.rp-lobby-active .rp-entry{display:none}
 .rp-app.rp-guest{min-height:100vh;padding:0}
 .rp-app.rp-guest::before{opacity:.12}
