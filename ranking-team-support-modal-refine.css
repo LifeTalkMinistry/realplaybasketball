@@ -1,0 +1,205 @@
+.rp-team-sheet-overlay[data-rp-team-support-overlay]{
+  position:fixed!important;
+  inset:0!important;
+  z-index:2147483000!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:clamp(14px,4vw,26px)!important;
+  background:rgba(1,7,12,.76)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+  backdrop-filter:blur(10px)!important;
+  opacity:0;
+  overflow:auto!important;
+  overscroll-behavior:contain;
+  transition:opacity .2s ease!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay].is-open{
+  opacity:1;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-sheet{
+  position:relative!important;
+  inset:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  width:min(100%,470px)!important;
+  max-width:470px!important;
+  max-height:min(84dvh,720px)!important;
+  margin:auto!important;
+  padding:22px 20px 18px!important;
+  overflow:auto!important;
+  border:1px solid rgba(75,214,255,.22)!important;
+  border-radius:22px!important;
+  background:linear-gradient(180deg,rgba(6,27,39,.985),rgba(2,14,23,.99))!important;
+  box-shadow:0 30px 90px rgba(0,0,0,.58),0 0 0 1px rgba(255,255,255,.015) inset!important;
+  transform:translateY(14px) scale(.985)!important;
+  transform-origin:center center!important;
+  opacity:0;
+  transition:transform .22s ease,opacity .22s ease!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay].is-open .rp-team-support-sheet{
+  transform:translateY(0) scale(1)!important;
+  opacity:1;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-sheet-grab{
+  display:none!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-sheet-head{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:16px!important;
+  margin:0 0 18px!important;
+  padding:0!important;
+  border:0!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-sheet-head>div{
+  min-width:0;
+  padding-top:2px;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-sheet-head small{
+  display:block!important;
+  margin:0 0 7px!important;
+  color:#55ddff!important;
+  font-size:.58rem!important;
+  line-height:1.2!important;
+  font-weight:950!important;
+  letter-spacing:.15em!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-sheet-head h3{
+  margin:0!important;
+  color:#f8fbff!important;
+  font-size:clamp(1.22rem,5vw,1.5rem)!important;
+  line-height:1!important;
+  letter-spacing:.01em!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-sheet-close{
+  position:static!important;
+  flex:0 0 42px!important;
+  width:42px!important;
+  height:42px!important;
+  margin:0!important;
+  padding:0!important;
+  border:1px solid rgba(181,218,233,.16)!important;
+  border-radius:50%!important;
+  background:rgba(255,255,255,.04)!important;
+  color:#dff7ff!important;
+  font-size:1.12rem!important;
+  line-height:1!important;
+  box-shadow:none!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-copy{
+  margin:0 0 13px!important;
+  color:#b5c8d3!important;
+  font-size:.82rem!important;
+  line-height:1.56!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-actions{
+  gap:10px!important;
+  margin-top:18px!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-sheet-submit{
+  min-height:48px!important;
+  padding:13px 16px!important;
+  border-radius:13px!important;
+  border:1px solid rgba(82,222,255,.48)!important;
+  background:linear-gradient(180deg,#0d5e79,#083f55)!important;
+  color:#f7fcff!important;
+  font-size:.7rem!important;
+  font-weight:950!important;
+  letter-spacing:.08em!important;
+  box-shadow:0 10px 26px rgba(0,0,0,.18)!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-secondary{
+  padding:13px 14px!important;
+  border-radius:13px!important;
+  background:rgba(3,18,27,.8)!important;
+  border-color:rgba(75,214,255,.17)!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-secondary span{
+  margin-top:5px!important;
+  color:#899eaa!important;
+  font-size:.62rem!important;
+  line-height:1.4!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-tertiary{
+  padding:11px 12px!important;
+  border:1px solid rgba(255,255,255,.045)!important;
+  border-radius:12px!important;
+  background:rgba(255,255,255,.018)!important;
+  color:#8fa5b1!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-footnote{
+  margin:14px auto 0!important;
+  max-width:360px;
+  color:#78909e!important;
+  font-size:.62rem!important;
+  line-height:1.45!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-path,
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-role,
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-tier{
+  border-radius:14px!important;
+  background:rgba(3,19,28,.78)!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-path{
+  padding:15px!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-rule,
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-impact div{
+  border-radius:10px!important;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-sheet::-webkit-scrollbar{
+  width:6px;
+}
+
+.rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-sheet::-webkit-scrollbar-thumb{
+  background:rgba(85,221,255,.18);
+  border-radius:999px;
+}
+
+@media (max-width:520px){
+  .rp-team-sheet-overlay[data-rp-team-support-overlay]{
+    padding:16px!important;
+  }
+
+  .rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-sheet{
+    width:100%!important;
+    max-height:88dvh!important;
+    padding:19px 16px 16px!important;
+    border-radius:19px!important;
+  }
+
+  .rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-sheet-head{
+    margin-bottom:15px!important;
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .rp-team-sheet-overlay[data-rp-team-support-overlay],
+  .rp-team-sheet-overlay[data-rp-team-support-overlay] .rp-team-support-sheet{
+    transition:none!important;
+  }
+}
