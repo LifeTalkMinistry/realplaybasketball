@@ -4,11 +4,7 @@ body.rp-simple-navigation-active{
   background:#02050a;
 }
 
-body.rp-simple-navigation-active [data-rp-lobby]>.rp-player-strip,
-body.rp-simple-navigation-active [data-rp-lobby]>.rp-lobby-head,
-body.rp-simple-navigation-active [data-rp-lobby]>.rp-mode-stage,
-body.rp-simple-navigation-active [data-rp-lobby]>.rp-quick-row,
-body.rp-simple-navigation-active .rp-bottom-nav{
+body.rp-simple-navigation-active [data-rp-lobby]>.rp-player-strip{
   display:none!important;
 }
 
