@@ -311,6 +311,7 @@
         transform:scale(var(--rp-profile-badge-scale,1));transform-origin:center;
       }
       .rp-profile.has-rp-profile-badges .rp-profile-player{margin-top:0!important;padding-top:0!important}
+      .rp-profile .rp-profile-badges:empty + .rp-profile-player{margin-top:4px!important;padding-top:0!important}
 
       @media(max-width:420px){
         .rp-world-player-row.rp-recognition-themed .rp-world-player-name{padding-right:88px}
@@ -420,20 +421,28 @@
     profile.__realPlayBadgeRank = data.rank;
     profile.__realPlayBadgePlayerName = data.playerName;
 
+    // The badge band is part of the hero's structural contract, not optional
+    // content height. Keep the slot mounted for every player so badge presence
+    // cannot move the player identity, stat boxes, or the section below.
     let strip = hero.querySelector('[data-rp-profile-badges]');
-    if (!data.badges.length) {
-      strip?.remove();
-      profile.classList.remove('has-rp-profile-badges');
-      return;
-    }
-
     if (!strip) {
       strip = document.createElement('div');
       strip.className = 'rp-profile-badges';
       strip.dataset.rpProfileBadges = 'true';
-      strip.setAttribute('aria-label', 'Player badges');
       identity.insertAdjacentElement('afterend', strip);
     }
+
+    if (!data.badges.length) {
+      if (strip.childNodes.length) strip.replaceChildren();
+      strip.dataset.signature = '';
+      strip.removeAttribute('aria-label');
+      strip.setAttribute('aria-hidden', 'true');
+      profile.classList.remove('has-rp-profile-badges');
+      return;
+    }
+
+    strip.removeAttribute('aria-hidden');
+    strip.setAttribute('aria-label', 'Player badges');
 
     const signature = data.badges.map((badge) => {
       const value = badge?.count ?? badge?.value ?? badge?.metrics?.rank ?? '';
