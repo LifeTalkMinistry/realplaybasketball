@@ -17,3 +17,76 @@
     padding-top: 52px !important;
   }
 }
+
+/*
+  PROFILE HERO STRUCTURAL CORRECTION
+  --------------------------------------------------------------------------
+  v119 proved that an unconditional reserved grid row makes every profile
+  taller. Restore the established profile flow for normal heroes. Only a hero
+  whose recognition slot is genuinely missing receives a synthetic slot with
+  the exact same structural dimensions as .rp-profile-badges.
+*/
+.rp-profile .rp-profile-hero {
+  display: block !important;
+}
+
+/* Restore the pre-v119 player spacing contract. */
+.rp-profile .rp-profile-hero > .rp-profile-player {
+  margin-top: 12px !important;
+}
+
+.rp-profile.has-rp-profile-badges .rp-profile-hero > .rp-profile-player {
+  margin-top: 4px !important;
+}
+
+/*
+  Missing-slot fallback only. Existing/correct profiles keep their real badge
+  strip and therefore keep their original height. A renderer that omits the
+  strip gets one layout-equivalent grid row, without any player-specific rule.
+*/
+.rp-profile .rp-profile-hero:not(:has(> .rp-profile-badges)) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto auto auto auto !important;
+  row-gap: 0 !important;
+}
+
+.rp-profile .rp-profile-hero:not(:has(> .rp-profile-badges)) > .rp-profile-identity-line {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+}
+
+.rp-profile .rp-profile-hero:not(:has(> .rp-profile-badges))::before {
+  content: '';
+  display: block;
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  min-height: 82px;
+  margin: 8px 0 0;
+  padding: 3px 0 4px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.rp-profile .rp-profile-hero:not(:has(> .rp-profile-badges)) > .rp-profile-player {
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  margin-top: 12px !important;
+}
+
+.rp-profile .rp-profile-hero:not(:has(> .rp-profile-badges)) > .rp-profile-rating-row {
+  grid-column: 1 !important;
+  grid-row: 4 !important;
+}
+
+@media (max-width: 420px) {
+  .rp-profile .rp-profile-hero:not(:has(> .rp-profile-badges))::before {
+    min-height: 78px;
+  }
+}
+
+@media (max-width: 355px) {
+  .rp-profile .rp-profile-hero:not(:has(> .rp-profile-badges))::before {
+    min-height: 72px;
+  }
+}
