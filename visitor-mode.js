@@ -32,8 +32,7 @@
   }
 
   function openAuth(view = 'signup') {
-    document.querySelector('[data-auth-open]')?.click();
-    window.setTimeout(() => document.querySelector(`[data-auth-tab="${view}"]`)?.click(), 30);
+    window.RealPlayAuth?.open?.(view);
   }
 
   const gate = document.createElement('div');
@@ -125,28 +124,6 @@
     openPublicPlayersFromPrimaryNav();
   }, true);
 
-  document.addEventListener('click', (event) => {
-    if (!isActive()) return;
-    const mainAction = event.target.closest('[data-rp-main-action]');
-    if (!mainAction) return;
-    const action = mainAction.dataset.rpMainAction;
-    if (action === 'updates' || action === 'world' || action === '5v5') return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-
-    if (action === 'profile') {
-      requireAccount({ copy: 'Create your Real Play player to unlock your own player card, stats and career history.' });
-    } else if (action === 'settings') {
-      requireAccount({ copy: 'Create an account or log in to manage membership, identity and account settings.' });
-    } else if (action === '3v3' || action === 'ranking') {
-      requireAccount({ title: 'READY TO PLAY?', copy: 'Create your Real Play player before joining, reserving or competing in an official game.' });
-    } else {
-      requireAccount();
-    }
-  }, true);
-
   function routeLoggedOutUserHome() {
     if (hasToken()) return;
 
@@ -154,17 +131,7 @@
     // entry/marketing screen; keep them inside the current Real Play Home.
     enter();
     closeGate();
-
-    const overlay = document.querySelector('[data-auth-overlay]');
-    if (overlay?.classList.contains('open')) {
-      const close = overlay.querySelector('[data-auth-close]');
-      if (close) close.click();
-      else {
-        overlay.classList.remove('open');
-        overlay.setAttribute('aria-hidden', 'true');
-        document.body.classList.remove('auth-open');
-      }
-    }
+    window.RealPlayAuth?.close?.();
 
     if (window.RealPlaySimpleNavigation?.home) {
       window.RealPlaySimpleNavigation.home();
