@@ -1,4 +1,7 @@
 (() => {
+  if (window.__realPlayThreeVThreeInstalled) return;
+  window.__realPlayThreeVThreeInstalled = true;
+
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
   const CLUBS = [
@@ -7,10 +10,6 @@
     { id: 'watchmen', name: 'WATCHMEN', verse: 'Isaiah 62:6' },
     { id: 'conquerors', name: 'CONQUERORS', verse: 'Romans 8:37' },
   ];
-
-  const lobby = document.querySelector('[data-rp-lobby]');
-  const oldStage = lobby?.querySelector('.rp-mode-stage');
-  if (!lobby || !oldStage) return;
 
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -36,86 +35,13 @@
     return data;
   }
 
-  const stage = document.createElement('section');
-  stage.className = 'rp-mode-stage rp-beta-mode-stage';
-  stage.setAttribute('aria-label', 'Real Play game formats');
-  stage.innerHTML = `
-    <div class="rp-mode-track" data-rp-beta-mode-track>
-      <article class="rp-mode-card rp-mode-3v3" data-beta-mode="3v3">
-        <div class="rp-mode-art" aria-hidden="true"></div>
-        <div class="rp-mode-card-content">
-          <div class="rp-mode-type">BETA SEASON · LIVE</div>
-          <h2>3V3</h2>
-          <p>Four Real Play clubs. Race to 8. Win your matchup and advance to the Final.</p>
-          <div class="rp-mode-meta">4 CLUBS · RACE TO 8 · WIN & ADVANCE</div>
-          <button class="rp-play-button" type="button" data-rp-enter-3v3>ENTER 3V3 <span>→</span></button>
-        </div>
-      </article>
-
-      <article class="rp-mode-card rp-mode-5v5" data-beta-mode="5v5" aria-disabled="true">
-        <div class="rp-mode-art" aria-hidden="true"></div>
-        <div class="rp-mode-card-content">
-          <div class="rp-mode-type">COMING SOON</div>
-          <h2>5V5</h2>
-          <p>Full-court Real Play basketball is being built for a future phase.</p>
-          <div class="rp-mode-meta">FULL COURT · FUTURE MODE</div>
-          <button class="rp-play-button" type="button" disabled>UNDER CONSTRUCTION</button>
-        </div>
-      </article>
-    </div>
-    <div class="rp-mode-tabs rp-beta-mode-tabs" role="tablist" aria-label="Game format selector">
-      <button class="rp-mode-tab active" type="button" role="tab" aria-selected="true" data-rp-beta-tab="0">3V3</button>
-      <button class="rp-mode-tab" type="button" role="tab" aria-selected="false" data-rp-beta-tab="1">5V5</button>
-    </div>
-  `;
-  oldStage.replaceWith(stage);
-
-  const track = stage.querySelector('[data-rp-beta-mode-track]');
-  const cards = [...stage.querySelectorAll('[data-beta-mode]')];
-  const tabs = [...stage.querySelectorAll('[data-rp-beta-tab]')];
-
-  function activateTab(index) {
-    tabs.forEach((tab, i) => {
-      const active = i === index;
-      tab.classList.toggle('active', active);
-      tab.setAttribute('aria-selected', String(active));
-    });
-  }
-
-  tabs.forEach((tab, index) => {
-    tab.addEventListener('click', () => {
-      cards[index]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-      activateTab(index);
-    });
-  });
-
-  let scrollTimer = null;
-  track?.addEventListener('scroll', () => {
-    window.clearTimeout(scrollTimer);
-    scrollTimer = window.setTimeout(() => {
-      if (!track) return;
-      const center = track.scrollLeft + track.clientWidth / 2;
-      let nearestIndex = 0;
-      let nearestDistance = Number.POSITIVE_INFINITY;
-      cards.forEach((card, index) => {
-        const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-        const distance = Math.abs(center - cardCenter);
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearestIndex = index;
-        }
-      });
-      activateTab(nearestIndex);
-    }, 70);
-  }, { passive: true });
-
   const view = document.createElement('section');
   view.className = 'rp-3v3-view';
   view.setAttribute('aria-hidden', 'true');
   view.innerHTML = `
     <div class="rp-3v3-shell">
       <header class="rp-3v3-topbar">
-        <button class="rp-3v3-back" type="button" aria-label="Back to main menu" data-rp-3v3-back>←</button>
+        <button class="rp-3v3-back" type="button" aria-label="Back to Real Play" data-rp-3v3-back>←</button>
         <div class="rp-3v3-brand"><strong>REAL PLAY 3V3</strong><span>BETA SEASON</span></div>
         <div class="rp-3v3-topmark">3V3</div>
       </header>
@@ -289,9 +215,9 @@
     const reserved = Number(season.reservedCount ?? season.reserved_count ?? 0) || 0;
     const capacity = Number(season.targetPlayers ?? season.target_players ?? 0) || 0;
     const joined = Boolean(season.registered);
-    const status = String(season.status || 'registration');
+    const sessionStatus = String(season.status || 'registration');
     const full = capacity > 0 && reserved >= capacity;
-    const registrationOpen = Boolean(season.registrationOpen) && status === 'registration' && !full;
+    const registrationOpen = Boolean(season.registrationOpen) && sessionStatus === 'registration' && !full;
     const details = [];
     const dateText = formatSessionDate(season.startsAt || season.starts_at);
     if (dateText) details.push(dateText);
@@ -310,14 +236,14 @@
           : `WE ONLY NEED ${remaining} MORE PLAYER${remaining === 1 ? '' : 'S'} TO COMPLETE THE FIRST 3V3 ROSTER.`;
     }
 
-    if (status === 'live') {
+    if (sessionStatus === 'live') {
       sessionPanel.classList.add('live');
       sessionAction.disabled = true;
       sessionAction.textContent = joined ? '● SEASON LIVE · YOU’RE IN' : '● SEASON LIVE';
       return;
     }
 
-    if (status === 'completed') {
+    if (sessionStatus === 'completed') {
       sessionAction.disabled = true;
       sessionAction.textContent = 'SEASON COMPLETE';
       return;
@@ -327,7 +253,7 @@
       sessionPanel.classList.add('secured');
       sessionAction.disabled = true;
       sessionAction.textContent = 'YOUR LEAGUE SPOT IS RESERVED ✓';
-      sessionCancel.hidden = status !== 'registration';
+      sessionCancel.hidden = sessionStatus !== 'registration';
       sessionCancel.disabled = sessionLoading;
       sessionCancel.textContent = sessionLoading ? 'RELEASING…' : 'RELEASE MY LEAGUE SPOT';
       return;
@@ -627,8 +553,6 @@
   });
   sessionAction?.addEventListener('click', secureSpot);
   sessionCancel?.addEventListener('click', cancelSpot);
-
-  stage.querySelector('[data-rp-enter-3v3]')?.addEventListener('click', openView);
   back?.addEventListener('click', closeView);
 
   window.addEventListener('focus', refreshIfOpen);
@@ -643,6 +567,12 @@
     if (confirm.classList.contains('open')) closeConfirmation();
     else if (view.classList.contains('open')) closeView();
   });
+
+  window.RealPlayThreeVThree = {
+    open: openView,
+    close: closeView,
+    refresh: refreshIfOpen,
+  };
 
   startSessionPolling();
 })();

@@ -49,9 +49,8 @@
   }
 
   function openThreeVThree() {
-    const trigger = document.querySelector('[data-rp-enter-3v3]');
-    if (trigger) {
-      trigger.click();
+    if (window.RealPlayThreeVThree?.open) {
+      window.RealPlayThreeVThree.open();
       return;
     }
     routeLegacy('3v3');
