@@ -21,6 +21,31 @@
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 
+  function positiveId(value) {
+    const id = Number(value);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+  }
+
+  function canonicalPlayerId(player) {
+    return positiveId(player?.playerId ?? player?.userId ?? player?.id);
+  }
+
+  function accountUserId(player) {
+    return positiveId(
+      player?.accountUserId
+      ?? player?.account_user_id
+      ?? player?.userAccountId
+      ?? player?.user_account_id
+    );
+  }
+
+  function replayRosterAccountId(player) {
+    const explicit = accountUserId(player);
+    if (explicit) return explicit;
+    const playerId = Number(player?.playerId);
+    return Number.isSafeInteger(playerId) && playerId > 0 ? playerId : null;
+  }
+
   function authToken() {
     return localStorage.getItem(TOKEN_KEY) || '';
   }
@@ -128,28 +153,44 @@
   }
 
   function candidateHtml(player) {
+    const accountId = accountUserId(player);
     const status = String(player?.status || 'active').toUpperCase();
     const ovr = player?.ovr === null || player?.ovr === undefined ? 'UNRANKED' : `${Number(player.ovr)} OVR`;
-    return `<button type="button" class="rp-player-correction-candidate" data-rp-player-correction-target="${Number(player.userId)}">
+    return `<button type="button" class="rp-player-correction-candidate" data-rp-player-correction-target="${accountId}">
       <span><b>${esc(playerNumberLabel(player))}</b><strong>${esc(player.playerName || 'REAL PLAY PLAYER')}</strong></span>
       <small>${esc(ovr)} · ${esc(status)}</small>
     </button>`;
   }
 
   function renderCandidateList(listNode, searchValue, sourceId) {
-    const rosterIds = new Set((latestContext?.players || []).map((player) => Number(player.playerId)));
+    // Replay/game-control player IDs are registered ACCOUNT ids (or negative
+    // manual ids). The admin directory now exposes canonical basketball ids in
+    // userId/playerId and keeps the login account id separately in accountUserId.
+    // Never compare those two namespaces directly: a coincidental numeric match
+    // can hide the wrong player, while the actual roster player can appear as a
+    // replacement for themselves.
+    const rosterAccountIds = new Set(
+      (latestContext?.players || []).map(replayRosterAccountId).filter(Boolean)
+    );
+    const source = contextPlayer(sourceId);
+    const sourceAccountId = replayRosterAccountId(source) || positiveId(sourceId);
     const query = String(searchValue || '').trim().toLowerCase();
     const matches = (directory || [])
       .filter((player) => {
-        const id = Number(player?.userId);
-        if (!Number.isSafeInteger(id) || id < 1) return false;
-        if (id === Number(sourceId) || rosterIds.has(id)) return false;
+        const accountId = accountUserId(player);
+        const canonicalId = canonicalPlayerId(player);
+
+        // The correction backend moves a finalized game to a registered Real
+        // Play account. Unclaimed/manual-only identities are not valid targets.
+        if (!accountId) return false;
+        if (accountId === sourceAccountId || rosterAccountIds.has(accountId)) return false;
         if (!query) return true;
         const haystack = [
           player?.playerName,
           player?.playerNumber === null || player?.playerNumber === undefined ? '' : `#${player.playerNumber}`,
           player?.playerNumber,
-          player?.userId,
+          canonicalId,
+          accountId,
         ].join(' ').toLowerCase();
         return haystack.includes(query);
       })
@@ -162,6 +203,12 @@
 
   async function applyCorrection(source, target) {
     if (busy || !latestSessionId) return;
+    const targetAccountId = accountUserId(target);
+    if (!targetAccountId) {
+      const status = modal?.querySelector('[data-rp-player-correction-status]');
+      if (status) status.textContent = 'That player is not attached to a Real Play account yet.';
+      return;
+    }
 
     const dirtyWarning = localDraftDirty
       ? '\n\nWARNING: You have unsaved score-sheet edits. Correcting the player will reload this editor and those unsaved edits will be discarded.'
@@ -184,7 +231,9 @@
           method: 'POST',
           json: {
             fromPlayerId: Number(source.playerId),
-            toPlayerId: Number(target.userId),
+            // Backend game participation is account-owned. Always send the
+            // account id, never the canonical World/player identity id.
+            toPlayerId: targetAccountId,
           },
         }
       );
@@ -255,8 +304,10 @@
       listNode?.addEventListener('click', (event) => {
         const button = event.target?.closest?.('[data-rp-player-correction-target]');
         if (!button || busy) return;
-        const targetId = Number(button.dataset.rpPlayerCorrectionTarget);
-        const target = (directory || []).find((player) => Number(player.userId) === targetId);
+        const targetAccountId = Number(button.dataset.rpPlayerCorrectionTarget);
+        const target = (directory || []).find(
+          (player) => accountUserId(player) === targetAccountId
+        );
         if (target) applyCorrection(source, target);
       });
     } catch (error) {
