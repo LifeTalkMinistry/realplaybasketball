@@ -44,6 +44,24 @@
     close: closeAuth,
   };
 
+  // Transitional compatibility for older feature fallbacks that still call
+  // document.querySelector('[data-auth-open]')?.click(). This is not visible UI
+  // and no longer depends on the retired historical landing page.
+  if (!document.querySelector('[data-auth-open]')) {
+    const compatibilityOpen = document.createElement('button');
+    compatibilityOpen.type = 'button';
+    compatibilityOpen.hidden = true;
+    compatibilityOpen.tabIndex = -1;
+    compatibilityOpen.dataset.authOpen = 'true';
+    compatibilityOpen.setAttribute('aria-hidden', 'true');
+    compatibilityOpen.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openAuth();
+    });
+    document.body.appendChild(compatibilityOpen);
+  }
+
   if (document.querySelector('[data-auth-overlay]')) return;
 
   const overlay = document.createElement('div');
