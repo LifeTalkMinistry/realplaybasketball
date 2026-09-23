@@ -8,6 +8,45 @@
 
   const handoffClicks = new WeakSet();
   let preparing = false;
+  let playerCorrectionRuntimePromise = null;
+
+  function ensurePlayerCorrectionRuntime() {
+    if (window.__realPlayReplayPlayerCorrectionInstalled) return Promise.resolve(true);
+    if (playerCorrectionRuntimePromise) return playerCorrectionRuntimePromise;
+
+    playerCorrectionRuntimePromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-rp-replay-player-correction-runtime]');
+      if (existing) {
+        const started = Date.now();
+        const timer = setInterval(() => {
+          if (window.__realPlayReplayPlayerCorrectionInstalled) {
+            clearInterval(timer);
+            resolve(true);
+          } else if (Date.now() - started > 5000) {
+            clearInterval(timer);
+            reject(new Error('Recorded player-correction controls did not initialize.'));
+          }
+        }, 60);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'career-game-replay-player-correction.js?v=20260922a';
+      script.async = true;
+      script.dataset.rpReplayPlayerCorrectionRuntime = '1';
+      script.onload = () => {
+        if (window.__realPlayReplayPlayerCorrectionInstalled) resolve(true);
+        else reject(new Error('Recorded player-correction controls did not initialize.'));
+      };
+      script.onerror = () => reject(new Error('Unable to load recorded player-correction controls.'));
+      document.head.appendChild(script);
+    }).catch((error) => {
+      playerCorrectionRuntimePromise = null;
+      throw error;
+    });
+
+    return playerCorrectionRuntimePromise;
+  }
 
   async function ensureReplayEditorRuntime() {
     const ensureAdmin = window.__realPlayEnsureAdminLoaded;
@@ -23,6 +62,7 @@
     }
 
     await window.__realPlayRefreshAdminGameControl();
+    await ensurePlayerCorrectionRuntime();
     return true;
   }
 
