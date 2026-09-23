@@ -146,7 +146,7 @@
 .rp-profile-record:not(:has(.rp-profile-win-rate))::before{width:100%!important}
 .rp-profile-record:not(:has(.rp-profile-win-rate))::after{display:none!important}
 
-/* Labels are pinned to the right of the emblem, matching the reference. */
+/* Labels sit close to their number, matching the reference hierarchy. */
 .rp-profile-rating-row .rp-profile-ovr > span,
 .rp-profile-rating-row .rp-profile-rank > span,
 .rp-profile-record > span:not(.rp-profile-win-rate-label),
@@ -155,7 +155,7 @@
   z-index:2!important;
   min-width:0!important;
   margin:0!important;
-  padding:13px 4px 0 38px!important;
+  padding:35px 4px 0 38px!important;
   display:block!important;
   color:#8998aa!important;
   font-size:.33rem!important;
@@ -167,7 +167,7 @@
   overflow:visible!important;
 }
 
-/* Circular emblems sit vertically centered on the left, not above the text. */
+/* Circular emblems stay centered on the left while labels move toward values. */
 .rp-profile-rating-row .rp-profile-ovr > span::before,
 .rp-profile-rating-row .rp-profile-rank > span::before,
 .rp-profile-record > span:not(.rp-profile-win-rate-label)::before,
@@ -309,7 +309,7 @@
   .rp-profile-rating-row .rp-profile-rank > span,
   .rp-profile-record > span:not(.rp-profile-win-rate-label),
   .rp-profile-record > .rp-profile-win-rate-label{
-    padding:16px 8px 0 54px!important;
+    padding:43px 8px 0 54px!important;
     font-size:.42rem!important;
   }
   .rp-profile-rating-row .rp-profile-ovr > span::before,
