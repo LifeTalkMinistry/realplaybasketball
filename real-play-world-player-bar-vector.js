@@ -74,14 +74,14 @@
     attributeFilter: ['data-recognition-type'],
   });
 
-  // Keep profile badge ownership synchronized with the same current authority
-  // used by the Players directory. The cache-busted loader prevents stale
-  // profile recognition code from surviving a deploy in the browser cache.
-  if (!window.__realPlayRankRecognitionSyncInstalled
-    && !document.querySelector('script[data-rp-rank-recognition-sync-loader]')) {
+  // Use the stable Players-authority bridge for profile badges. It does not
+  // toggle the legacy profile badge layout class, so the old recognition
+  // renderer and the authority layer cannot fight over hero height.
+  if (!window.__realPlayProfileRecognitionAuthorityInstalled
+    && !document.querySelector('script[data-rp-profile-recognition-authority-loader]')) {
     const syncScript = document.createElement('script');
-    syncScript.dataset.rpRankRecognitionSyncLoader = '1';
-    syncScript.src = 'real-play-rank-recognition-sync.js?v=20260923-profile-recognition-authority-v4';
+    syncScript.dataset.rpProfileRecognitionAuthorityLoader = '1';
+    syncScript.src = 'real-play-profile-recognition-authority.js?v=20260923-profile-recognition-stability-v1';
     syncScript.async = false;
     document.head.appendChild(syncScript);
   }
