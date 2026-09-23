@@ -31,7 +31,7 @@
       }
 
       const script = document.createElement('script');
-      script.src = 'career-game-replay-player-correction.js?v=20260922a';
+      script.src = 'career-game-replay-player-correction.js?v=20260923-identity-fix';
       script.async = true;
       script.dataset.rpReplayPlayerCorrectionRuntime = '1';
       script.onload = () => {
