@@ -27,3 +27,32 @@
     margin-top:82px!important;
   }
 }
+
+/* Keep the entire stat deck above portrait/background art. Record and Win Rate
+   are drawn with pseudo-elements, so isolate that stacking context and use
+   opaque surfaces to keep their rounded top edges as crisp as OVR/Rank. */
+.rp-profile.open .rp-profile-hero .rp-profile-rating-row{
+  position:relative!important;
+  z-index:20!important;
+  isolation:isolate!important;
+}
+.rp-profile.open .rp-profile-rating-row .rp-profile-ovr,
+.rp-profile.open .rp-profile-rating-row .rp-profile-rank,
+.rp-profile.open .rp-profile-rating-row .rp-profile-record{
+  position:relative!important;
+  z-index:2!important;
+}
+.rp-profile.open .rp-profile-rating-row .rp-profile-record{
+  isolation:isolate!important;
+}
+.rp-profile.open .rp-profile-rating-row .rp-profile-record::before,
+.rp-profile.open .rp-profile-rating-row .rp-profile-record::after{
+  z-index:1!important;
+  background:linear-gradient(145deg,#0e1926,#03080e)!important;
+}
+.rp-profile.open .rp-profile-rating-row .rp-profile-record::before{
+  border-color:rgba(151,177,202,.28)!important;
+}
+.rp-profile.open .rp-profile-rating-row .rp-profile-record::after{
+  border-color:rgba(255,71,97,.45)!important;
+}
