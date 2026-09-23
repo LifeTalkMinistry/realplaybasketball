@@ -16,7 +16,9 @@
   let scheduled = false;
   let authorityLoadedAt = 0;
   let authorityPromise = null;
-  let authorityById = new Map();
+  let authorityByCanonicalId = new Map();
+  let authorityByAccountId = new Map();
+  let authorityPlayers = [];
 
   function normalizeType(value) {
     return String(value || '').trim().toLowerCase();
@@ -49,31 +51,45 @@
     );
   }
 
-  function sourcePlayerIds(source) {
-    const candidates = [
+  function sourceCanonicalIds(source) {
+    const values = [
       source?.playerId,
-      source?.userId,
-      source?.id,
-      source?.accountUserId,
-      source?.account_user_id,
+      source?.player_id,
       source?.player?.playerId,
-      source?.player?.userId,
-      source?.player?.id,
-      source?.player?.accountUserId,
-      source?.player?.account_user_id,
+      source?.player?.player_id,
       source?.profile?.playerId,
       source?.profile?.player_id,
-      source?.profile?.userId,
-      source?.profile?.user_id,
-      source?.profile?.id,
+    ];
+    return [...new Set(values.map(positiveIdString).filter(Boolean))];
+  }
+
+  function sourceAccountIds(source) {
+    const values = [
+      source?.accountUserId,
+      source?.account_user_id,
+      source?.userAccountId,
+      source?.user_account_id,
+      source?.player?.accountUserId,
+      source?.player?.account_user_id,
       source?.profile?.accountUserId,
       source?.profile?.account_user_id,
     ];
-    return [...new Set(candidates.map(positiveIdString).filter(Boolean))];
+    return [...new Set(values.map(positiveIdString).filter(Boolean))];
   }
 
-  function sourcePlayerId(source) {
-    return sourcePlayerIds(source)[0] || '';
+  function sourceAmbiguousIds(source) {
+    const values = [
+      source?.userId,
+      source?.user_id,
+      source?.id,
+      source?.player?.userId,
+      source?.player?.user_id,
+      source?.player?.id,
+      source?.profile?.userId,
+      source?.profile?.user_id,
+      source?.profile?.id,
+    ];
+    return [...new Set(values.map(positiveIdString).filter(Boolean))];
   }
 
   function profileSource(profile) {
@@ -131,43 +147,84 @@
     });
   }
 
-  function profileExplicitIds(profile) {
-    const source = profileSource(profile);
-    return [...new Set([
-      positiveIdString(profile?.dataset?.rpPublicPlayerId),
-      positiveIdString(profile?.dataset?.rpProfilePlayerId),
-      ...sourcePlayerIds(source),
-    ].filter(Boolean))];
+  function displayedProfileName(profile) {
+    return normalizeName(profile?.querySelector('.rp-profile-name h1')?.textContent);
   }
 
-  function uniqueAuthorityPlayers() {
-    return [...new Set(authorityById.values())];
+  function chooseCandidate(candidates, profile) {
+    const unique = [...new Set(candidates.filter(Boolean))];
+    if (unique.length === 1) return unique[0];
+    if (!unique.length) return null;
+
+    const wantedName = displayedProfileName(profile);
+    if (!wantedName) return null;
+    const nameMatches = unique.filter((player) => normalizeName(
+      player?.playerName || player?.player_name || player?.name
+    ) === wantedName);
+    return nameMatches.length === 1 ? nameMatches[0] : null;
   }
 
   function matchingAuthorityPlayer(profile) {
-    const explicitIds = profileExplicitIds(profile);
-    for (const explicitId of explicitIds) {
-      if (authorityById.has(explicitId)) return authorityById.get(explicitId);
-    }
+    const source = profileSource(profile);
+    const canonicalIds = [...new Set([
+      positiveIdString(profile?.dataset?.rpPublicPlayerId),
+      positiveIdString(profile?.dataset?.rpProfilePlayerId),
+      ...sourceCanonicalIds(source),
+    ].filter(Boolean))];
+    const accountIds = sourceAccountIds(source);
+    const ambiguousIds = sourceAmbiguousIds(source);
 
-    const wantedName = normalizeName(profile?.querySelector('.rp-profile-name h1')?.textContent);
+    const directCandidates = [];
+    canonicalIds.forEach((id) => {
+      if (authorityByCanonicalId.has(id)) directCandidates.push(authorityByCanonicalId.get(id));
+    });
+    accountIds.forEach((id) => {
+      if (authorityByAccountId.has(id)) directCandidates.push(authorityByAccountId.get(id));
+    });
+
+    // userId/id fields are legacy-ambiguous: some surfaces used account ids,
+    // newer World surfaces use canonical player ids. Check both namespaces but
+    // never collapse them into one map because the numeric values can collide.
+    ambiguousIds.forEach((id) => {
+      if (authorityByCanonicalId.has(id)) directCandidates.push(authorityByCanonicalId.get(id));
+      if (authorityByAccountId.has(id)) directCandidates.push(authorityByAccountId.get(id));
+    });
+
+    const direct = chooseCandidate(directCandidates, profile);
+    if (direct) return direct;
+
+    const wantedName = displayedProfileName(profile);
     if (!wantedName) return null;
-    const matches = uniqueAuthorityPlayers().filter((player) => normalizeName(
+    const nameMatches = authorityPlayers.filter((player) => normalizeName(
       player?.playerName || player?.player_name || player?.name
     ) === wantedName);
-    return matches.length === 1 ? matches[0] : null;
+    return nameMatches.length === 1 ? nameMatches[0] : null;
   }
 
   function matchingWorldRow(profile) {
-    const explicitIds = profileExplicitIds(profile);
+    const source = profileSource(profile);
+    const explicitCanonicalIds = [...new Set([
+      positiveIdString(profile?.dataset?.rpPublicPlayerId),
+      positiveIdString(profile?.dataset?.rpProfilePlayerId),
+      ...sourceCanonicalIds(source),
+    ].filter(Boolean))];
     const rows = [...document.querySelectorAll('.rp-world-player-row')];
 
-    for (const explicitId of explicitIds) {
+    for (const explicitId of explicitCanonicalIds) {
       const byId = rows.find((row) => String(row?.dataset?.worldPlayerId || '').trim() === explicitId);
       if (byId) return byId;
     }
 
-    const wantedName = normalizeName(profile?.querySelector('.rp-profile-name h1')?.textContent);
+    const authorityPlayer = matchingAuthorityPlayer(profile);
+    const authorityCanonicalId = playerId(authorityPlayer);
+    if (authorityCanonicalId) {
+      const byAuthority = rows.find(
+        (row) => String(row?.dataset?.worldPlayerId || '').trim() === authorityCanonicalId
+      );
+      if (byAuthority) return byAuthority;
+    }
+
+    const wantedName = displayedProfileName(profile);
     if (!wantedName) return null;
     const matches = rows.filter((row) => normalizeName(
       row?.querySelector('.rp-world-player-name strong')?.textContent
@@ -190,25 +247,29 @@
 
   async function loadAuthority(force = false) {
     const now = Date.now();
-    if (!force && authorityLoadedAt && now - authorityLoadedAt < AUTHORITY_TTL_MS) return authorityById;
+    if (!force && authorityLoadedAt && now - authorityLoadedAt < AUTHORITY_TTL_MS) {
+      return authorityPlayers;
+    }
     if (authorityPromise) return authorityPromise;
-    if (typeof window.RealPlayWorld?.community !== 'function') return authorityById;
+    if (typeof window.RealPlayWorld?.community !== 'function') return authorityPlayers;
 
     authorityPromise = (async () => {
       try {
         const data = await window.RealPlayWorld.community('players');
-        const next = new Map();
-        (Array.isArray(data?.players) ? data.players : []).forEach((player) => {
-          // World rows are keyed by canonical basketball identity, while some
-          // profile surfaces still carry the registered account id. Index the
-          // exact same authority object under both namespaces so either surface
-          // resolves to the same player instead of keeping stale recognitions.
+        const players = Array.isArray(data?.players) ? data.players : [];
+        const byCanonical = new Map();
+        const byAccount = new Map();
+
+        players.forEach((player) => {
           const canonicalId = playerId(player);
           const accountId = accountPlayerId(player);
-          if (canonicalId) next.set(canonicalId, player);
-          if (accountId) next.set(accountId, player);
+          if (canonicalId) byCanonical.set(canonicalId, player);
+          if (accountId) byAccount.set(accountId, player);
         });
-        authorityById = next;
+
+        authorityPlayers = players;
+        authorityByCanonicalId = byCanonical;
+        authorityByAccountId = byAccount;
         authorityLoadedAt = Date.now();
       } catch (_error) {
         // Keep the last known authority. DOM-row fallback still protects the UI.
@@ -216,7 +277,7 @@
         authorityPromise = null;
         scheduleSync();
       }
-      return authorityById;
+      return authorityPlayers;
     })();
 
     return authorityPromise;
@@ -282,14 +343,9 @@
   function syncProfile(profile) {
     if (!(profile instanceof HTMLElement)) return;
 
-    // Prefer the same current Players API authority used to build the directory.
-    // This still works after opening a profile, when the Players rows may no
-    // longer exist in the DOM. That was the gap that allowed stale MVP badges
-    // to survive on a player's profile.
     const authorityPlayer = matchingAuthorityPlayer(profile);
     let allowedTypes = authorityPlayer ? authorityRecognitionTypes(authorityPlayer) : null;
 
-    // Fast fallback while authority is loading: use the matching rendered row.
     if (!allowedTypes) {
       const worldRow = matchingWorldRow(profile);
       if (Array.isArray(worldRow?.__realPlayBadges)) {
