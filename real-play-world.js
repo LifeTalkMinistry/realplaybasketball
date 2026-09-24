@@ -7,6 +7,7 @@
   const COMMUNITY_URL = `${API_BASE_URL}/api/real-play/community`;
   const PUBLIC_COMMUNITY_URL = `${API_BASE_URL}/api/real-play/public/community`;
   const PUBLIC_ACTIONS = new Set(['bootstrap', 'feed', 'channels', 'chat', 'players', 'player_profile']);
+  const COMMUNITY_TIMEOUT_MS = 10000;
 
   let panel = null;
   let activeTab = 'world';
@@ -51,6 +52,12 @@
     return Boolean(window.RealPlayVisitor?.isActive?.());
   }
 
+  function normalizeTab(tab) {
+    if (tab === 'players') return 'players';
+    if (tab === 'chats') return 'chats';
+    return 'world';
+  }
+
   function askToJoin(copy) {
     window.RealPlayVisitor?.requireAccount?.({
       title: 'JOIN THE CONVERSATION',
@@ -58,10 +65,27 @@
     });
   }
 
+  async function requestCommunity(url, options) {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), COMMUNITY_TIMEOUT_MS);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        const timeoutError = new Error('Real Play request timed out. Please try again.');
+        timeoutError.status = 408;
+        throw timeoutError;
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
   async function community(action, payload = {}) {
     const accessToken = token();
     if (!accessToken && visitor() && PUBLIC_ACTIONS.has(action)) {
-      const response = await fetch(PUBLIC_COMMUNITY_URL, {
+      const response = await requestCommunity(PUBLIC_COMMUNITY_URL, {
         method: 'POST',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, ...payload }),
@@ -81,7 +105,7 @@
       error.status = 401;
       throw error;
     }
-    const response = await fetch(COMMUNITY_URL, {
+    const response = await requestCommunity(COMMUNITY_URL, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -190,6 +214,10 @@
   function renderTabs() {
     panel?.querySelectorAll('[data-world-tab]').forEach((button) => button.classList.toggle('active', button.dataset.worldTab === activeTab));
     panel?.querySelectorAll('[data-world-view]').forEach((view) => { view.hidden = view.dataset.worldView !== activeTab; });
+    const title = panel?.querySelector('.rp-world-title strong');
+    const badge = panel?.querySelector('.rp-world-online');
+    if (title) title.textContent = activeTab === 'players' ? 'PLAYERS' : activeTab === 'chats' ? 'CHATS' : 'WORLD';
+    if (badge) badge.textContent = activeTab === 'chats' && !token() ? 'READ ONLY' : 'COMMUNITY';
   }
 
   function renderMe() {
@@ -451,23 +479,37 @@
     }
   }
 
-  async function switchTab(tab) {
-    activeTab = tab === 'chats' ? 'chats' : 'world';
+  async function switchTab(tab, { refresh = true } = {}) {
+    activeTab = normalizeTab(tab);
     renderTabs();
-    if (activeTab === 'world') await refreshFeed({ quiet: true });
-    else {
-      await refreshChannels();
-      forceChatBottom = true;
-      await refreshChat({ quiet: false, scroll: true });
+
+    if (panel?.classList.contains('open')) {
+      if (activeTab === 'players') stopPolling();
+      else startPolling();
     }
+
+    if (!refresh) return;
+    if (activeTab === 'players') {
+      await window.RealPlayPlayers?.refresh?.();
+      return;
+    }
+    if (activeTab === 'world') {
+      await refreshFeed({ quiet: true });
+      return;
+    }
+
+    await refreshChannels();
+    forceChatBottom = true;
+    await refreshChat({ quiet: false, scroll: true });
   }
 
   function startPolling() {
     stopPolling();
+    if (activeTab === 'players') return;
     pollTimer = setInterval(() => {
       if (!panel?.classList.contains('open') || document.hidden) return;
       if (activeTab === 'world') refreshFeed({ quiet: true });
-      else refreshChat({ quiet: true });
+      else if (activeTab === 'chats') refreshChat({ quiet: true });
     }, 12000);
   }
 
@@ -481,9 +523,9 @@
     if (!active) document.querySelector('[data-rp-nav="play"]')?.classList.add('active');
   }
 
-  function openWorld() {
+  function openWorld(tab = 'world') {
     createPanel();
-    activeTab = 'world';
+    activeTab = normalizeTab(tab);
     currentChannel = 'world';
     messages = [];
     forceChatBottom = true;
@@ -494,6 +536,13 @@
     document.body.classList.add('rp-world-open');
     panel.scrollTop = 0;
     setWorldNavActive(true);
+
+    if (activeTab === 'players') {
+      stopPolling();
+      window.setTimeout(() => window.RealPlayPlayers?.refresh?.(), 0);
+      return;
+    }
+
     bootstrap();
     startPolling();
   }
@@ -533,19 +582,19 @@
     if (!trigger || panel?.contains(trigger)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    openWorld();
+    openWorld('world');
   }, true);
 
   window.addEventListener('focus', () => {
     if (!panel?.classList.contains('open')) return;
     if (activeTab === 'world') refreshFeed({ quiet: true });
-    else refreshChat({ quiet: true });
+    else if (activeTab === 'chats') refreshChat({ quiet: true });
   });
   window.addEventListener('keydown', (event) => { if (event.key === 'Escape' && panel?.classList.contains('open')) closeWorld(); });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && panel?.classList.contains('open')) {
       if (activeTab === 'world') refreshFeed({ quiet: true });
-      else refreshChat({ quiet: true });
+      else if (activeTab === 'chats') refreshChat({ quiet: true });
     }
   });
 
@@ -554,5 +603,11 @@
     observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 
-  window.RealPlayWorld = { open: openWorld, close: closeWorld, community };
+  window.RealPlayWorld = {
+    open: () => openWorld('world'),
+    openTab: openWorld,
+    setActiveTab: (tab) => switchTab(tab, { refresh: false }),
+    close: closeWorld,
+    community,
+  };
 })();
