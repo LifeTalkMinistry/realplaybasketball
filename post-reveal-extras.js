@@ -9,7 +9,7 @@
     'home-open-rank-admin-clear-list.js?v=20260921-home-schedule-clear-list-v3',
     'takeover-announcement.js?v=20260923-takeover-clean-v1',
     'takeover-local-test.js?v=20260923-takeover-clean-v1',
-    'takeover-admin-clean.js?v=20260923-takeover-clean-v1',
+    'takeover-admin-clean-v2.js?v=20260923-takeover-clean-v3',
   ];
 
   let started = false;
