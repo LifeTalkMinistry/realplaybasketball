@@ -162,6 +162,46 @@
   text-align:center!important;
 }
 
+/* The help-path chooser mirrors the first screen: one centered title and only
+   the two support paths. Explanatory copy and exit chrome are intentionally
+   absent here; the next screens carry the details. */
+.rp-team-support-overlay[data-rp-team-support-help-choice="true"] .rp-team-sheet-head{
+  justify-content:center!important;
+  margin-bottom:14px!important;
+  text-align:center!important;
+}
+
+.rp-team-support-overlay[data-rp-team-support-help-choice="true"] .rp-team-sheet-head>div,
+.rp-team-support-overlay[data-rp-team-support-help-choice="true"] .rp-team-sheet-head h3{
+  width:100%!important;
+  text-align:center!important;
+}
+
+.rp-team-support-overlay[data-rp-team-support-help-choice="true"] .rp-team-support-paths{
+  gap:9px!important;
+  margin:0!important;
+}
+
+.rp-team-support-overlay[data-rp-team-support-help-choice="true"] .rp-team-support-path{
+  min-height:70px!important;
+  padding:13px 14px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+}
+
+.rp-team-support-overlay[data-rp-team-support-help-choice="true"] .rp-team-support-path small,
+.rp-team-support-overlay[data-rp-team-support-help-choice="true"] .rp-team-support-path strong{
+  width:100%!important;
+  text-align:center!important;
+}
+
+.rp-team-support-overlay[data-rp-team-support-help-choice="true"] .rp-team-support-path strong{
+  margin-bottom:0!important;
+}
+
 .rp-team-support-overlay .rp-team-support-tertiary{
   color:#8092a4!important;
   background:rgba(255,255,255,.02)!important;
