@@ -13,7 +13,7 @@ body.rp-simple-navigation-active [data-rp-lobby]>.rp-player-strip{
 body.rp-simple-navigation-active .rp-current-view-host{
   position:relative;
   min-height:calc(100dvh - 78px - var(--rp-simple-nav-height));
-  padding:16px 14px calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom) + 24px)!important;
+  padding:16px 0 calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom) + 24px)!important;
   display:block!important;
   overflow:visible!important;
   background:linear-gradient(180deg,#02060b 0%,#02050a 58%,#030407 100%);
@@ -381,7 +381,7 @@ body.rp-simple-navigation-active .rp-profile-actions [data-rp-simple-settings]{
 
 @media(max-width:420px){
   body.rp-simple-navigation-active{--rp-simple-nav-height:66px}
-  body.rp-simple-navigation-active .rp-current-view-host{padding-inline:12px!important}
+  body.rp-simple-navigation-active .rp-current-view-host{padding-inline:0!important}
   body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center{padding-top:76px!important}
   body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup{min-height:64px!important}
   body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup strong{font-size:1.36rem!important}
