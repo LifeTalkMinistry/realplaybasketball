@@ -7,6 +7,9 @@
     'profile-share-linked-card.js?v=20260920-profile-share-story-my-day-v110',
     'home-open-rank-admin-delete.js?v=20260921-home-schedule-delete-v1',
     'home-open-rank-admin-clear-list.js?v=20260921-home-schedule-clear-list-v3',
+    'takeover-announcement.js?v=20260923-takeover-clean-v1',
+    'takeover-local-test.js?v=20260923-takeover-clean-v1',
+    'takeover-admin-clean.js?v=20260923-takeover-clean-v1',
   ];
 
   let started = false;
