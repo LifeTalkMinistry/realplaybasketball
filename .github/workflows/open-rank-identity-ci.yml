@@ -24,6 +24,7 @@ jobs:
         run: |
           node --check app.js
           node --check startup-preload.js
+          node --check post-reveal-extras.js
           node --check open-rank-auto-id.js
           node --check public-profile-history.js
           node --check updates-session-title-admin.js
