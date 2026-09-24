@@ -9,6 +9,13 @@
     window.setTimeout(() => overlay.remove(), 180);
   }
 
+  function getSupportOverlay(root = document) {
+    if (root?.matches?.('[data-rp-team-support-overlay]')) return root;
+    const ancestor = root?.closest?.('[data-rp-team-support-overlay]');
+    if (ancestor) return ancestor;
+    return root?.querySelector?.('[data-rp-team-support-overlay]') || null;
+  }
+
   function syncMainChoice(overlay) {
     const panel = overlay?.querySelector?.('[data-rp-team-support-panel]');
     if (!panel) return;
@@ -21,7 +28,9 @@
     if (!isMainChoice) return;
 
     const title = panel.querySelector('#rp-team-support-title');
-    if (title) title.textContent = 'WOULD YOU LIKE TO HELP US?';
+    if (title && title.textContent !== 'WOULD YOU LIKE TO HELP US?') {
+      title.textContent = 'WOULD YOU LIKE TO HELP US?';
+    }
 
     // The first prompt is intentionally only a two-way choice. Remove the
     // explanatory paragraphs, footnote, third option, and header close button.
@@ -29,7 +38,9 @@
       .forEach((node) => node.remove());
     panel.querySelector('.rp-team-sheet-close')?.remove();
 
-    helpButton.textContent = 'SEE HOW I CAN HELP';
+    if (helpButton.textContent !== 'SEE HOW I CAN HELP') {
+      helpButton.textContent = 'SEE HOW I CAN HELP';
+    }
 
     const existingExit = actions.querySelector('[data-rp-team-support-play-exit]');
     const playingButton = actions.querySelector('[data-rp-team-support-screen="playing"]');
@@ -46,33 +57,54 @@
         closeSupportOverlay(overlay);
       });
       playingButton.replaceWith(exitButton);
-    } else if (existingExit) {
+    } else if (existingExit && existingExit.textContent !== "I'LL SUPPORT BY PLAYING") {
       existingExit.textContent = "I'LL SUPPORT BY PLAYING";
     }
   }
 
   function normalizeOverlay(root = document) {
-    const overlay = root?.matches?.('[data-rp-team-support-overlay]')
-      ? root
-      : root?.querySelector?.('[data-rp-team-support-overlay]');
+    const overlay = getSupportOverlay(root);
     if (!overlay) return;
 
     // Detach this flow from the shared bottom-sheet classes. Those classes are
     // intentionally anchored to the bottom for team creation/join sheets and
     // were overriding the support funnel even when its CSS requested centering.
-    overlay.classList.remove('rp-team-sheet-overlay');
-    overlay.classList.add('rp-team-support-overlay');
+    if (overlay.classList.contains('rp-team-sheet-overlay')) {
+      overlay.classList.remove('rp-team-sheet-overlay');
+    }
+    if (!overlay.classList.contains('rp-team-support-overlay')) {
+      overlay.classList.add('rp-team-support-overlay');
+    }
 
     const panel = overlay.querySelector('[data-rp-team-support-panel]');
     if (panel) {
-      panel.classList.remove('rp-team-sheet');
-      panel.classList.add('rp-team-support-card');
+      if (panel.classList.contains('rp-team-sheet')) panel.classList.remove('rp-team-sheet');
+      if (!panel.classList.contains('rp-team-support-card')) panel.classList.add('rp-team-support-card');
     }
 
     syncMainChoice(overlay);
   }
 
-  const observer = new MutationObserver(() => normalizeOverlay(document));
+  const observer = new MutationObserver((mutations) => {
+    const overlays = new Set();
+
+    for (const mutation of mutations) {
+      if (mutation.target instanceof Element) {
+        const owner = mutation.target.closest('[data-rp-team-support-overlay]');
+        if (owner) overlays.add(owner);
+      }
+
+      for (const node of mutation.addedNodes) {
+        if (!(node instanceof Element)) continue;
+        if (node.matches('[data-rp-team-support-overlay]')) overlays.add(node);
+        const nested = node.querySelector?.('[data-rp-team-support-overlay]');
+        if (nested) overlays.add(nested);
+      }
+    }
+
+    overlays.forEach((overlay) => normalizeOverlay(overlay));
+  });
+
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   // The initial prompt is mandatory: the player must choose either to see how
