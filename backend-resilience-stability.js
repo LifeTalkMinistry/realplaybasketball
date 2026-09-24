@@ -5,11 +5,13 @@
   const API_ORIGIN = 'https://api.clarapmc.com';
   const REQUEST_TIMEOUT_MS = 15000;
   const HEALTH_TIMEOUT_MS = 3500;
+  const OUTAGE_CONFIRMATION_DELAY_MS = 350;
   const originalFetch = window.fetch.bind(window);
 
   let backendUnavailable = false;
   let retrying = false;
   let healthProbePromise = null;
+  let outageConfirmationPromise = null;
 
   function isBackendUrl(input) {
     const raw = typeof input === 'string' ? input : input?.url;
@@ -75,11 +77,16 @@
     queueMicrotask(revealFallbacks);
   }
 
+  function clearFallbacks() {
+    document.querySelectorAll('[data-rp-backend-empty]').forEach((node) => node.remove());
+  }
+
   function markAvailable() {
     backendUnavailable = false;
     const banner = document.querySelector('[data-rp-backend-banner]');
     if (banner) banner.hidden = true;
     document.body.classList.remove('rp-backend-unavailable');
+    clearFallbacks();
   }
 
   function friendlyNetworkError(cause) {
@@ -130,6 +137,20 @@
     return healthProbePromise;
   }
 
+  async function confirmBackendUnavailable() {
+    if (outageConfirmationPromise) return outageConfirmationPromise;
+
+    outageConfirmationPromise = (async () => {
+      if (await probeBackendHealth()) return false;
+      await new Promise((resolve) => window.setTimeout(resolve, OUTAGE_CONFIRMATION_DELAY_MS));
+      return !(await probeBackendHealth());
+    })().finally(() => {
+      outageConfirmationPromise = null;
+    });
+
+    return outageConfirmationPromise;
+  }
+
   window.fetch = async function realPlayResilientFetch(input, init = {}) {
     if (!isBackendUrl(input)) return originalFetch(input, init);
 
@@ -160,8 +181,8 @@
         throw error;
       }
 
-      const healthy = await probeBackendHealth();
-      if (!healthy) {
+      const unavailable = await confirmBackendUnavailable();
+      if (unavailable) {
         markUnavailable();
         throw friendlyNetworkError(error);
       }
@@ -189,7 +210,6 @@
       if (!healthy) throw new Error('Backend health check failed.');
 
       markAvailable();
-      document.querySelectorAll('[data-rp-backend-empty]').forEach((node) => node.remove());
 
       const active = document.querySelector('[data-rp-simple-nav-item].active, [data-rp-simple-nav-item][aria-current="page"]');
       const route = active?.dataset?.rpSimpleNavItem;
