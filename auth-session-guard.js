@@ -205,14 +205,12 @@
   async function probeServerAvailability({ allowShow = true } = {}) {
     if (outageProbe) return outageProbe;
     outageProbe = (async () => {
-      const headers = { Accept: 'application/json' };
-      const auth = currentToken();
-      if (auth) headers.Authorization = `Bearer ${auth}`;
-
       try {
-        const response = await nativeFetch(`${REAL_PLAY_API}me?rp_connection_probe=${Date.now()}`, {
+        const response = await nativeFetch(`${REAL_PLAY_API}health?rp_connection_probe=${Date.now()}`, {
           method: 'GET',
-          headers,
+          headers: {
+            Accept: 'application/json',
+          },
           cache: 'no-store',
         });
         const unavailable = OUTAGE_STATUSES.has(response.status);
