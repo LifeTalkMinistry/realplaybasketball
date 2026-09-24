@@ -62,6 +62,33 @@
     }
   }
 
+  function syncHelpChoice(overlay) {
+    const panel = overlay?.querySelector?.('[data-rp-team-support-panel]');
+    if (!panel) return;
+
+    const paths = panel.querySelector('.rp-team-support-paths');
+    const volunteer = paths?.querySelector('[data-rp-team-support-screen="volunteer"]');
+    const money = paths?.querySelector('[data-rp-team-support-screen="money"]');
+    const isHelpChoice = Boolean(paths && volunteer && money);
+
+    overlay.dataset.rpTeamSupportHelpChoice = isHelpChoice ? 'true' : 'false';
+    if (!isHelpChoice) return;
+
+    const title = panel.querySelector('#rp-team-support-title');
+    if (title && title.textContent !== 'HOW WOULD YOU LIKE TO HELP?') {
+      title.textContent = 'HOW WOULD YOU LIKE TO HELP?';
+    }
+
+    // Keep this screen as clean as the first prompt: one title and exactly two
+    // choices. Deeper volunteer/money screens retain their own back controls.
+    panel.querySelector('.rp-team-sheet-head small')?.remove();
+    panel.querySelector('.rp-team-sheet-close')?.remove();
+    panel.querySelector('.rp-team-support-back')?.remove();
+    panel.querySelectorAll('.rp-team-support-copy, .rp-team-support-tertiary')
+      .forEach((node) => node.remove());
+    paths.querySelectorAll('p').forEach((node) => node.remove());
+  }
+
   function normalizeOverlay(root = document) {
     const overlay = getSupportOverlay(root);
     if (!overlay) return;
@@ -83,6 +110,7 @@
     }
 
     syncMainChoice(overlay);
+    syncHelpChoice(overlay);
   }
 
   const observer = new MutationObserver((mutations) => {
