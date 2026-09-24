@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260923-profile-hero-contract-v119';
+  const version = '20260924-predeadui-support-loader-v120';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
@@ -309,11 +309,11 @@
       return;
     }
 
-    await loadScript('legacy-bottom-nav-removal.js', 3500);
-    await loadScript('main-menu-fast-snap-bootstrap.js', 3500);
+    await loadScript('legacy-bottom-nav-removal.js', 12000);
+    await loadScript('main-menu-fast-snap-bootstrap.js', 12000);
 
-    const mainMenuLoaded = await loadScript('main-menu.js', 6500);
-    const simpleNavLoaded = await loadScript('simple-navigation.js', 6500);
+    const mainMenuLoaded = await loadScript('main-menu.js', 15000);
+    const simpleNavLoaded = await loadScript('simple-navigation.js', 15000);
 
     if (!mainMenuLoaded || !simpleNavLoaded) {
       showBootFailure('Critical Real Play navigation failed to initialize.');
