@@ -4,11 +4,14 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
+  const PROFILE_REQUEST_TIMEOUT_MS = 10000;
   let panel = null;
   let state = null;
   let teamState = null;
   let membershipState = null;
   let loading = false;
+  let refreshController = null;
+  let refreshRequestId = 0;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -225,7 +228,7 @@
       </details>`;
   }
 
-  async function api(path) {
+  async function api(path, signal) {
     const accessToken = token();
     if (!accessToken) {
       const error = new Error('Please log in to Real Play first.');
@@ -235,6 +238,7 @@
     const response = await fetch(`${API_BASE_URL}${path}`, {
       headers: { Accept: 'application/json', Authorization: `Bearer ${accessToken}` },
       cache: 'no-store',
+      signal,
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -423,14 +427,24 @@
 
   async function refresh() {
     if (loading) return;
+    const requestId = ++refreshRequestId;
+    const controller = new AbortController();
+    refreshController = controller;
+    let timedOut = false;
+    const timer = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, PROFILE_REQUEST_TIMEOUT_MS);
+
     loading = true;
     setStatus('LOADING PLAYER PROFILE...');
     try {
       const [profileResult, teamResult, membershipResult] = await Promise.allSettled([
-        api('/api/real-play/me'),
-        api('/api/real-play/3v3/me'),
-        api('/api/real-play/membership'),
+        api('/api/real-play/me', controller.signal),
+        api('/api/real-play/3v3/me', controller.signal),
+        api('/api/real-play/membership', controller.signal),
       ]);
+      if (requestId !== refreshRequestId) return;
       if (profileResult.status === 'rejected') throw profileResult.reason;
       state = profileResult.value;
       teamState = teamResult.status === 'fulfilled' ? teamResult.value : null;
@@ -438,6 +452,12 @@
       renderProfile();
       setStatus('');
     } catch (error) {
+      if (requestId !== refreshRequestId) return;
+      if (error?.name === 'AbortError') {
+        if (!panel?.classList.contains('open')) return;
+        setStatus(timedOut ? 'Player profile took too long to load. Please try again.' : 'Player profile request was cancelled.', 'error');
+        return;
+      }
       if (error.status === 401) {
         closeProfile();
         document.querySelector('[data-auth-open]')?.click();
@@ -445,7 +465,11 @@
       }
       setStatus(error.message || 'Could not load your profile.', 'error');
     } finally {
-      loading = false;
+      window.clearTimeout(timer);
+      if (requestId === refreshRequestId) {
+        loading = false;
+        refreshController = null;
+      }
     }
   }
 
@@ -460,6 +484,11 @@
 
   function closeProfile() {
     if (!panel) return;
+    refreshRequestId += 1;
+    refreshController?.abort();
+    refreshController = null;
+    loading = false;
+
     const focused = document.activeElement;
     if (focused && panel.contains(focused)) {
       try { focused.blur?.(); } catch (_error) {}
