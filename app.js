@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260924-home-first-v121';
+  const version = '20260924-surgical-stability-v123';
   const html = document.documentElement;
   const bootStartedAt = performance.now();
   const MIN_BOOT_DISPLAY_MS = 2400;
