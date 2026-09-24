@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260923-profile-hero-contract-v119';
+  const version = '20260924-home-first-v121';
   const html = document.documentElement;
   const bootStartedAt = performance.now();
   const MIN_BOOT_DISPLAY_MS = 2400;
@@ -338,41 +338,29 @@
     'world-results.css',
   ];
 
-  // The loading gate owns every stylesheet needed by the first interactive
-  // player-facing frame. Deep mode/admin styling remains progressive.
+  // Only the styles required for the first usable HOME/nav frame and immediate
+  // Save My Slot / World / Players / Chats / Me entry remain behind the gate.
   const criticalStylesheetHrefs = new Set([
     'mobile-lobby.css',
     'lobby-topbar-cleanup.css',
     'mobile-entry.css',
-    'public-landing.css',
-    'public-landing-cleanup.css',
     'mobile-shell-fix.css',
     'mobile-lobby-cleanup.css',
-    'main-menu.css',
     'simple-navigation.css',
+    'home-main-announcement-art.css',
+    'home-open-rank-art.css',
+    'home-why-real-play.css',
+    'public-founder-credit.css',
+    'visitor-mode.css',
+    'auth-welcome-cleanup.css',
+    'real-play-updates.css',
+    'real-play-world.css',
+    'real-play-profile.css',
+    'profile-identity-cleanup.css',
     'ranking-games.css',
     'ranking-games-cleanup.css',
     'ranking-session-teams.css',
     'ranking-team-support-center-force.css',
-    'real-play-updates.css',
-    'real-play-updates-cleanup.css',
-    'real-play-updates-game-detail.css',
-    'real-play-world.css',
-    'real-play-world-chat-cleanup.css',
-    'real-play-profile.css',
-    'profile-identity-cleanup.css',
-    'real-play-profile-intro.css',
-    'real-play-profile-metrics.css',
-    'profile-metrics-stability.css',
-    'membership.css',
-    'settings-panel.css',
-    'auth-welcome-cleanup.css',
-    'public-founder-credit.css',
-    'visitor-mode.css',
-    'home-main-announcement-art.css',
-    'home-open-rank-art.css',
-    'home-why-real-play.css',
-    'world-results.css',
   ]);
 
   (async () => {
@@ -420,18 +408,60 @@
       return;
     }
 
-    // Everything through the current Open Ranking reservation stack loads
-    // behind the gate; admin/deep support continues progressively afterward.
-    const firstInteractionEnhancements = [
-      'public-landing.js',
+    // Keep only the authorities and reservation stack that must be immediately
+    // usable at first paint. Deep feature screens continue right after reveal.
+    const coreInteractionEnhancements = [
       'home-why-real-play.js',
       'visitor-mode.js',
       'public-founder-credit.js',
+      'login-landing-fix.js',
+      'persistent-session-fix.js',
+      'real-play-updates.js',
+      'real-play-world.js',
+      'real-play-world-chat-cleanup.js',
+      'profile-load-guard.js',
+      'real-play-profile.js',
+      'real-play-world-players.js',
+      'visitor-world-players.js',
+      'ranking-games.js',
+      'ranking-games-secured-players.js',
+      'ranking-games-standby-players.js',
+      'ranking-games-info-toggle.js',
+      'ranking-games-session-cleanup.js',
+      'ranking-team-support-center-force.js',
+      'ranking-team-support-tiers.js',
+      'ranking-session-teams.js',
+      'ranking-spot-priority.js',
+      'ranking-reservation-snapshot.js',
+    ];
+
+    for (const href of coreInteractionEnhancements) {
+      const loaded = await loadScript(href, 4500);
+      if (!loaded) console.warn(`[Real Play] Core interaction layer failed to load: ${href}`);
+    }
+
+    if (!hasPrimaryInteractions()) {
+      showBootFailure('Primary Real Play interactions failed to initialize.');
+      return;
+    }
+
+    // Let async Home schedule/capacity rendering and the few true HOME decorators
+    // stop moving before the first visible frame. Deep screens no longer block it.
+    await waitForHomeSettled();
+    await waitForMinimumBootDisplay();
+    await nextPaint();
+
+    bootResourcesReady = true;
+    if (!revealNewShell()) {
+      showBootFailure('Real Play core shell is unavailable.');
+      return;
+    }
+
+    const deferredPlayerEnhancements = [
+      'public-landing.js',
       'home-future-4v4-preview.js',
       'home-future-4v4-card-cleanup.js',
       'home-payment-admin.js',
-      'login-landing-fix.js',
-      'persistent-session-fix.js',
       'visitor-replay-access.js',
       'career-game-replay.js',
       'career-game-replay-marker-cleanup.js',
@@ -448,21 +478,14 @@
       'three-v-three-refinement.js',
       'three-v-three-participants.js',
       'three-v-three-club-art.js',
-      'real-play-updates.js',
       'real-play-updates-info-toggle.js',
       'updates-session-title-admin.js',
       'real-play-updates-game-detail.js',
-      'real-play-world.js',
-      'real-play-world-chat-cleanup.js',
-      'profile-load-guard.js',
-      'real-play-profile.js',
       'settings-panel.js',
       'profile-art-owner-access.js',
       'real-play-profile-intro.js',
       'profile-metrics-stability.js',
       'real-play-profile-metrics.js',
-      'real-play-world-players.js',
-      'visitor-world-players.js',
       'public-profile-history.js',
       'real-play-rank-explainer.js',
       'world-results.js',
@@ -476,41 +499,10 @@
       'real-play-player-claim.js',
       'player-number-recovery.js',
       'player-identity-manager.js',
-      'ranking-games.js',
-      'ranking-games-secured-players.js',
-      'ranking-games-standby-players.js',
-      'ranking-games-info-toggle.js',
-      'ranking-games-session-cleanup.js',
-      'ranking-team-support-center-force.js',
-      'ranking-team-support-tiers.js',
-      'ranking-session-teams.js',
-      'ranking-spot-priority.js',
-      'ranking-reservation-snapshot.js',
     ];
 
-    for (const href of firstInteractionEnhancements) {
-      const loaded = await loadScript(href, 4500);
-      if (!loaded) console.warn(`[Real Play] First-interaction layer failed to load: ${href}`);
-    }
-
-    if (!hasPrimaryInteractions()) {
-      showBootFailure('Primary Real Play interactions failed to initialize.');
-      return;
-    }
-
-    // Let async Home schedule/capacity rendering and DOM decorators stop moving
-    // before the first visible frame. A bounded quiet window prevents a hang.
-    await waitForHomeSettled();
-    await waitForMinimumBootDisplay();
-    await nextPaint();
-
-    bootResourcesReady = true;
-    if (!revealNewShell()) {
-      showBootFailure('Real Play core shell is unavailable.');
-      return;
-    }
-
     const deferredEnhancements = [
+      ...deferredPlayerEnhancements,
       'overlay-focus-release.js',
       'player-admin-probe-guard.js',
       'admin-live-stat-stability.js',
@@ -529,13 +521,16 @@
       'admin-live-refresh-fix.js',
     ];
 
+    // Start non-critical styles immediately after reveal so player-facing deep
+    // screens are styled by the time their scripts finish progressively loading.
+    const remainingStyles = stylesheetHrefs.filter((href) => !criticalStylesheetHrefs.has(href));
+    const stylesheetLoads = remainingStyles.map((href) => addStylesheet(href));
+
     for (const href of deferredEnhancements) {
       const loaded = await loadScript(href, 4500);
       if (!loaded) console.warn(`[Real Play] Optional layer failed to load: ${href}`);
     }
 
-    const remainingStyles = stylesheetHrefs.filter((href) => !criticalStylesheetHrefs.has(href));
-    const stylesheetLoads = remainingStyles.map((href) => addStylesheet(href));
     const stylesheetResults = await Promise.all(stylesheetLoads);
     stylesheetResults.forEach((loaded, index) => {
       if (!loaded) console.warn(`[Real Play] Optional stylesheet failed to settle at index ${index}.`);
