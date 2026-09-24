@@ -11,6 +11,7 @@
   const ADMIN_CACHE_KEY = 'real_play_admin_ui_bypass_v1';
   const OUTAGE_STATUSES = new Set([502, 503, 504]);
   const PUBLIC_ACTIONS = new Set(['bootstrap', 'feed', 'channels', 'chat', 'players', 'player_profile']);
+  const HEALTH_PROBE_TIMEOUT_MS = 5000;
 
   let outageOverlay = null;
   let outageProbe = null;
@@ -19,6 +20,10 @@
 
   function requestUrl(input) {
     return typeof input === 'string' ? input : input?.url || '';
+  }
+
+  function isAbortError(error) {
+    return error?.name === 'AbortError';
   }
 
   function currentToken() {
@@ -205,6 +210,8 @@
   async function probeServerAvailability({ allowShow = true } = {}) {
     if (outageProbe) return outageProbe;
     outageProbe = (async () => {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), HEALTH_PROBE_TIMEOUT_MS);
       try {
         const response = await nativeFetch(`${REAL_PLAY_API}health?rp_connection_probe=${Date.now()}`, {
           method: 'GET',
@@ -212,6 +219,7 @@
             Accept: 'application/json',
           },
           cache: 'no-store',
+          signal: controller.signal,
         });
         const unavailable = OUTAGE_STATUSES.has(response.status);
         if (!unavailable) {
@@ -224,6 +232,7 @@
         if (allowShow) showServerUnavailable();
         return false;
       } finally {
+        window.clearTimeout(timer);
         outageProbe = null;
       }
     })();
@@ -308,7 +317,7 @@
     try {
       response = await nativeFetch(input, init);
     } catch (error) {
-      if (realPlayRequest) signalPossibleOutage();
+      if (realPlayRequest && !isAbortError(error)) signalPossibleOutage();
       throw error;
     }
 
@@ -342,8 +351,8 @@
     // in case the request raced with page/app initialization.
     try {
       response = await nativeFetch(input, init);
-    } catch (_error) {
-      if (realPlayRequest) signalPossibleOutage();
+    } catch (error) {
+      if (realPlayRequest && !isAbortError(error)) signalPossibleOutage();
       return response;
     }
 
