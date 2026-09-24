@@ -1,6 +1,181 @@
 (() => {
   const TOKEN_KEY = 'real_play_access_token';
   const VISITOR_KEY = 'real_play_visitor_mode';
+  const HOME_PUBLIC_UPDATES_PATH = '/api/real-play/public/updates';
+  const HOME_RANKING_ACCESS_PATH = '/api/real-play/career/access';
+
+  // Keep the same Real Play loading screen in place after the core shell mounts
+  // until the initial Home authority has actually settled the data visible on
+  // the first screen. This gate deliberately ignores World, Players, Chats,
+  // Profile, videos, admin tools, and other progressive enhancements.
+  if (!window.__realPlayInitialHomeReadinessGateInstalled) {
+    window.__realPlayInitialHomeReadinessGateInstalled = true;
+
+    const html = document.documentElement;
+    html.classList.add('rp-home-readiness-pending');
+
+    const style = document.createElement('style');
+    style.id = 'rp-home-readiness-gate-style';
+    style.textContent = `
+      html.rp-home-readiness-pending body{
+        margin:0!important;
+        min-height:100dvh!important;
+        overflow:hidden!important;
+        background:#020306!important;
+        pointer-events:none!important;
+        user-select:none!important;
+      }
+      html.rp-home-readiness-pending body>*{
+        visibility:hidden!important;
+        pointer-events:none!important;
+      }
+      html.rp-home-readiness-pending body::before,
+      html.rp-home-readiness-pending body::after{
+        position:fixed;
+        left:50%;
+        z-index:2147483647;
+        visibility:visible!important;
+        pointer-events:none;
+        transform:translateX(-50%);
+        text-align:center;
+        white-space:nowrap;
+      }
+      html.rp-home-readiness-pending body::before{
+        content:'REAL PLAY';
+        top:45%;
+        color:#f6f9ff;
+        font-family:Impact,'Arial Narrow',Arial,sans-serif;
+        font-size:clamp(2rem,9vw,3.25rem);
+        font-style:italic;
+        font-weight:950;
+        letter-spacing:.025em;
+      }
+      html.rp-home-readiness-pending body::after{
+        content:'BASKETBALL  ·  LOADING';
+        top:calc(45% + 58px);
+        color:#42d8ff;
+        font-family:Arial,sans-serif;
+        font-size:.56rem;
+        font-weight:900;
+        letter-spacing:.22em;
+        animation:rpHomeReadinessPulse 1.1s ease-in-out infinite alternate;
+      }
+      @keyframes rpHomeReadinessPulse{from{opacity:.38}to{opacity:1}}
+      @media(prefers-reduced-motion:reduce){
+        html.rp-home-readiness-pending body::after{animation:none;opacity:.78}
+      }
+    `;
+    document.head.appendChild(style);
+
+    const originalFetch = window.fetch?.bind(window);
+    const state = {
+      appReady: false,
+      publicSeen: false,
+      publicBodySettled: false,
+      availabilitySeen: false,
+      availabilityBodySettled: false,
+      released: false,
+      fallbackTimer: 0,
+    };
+
+    const needsAvailability = () => Boolean(window.localStorage.getItem(TOKEN_KEY));
+
+    function normalizeUrl(input) {
+      try {
+        if (typeof input === 'string') return new URL(input, window.location.href).href;
+        if (input instanceof URL) return input.href;
+        if (input && typeof input.url === 'string') return new URL(input.url, window.location.href).href;
+      } catch (_error) {}
+      return '';
+    }
+
+    function homeInstalled() {
+      return Boolean(document.querySelector('[data-rp-simple-home][data-rp-home-command-center="true"]'));
+    }
+
+    function bodySettled(response) {
+      if (!response || typeof response.clone !== 'function') return Promise.resolve();
+      try {
+        const copy = response.clone();
+        return copy.text().catch(() => undefined);
+      } catch (_error) {
+        return Promise.resolve();
+      }
+    }
+
+    function nextPaint() {
+      return new Promise((resolve) => {
+        window.requestAnimationFrame(() => window.requestAnimationFrame(resolve));
+      });
+    }
+
+    async function releaseGate(reason) {
+      if (state.released) return;
+      state.released = true;
+      if (state.fallbackTimer) window.clearTimeout(state.fallbackTimer);
+      await nextPaint();
+      html.classList.remove('rp-home-readiness-pending');
+      style.remove();
+      if (originalFetch && window.fetch === trackedFetch) window.fetch = originalFetch;
+      try {
+        window.dispatchEvent(new CustomEvent('realplay:initial-home-ready', { detail: { reason } }));
+      } catch (_error) {}
+    }
+
+    function maybeRelease() {
+      if (state.released || !state.appReady || !homeInstalled()) return;
+      if (!state.publicSeen || !state.publicBodySettled) return;
+      if (needsAvailability() && (!state.availabilitySeen || !state.availabilityBodySettled)) return;
+      releaseGate('home-data-settled');
+    }
+
+    function trackResponse(kind, request) {
+      Promise.resolve(request).then(
+        async (response) => {
+          await bodySettled(response);
+          if (kind === 'public') state.publicBodySettled = true;
+          if (kind === 'availability') state.availabilityBodySettled = true;
+          queueMicrotask(maybeRelease);
+        },
+        () => {
+          if (kind === 'public') state.publicBodySettled = true;
+          if (kind === 'availability') state.availabilityBodySettled = true;
+          queueMicrotask(maybeRelease);
+        },
+      );
+    }
+
+    function trackedFetch(...args) {
+      const request = originalFetch(...args);
+      if (!state.appReady || !window.__realPlaySimpleNavigationStateAuthorityInstalled) return request;
+
+      const url = normalizeUrl(args[0]);
+      if (!state.publicSeen && url.includes(HOME_PUBLIC_UPDATES_PATH)) {
+        state.publicSeen = true;
+        trackResponse('public', request);
+      } else if (!state.availabilitySeen && url.includes(HOME_RANKING_ACCESS_PATH)) {
+        state.availabilitySeen = true;
+        trackResponse('availability', request);
+      }
+      return request;
+    }
+
+    if (originalFetch) window.fetch = trackedFetch;
+
+    window.addEventListener('realplay:app-ready', () => {
+      state.appReady = true;
+      // This is only a deadlock escape if the Home authority itself fails to
+      // load or never starts its initial request. It is not the normal reveal
+      // condition and does not intentionally delay a healthy startup.
+      state.fallbackTimer = window.setTimeout(() => {
+        if (!state.released) {
+          console.warn('[Real Play] Initial Home readiness gate used its failure fallback.');
+          releaseGate('failure-fallback');
+        }
+      }, 10_000);
+      queueMicrotask(maybeRelease);
+    }, { once: true });
+  }
 
   // Real Play is public-first: no account is required to browse the live
   // community, players, public chat, schedules, results, or announcements.
