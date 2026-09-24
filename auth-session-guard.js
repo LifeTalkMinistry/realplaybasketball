@@ -12,10 +12,17 @@
   const OUTAGE_STATUSES = new Set([502, 503, 504]);
   const PUBLIC_ACTIONS = new Set(['bootstrap', 'feed', 'channels', 'chat', 'players', 'player_profile']);
   const HEALTH_PROBE_TIMEOUT_MS = 5000;
+  const OUTAGE_CONFIRMATION_FAILURES = 2;
+  const OUTAGE_CONFIRMATION_DELAY_MS = 1400;
+  const OUTAGE_FAILURE_WINDOW_MS = 15000;
 
   let outageOverlay = null;
   let outageProbe = null;
   let outageRetryTimer = 0;
+  let outageConfirmationTimer = 0;
+  let outageSignalTimer = 0;
+  let outageFailureCount = 0;
+  let lastOutageFailureAt = 0;
   let adminRememberTimer = 0;
 
   function requestUrl(input) {
@@ -159,7 +166,7 @@
       retryButton.textContent = 'CHECKING…';
       const available = await probeServerAvailability({ allowShow: true });
       if (available) {
-        hideServerUnavailable();
+        markServerHealthy();
         retryButton.textContent = 'RETRY CONNECTION';
         retryButton.disabled = false;
         return;
@@ -207,6 +214,51 @@
     document.body?.classList.remove('rp-server-unavailable');
   }
 
+  function clearOutageSuspicion() {
+    outageFailureCount = 0;
+    lastOutageFailureAt = 0;
+    if (outageConfirmationTimer) {
+      window.clearTimeout(outageConfirmationTimer);
+      outageConfirmationTimer = 0;
+    }
+    if (outageSignalTimer) {
+      window.clearTimeout(outageSignalTimer);
+      outageSignalTimer = 0;
+    }
+  }
+
+  function markServerHealthy() {
+    clearOutageSuspicion();
+    hideServerUnavailable();
+  }
+
+  function scheduleOutageConfirmation() {
+    if (outageConfirmationTimer || outageOverlay?.classList.contains('open')) return;
+    outageConfirmationTimer = window.setTimeout(() => {
+      outageConfirmationTimer = 0;
+      probeServerAvailability({ allowShow: true }).catch(() => undefined);
+    }, OUTAGE_CONFIRMATION_DELAY_MS);
+  }
+
+  function recordOutageFailure({ allowShow = true } = {}) {
+    if (!allowShow) return false;
+
+    const now = Date.now();
+    if (!lastOutageFailureAt || now - lastOutageFailureAt > OUTAGE_FAILURE_WINDOW_MS) {
+      outageFailureCount = 0;
+    }
+    lastOutageFailureAt = now;
+    outageFailureCount += 1;
+
+    if (outageFailureCount >= OUTAGE_CONFIRMATION_FAILURES) {
+      showServerUnavailable();
+      return false;
+    }
+
+    scheduleOutageConfirmation();
+    return false;
+  }
+
   async function probeServerAvailability({ allowShow = true } = {}) {
     if (outageProbe) return outageProbe;
     outageProbe = (async () => {
@@ -221,16 +273,13 @@
           cache: 'no-store',
           signal: controller.signal,
         });
-        const unavailable = OUTAGE_STATUSES.has(response.status);
-        if (!unavailable) {
-          hideServerUnavailable();
+        if (!OUTAGE_STATUSES.has(response.status)) {
+          markServerHealthy();
           return true;
         }
-        if (allowShow) showServerUnavailable();
-        return false;
+        return recordOutageFailure({ allowShow });
       } catch (_error) {
-        if (allowShow) showServerUnavailable();
-        return false;
+        return recordOutageFailure({ allowShow });
       } finally {
         window.clearTimeout(timer);
         outageProbe = null;
@@ -240,9 +289,11 @@
   }
 
   function signalPossibleOutage() {
-    window.setTimeout(() => {
+    if (outageSignalTimer || outageProbe) return;
+    outageSignalTimer = window.setTimeout(() => {
+      outageSignalTimer = 0;
       probeServerAvailability({ allowShow: true }).catch(() => undefined);
-    }, 0);
+    }, 120);
   }
 
   function isProtectedRealPlayRequest(input, init = {}) {
@@ -323,7 +374,7 @@
 
     if (realPlayRequest) {
       if (OUTAGE_STATUSES.has(response.status)) signalPossibleOutage();
-      else if (outageOverlay?.classList.contains('open')) hideServerUnavailable();
+      else markServerHealthy();
     }
 
     if (!protectedRequest || response.ok) return response;
@@ -356,7 +407,10 @@
       return response;
     }
 
-    if (OUTAGE_STATUSES.has(response.status)) signalPossibleOutage();
+    if (realPlayRequest) {
+      if (OUTAGE_STATUSES.has(response.status)) signalPossibleOutage();
+      else markServerHealthy();
+    }
     if (response.status !== 401) return response;
 
     const body = await response.clone().text().catch(() => firstBody);
@@ -396,8 +450,11 @@
     }
   }, 1200);
 
+  // Startup latency is not an outage signal. This first probe is deliberately
+  // silent; an outage UI is only allowed after a real request fails and the
+  // health endpoint then fails confirmation twice.
   window.addEventListener('realplay:app-ready', () => {
-    window.setTimeout(() => probeServerAvailability({ allowShow: true }).catch(() => undefined), 350);
+    window.setTimeout(() => probeServerAvailability({ allowShow: false }).catch(() => undefined), 350);
   }, { once: true });
 
   window.addEventListener('storage', (event) => {
