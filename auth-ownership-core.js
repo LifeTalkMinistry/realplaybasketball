@@ -1,6 +1,7 @@
 (() => {
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
+  const AUTH_REQUEST_TIMEOUT_MS = 12000;
 
   const overlay = document.querySelector('[data-auth-overlay]');
   const closeButton = document.querySelector('[data-auth-close]');
@@ -131,12 +132,29 @@
       if (!token) throw new Error('Please log in first.');
       headers.Authorization = `Bearer ${token}`;
     }
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      method: options.method || 'GET',
-      headers,
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-      cache: 'no-store',
-    });
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), AUTH_REQUEST_TIMEOUT_MS);
+    let response;
+    try {
+      response = await fetch(`${API_BASE_URL}${path}`, {
+        method: options.method || 'GET',
+        headers,
+        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        const timeoutError = new Error('Real Play took too long to respond. Please try again.');
+        timeoutError.status = 408;
+        throw timeoutError;
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timer);
+    }
+
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       if (response.status === 401 && options.auth) clearSession();
