@@ -34,6 +34,10 @@
   }
 
   async function community(action, payload = {}) {
+    if (window.RealPlayWorld?.community) {
+      return window.RealPlayWorld.community(action, payload);
+    }
+
     const accessToken = token();
     if (!accessToken) {
       const error = new Error('Please log in to Real Play first.');
@@ -174,6 +178,7 @@
 
   function activatePlayers() {
     if (!worldPanel) return;
+    window.RealPlayWorld?.setActiveTab?.('players');
     worldPanel.querySelectorAll('[data-world-tab]').forEach((button) => {
       button.classList.toggle('active', button.dataset.worldTab === 'players');
     });
