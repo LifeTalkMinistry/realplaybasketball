@@ -204,3 +204,12 @@
     opacity: .86;
   }
 }
+
+/* Loading status copy only — no startup or timing behavior changes. */
+html.rp-shell-booting:not(.rp-shell-failed) body::after {
+  content: 'APPLYING THE LATEST UPDATES\A This may take a little longer than usual.\A Thank you for your patience.' !important;
+  width: min(88vw, 420px) !important;
+  white-space: pre-line !important;
+  line-height: 1.55 !important;
+  letter-spacing: .08em !important;
+}
