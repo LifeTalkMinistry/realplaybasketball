@@ -174,13 +174,17 @@
   function loadScript(href, timeoutMs = 6000) {
     return new Promise((resolve) => {
       const script = document.createElement('script');
+      const softDeadlineMs = Math.max(1500, Number(timeoutMs) || 6000);
+      const hardDeadlineMs = softDeadlineMs * 4;
       let settled = false;
-      let timer = 0;
+      let softTimer = 0;
+      let hardTimer = 0;
 
       const finish = (loaded) => {
         if (settled) return;
         settled = true;
-        if (timer) window.clearTimeout(timer);
+        if (softTimer) window.clearTimeout(softTimer);
+        if (hardTimer) window.clearTimeout(hardTimer);
         resolve(Boolean(loaded));
       };
 
@@ -188,11 +192,13 @@
       script.async = false;
       script.addEventListener('load', () => finish(true), { once: true });
       script.addEventListener('error', () => finish(false), { once: true });
-      timer = window.setTimeout(() => {
-        console.warn(`[Real Play] Script load timed out: ${href}`);
-        try { script.remove(); } catch (_error) {}
+      softTimer = window.setTimeout(() => {
+        console.warn(`[Real Play] Script is still loading after ${softDeadlineMs}ms: ${href}`);
+      }, softDeadlineMs);
+      hardTimer = window.setTimeout(() => {
+        console.warn(`[Real Play] Script did not settle after ${hardDeadlineMs}ms: ${href}`);
         finish(false);
-      }, Math.max(1500, Number(timeoutMs) || 6000));
+      }, hardDeadlineMs);
       document.head.appendChild(script);
     });
   }
