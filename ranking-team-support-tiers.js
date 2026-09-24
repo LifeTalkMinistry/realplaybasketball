@@ -32,7 +32,7 @@
       .rp-team-support-path.money{border-color:rgba(255,211,91,.28);background:rgba(34,27,7,.32)}
       .rp-team-support-path.money small{color:#ffd35b}
       .rp-team-support-roles{display:grid;gap:8px;margin:12px 0}
-      .rp-team-support-role{padding:11px 12px;cursor:default}
+      .rp-team-support-role{padding:11px 12px}
       .rp-team-support-role span{display:block;color:#53dcff;font-size:.55rem;font-weight:950;letter-spacing:.11em}
       .rp-team-support-role strong{display:block;margin:3px 0;color:#f7fbff;font-size:.82rem}
       .rp-team-support-role p{margin:0;color:#8299a7;font-size:.62rem;line-height:1.4}
@@ -59,6 +59,13 @@
       .rp-team-support-appreciation blockquote strong{color:#fff;font-weight:950}
       .rp-team-support-appreciation cite{margin-top:2px;color:#53dcff;font-size:.55rem;font-style:normal;font-weight:950;letter-spacing:.15em}
       .rp-team-support-appreciation .rp-team-sheet-submit{width:100%;margin-top:10px}
+      .rp-team-support-volunteer-menu{display:grid;gap:12px;text-align:center}
+      .rp-team-support-volunteer-menu h3{margin:0 0 6px;color:#f3f8ff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.35rem;font-style:italic;font-weight:1000;letter-spacing:.018em;text-transform:uppercase}
+      .rp-team-support-volunteer-menu .rp-team-support-paths{grid-template-columns:1fr!important;margin:8px 0 0}
+      .rp-team-support-volunteer-menu .rp-team-support-path{min-height:50px;display:grid;place-items:center;text-align:center}
+      .rp-team-support-volunteer-menu .rp-team-support-path strong{margin:0;font-size:.82rem;letter-spacing:.06em}
+      .rp-team-support-role-detail{text-align:center}
+      .rp-team-support-role-detail .rp-team-support-copy{max-width:390px;margin:0 auto 14px;text-align:center}
       @media (min-width:560px){
         .rp-team-support-grid{grid-template-columns:1fr 1fr}
         .rp-team-support-tier{grid-template-columns:1fr}
@@ -123,17 +130,27 @@
   }
 
   function volunteerScreen() {
-    return shell('NON-MONETARY SUPPORT', 'HELP WITHOUT SPENDING.', `
-      <button class="rp-team-support-back" type="button" data-rp-team-support-screen="help">← BACK</button>
-      <p class="rp-team-support-copy">You can help Real Play operate better simply by sharing your time, attention, or something you already have during the session.</p>
-      <div class="rp-team-support-roles">
-        <article class="rp-team-support-role"><span>GAME OPERATIONS</span><strong>Volunteer as a game auditor / scorer</strong><p>Help verify what happens on the court and support accurate game records.</p></article>
-        <article class="rp-team-support-role"><span>MEDIA CREW</span><strong>Volunteer as a cameraman</strong><p>Help capture games, highlights, and moments players can look back on.</p></article>
-        <article class="rp-team-support-role"><span>EXTRA CAMERA ANGLE</span><strong>Lend your phone as a game camera</strong><p>Your phone stays yours. Real Play only borrows it during the game so we can record from more than one angle.</p></article>
-        <article class="rp-team-support-role"><span>SESSION SUPPORT</span><strong>Help with setup and game operations</strong><p>Assist with organizing players, preparing the court flow, and keeping the session moving.</p></article>
+    return `
+      <div class="rp-team-support-volunteer-menu">
+        <h3 id="rp-team-support-title">HELP WITHOUT SPENDING.</h3>
+        <div class="rp-team-support-paths" aria-label="Non-monetary support options">
+          <button class="rp-team-support-path" type="button" data-rp-team-support-screen="volunteer-game"><strong>GAME OPERATIONS</strong></button>
+          <button class="rp-team-support-path" type="button" data-rp-team-support-screen="volunteer-media"><strong>MEDIA CREW</strong></button>
+          <button class="rp-team-support-path" type="button" data-rp-team-support-screen="volunteer-camera"><strong>EXTRA CAMERA ANGLE</strong></button>
+          <button class="rp-team-support-path" type="button" data-rp-team-support-screen="volunteer-session"><strong>SESSION SUPPORT</strong></button>
+        </div>
       </div>
-      <p class="rp-team-support-rule"><strong>INTERESTED?</strong> Tell a Real Play organizer during the session which role you want to help with. We can coordinate it before the game starts.</p>
-      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>I'D LIKE TO HELP — TAKE ME TO MY TEAM</button>
+    `;
+  }
+
+  function volunteerRoleScreen(title, explanation) {
+    return shell('NON-MONETARY SUPPORT', title, `
+      <div class="rp-team-support-role-detail">
+        <button class="rp-team-support-back" type="button" data-rp-team-support-screen="volunteer">← BACK</button>
+        <p class="rp-team-support-copy">${explanation}</p>
+        <p class="rp-team-support-rule"><strong>INTERESTED?</strong> Tell a Real Play organizer during the session that you want to help with this role so we can coordinate it before the game starts.</p>
+        <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>I'D LIKE TO HELP — TAKE ME TO MY TEAM</button>
+      </div>
     `);
   }
 
@@ -186,6 +203,10 @@
       main: mainScreen,
       help: helpScreen,
       volunteer: volunteerScreen,
+      'volunteer-game': () => volunteerRoleScreen('GAME OPERATIONS', 'Volunteer as a game auditor or scorer. Help verify what happens on the court and support accurate game records.'),
+      'volunteer-media': () => volunteerRoleScreen('MEDIA CREW', 'Volunteer as a cameraman. Help capture games, highlights, and moments players can look back on.'),
+      'volunteer-camera': () => volunteerRoleScreen('EXTRA CAMERA ANGLE', 'Lend your phone as a game camera. Your phone stays yours; Real Play only borrows it during the game so we can record from more than one angle.'),
+      'volunteer-session': () => volunteerRoleScreen('SESSION SUPPORT', 'Help with setup and game operations by organizing players, preparing the court flow, and keeping the session moving.'),
       money: moneyScreen,
       playing: playingScreen,
     };
