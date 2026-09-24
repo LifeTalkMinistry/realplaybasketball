@@ -140,8 +140,15 @@
 
   function openWorldTab(tab) {
     closePrimaryLayers('world');
-    window.RealPlayWorld?.open?.();
     setActive(tab === 'players' ? 'players' : tab === 'chats' ? 'chats' : 'world');
+
+    if (window.RealPlayWorld?.openTab) {
+      window.RealPlayWorld.openTab(tab);
+      return;
+    }
+
+    // Compatibility fallback for an older cached World runtime.
+    window.RealPlayWorld?.open?.();
     window.setTimeout(() => activateWorldTab(tab), 30);
   }
 
