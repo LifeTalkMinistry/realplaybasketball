@@ -137,6 +137,31 @@
   border-color:rgba(80,218,255,.13)!important;
 }
 
+/* The initial support prompt is intentionally just one centered question and
+   two centered choices. Deeper support screens keep their existing headers. */
+.rp-team-support-overlay[data-rp-team-support-main-choice="true"] .rp-team-sheet-head{
+  justify-content:center!important;
+  text-align:center!important;
+}
+
+.rp-team-support-overlay[data-rp-team-support-main-choice="true"] .rp-team-sheet-head>div{
+  width:100%!important;
+  text-align:center!important;
+}
+
+.rp-team-support-overlay[data-rp-team-support-main-choice="true"] .rp-team-sheet-head small{
+  display:none!important;
+}
+
+.rp-team-support-overlay[data-rp-team-support-main-choice="true"] .rp-team-sheet-head h3{
+  width:100%!important;
+  text-align:center!important;
+}
+
+.rp-team-support-overlay[data-rp-team-support-main-choice="true"] .rp-team-support-secondary{
+  text-align:center!important;
+}
+
 .rp-team-support-overlay .rp-team-support-tertiary{
   color:#8092a4!important;
   background:rgba(255,255,255,.02)!important;
