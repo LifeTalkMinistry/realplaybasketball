@@ -62,6 +62,7 @@
   const TOKEN_KEY = 'real_play_access_token';
   const VISITOR_KEY = 'real_play_visitor_mode';
   const API_BASE_URL = 'https://api.clarapmc.com';
+  let identityRefreshPromise = null;
 
   const hasToken = () => Boolean(window.localStorage.getItem(TOKEN_KEY));
   const isLoggedIn = () => hasToken() || Boolean(accountView && !accountView.hidden);
@@ -77,18 +78,26 @@
   async function refreshPlayerIdentity() {
     const token = window.localStorage.getItem(TOKEN_KEY);
     if (!token) return;
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/real-play/me`, {
-        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return;
-      const state = await response.json();
-      const profile = state?.profile || {};
-      const currentNumber = state?.currentNumber?.number ?? profile.player_number ?? profile.playerNumber ?? profile.number;
-      applyIdentity(profile.player_name || profile.playerName || profile.name, currentNumber);
-    } catch (_error) {
-      // Keep the lobby usable if identity refresh is temporarily unavailable.
-    }
+    if (identityRefreshPromise) return identityRefreshPromise;
+
+    identityRefreshPromise = (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/real-play/me`, {
+          headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) return;
+        const state = await response.json();
+        const profile = state?.profile || {};
+        const currentNumber = state?.currentNumber?.number ?? profile.player_number ?? profile.playerNumber ?? profile.number;
+        applyIdentity(profile.player_name || profile.playerName || profile.name, currentNumber);
+      } catch (_error) {
+        // Keep the lobby usable if identity refresh is temporarily unavailable.
+      } finally {
+        identityRefreshPromise = null;
+      }
+    })();
+
+    return identityRefreshPromise;
   }
 
   function syncPlayer() {
@@ -155,7 +164,7 @@
     const observer = new MutationObserver(syncPlayer);
     observer.observe(node, { childList: true, characterData: true, subtree: true });
   });
-  window.addEventListener('focus', () => { syncPlayer(); refreshPlayerIdentity(); });
+  window.addEventListener('focus', syncPlayer);
   window.addEventListener('storage', syncPlayer);
   window.addEventListener('realplay:visitorchange', syncPlayer);
 })();
