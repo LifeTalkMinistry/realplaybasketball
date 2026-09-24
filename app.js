@@ -1,557 +1,261 @@
 (() => {
-  const version = '20260924-surgical-stability-v123';
+  const version = '20260924-lazy-start-v1';
   const html = document.documentElement;
   const bootStartedAt = performance.now();
-  const MIN_BOOT_DISPLAY_MS = 2400;
+  const MIN_BOOT_DISPLAY_MS = 450;
   html.classList.add('js', 'rp-shell-booting');
 
-  // Startup has only three visible states:
-  // loading -> usable core shell, loading -> explicit critical failure, then
-  // progressive enhancement continues without owning the boot gate.
   const bootStyle = document.createElement('style');
   bootStyle.id = 'rp-shell-boot-style';
   bootStyle.textContent = `
-    html.rp-shell-booting body{
-      margin:0!important;
-      min-height:100dvh!important;
-      overflow:hidden!important;
-      background:#020306!important;
-      pointer-events:none!important;
-      user-select:none!important;
-    }
-    html.rp-shell-booting body>*{
-      visibility:hidden!important;
-      pointer-events:none!important;
-    }
-    html.rp-shell-booting body::before,
-    html.rp-shell-booting body::after{
-      position:fixed;
-      left:50%;
-      z-index:2147483647;
-      visibility:visible!important;
-      pointer-events:none;
-      transform:translateX(-50%);
-      text-align:center;
-    }
-    html.rp-shell-booting body::before{
-      content:'REAL PLAY';
-      top:45%;
-      color:#f6f9ff;
-      font-family:Impact,'Arial Narrow',Arial,sans-serif;
-      font-size:clamp(2rem,9vw,3.25rem);
-      font-style:italic;
-      font-weight:950;
-      letter-spacing:.025em;
-      white-space:nowrap;
-    }
-    html.rp-shell-booting body::after{
-      content:'BASKETBALL  ·  LOADING';
-      top:calc(45% + 58px);
-      color:#42d8ff;
-      font-family:Arial,sans-serif;
-      font-size:.56rem;
-      font-weight:900;
-      letter-spacing:.22em;
-      white-space:nowrap;
-      animation:rpShellBootPulse 1.1s ease-in-out infinite alternate;
-    }
-    html.rp-shell-booting.rp-shell-failed body::after{
-      content:'LOAD FAILED  ·  REFRESH';
-      color:#ff7b8c;
-      animation:none;
-      opacity:1;
-    }
-    @keyframes rpShellBootPulse{
-      from{opacity:.38}
-      to{opacity:1}
-    }
-    @media(prefers-reduced-motion:reduce){
-      html.rp-shell-booting body::after{animation:none;opacity:.78}
-    }
+    html.rp-shell-booting body{margin:0!important;min-height:100dvh!important;overflow:hidden!important;background:#020306!important;pointer-events:none!important;user-select:none!important}
+    html.rp-shell-booting body>*{visibility:hidden!important;pointer-events:none!important}
+    html.rp-shell-booting body::before,html.rp-shell-booting body::after{position:fixed;left:50%;z-index:2147483647;visibility:visible!important;pointer-events:none;transform:translateX(-50%);text-align:center}
+    html.rp-shell-booting body::before{content:'REAL PLAY';top:45%;color:#f6f9ff;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:clamp(2rem,9vw,3.25rem);font-style:italic;font-weight:950;letter-spacing:.025em;white-space:nowrap}
+    html.rp-shell-booting body::after{content:'BASKETBALL  ·  LOADING';top:calc(45% + 58px);color:#42d8ff;font-family:Arial,sans-serif;font-size:.56rem;font-weight:900;letter-spacing:.22em;white-space:nowrap;animation:rpShellBootPulse 1.1s ease-in-out infinite alternate}
+    html.rp-shell-booting.rp-shell-failed body::after{content:'LOAD FAILED  ·  REFRESH';color:#ff7b8c;animation:none;opacity:1}
+    @keyframes rpShellBootPulse{from{opacity:.38}to{opacity:1}}
+    @media(prefers-reduced-motion:reduce){html.rp-shell-booting body::after{animation:none;opacity:.78}}
   `;
   document.head.appendChild(bootStyle);
 
   let shellReady = false;
-  let bootResourcesReady = false;
   let shellReadyObserver = null;
+  const scriptPromises = new Map();
+  const stylePromises = new Map();
 
   function clearStaticBootFallback() {
-    if (window.__rpStaticBootFallback) {
-      window.clearTimeout(window.__rpStaticBootFallback);
-      window.__rpStaticBootFallback = null;
+    if (!window.__rpStaticBootFallback) return;
+    window.clearTimeout(window.__rpStaticBootFallback);
+    window.__rpStaticBootFallback = null;
+  }
+  clearStaticBootFallback();
+
+  function sameAsset(urlA, urlB) {
+    try {
+      const a = new URL(urlA, document.baseURI);
+      const b = new URL(urlB, document.baseURI);
+      return a.origin === b.origin && a.pathname === b.pathname;
+    } catch (_error) {
+      return false;
     }
   }
 
-  // Neutralize the older inline HTML fallback as soon as app.js starts. The
-  // loader must never uncover a partially initialized interface after 8s.
-  clearStaticBootFallback();
+  function loadScript(href, timeoutMs = 8000) {
+    const key = new URL(href, document.baseURI).pathname;
+    if (scriptPromises.has(key)) return scriptPromises.get(key);
+    const existing = Array.from(document.scripts).find((script) => sameAsset(script.src, href));
+    if (existing) {
+      const ready = Promise.resolve(true);
+      scriptPromises.set(key, ready);
+      return ready;
+    }
 
-  function hasNewShell() {
-    return Boolean(
-      document.querySelector('[data-rp-simple-nav]') &&
-      document.querySelector('[data-rp-simple-home]')
-    );
+    const promise = new Promise((resolve) => {
+      const script = document.createElement('script');
+      let settled = false;
+      const finish = (ok) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        if (!ok) scriptPromises.delete(key);
+        resolve(Boolean(ok));
+      };
+      script.src = `${href}${href.includes('?') ? '&' : '?'}v=${version}`;
+      script.async = false;
+      script.addEventListener('load', () => finish(true), { once: true });
+      script.addEventListener('error', () => finish(false), { once: true });
+      const timer = window.setTimeout(() => finish(false), timeoutMs);
+      document.head.appendChild(script);
+    });
+    scriptPromises.set(key, promise);
+    return promise;
   }
 
-  function hasPrimaryInteractions() {
+  function loadStyle(href, timeoutMs = 8000) {
+    const key = new URL(href, document.baseURI).pathname;
+    if (stylePromises.has(key)) return stylePromises.get(key);
+    const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+      .find((link) => sameAsset(link.href, href));
+    if (existing) {
+      const ready = Promise.resolve(true);
+      stylePromises.set(key, ready);
+      return ready;
+    }
+
+    const promise = new Promise((resolve) => {
+      const link = document.createElement('link');
+      let settled = false;
+      const finish = (ok) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        if (!ok) stylePromises.delete(key);
+        resolve(Boolean(ok));
+      };
+      link.rel = 'stylesheet';
+      link.href = `${href}${href.includes('?') ? '&' : '?'}v=${version}`;
+      link.addEventListener('load', () => finish(true), { once: true });
+      link.addEventListener('error', () => finish(false), { once: true });
+      const timer = window.setTimeout(() => finish(false), timeoutMs);
+      document.head.appendChild(link);
+    });
+    stylePromises.set(key, promise);
+    return promise;
+  }
+
+  // Share the same deduped transport with the on-demand feature loader.
+  if (window.RealPlayFeatureLoader) {
+    window.RealPlayFeatureLoader.loadScript = loadScript;
+    window.RealPlayFeatureLoader.loadStyle = loadStyle;
+  }
+
+  function hasCoreShell() {
     const navItems = document.querySelectorAll('[data-rp-simple-nav-item]');
     return Boolean(
-      navItems.length === 5 &&
+      document.querySelector('[data-rp-simple-nav]') &&
       document.querySelector('[data-rp-simple-home][data-rp-home-command-center="true"]') &&
       document.querySelector('[data-rp-home-save-slot]') &&
       document.querySelector('[data-rp-home-whats-coming]') &&
-      window.RealPlayUpdates?.open &&
-      window.RealPlayWorld?.open &&
-      window.RealPlayProfile?.open &&
-      window.RealPlayRankingGames?.open
+      navItems.length === 5
     );
   }
 
-  function revealNewShell() {
-    if (shellReady) return true;
-    if (!bootResourcesReady || !hasNewShell() || !hasPrimaryInteractions()) return false;
-
+  function revealShell() {
+    if (shellReady || !hasCoreShell()) return false;
     shellReady = true;
     clearStaticBootFallback();
     html.classList.remove('rp-shell-booting', 'rp-shell-failed');
     html.classList.add('rp-shell-ready');
     shellReadyObserver?.disconnect();
     shellReadyObserver = null;
-
-    try {
-      window.dispatchEvent(new CustomEvent('realplay:app-ready'));
-    } catch (_error) {}
-
+    try { window.dispatchEvent(new CustomEvent('realplay:app-ready')); } catch (_error) {}
     return true;
   }
 
-  shellReadyObserver = new MutationObserver(revealNewShell);
-  shellReadyObserver.observe(document.documentElement, { childList: true, subtree: true });
-
   function showBootFailure(message, error) {
-    // Once the usable shell is visible, an optional enhancement is never
-    // allowed to throw the player back onto the black loading/failure screen.
     if (shellReady) {
-      console.error(`[Real Play] ${message || 'Optional startup layer failed.'}`, error || '');
+      console.error(`[Real Play] ${message || 'Optional layer failed.'}`, error || '');
       return;
     }
-
     clearStaticBootFallback();
     shellReadyObserver?.disconnect();
     shellReadyObserver = null;
     html.classList.add('rp-shell-booting', 'rp-shell-failed');
     html.classList.remove('rp-shell-ready');
-    console.error(`[Real Play] ${message || 'New shell failed to initialize.'}`, error || '');
-  }
-
-  function addStylesheet(href, timeoutMs = 6500) {
-    return new Promise((resolve) => {
-      const css = document.createElement('link');
-      let settled = false;
-      let timer = 0;
-
-      const finish = (loaded) => {
-        if (settled) return;
-        settled = true;
-        if (timer) window.clearTimeout(timer);
-        resolve(Boolean(loaded));
-      };
-
-      css.rel = 'stylesheet';
-      css.href = `${href}?v=${version}`;
-      css.addEventListener('load', () => finish(true), { once: true });
-      css.addEventListener('error', () => finish(false), { once: true });
-      timer = window.setTimeout(() => {
-        console.warn(`[Real Play] Stylesheet load timed out: ${href}`);
-        finish(false);
-      }, Math.max(1500, Number(timeoutMs) || 6500));
-      document.head.appendChild(css);
-    });
-  }
-
-  // Every script request must settle so one optional network request cannot
-  // permanently trap startup or the later enhancement chain.
-  function loadScript(href, timeoutMs = 6000) {
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      const softDeadlineMs = Math.max(1500, Number(timeoutMs) || 6000);
-      const hardDeadlineMs = softDeadlineMs * 4;
-      let settled = false;
-      let softTimer = 0;
-      let hardTimer = 0;
-
-      const finish = (loaded) => {
-        if (settled) return;
-        settled = true;
-        if (softTimer) window.clearTimeout(softTimer);
-        if (hardTimer) window.clearTimeout(hardTimer);
-        resolve(Boolean(loaded));
-      };
-
-      script.src = `${href}?v=${version}`;
-      script.async = false;
-      script.addEventListener('load', () => finish(true), { once: true });
-      script.addEventListener('error', () => finish(false), { once: true });
-      softTimer = window.setTimeout(() => {
-        console.warn(`[Real Play] Script is still loading after ${softDeadlineMs}ms: ${href}`);
-      }, softDeadlineMs);
-      hardTimer = window.setTimeout(() => {
-        console.warn(`[Real Play] Script did not settle after ${hardDeadlineMs}ms: ${href}`);
-        finish(false);
-      }, hardDeadlineMs);
-      document.head.appendChild(script);
-    });
+    console.error(`[Real Play] ${message || 'Core shell failed to initialize.'}`, error || '');
   }
 
   function nextPaint() {
-    return new Promise((resolve) => {
-      window.requestAnimationFrame(() => window.requestAnimationFrame(resolve));
-    });
+    return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   }
 
   async function waitForMinimumBootDisplay() {
     const remaining = MIN_BOOT_DISPLAY_MS - (performance.now() - bootStartedAt);
-    if (remaining > 0) {
-      await new Promise((resolve) => window.setTimeout(resolve, remaining));
-    }
+    if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
   }
 
-  async function waitForHomeSettled(timeoutMs = 4500, quietMs = 500) {
+  async function waitForHomeQuiet(timeoutMs = 1400, quietMs = 180) {
     const root = document.querySelector('[data-rp-simple-home]');
-    if (!root) return false;
-
-    return new Promise((resolve) => {
+    if (!root) return;
+    await new Promise((resolve) => {
       let done = false;
       let quietTimer = 0;
-      let timeoutTimer = 0;
-
-      const finish = (value) => {
+      const observer = new MutationObserver(() => {
+        window.clearTimeout(quietTimer);
+        quietTimer = window.setTimeout(finish, quietMs);
+      });
+      const finish = () => {
         if (done) return;
         done = true;
-        if (quietTimer) window.clearTimeout(quietTimer);
-        if (timeoutTimer) window.clearTimeout(timeoutTimer);
         observer.disconnect();
-        resolve(value);
+        window.clearTimeout(quietTimer);
+        window.clearTimeout(hardTimer);
+        resolve();
       };
-
-      const armQuietWindow = () => {
-        if (quietTimer) window.clearTimeout(quietTimer);
-        quietTimer = window.setTimeout(() => finish(true), quietMs);
-      };
-
-      const observer = new MutationObserver(armQuietWindow);
-      observer.observe(root, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        characterData: true,
-      });
-
-      armQuietWindow();
-      timeoutTimer = window.setTimeout(() => finish(true), timeoutMs);
+      observer.observe(root, { childList: true, subtree: true, attributes: true, characterData: true });
+      quietTimer = window.setTimeout(finish, quietMs);
+      const hardTimer = window.setTimeout(finish, timeoutMs);
     });
   }
 
-  async function waitForVisualStability() {
-    const fontReady = document.fonts?.ready
-      ? Promise.resolve(document.fonts.ready).catch(() => undefined)
-      : Promise.resolve();
-
-    await Promise.race([
-      fontReady,
-      new Promise((resolve) => window.setTimeout(resolve, 1500)),
-    ]);
-
-    const images = Array.from(document.images || []);
-    if (images.length) {
-      const imageReady = Promise.all(images.map((image) => {
-        if (image.complete) {
-          if (typeof image.decode === 'function') return image.decode().catch(() => undefined);
-          return Promise.resolve();
-        }
-        return new Promise((resolve) => {
-          image.addEventListener('load', resolve, { once: true });
-          image.addEventListener('error', resolve, { once: true });
-        });
-      }));
-
-      await Promise.race([
-        imageReady,
-        new Promise((resolve) => window.setTimeout(resolve, 3000)),
-      ]);
-    }
-
-    await nextPaint();
-  }
-
-  const stylesheetHrefs = [
+  const CORE_STYLES = [
     'mobile-lobby.css',
     'lobby-topbar-cleanup.css',
     'mobile-entry.css',
-    'public-landing.css',
-    'public-pricing-breakdown.css',
-    'public-story-carousel.css',
-    'ambient-brand-glow.css',
-    'public-landing-premium.css',
-    'public-landing-ball-focus.css',
     'mobile-shell-fix.css',
     'mobile-lobby-cleanup.css',
-    'main-menu.css',
-    'ranking-games.css',
-    'ranking-games-cleanup.css',
-    'ranking-session-teams.css',
-    'ranking-team-support-center-force.css',
-    'three-v-three-beta.css',
-    'three-v-three-secure-spot.css',
-    'three-v-three-refinement.css',
-    'three-v-three-participants.css',
-    'three-v-three-premium.css',
-    'three-v-three-logo-scale.css',
-    'three-v-three-club-themes.css',
-    'career-game-replay.css',
-    'career-game-replay-stats.css',
-    'career-game-replay-winner.css',
-    'real-play-updates.css',
-    'real-play-updates-cleanup.css',
-    'real-play-updates-game-detail.css',
-    'real-play-world.css',
-    'real-play-world-chat-cleanup.css',
-    'real-play-world-chat-moderation.css',
-    'real-play-profile.css',
-    'profile-identity-cleanup.css',
-    'real-play-profile-intro.css',
-    'real-play-profile-metrics.css',
-    'profile-metrics-stability.css',
-    'membership.css',
-    'real-play-brand-system.css',
-    'main-menu-brand-overrides.css',
-    'main-menu-cinematic.css',
-    'main-menu-ball-background.css',
-    'main-menu-card-premium.css',
-    'settings-panel.css',
-    'auth-welcome-cleanup.css',
-    'public-landing-cleanup.css',
-    'public-origin-center-force.css',
-    'public-founder-credit.css',
-    'admin-courtside-live.css',
-    'admin-shot-breakdown.css',
-    'admin-recorded-scoring-winner.css',
-    'visitor-mode.css',
     'simple-navigation.css',
     'home-main-announcement-art.css',
     'home-open-rank-art.css',
     'home-why-real-play.css',
-    'world-results.css',
+    'public-founder-credit.css',
+    'visitor-mode.css',
+    'auth-welcome-cleanup.css',
   ];
 
-  // Only the styles required for the first usable HOME/nav frame and immediate
-  // Save My Slot / World / Players / Chats / Me entry remain behind the gate.
-  const criticalStylesheetHrefs = new Set([
-    'mobile-lobby.css',
-    'lobby-topbar-cleanup.css',
-    'mobile-entry.css',
-    'mobile-shell-fix.css',
-    'mobile-lobby-cleanup.css',
-    'simple-navigation.css',
-    'home-main-announcement-art.css',
-    'home-open-rank-art.css',
-    'home-why-real-play.css',
-    'public-founder-credit.css',
-    'visitor-mode.css',
-    'auth-welcome-cleanup.css',
-    'real-play-updates.css',
-    'real-play-world.css',
-    'real-play-profile.css',
-    'profile-identity-cleanup.css',
-    'ranking-games.css',
-    'ranking-games-cleanup.css',
-    'ranking-session-teams.css',
-    'ranking-team-support-center-force.css',
-  ]);
-
   (async () => {
-    const guardLoaded = await loadScript('auth-session-guard.js', 5000);
-    const entryLoaded = await loadScript('public-first-entry.js', 5000);
+    const coreStyleLoad = Promise.all(CORE_STYLES.map((href) => loadStyle(href, 5000)));
+
+    const [guardLoaded, entryLoaded] = await Promise.all([
+      loadScript('auth-session-guard.js', 6000),
+      loadScript('public-first-entry.js', 6000),
+    ]);
     if (!guardLoaded) console.warn('[Real Play] Auth session guard did not load during startup.');
     if (!entryLoaded) console.warn('[Real Play] Public-first entry did not load during startup.');
 
     const lobbyLoaded = await loadScript('mobile-lobby.js', 6500);
-    const lobbyMounted = Boolean(document.querySelector('[data-rp-app]'));
-
-    if (!lobbyLoaded || !lobbyMounted) {
+    if (!lobbyLoaded || !document.querySelector('[data-rp-app]')) {
       showBootFailure('Mobile lobby failed to mount.');
       return;
     }
 
-    await loadScript('legacy-bottom-nav-removal.js', 3500);
+    await Promise.all([
+      loadScript('legacy-bottom-nav-removal.js', 3500),
+      loadScript('simple-navigation.js', 6500),
+    ]);
 
-    const simpleNavLoaded = await loadScript('simple-navigation.js', 6500);
-    if (!simpleNavLoaded) {
+    if (!document.querySelector('[data-rp-simple-nav]') || !document.querySelector('[data-rp-simple-home]')) {
       showBootFailure('Critical Real Play navigation failed to initialize.');
       return;
     }
 
-    if (!hasNewShell()) {
-      await new Promise((resolve) => window.setTimeout(resolve, 120));
-      if (!hasNewShell()) {
-        showBootFailure('New shell did not initialize.');
-        return;
-      }
-    }
-
-    const criticalStyleResults = await Promise.all(
-      [...criticalStylesheetHrefs].map((href) => addStylesheet(href, 4500))
-    );
-    criticalStyleResults.forEach((loaded, index) => {
-      if (!loaded) console.warn(`[Real Play] Critical shell stylesheet did not settle at index ${index}.`);
-    });
-
-    // The authoritative Home state is part of readiness now, not a post-reveal
-    // enhancement. It installs the live Sunday session and Save My Slot action.
     const navAuthorityLoaded = await loadScript('simple-navigation-state-authority.js', 6500);
     if (!navAuthorityLoaded) {
       showBootFailure('Home navigation authority failed to initialize.');
       return;
     }
 
-    // Keep only the authorities and reservation stack that must be immediately
-    // usable at first paint. Deep feature screens continue right after reveal.
-    const coreInteractionEnhancements = [
+    // HOME-only enhancements. Deep feature screens are owned by lazy-feature-loader.js.
+    for (const href of [
       'home-why-real-play.js',
       'visitor-mode.js',
       'public-founder-credit.js',
       'login-landing-fix.js',
       'persistent-session-fix.js',
-      'real-play-updates.js',
-      'real-play-world.js',
-      'real-play-world-chat-cleanup.js',
-      'profile-load-guard.js',
-      'real-play-profile.js',
-      'real-play-world-players.js',
-      'visitor-world-players.js',
-      'ranking-games.js',
-      'ranking-games-secured-players.js',
-      'ranking-games-standby-players.js',
-      'ranking-games-info-toggle.js',
-      'ranking-games-session-cleanup.js',
-      'ranking-team-support-center-force.js',
-      'ranking-team-support-tiers.js',
-      'ranking-session-teams.js',
-      'ranking-spot-priority.js',
-      'ranking-reservation-snapshot.js',
-    ];
-
-    for (const href of coreInteractionEnhancements) {
-      const loaded = await loadScript(href, 4500);
-      if (!loaded) console.warn(`[Real Play] Core interaction layer failed to load: ${href}`);
+    ]) {
+      const loaded = await loadScript(href, 5000);
+      if (!loaded) console.warn(`[Real Play] Home layer failed to load: ${href}`);
     }
 
-    if (!hasPrimaryInteractions()) {
-      showBootFailure('Primary Real Play interactions failed to initialize.');
-      return;
-    }
-
-    // Let async Home schedule/capacity rendering and the few true HOME decorators
-    // stop moving before the first visible frame. Deep screens no longer block it.
-    await waitForHomeSettled();
+    await coreStyleLoad;
+    await waitForHomeQuiet();
     await waitForMinimumBootDisplay();
     await nextPaint();
 
-    bootResourcesReady = true;
-    if (!revealNewShell()) {
+    if (!revealShell()) {
       showBootFailure('Real Play core shell is unavailable.');
       return;
     }
 
-    const deferredPlayerEnhancements = [
-      'public-landing.js',
-      'home-future-4v4-preview.js',
-      'home-future-4v4-card-cleanup.js',
-      'home-payment-admin.js',
-      'visitor-replay-access.js',
-      'career-game-replay.js',
-      'career-game-replay-marker-cleanup.js',
-      'career-game-replay-assist-authority.js',
-      'career-game-replay-positive-events.js',
-      'career-game-replay-fullscreen-back.js',
-      'career-game-replay-stats.js',
-      'career-game-replay-official-mvp.js',
-      'career-game-replay-comments-viewport.js',
-      'career-game-replay-winner.js',
-      'membership-bootstrap.js',
-      'three-v-three-beta.js',
-      'three-v-three-layout-order.js',
-      'three-v-three-refinement.js',
-      'three-v-three-participants.js',
-      'three-v-three-club-art.js',
-      'real-play-updates-info-toggle.js',
-      'updates-session-title-admin.js',
-      'real-play-updates-game-detail.js',
-      'settings-panel.js',
-      'profile-art-owner-access.js',
-      'real-play-profile-intro.js',
-      'profile-metrics-stability.js',
-      'real-play-profile-metrics.js',
-      'public-profile-history.js',
-      'real-play-rank-explainer.js',
-      'world-results.js',
-      'player-id-badge.js',
-      'real-play-world-score-order-fix.js',
-      'profile-game-replay-link.js',
-      'real-play-world-player-filters.js',
-      'real-play-captain-eligibility.js',
-      'real-play-world-player-bar-vector.js',
-      'real-play-world-player-admin.js',
-      'real-play-player-claim.js',
-      'player-number-recovery.js',
-      'player-identity-manager.js',
-    ];
+    // Do not start a whole-app background download here. The next feature is
+    // fetched only when the player asks for it.
+    try { window.dispatchEvent(new CustomEvent('realplay:enhancements-ready', { detail: { lazy: true } })); } catch (_error) {}
+  })().catch((error) => showBootFailure('Startup stopped on an unexpected error.', error));
 
-    const deferredEnhancements = [
-      ...deferredPlayerEnhancements,
-      'overlay-focus-release.js',
-      'player-admin-probe-guard.js',
-      'admin-live-stat-stability.js',
-      'admin-courtside-live.js',
-      'admin-recorded-stat-controls-fix.js',
-      'admin-recorded-scoring-winner.js',
-      'admin-access-bootstrap.js',
-      'real-play-world-chat-moderation.js',
-      'admin-live-session-expiry.js',
-      'admin-game-type-switch.js',
-      'admin-session-picker-v5-loader.js',
-      'open-rank-auto-id.js',
-      'career-game-replay-admin-edit.js',
-      'career-game-replay-admin-root.js',
-      'admin-game-rotation.js',
-      'admin-live-refresh-fix.js',
-    ];
-
-    // Start non-critical styles immediately after reveal so player-facing deep
-    // screens are styled by the time their scripts finish progressively loading.
-    const remainingStyles = stylesheetHrefs.filter((href) => !criticalStylesheetHrefs.has(href));
-    const stylesheetLoads = remainingStyles.map((href) => addStylesheet(href));
-
-    for (const href of deferredEnhancements) {
-      const loaded = await loadScript(href, 4500);
-      if (!loaded) console.warn(`[Real Play] Optional layer failed to load: ${href}`);
-    }
-
-    const stylesheetResults = await Promise.all(stylesheetLoads);
-    stylesheetResults.forEach((loaded, index) => {
-      if (!loaded) console.warn(`[Real Play] Optional stylesheet failed to settle at index ${index}.`);
-    });
-
-    await waitForVisualStability();
-
-    try {
-      window.dispatchEvent(new CustomEvent('realplay:enhancements-ready'));
-    } catch (_error) {}
-  })().catch((error) => {
-    if (shellReady) {
-      console.error('[Real Play] Progressive enhancement startup stopped after the core shell was ready.', error);
-      return;
-    }
-    showBootFailure('Startup stopped on an unexpected error.', error);
+  shellReadyObserver = new MutationObserver(() => {
+    if (shellReady) return;
+    if (hasCoreShell()) revealShell();
   });
+  shellReadyObserver.observe(document.documentElement, { childList: true, subtree: true });
 })();
