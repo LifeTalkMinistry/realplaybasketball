@@ -42,23 +42,12 @@
       helpButton.textContent = 'SEE HOW I CAN HELP';
     }
 
-    const existingExit = actions.querySelector('[data-rp-team-support-play-exit]');
+    // Keep the playing choice connected to the existing premium appreciation
+    // screen. The base support flow already owns the screen transition and the
+    // final exit button; this layer only cleans the label and presentation.
     const playingButton = actions.querySelector('[data-rp-team-support-screen="playing"]');
-    if (!existingExit && playingButton) {
-      // Replace the old button node so its previous "open playing screen"
-      // listener is discarded. This choice now exits directly to the team.
-      const exitButton = playingButton.cloneNode(false);
-      exitButton.removeAttribute('data-rp-team-support-screen');
-      exitButton.dataset.rpTeamSupportPlayExit = 'true';
-      exitButton.textContent = "I'LL SUPPORT BY PLAYING";
-      exitButton.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        closeSupportOverlay(overlay);
-      });
-      playingButton.replaceWith(exitButton);
-    } else if (existingExit && existingExit.textContent !== "I'LL SUPPORT BY PLAYING") {
-      existingExit.textContent = "I'LL SUPPORT BY PLAYING";
+    if (playingButton && playingButton.textContent !== "I'LL SUPPORT BY PLAYING") {
+      playingButton.textContent = "I'LL SUPPORT BY PLAYING";
     }
   }
 
