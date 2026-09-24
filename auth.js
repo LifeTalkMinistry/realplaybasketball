@@ -15,11 +15,11 @@
   }
 
   loadScript('auth-account-name-bridge.js?v=20260907-ownership-disputes-v1', () => {
-    loadScript('auth-ownership-core.js?v=20260907-ownership-disputes-v1', () => {
+    loadScript('auth-ownership-core.js?v=20260924-surgical-stability-v1', () => {
       loadScript('auth-ownership-disputes.js?v=20260907-ownership-disputes-v1', () => {
-        loadScript('profile-experience.js', () => {
-          loadScript('player-identity-manager.js?v=20260917-name-number-v1');
-        });
+        // Player identity manager is owned by app.js after the core shell reveal.
+        // Keeping a single loader avoids requesting the same module under two versions.
+        loadScript('profile-experience.js');
       });
     });
   });
