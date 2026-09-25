@@ -167,29 +167,34 @@
     `);
   }
 
+  const MONEY_TIERS = {
+    supporter: { name: 'SUPPORTER', price: '₱99', benefits: 'Supporter recognition · Basic profile customization' },
+    builder: { name: 'BUILDER', price: '₱199', benefits: 'More customization · Stronger jersey-number and legitimate booking priority' },
+    founding_supporter: { name: 'FOUNDING SUPPORTER', price: '₱499', benefits: 'Full available customization · Highest player-level support priority' },
+    sponsor: { name: 'SPONSOR', price: '₱999', benefits: 'Support recognition · Eligible business / brand visibility inside Real Play' },
+  };
+
   function moneyScreen() {
-    return shell('OPTIONAL MONTHLY SUPPORT', 'HELP FUND REAL PLAY.', `
-      <p class="rp-team-support-copy"><strong>Your team and session spot are already secured.</strong> Choose financial support only if it fits you and you want to help sustain the platform.</p>
-      <div class="rp-team-support-grid" aria-label="Real Play monthly support levels">
-        <article class="rp-team-support-tier">
-          <div><span>SUPPORTER</span><strong>LEVEL 1</strong></div><b>₱99 <small>/ MONTH</small></b>
-          <p>Supporter recognition · Basic profile customization</p>
-        </article>
-        <article class="rp-team-support-tier">
-          <div><span>BUILDER</span><strong>LEVEL 2</strong></div><b>₱199 <small>/ MONTH</small></b>
-          <p>More customization · Stronger jersey-number and legitimate booking priority</p>
-        </article>
-        <article class="rp-team-support-tier">
-          <div><span>FOUNDING SUPPORTER</span><strong>LEVEL 3</strong></div><b>₱499 <small>/ MONTH</small></b>
-          <p>Full available customization · Highest player-level support priority</p>
-        </article>
-        <article class="rp-team-support-tier sponsor">
-          <div><span>SPONSOR</span><strong>LEVEL 4</strong></div><b>₱999 <small>/ MONTH</small></b>
-          <p>Support recognition · Eligible business / brand visibility inside Real Play</p>
-        </article>
+    return shell('', 'HELP FUND REAL PLAY', `
+      <div class="rp-team-support-roles" aria-label="Real Play monthly support levels">
+        <button class="rp-team-support-role" type="button" data-rp-team-support-money-tier="supporter"><strong>₱99 / MONTH — SUPPORTER</strong></button>
+        <button class="rp-team-support-role" type="button" data-rp-team-support-money-tier="builder"><strong>₱199 / MONTH — BUILDER</strong></button>
+        <button class="rp-team-support-role" type="button" data-rp-team-support-money-tier="founding_supporter"><strong>₱499 / MONTH — FOUNDING SUPPORTER</strong></button>
+        <button class="rp-team-support-role" type="button" data-rp-team-support-money-tier="sponsor"><strong>₱999 / MONTH — SPONSOR</strong></button>
+      </div>
+    `);
+  }
+
+  function moneyDetailScreen(tierKey) {
+    const tier = MONEY_TIERS[tierKey] || MONEY_TIERS.supporter;
+    return shell('', tier.name, `
+      <div class="rp-team-support-role-description">
+        <strong>${tier.price} / MONTH</strong>
+        <p><strong>WHAT YOU GET</strong></p>
+        <p>${tier.benefits}</p>
       </div>
       <p class="rp-team-support-rule"><strong>SUPPORT NEVER BUYS BASKETBALL.</strong> It cannot change OVR, stats, MVP, matchmaking, or remove a spot another player already secured.</p>
-      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>CONTINUE TO MY TEAM</button>
+      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>SUPPORT REAL PLAY — ${tier.price}/MONTH</button>
     `);
   }
 
@@ -223,7 +228,9 @@
     };
     panel.innerHTML = screenName.startsWith('volunteer:')
       ? volunteerDetailScreen(screenName.slice('volunteer:'.length))
-      : (screens[screenName] || mainScreen)();
+      : screenName.startsWith('money:')
+        ? moneyDetailScreen(screenName.slice('money:'.length))
+        : (screens[screenName] || mainScreen)();
 
     if (screenName === 'volunteer' || screenName === 'money') {
       const closeButton = panel.querySelector('[data-rp-team-support-close]');
@@ -245,12 +252,25 @@
       }
     }
 
+    if (screenName.startsWith('money:')) {
+      const closeButton = panel.querySelector('[data-rp-team-support-close]');
+      if (closeButton) {
+        closeButton.removeAttribute('data-rp-team-support-close');
+        closeButton.setAttribute('aria-label', 'Back to support levels');
+        closeButton.textContent = '←';
+        closeButton.addEventListener('click', () => renderScreen(overlay, 'money'));
+      }
+    }
+
     panel.querySelectorAll('[data-rp-team-support-close]').forEach((button) => button.addEventListener('click', closePrompt));
     panel.querySelectorAll('[data-rp-team-support-screen]').forEach((button) => button.addEventListener('click', () => {
       renderScreen(overlay, button.dataset.rpTeamSupportScreen || 'main');
     }));
     panel.querySelectorAll('[data-rp-team-support-volunteer-role]').forEach((button) => button.addEventListener('click', () => {
       renderScreen(overlay, `volunteer:${button.dataset.rpTeamSupportVolunteerRole}`);
+    }));
+    panel.querySelectorAll('[data-rp-team-support-money-tier]').forEach((button) => button.addEventListener('click', () => {
+      renderScreen(overlay, `money:${button.dataset.rpTeamSupportMoneyTier}`);
     }));
     panel.querySelectorAll('[data-rp-team-support-interest]').forEach((button) => button.addEventListener('click', async () => {
       const status = panel.querySelector('[data-rp-team-support-interest-status]');
