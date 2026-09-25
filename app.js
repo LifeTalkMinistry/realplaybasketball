@@ -1,5 +1,10 @@
 (() => {
-  const version = '20260925-settings-grouped-v122';
+  const version = (() => {
+    // Cache authority: index.html supplies a fresh deployment id on every deploy.
+    // The fallback is only for direct/local app.js execution.
+    const fromDocument = String(document.documentElement?.dataset?.rpDeploy || '').trim();
+    return fromDocument || '20260925-cache-authority-v123';
+  })();
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
