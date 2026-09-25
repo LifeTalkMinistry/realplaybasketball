@@ -466,6 +466,14 @@ body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home
   font-size:clamp(.43rem,2vw,.58rem)!important;
   letter-spacing:.22em!important;
 }
+body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-official-logo{
+  display:block!important;
+  width:min(78%,430px)!important;
+  height:auto!important;
+  max-height:112px!important;
+  object-fit:contain!important;
+  flex:0 0 auto!important;
+}
 
 @media(max-width:420px){
   body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center{padding-top:0!important}
@@ -480,4 +488,8 @@ body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home
       url('assets/main-menu/main-menu-basketball-bg.png') center 51%/154% auto no-repeat!important;
   }
   body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup strong{font-size:1.75rem!important}
+  body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-official-logo{
+    width:min(82%,360px)!important;
+    max-height:96px!important;
+  }
 }
