@@ -68,6 +68,7 @@ body.rp-settings-open{overflow:hidden}
 .rp-settings-player-id:not(:disabled):active{transform:scale(.985)}
 .rp-settings-player-id:disabled{cursor:default;opacity:.58}
 .rp-settings-list{display:grid;gap:8px}
+.rp-settings-section-intro{padding:18px 3px 14px;color:#8994a3;font-size:.78rem;line-height:1.45}
 .rp-settings-row{
   width:100%;
   min-height:67px;
