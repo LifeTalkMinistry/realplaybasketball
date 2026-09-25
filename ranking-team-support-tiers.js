@@ -140,7 +140,6 @@
 
   function volunteerScreen() {
     return shell('', 'HELP WITHOUT SPENDING', `
-      <button class="rp-team-support-back" type="button" data-rp-team-support-screen="help">← BACK</button>
       <div class="rp-team-support-roles" aria-label="Ways to help without spending">
         <button class="rp-team-support-role" type="button" data-rp-team-support-volunteer-role="game_operations"><strong>GAME OPERATIONS</strong></button>
         <button class="rp-team-support-role" type="button" data-rp-team-support-volunteer-role="media_crew"><strong>MEDIA CREW</strong></button>
@@ -226,6 +225,16 @@
     panel.innerHTML = screenName.startsWith('volunteer:')
       ? volunteerDetailScreen(screenName.slice('volunteer:'.length))
       : (screens[screenName] || mainScreen)();
+
+    if (screenName === 'volunteer') {
+      const closeButton = panel.querySelector('[data-rp-team-support-close]');
+      if (closeButton) {
+        closeButton.removeAttribute('data-rp-team-support-close');
+        closeButton.setAttribute('aria-label', 'Back');
+        closeButton.textContent = '←';
+        closeButton.addEventListener('click', () => renderScreen(overlay, 'help'));
+      }
+    }
 
     if (screenName.startsWith('volunteer:')) {
       const closeButton = panel.querySelector('[data-rp-team-support-close]');
