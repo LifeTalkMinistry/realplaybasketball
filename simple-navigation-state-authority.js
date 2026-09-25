@@ -224,8 +224,7 @@
       </div>
 
       <div class="rp-home-brand-lockup" aria-label="Real Play Basketball — Less Screen. Real Points.">
-        <strong>REAL PLAY</strong>
-        <span>BASKETBALL</span>
+        <img class="rp-home-official-logo" src="assets/branding/real-play-official-logo.png" alt="Real Play Basketball">
         <small>LESS SCREEN. REAL POINTS.</small>
       </div>`;
 
