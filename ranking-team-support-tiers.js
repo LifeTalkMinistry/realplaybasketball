@@ -163,7 +163,8 @@
         <strong>JOB DESCRIPTION:</strong>
         <p>${descriptions[roleKey] || role.copy}</p>
       </div>
-      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>I'M INTERESTED</button>
+      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-interest="${roleKey}">I'M INTERESTED</button>
+      <p class="rp-team-support-interest-status" data-rp-team-support-interest-status aria-live="polite"></p>
     `);
   }
 
@@ -242,6 +243,29 @@
     }));
     panel.querySelectorAll('[data-rp-team-support-volunteer-role]').forEach((button) => button.addEventListener('click', () => {
       renderScreen(overlay, `volunteer:${button.dataset.rpTeamSupportVolunteerRole}`);
+    }));
+    panel.querySelectorAll('[data-rp-team-support-interest]').forEach((button) => button.addEventListener('click', async () => {
+      const status = panel.querySelector('[data-rp-team-support-interest-status]');
+      const token = window.localStorage.getItem('real_play_access_token') || '';
+      if (!token) {
+        if (status) status.textContent = 'Log in to your Real Play account first.';
+        return;
+      }
+      button.disabled = true;
+      if (status) status.textContent = 'Saving your interest…';
+      try {
+        const response = await fetch('https://api.clarapmc.com/api/real-play/volunteer/interest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ role: button.dataset.rpTeamSupportInterest }),
+        });
+        if (!response.ok) throw new Error('Volunteer interest could not be saved.');
+        if (status) status.textContent = 'You’re on the interested list.';
+        button.textContent = 'INTEREST RECORDED';
+      } catch (_error) {
+        button.disabled = false;
+        if (status) status.textContent = 'Could not save your interest. Please try again.';
+      }
     }));
 
     window.setTimeout(() => {
