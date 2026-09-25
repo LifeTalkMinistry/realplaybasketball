@@ -98,19 +98,29 @@
       </header>
       <div class="rp-settings-section-intro">People who help Real Play operate on and around the court.</div>
       <div class="rp-settings-list">
-        <button type="button" class="rp-settings-row" data-rp-volunteer-group="game-operations">
+        <button type="button" class="rp-settings-row" data-rp-volunteer-group="game_operations">
           <span><strong>GAME OPERATIONS</strong><small>Game auditors, scorers and court operations</small></span><b>→</b>
         </button>
-        <button type="button" class="rp-settings-row" data-rp-volunteer-group="media-crew">
+        <button type="button" class="rp-settings-row" data-rp-volunteer-group="media_crew">
           <span><strong>MEDIA CREW</strong><small>Cameramen and game content support</small></span><b>→</b>
         </button>
-        <button type="button" class="rp-settings-row" data-rp-volunteer-group="extra-camera">
+        <button type="button" class="rp-settings-row" data-rp-volunteer-group="extra_camera">
           <span><strong>EXTRA CAMERA / EQUIPMENT</strong><small>Phones and equipment temporarily shared for sessions</small></span><b>→</b>
         </button>
-        <button type="button" class="rp-settings-row" data-rp-volunteer-group="session-support">
+        <button type="button" class="rp-settings-row" data-rp-volunteer-group="session_support">
           <span><strong>SESSION SUPPORT</strong><small>Setup, player flow, rotations and session helpers</small></span><b>→</b>
         </button>
       </div>
+    </section>
+
+    <section class="rp-settings-panel rp-settings-volunteer-roster" data-rp-settings-volunteer-roster hidden role="dialog" aria-modal="true" aria-labelledby="rp-volunteer-roster-title">
+      <header class="rp-settings-head">
+        <button class="rp-settings-back" type="button" data-rp-volunteer-roster-back aria-label="Back to Team and Volunteers">←</button>
+        <div><small>TEAM &amp; VOLUNTEERS</small><h2 id="rp-volunteer-roster-title" data-rp-volunteer-roster-title>VOLUNTEERS</h2></div>
+      </header>
+      <div class="rp-settings-section-intro">Manage people who offered to help in this role.</div>
+      <div class="rp-settings-volunteer-section"><h3>INTERESTED</h3><div class="rp-settings-list" data-rp-volunteer-interested><p class="rp-settings-section-intro">Loading…</p></div></div>
+      <div class="rp-settings-volunteer-section"><h3>ACTIVE TEAM</h3><div class="rp-settings-list" data-rp-volunteer-active><p class="rp-settings-section-intro">Loading…</p></div></div>
     </section>
 
     <section class="rp-settings-panel rp-settings-community" data-rp-settings-community hidden role="dialog" aria-modal="true" aria-labelledby="rp-community-title">
@@ -136,6 +146,7 @@
   const accountPanel = panel.querySelector('[data-rp-settings-account]');
   const communityPanel = panel.querySelector('[data-rp-settings-community]');
   const teamVolunteersPanel = panel.querySelector('[data-rp-settings-team-volunteers]');
+  const volunteerRosterPanel = panel.querySelector('[data-rp-settings-volunteer-roster]');
   const nameNode = panel.querySelector('[data-rp-settings-name]');
   const emailNode = panel.querySelector('[data-rp-settings-email]');
   const playerIdButton = panel.querySelector('[data-rp-settings-player-id]');
@@ -145,6 +156,7 @@
   let currentPlayerId = null;
   let identityRequest = 0;
   let copyResetTimer = 0;
+  let volunteerRole = '';
 
   function positiveInteger(value) {
     const parsed = Number(value);
@@ -282,6 +294,7 @@
     if (accountPanel) accountPanel.hidden = true;
     if (communityPanel) communityPanel.hidden = true;
     if (teamVolunteersPanel) teamVolunteersPanel.hidden = true;
+    if (volunteerRosterPanel) volunteerRosterPanel.hidden = true;
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-settings-open');
@@ -306,6 +319,7 @@
     if (accountPanel) accountPanel.hidden = true;
     if (communityPanel) communityPanel.hidden = true;
     if (teamVolunteersPanel) teamVolunteersPanel.hidden = true;
+    if (volunteerRosterPanel) volunteerRosterPanel.hidden = true;
 
     if (restoreFocus) {
       window.setTimeout(() => settingsChoice.focus({ preventScroll: true }), 30);
@@ -318,6 +332,7 @@
     if (accountPanel) accountPanel.hidden = false;
     if (communityPanel) communityPanel.hidden = true;
     if (teamVolunteersPanel) teamVolunteersPanel.hidden = true;
+    if (volunteerRosterPanel) volunteerRosterPanel.hidden = true;
     accountPanel?.querySelector('[data-rp-account-back]')?.focus();
   }
 
@@ -327,6 +342,45 @@
     if (communityPanel) communityPanel.hidden = true;
     if (teamVolunteersPanel) teamVolunteersPanel.hidden = false;
     teamVolunteersPanel?.querySelector('[data-rp-team-volunteers-back]')?.focus();
+  }
+
+  const VOLUNTEER_TITLES = { game_operations: 'GAME OPERATIONS', media_crew: 'MEDIA CREW', extra_camera: 'EXTRA CAMERA / EQUIPMENT', session_support: 'SESSION SUPPORT' };
+
+  async function showVolunteerRoster(role) {
+    volunteerRole = role;
+    if (mainPanel) mainPanel.hidden = true;
+    if (accountPanel) accountPanel.hidden = true;
+    if (communityPanel) communityPanel.hidden = true;
+    if (teamVolunteersPanel) teamVolunteersPanel.hidden = true;
+    if (volunteerRosterPanel) volunteerRosterPanel.hidden = false;
+    const title = panel.querySelector('[data-rp-volunteer-roster-title]');
+    if (title) title.textContent = VOLUNTEER_TITLES[role] || 'VOLUNTEERS';
+    await loadVolunteerRoster();
+  }
+
+  async function loadVolunteerRoster() {
+    const interested = panel.querySelector('[data-rp-volunteer-interested]');
+    const active = panel.querySelector('[data-rp-volunteer-active]');
+    if (!volunteerRole || !interested || !active) return;
+    interested.innerHTML = '<p class="rp-settings-section-intro">Loading…</p>';
+    active.innerHTML = '<p class="rp-settings-section-intro">Loading…</p>';
+    const token = window.localStorage.getItem(TOKEN_KEY) || '';
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/real-play/admin/volunteers?role=${encodeURIComponent(volunteerRole)}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }, cache: 'no-store' });
+      if (!response.ok) throw new Error('load failed');
+      const data = await response.json();
+      const rows = Array.isArray(data.volunteers) ? data.volunteers : [];
+      const render = (status) => {
+        const selected = rows.filter((row) => row.status === status);
+        if (!selected.length) return '<p class="rp-settings-section-intro">No players yet.</p>';
+        return selected.map((row) => `<div class="rp-settings-row"><span><strong>${String(row.player_name || 'REAL PLAY PLAYER').replace(/[<>&"]/g, '')}</strong><small>${String(row.email || '').replace(/[<>&"]/g, '')}</small></span><button type="button" class="rp-settings-back" data-rp-volunteer-status="${status === 'interested' ? 'active' : 'interested'}" data-rp-volunteer-user="${Number(row.user_id)}">${status === 'interested' ? 'ADD' : '↩'}</button></div>`).join('');
+      };
+      interested.innerHTML = render('interested');
+      active.innerHTML = render('active');
+    } catch (_error) {
+      interested.innerHTML = '<p class="rp-settings-section-intro">Could not load volunteers.</p>';
+      active.innerHTML = '';
+    }
   }
 
   function showCommunity() {
@@ -444,6 +498,23 @@
   panel.querySelector('[data-rp-team-volunteers-back]')?.addEventListener('click', showMainSettings);
   panel.querySelector('[data-rp-settings-section="account"]')?.addEventListener('click', showAccount);
   panel.querySelector('[data-rp-settings-section="team-volunteers"]')?.addEventListener('click', showTeamVolunteers);
+  panel.querySelector('[data-rp-volunteer-roster-back]')?.addEventListener('click', showTeamVolunteers);
+  panel.querySelectorAll('[data-rp-volunteer-group]').forEach((button) => button.addEventListener('click', () => showVolunteerRoster(button.dataset.rpVolunteerGroup)));
+  volunteerRosterPanel?.addEventListener('click', async (event) => {
+    const button = event.target.closest?.('[data-rp-volunteer-status]');
+    if (!button) return;
+    button.disabled = true;
+    const token = window.localStorage.getItem(TOKEN_KEY) || '';
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/real-play/admin/volunteers/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ role: volunteerRole, userId: Number(button.dataset.rpVolunteerUser), status: button.dataset.rpVolunteerStatus }),
+      });
+      if (!response.ok) throw new Error('update failed');
+      await loadVolunteerRoster();
+    } catch (_error) { button.disabled = false; }
+  });
 
   panel.querySelectorAll('[data-rp-settings-action]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -465,7 +536,7 @@
 
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !panel.classList.contains('open')) return;
-    if ((communityPanel && !communityPanel.hidden) || (accountPanel && !accountPanel.hidden) || (teamVolunteersPanel && !teamVolunteersPanel.hidden)) showMainSettings();
+    if ((communityPanel && !communityPanel.hidden) || (accountPanel && !accountPanel.hidden) || (teamVolunteersPanel && !teamVolunteersPanel.hidden) || (volunteerRosterPanel && !volunteerRosterPanel.hidden)) showMainSettings();
     else closeSettings();
   });
 })();
