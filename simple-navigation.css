@@ -495,3 +495,20 @@ body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home
     max-height:96px!important;
   }
 }
+
+/* HOME HERO LAYERING — keep accent rails behind the official logo and tagline. */
+body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-simple-home.rp-home-command-center .rp-home-brand-lockup{
+  isolation:isolate!important;
+}
+body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::before,
+body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-simple-home.rp-home-command-center .rp-home-brand-lockup::after{
+  z-index:0!important;
+}
+body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-simple-home.rp-home-command-center .rp-home-official-logo{
+  position:relative!important;
+  z-index:2!important;
+}
+body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-simple-home.rp-home-command-center .rp-home-brand-lockup small{
+  position:relative!important;
+  z-index:3!important;
+}
