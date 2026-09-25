@@ -473,6 +473,9 @@ body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home
   max-height:112px!important;
   object-fit:contain!important;
   flex:0 0 auto!important;
+  /* The tagline is the visual center anchor. The transparent logo artwork
+     carries more empty canvas on its right, so compensate only the logo. */
+  transform:translateX(7%)!important;
 }
 
 @media(max-width:420px){
