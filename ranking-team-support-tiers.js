@@ -199,19 +199,10 @@
   }
 
   function playingScreen() {
-    return shell('YOUR PARTICIPATION MATTERS', 'YOU’RE ALREADY HELPING.', `
-      <button class="rp-team-support-back" type="button" data-rp-team-support-screen="main">← BACK</button>
-      <p class="rp-team-support-copy"><strong>Playing is participation. Participation is support.</strong></p>
-      <p class="rp-team-support-copy">Every time you show up, compete with the right spirit, respect your teammates and opponents, and bring good sportsmanship to the court, you help Real Play become the kind of community we want it to be.</p>
-      <div class="rp-team-support-impact">
-        <div><strong>YOU KEEP THE GAMES ACTIVE.</strong><span>More players showing up means more consistent, better sessions for everyone.</span></div>
-        <div><strong>YOUR COMPETITIVE SPIRIT ADDS VALUE.</strong><span>Your effort makes each matchup more meaningful and gives other players a real challenge.</span></div>
-        <div><strong>YOUR SPORTSMANSHIP BUILDS THE CULTURE.</strong><span>Respect makes teammates and opponents feel welcome and gives people a reason to come back.</span></div>
-        <div><strong>YOU HELP BUILD REAL CONNECTIONS.</strong><span>Every game creates new teammates, opponents, friendships, and a stronger basketball community.</span></div>
-        <div><strong>YOU SHOW THAT THE MISSION WORKS.</strong><span>Every person who gets off the screen and onto the court is already living “Less Screen. Real Points.”</span></div>
-      </div>
-      <p class="rp-team-support-copy"><strong>So if playing is what you can contribute right now, that is already valuable to us.</strong> Show up. Compete. Respect the game. Enjoy the community. Keep playing.</p>
-      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>PROUD TO PLAY — TAKE ME TO MY TEAM</button>
+    return shell('', 'THANK YOU FOR PLAYING.', `
+      <p class="rp-team-support-copy rp-team-support-playing-quote">Every time you choose the court, bring your effort, and play with respect, you give Real Play a reason to exist. You are not just playing — you are helping build this community. Thank you for showing up and making Real Play real.</p>
+      <p class="rp-team-support-footnote"><strong>— REAL PLAY BASKETBALL</strong></p>
+      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>CONTINUE TO MY TEAM</button>
     `);
   }
 
