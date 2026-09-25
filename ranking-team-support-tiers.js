@@ -115,17 +115,47 @@
     `);
   }
 
+  const VOLUNTEER_ROLES = {
+    game_operations: {
+      kicker: 'GAME OPERATIONS',
+      title: 'VOLUNTEER AS A GAME AUDITOR / SCORER',
+      copy: 'Help verify what happens on the court and support accurate game records.',
+    },
+    media_crew: {
+      kicker: 'MEDIA CREW',
+      title: 'VOLUNTEER AS A CAMERAMAN',
+      copy: 'Help capture games, highlights, and moments players can look back on.',
+    },
+    extra_camera: {
+      kicker: 'EXTRA CAMERA ANGLE',
+      title: 'LEND YOUR PHONE AS A GAME CAMERA',
+      copy: 'Your phone stays yours. Real Play only borrows it during the game so we can record from more than one angle.',
+    },
+    session_support: {
+      kicker: 'SESSION SUPPORT',
+      title: 'HELP WITH SETUP AND GAME OPERATIONS',
+      copy: 'Assist with organizing players, preparing the court flow, and keeping the session moving.',
+    },
+  };
+
   function volunteerScreen() {
-    return shell('NON-MONETARY SUPPORT', 'HELP WITHOUT SPENDING.', `
+    return shell('', 'HELP WITHOUT SPENDING', `
       <button class="rp-team-support-back" type="button" data-rp-team-support-screen="help">← BACK</button>
-      <p class="rp-team-support-copy">You can help Real Play operate better simply by sharing your time, attention, or something you already have during the session.</p>
-      <div class="rp-team-support-roles">
-        <article class="rp-team-support-role"><span>GAME OPERATIONS</span><strong>Volunteer as a game auditor / scorer</strong><p>Help verify what happens on the court and support accurate game records.</p></article>
-        <article class="rp-team-support-role"><span>MEDIA CREW</span><strong>Volunteer as a cameraman</strong><p>Help capture games, highlights, and moments players can look back on.</p></article>
-        <article class="rp-team-support-role"><span>EXTRA CAMERA ANGLE</span><strong>Lend your phone as a game camera</strong><p>Your phone stays yours. Real Play only borrows it during the game so we can record from more than one angle.</p></article>
-        <article class="rp-team-support-role"><span>SESSION SUPPORT</span><strong>Help with setup and game operations</strong><p>Assist with organizing players, preparing the court flow, and keeping the session moving.</p></article>
+      <div class="rp-team-support-roles" aria-label="Ways to help without spending">
+        <button class="rp-team-support-role" type="button" data-rp-team-support-volunteer-role="game_operations"><strong>GAME OPERATIONS</strong></button>
+        <button class="rp-team-support-role" type="button" data-rp-team-support-volunteer-role="media_crew"><strong>MEDIA CREW</strong></button>
+        <button class="rp-team-support-role" type="button" data-rp-team-support-volunteer-role="extra_camera"><strong>EXTRA CAMERA ANGLE</strong></button>
+        <button class="rp-team-support-role" type="button" data-rp-team-support-volunteer-role="session_support"><strong>SESSION SUPPORT</strong></button>
       </div>
-      <p class="rp-team-support-rule"><strong>INTERESTED?</strong> Tell a Real Play organizer during the session which role you want to help with. We can coordinate it before the game starts.</p>
+    `);
+  }
+
+  function volunteerDetailScreen(roleKey) {
+    const role = VOLUNTEER_ROLES[roleKey] || VOLUNTEER_ROLES.game_operations;
+    return shell(role.kicker, role.title, `
+      <button class="rp-team-support-back" type="button" data-rp-team-support-screen="volunteer">← BACK</button>
+      <p class="rp-team-support-copy">${role.copy}</p>
+      <p class="rp-team-support-rule"><strong>INTERESTED?</strong> Tell a Real Play organizer during the session that you want to help with this role. We can coordinate it before the game starts.</p>
       <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>I'D LIKE TO HELP — TAKE ME TO MY TEAM</button>
     `);
   }
@@ -185,11 +215,16 @@
       money: moneyScreen,
       playing: playingScreen,
     };
-    panel.innerHTML = (screens[screenName] || mainScreen)();
+    panel.innerHTML = screenName.startsWith('volunteer:')
+      ? volunteerDetailScreen(screenName.slice('volunteer:'.length))
+      : (screens[screenName] || mainScreen)();
 
     panel.querySelectorAll('[data-rp-team-support-close]').forEach((button) => button.addEventListener('click', closePrompt));
     panel.querySelectorAll('[data-rp-team-support-screen]').forEach((button) => button.addEventListener('click', () => {
       renderScreen(overlay, button.dataset.rpTeamSupportScreen || 'main');
+    }));
+    panel.querySelectorAll('[data-rp-team-support-volunteer-role]').forEach((button) => button.addEventListener('click', () => {
+      renderScreen(overlay, `volunteer:${button.dataset.rpTeamSupportVolunteerRole}`);
     }));
 
     window.setTimeout(() => {
