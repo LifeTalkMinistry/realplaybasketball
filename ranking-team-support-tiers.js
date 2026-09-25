@@ -152,11 +152,19 @@
 
   function volunteerDetailScreen(roleKey) {
     const role = VOLUNTEER_ROLES[roleKey] || VOLUNTEER_ROLES.game_operations;
+    const descriptions = {
+      game_operations: 'Help operate official games by recording scores and player stats, verifying game events, correcting mistakes when needed, and making sure the final game record is accurate.',
+      media_crew: 'Help record games and capture clear footage of plays, highlights, and player moments that Real Play can use for game content and player profiles.',
+      extra_camera: 'Lend your phone during games so Real Play can record an additional camera angle. Your phone stays yours and is only used temporarily during the game.',
+      session_support: 'Help keep the session organized by assisting with player flow, game preparation, court setup, rotations, and other simple tasks that keep games moving smoothly.',
+    };
     return shell(role.kicker, role.title, `
       <button class="rp-team-support-back" type="button" data-rp-team-support-screen="volunteer">← BACK</button>
-      <p class="rp-team-support-copy">${role.copy}</p>
-      <p class="rp-team-support-rule"><strong>INTERESTED?</strong> Tell a Real Play organizer during the session that you want to help with this role. We can coordinate it before the game starts.</p>
-      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>I'D LIKE TO HELP — TAKE ME TO MY TEAM</button>
+      <div class="rp-team-support-role-description">
+        <strong>JOB DESCRIPTION:</strong>
+        <p>${descriptions[roleKey] || role.copy}</p>
+      </div>
+      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>I'M INTERESTED</button>
     `);
   }
 
