@@ -468,13 +468,13 @@ body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home
 }
 body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-official-logo{
   display:block!important;
+  position:relative!important;
+  z-index:2!important;
   width:min(78%,430px)!important;
   height:auto!important;
   max-height:112px!important;
   object-fit:contain!important;
   flex:0 0 auto!important;
-  /* The tagline is the visual center anchor. The transparent logo artwork
-     carries more empty canvas on its right, so compensate only the logo. */
 }
 
 @media(max-width:420px){
