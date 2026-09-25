@@ -6,6 +6,7 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
   const CURRENT_RANKING_ACCESS_URL = `${API_BASE_URL}/api/real-play/career/access`;
+  const PUBLIC_RANKING_ACCESS_URL = `${API_BASE_URL}/api/real-play/public/career/access`;
   const HOME_REFRESH_MIN_MS = 15_000;
   const HOME_RATE_LIMIT_BACKOFF_MS = 60_000;
   let enforcing = false;
@@ -297,18 +298,14 @@
     const auth = localStorage.getItem(TOKEN_KEY) || '';
     const node = homeRoot()?.querySelector('[data-rp-home-open-rank-capacity]');
     if (!node) return;
-    if (!auth) {
-      hasOpenRankAvailability = false;
-      renderConfiguredOpenRankCapacity({ force: true });
-      return;
-    }
+
+    const endpoint = auth ? CURRENT_RANKING_ACCESS_URL : PUBLIC_RANKING_ACCESS_URL;
+    const headers = { Accept: 'application/json' };
+    if (auth) headers.Authorization = `Bearer ${auth}`;
 
     try {
-      const response = await fetch(CURRENT_RANKING_ACCESS_URL, {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${auth}`,
-        },
+      const response = await fetch(endpoint, {
+        headers,
         cache: 'no-store',
       });
       if (requestId !== availabilityRequestId) return;
