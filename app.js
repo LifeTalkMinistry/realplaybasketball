@@ -73,7 +73,22 @@
 
   let shellReady = false;
   let bootResourcesReady = false;
+  let coreAppReady = false;
+  let initialHomeReady = Boolean(window.__realPlayInitialHomeReady);
   let shellReadyObserver = null;
+
+  function announceCoreAppReady() {
+    if (coreAppReady) return;
+    coreAppReady = true;
+    try {
+      window.dispatchEvent(new CustomEvent('realplay:app-ready'));
+    } catch (_error) {}
+  }
+
+  window.addEventListener('realplay:initial-home-ready', () => {
+    initialHomeReady = true;
+    revealNewShell();
+  }, { once: true });
 
   function clearStaticBootFallback() {
     if (window.__rpStaticBootFallback) {
@@ -95,7 +110,7 @@
 
   function revealNewShell() {
     if (shellReady) return true;
-    if (!bootResourcesReady || !hasNewShell()) return false;
+    if (!bootResourcesReady || !initialHomeReady || !hasNewShell()) return false;
 
     shellReady = true;
     clearStaticBootFallback();
@@ -103,10 +118,6 @@
     html.classList.add('rp-shell-ready');
     shellReadyObserver?.disconnect();
     shellReadyObserver = null;
-
-    try {
-      window.dispatchEvent(new CustomEvent('realplay:app-ready'));
-    } catch (_error) {}
 
     return true;
   }
@@ -372,10 +383,15 @@
     await waitForVisualStability();
 
     bootResourcesReady = true;
-    if (!revealNewShell()) {
-      showBootFailure('Real Play core shell is unavailable.');
-      return;
-    }
+
+    // Core readiness starts Home authority work, but does not visually reveal
+    // the shell. Home owns the final initial-frame readiness boundary.
+    announceCoreAppReady();
+
+    // The Home gate may have released before this listener path reached the
+    // reveal attempt. Read its durable state as well as the event.
+    initialHomeReady = initialHomeReady || Boolean(window.__realPlayInitialHomeReady);
+    revealNewShell();
 
     const enhancements = [
       'public-landing.js',
