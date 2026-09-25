@@ -461,7 +461,7 @@ body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home
   font-size:clamp(.60rem,2.8vw,.84rem)!important;
 }
 body.rp-simple-navigation-active .rp-simple-home.rp-home-command-center .rp-home-brand-lockup small{
-  margin-top:2px!important;
+  margin-top:-6px!important;
   color:#b4c5d8!important;
   font-size:clamp(.43rem,2vw,.58rem)!important;
   letter-spacing:.22em!important;
