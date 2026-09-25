@@ -226,6 +226,16 @@
       ? volunteerDetailScreen(screenName.slice('volunteer:'.length))
       : (screens[screenName] || mainScreen)();
 
+    if (screenName.startsWith('volunteer:')) {
+      const closeButton = panel.querySelector('[data-rp-team-support-close]');
+      if (closeButton) {
+        closeButton.removeAttribute('data-rp-team-support-close');
+        closeButton.setAttribute('aria-label', 'Back to volunteer roles');
+        closeButton.textContent = '←';
+        closeButton.addEventListener('click', () => renderScreen(overlay, 'volunteer'));
+      }
+    }
+
     panel.querySelectorAll('[data-rp-team-support-close]').forEach((button) => button.addEventListener('click', closePrompt));
     panel.querySelectorAll('[data-rp-team-support-screen]').forEach((button) => button.addEventListener('click', () => {
       renderScreen(overlay, button.dataset.rpTeamSupportScreen || 'main');
