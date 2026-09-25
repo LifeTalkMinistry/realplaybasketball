@@ -282,7 +282,7 @@
 }
 .rp-team-support-overlay[data-rp-team-support-help-choice="true"] .rp-team-sheet-close{
   position:absolute!important;
-  top:0!important;
+  top:8px!important;
   right:10px!important;
   z-index:3!important;
   display:flex!important;
