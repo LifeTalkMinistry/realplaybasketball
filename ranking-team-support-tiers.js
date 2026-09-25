@@ -52,6 +52,15 @@
       .rp-team-support-impact strong{display:block;color:#eefbff;font-size:.66rem;letter-spacing:.04em}
       .rp-team-support-impact span{display:block;margin-top:2px;color:#8299a7;font-size:.61rem;line-height:1.38}
       .rp-team-support-back{display:inline-flex;align-items:center;gap:5px;margin:0 0 10px;padding:0;border:0;background:transparent;color:#74dfff;font-size:.58rem;font-weight:950;letter-spacing:.08em;cursor:pointer}
+      .rp-team-support-money-intro{margin:0 0 12px;color:#91a9b7;font-size:.67rem;line-height:1.45}
+      .rp-team-support-benefits{display:grid;gap:8px;margin:10px 0 12px}
+      .rp-team-support-benefit{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;align-items:start;padding:11px 12px;border:1px solid rgba(76,214,255,.14);border-radius:12px;background:rgba(4,20,29,.68)}
+      .rp-team-support-benefit-icon{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:rgba(66,216,255,.10);color:#62e2ff;font-size:.68rem;font-weight:950;line-height:1}
+      .rp-team-support-benefit strong{display:block;margin:0;color:#f7fbff;font-size:.72rem;letter-spacing:.01em}
+      .rp-team-support-benefit p{margin:3px 0 0;color:#8199a7;font-size:.61rem;line-height:1.4}
+      .rp-team-support-guarantee{margin:10px 0 12px;padding:10px 11px;border:1px solid rgba(76,214,255,.12);border-radius:11px;background:rgba(255,255,255,.025)}
+      .rp-team-support-guarantee strong{display:block;color:#bfefff;font-size:.54rem;font-weight:950;letter-spacing:.12em}
+      .rp-team-support-guarantee p{margin:4px 0 0;color:#7f96a4;font-size:.59rem;line-height:1.45}
       @media (min-width:560px){
         .rp-team-support-grid{grid-template-columns:1fr 1fr}
         .rp-team-support-tier{grid-template-columns:1fr}
@@ -168,10 +177,53 @@
   }
 
   const MONEY_TIERS = {
-    supporter: { name: 'SUPPORTER', price: '₱99', benefits: 'Supporter recognition · Basic profile customization' },
-    builder: { name: 'BUILDER', price: '₱199', benefits: 'More customization · Stronger jersey-number and legitimate booking priority' },
-    founding_supporter: { name: 'FOUNDING SUPPORTER', price: '₱499', benefits: 'Full available customization · Highest player-level support priority' },
-    sponsor: { name: 'SPONSOR', price: '₱999', benefits: 'Support recognition · Eligible business / brand visibility inside Real Play' },
+    supporter: {
+      name: 'SUPPORTER',
+      price: '₱99',
+      intro: 'A simple way to support Real Play and unlock your first identity perks.',
+      cta: 'SUPPORT REAL PLAY',
+      benefits: [
+        ['Supporter Badge', 'Show that you help keep Real Play moving.'],
+        ['Basic Profile Customization', 'Unlock simple profile personalization.'],
+        ['Supporter Recognition', 'Recognized as an active Real Play supporter.'],
+      ],
+    },
+    builder: {
+      name: 'BUILDER',
+      price: '₱199',
+      intro: 'For players who want stronger identity perks and added convenience.',
+      cta: 'BECOME A BUILDER',
+      benefits: [
+        ['Everything in Supporter', 'Includes all Supporter benefits.'],
+        ['Builder Badge', 'A higher supporter status on your profile.'],
+        ['Enhanced Profile Customization', 'Unlock more ways to personalize your identity.'],
+        ['Earlier Booking Access', 'Get earlier access to available session reservations.'],
+      ],
+    },
+    founding_supporter: {
+      name: 'FOUNDING SUPPORTER',
+      price: '₱499',
+      intro: 'Premium early-supporter status with stronger Real Play identity benefits.',
+      cta: 'BECOME A FOUNDING SUPPORTER',
+      benefits: [
+        ['Everything in Builder', 'Includes all Builder benefits.'],
+        ['Founding Supporter Badge', 'Stand out as an early Real Play supporter.'],
+        ['Premium Profile Customization', 'Unlock the highest player-profile presentation level.'],
+        ['Higher Jersey Number Priority', 'Stronger priority during monthly number conflicts.'],
+      ],
+    },
+    sponsor: {
+      name: 'SPONSOR',
+      price: '₱999',
+      intro: 'For supporters or brands who want official visibility inside Real Play.',
+      cta: 'BECOME A SPONSOR',
+      benefits: [
+        ['Everything in Founding Supporter', 'Includes all Founding Supporter benefits.'],
+        ['Sponsor Status', 'Recognized as an official Real Play supporter.'],
+        ['Sponsor Visibility', 'Display your name, brand, or approved logo inside Real Play.'],
+        ['Featured Sponsor Recognition', 'Enhanced visibility in designated sponsor spaces.'],
+      ],
+    },
   };
 
   function moneyScreen() {
@@ -182,19 +234,37 @@
         <button class="rp-team-support-role" type="button" data-rp-team-support-money-tier="founding_supporter"><strong>₱499 / MONTH — FOUNDING SUPPORTER</strong></button>
         <button class="rp-team-support-role" type="button" data-rp-team-support-money-tier="sponsor"><strong>₱999 / MONTH — SPONSOR</strong></button>
       </div>
+      <div class="rp-team-support-guarantee">
+        <strong>FAIR PLAY GUARANTEE</strong>
+        <p>Support unlocks recognition, identity, and convenience — never basketball advantage.</p>
+      </div>
     `);
   }
 
   function moneyDetailScreen(tierKey) {
     const tier = MONEY_TIERS[tierKey] || MONEY_TIERS.supporter;
+    const benefits = tier.benefits.map(([title, description]) => `
+      <div class="rp-team-support-benefit">
+        <span class="rp-team-support-benefit-icon" aria-hidden="true">✓</span>
+        <div>
+          <strong>${title}</strong>
+          <p>${description}</p>
+        </div>
+      </div>
+    `).join('');
+
     return shell('', tier.name, `
       <div class="rp-team-support-role-description">
         <strong>${tier.price} / MONTH</strong>
         <p><strong>WHAT YOU GET</strong></p>
-        <p>${tier.benefits}</p>
       </div>
-      <p class="rp-team-support-rule"><strong>SUPPORT NEVER BUYS BASKETBALL.</strong> It cannot change OVR, stats, MVP, matchmaking, or remove a spot another player already secured.</p>
-      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>SUPPORT REAL PLAY — ${tier.price}/MONTH</button>
+      <p class="rp-team-support-money-intro">${tier.intro}</p>
+      <div class="rp-team-support-benefits">${benefits}</div>
+      <div class="rp-team-support-guarantee">
+        <strong>FAIR PLAY GUARANTEE</strong>
+        <p>Support never changes OVR, Rank, Stats, MVP, matchmaking, or a spot another player already secured.</p>
+      </div>
+      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>${tier.cta} — ${tier.price}/MONTH</button>
     `);
   }
 
