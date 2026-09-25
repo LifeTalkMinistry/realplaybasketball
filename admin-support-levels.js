@@ -18,6 +18,7 @@
   let loadSequence = 0;
   let bypassSaveCapture = false;
   let decorateTimer = 0;
+  let editorSyncTimer = 0;
 
   function authToken() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -38,12 +39,11 @@
     if (!Number.isSafeInteger(playerId) || playerId <= 0) return null;
     const support = entry?.support && typeof entry.support === 'object' ? entry.support : null;
     const tierCode = normalizeTierCode(support?.tierCode ?? support?.tier_code);
+    const accountId = Number(entry?.accountUserId ?? entry?.userId);
     return {
       playerId,
-      accountAvailable: entry?.accountAvailable !== false && Number.isSafeInteger(Number(entry?.accountUserId ?? entry?.userId)),
-      accountUserId: Number.isSafeInteger(Number(entry?.accountUserId ?? entry?.userId))
-        ? Number(entry?.accountUserId ?? entry?.userId)
-        : null,
+      accountAvailable: entry?.accountAvailable !== false && Number.isSafeInteger(accountId) && accountId > 0,
+      accountUserId: Number.isSafeInteger(accountId) && accountId > 0 ? accountId : null,
       support: tierCode
         ? {
             ...support,
@@ -76,7 +76,6 @@
       .rp-member-support-note strong{color:#bdeef7}
       .rp-member-support-section.is-unavailable{opacity:.7}
       .rp-member-support-section.is-unavailable select{cursor:not-allowed}
-      .rp-member-support-loading{color:#6f879d;font-size:.58rem;font-weight:800;letter-spacing:.04em}
       @media(max-width:430px){
         .rp-member-status-controls{max-width:142px;gap:5px}
         .rp-member-support-status,.rp-member-status{padding:5px 7px;font-size:.43rem}
@@ -118,8 +117,7 @@
     });
     supportByPlayerId = next;
     scheduleDecoration(0);
-    scheduleDecoration(80);
-    if (activePlayerId) window.setTimeout(() => hydrateEditor(activePlayerId), 0);
+    if (activePlayerId) scheduleEditorSync(0);
   }
 
   async function loadSupportDirectory({ force = false } = {}) {
@@ -140,14 +138,6 @@
     return loadPromise;
   }
 
-  function supportBadgeMarkup(support) {
-    const code = normalizeTierCode(support?.tierCode ?? support?.tier_code);
-    if (!code || support?.active === false) return '';
-    const meta = TIER_META[code];
-    if (!meta) return '';
-    return `<span class="rp-member-support-status ${code}" data-member-support-status title="${meta.fullLabel || meta.label} · ₱${meta.amount}/month">${meta.label}</span>`;
-  }
-
   function decorateCards() {
     decorateTimer = 0;
     ensureStyles();
@@ -155,13 +145,38 @@
       const playerId = Number(card.dataset.memberPlayer);
       const controls = card.querySelector('.rp-member-status-controls');
       if (!controls) return;
-      controls.querySelector('[data-member-support-status]')?.remove();
+
       const entry = supportByPlayerId.get(playerId);
-      const markup = supportBadgeMarkup(entry?.support);
-      if (!markup) return;
+      const code = normalizeTierCode(entry?.support?.tierCode ?? entry?.support?.tier_code);
+      const meta = code && entry?.support?.active !== false ? TIER_META[code] : null;
+      const existing = controls.querySelector('[data-member-support-status]');
+
+      if (!meta) {
+        existing?.remove();
+        return;
+      }
+
+      if (existing) {
+        if (existing.dataset.memberSupportTier !== code) {
+          existing.className = `rp-member-support-status ${code}`;
+          existing.dataset.memberSupportTier = code;
+        }
+        const label = meta.label;
+        const title = `${meta.fullLabel || meta.label} · ₱${meta.amount}/month`;
+        if (existing.textContent !== label) existing.textContent = label;
+        if (existing.title !== title) existing.title = title;
+        return;
+      }
+
+      const badge = document.createElement('span');
+      badge.className = `rp-member-support-status ${code}`;
+      badge.dataset.memberSupportStatus = '1';
+      badge.dataset.memberSupportTier = code;
+      badge.textContent = meta.label;
+      badge.title = `${meta.fullLabel || meta.label} · ₱${meta.amount}/month`;
       const accessBadge = controls.querySelector('.rp-member-status');
-      if (accessBadge) accessBadge.insertAdjacentHTML('beforebegin', markup);
-      else controls.insertAdjacentHTML('afterbegin', markup);
+      if (accessBadge) controls.insertBefore(badge, accessBadge);
+      else controls.prepend(badge);
     });
   }
 
@@ -220,9 +235,11 @@
     }
 
     const headKicker = backdrop.querySelector('.rp-member-editor-head small');
-    if (headKicker) headKicker.textContent = 'PLAYER ACCESS + SUPPORT';
+    if (headKicker && headKicker.textContent !== 'PLAYER ACCESS + SUPPORT') {
+      headKicker.textContent = 'PLAYER ACCESS + SUPPORT';
+    }
     const save = backdrop.querySelector('[data-member-editor-save]');
-    if (save && !save.disabled) save.textContent = 'SAVE PLAYER';
+    if (save && !save.disabled && save.textContent !== 'SAVE PLAYER') save.textContent = 'SAVE PLAYER';
     return section;
   }
 
@@ -237,7 +254,7 @@
     const meta = TIER_META[tierCode] || null;
 
     if (amountWrap) amountWrap.hidden = !meta;
-    if (amount) amount.value = meta ? String(meta.amount) : '';
+    if (amount && amount.value !== (meta ? String(meta.amount) : '')) amount.value = meta ? String(meta.amount) : '';
     if (sponsorWrap) sponsorWrap.hidden = tierCode !== 'sponsor';
 
     const entry = supportByPlayerId.get(Number(activePlayerId));
@@ -246,11 +263,12 @@
     if (select) select.disabled = !accountAvailable;
 
     if (note) {
-      note.innerHTML = !accountAvailable
+      const markup = !accountAvailable
         ? 'A claimed <strong>Real Play account is required</strong> before supporter perks can be assigned.'
         : meta
           ? `<strong>${meta.fullLabel || meta.label}</strong> is voluntary support and stays separate from this player's Free / Member / Pay to Play access.`
           : 'No monthly support level is assigned. The player\'s court access remains completely separate.';
+      if (note.innerHTML !== markup) note.innerHTML = markup;
     }
   }
 
@@ -267,15 +285,27 @@
     if (!entry) {
       if (select) select.disabled = true;
       const note = section.querySelector('[data-member-support-note]');
-      if (note) note.textContent = 'Loading supporter status…';
+      if (note && note.textContent !== 'Loading supporter status…') note.textContent = 'Loading supporter status…';
       return;
     }
 
-    if (select) select.value = tierCode;
-    if (sponsor) sponsor.value = String(support?.sponsorName ?? support?.sponsor_name ?? '');
+    if (select && select.value !== tierCode) select.value = tierCode;
+    const sponsorValue = String(support?.sponsorName ?? support?.sponsor_name ?? '');
+    if (sponsor && sponsor.value !== sponsorValue) sponsor.value = sponsorValue;
     section.dataset.supportInitialTier = tierCode;
-    section.dataset.supportInitialSponsor = String(support?.sponsorName ?? support?.sponsor_name ?? '').trim();
+    section.dataset.supportInitialSponsor = sponsorValue.trim();
     syncSupportFields(section);
+  }
+
+  function scheduleEditorSync(delay = 0) {
+    if (editorSyncTimer) window.clearTimeout(editorSyncTimer);
+    editorSyncTimer = window.setTimeout(() => {
+      editorSyncTimer = 0;
+      if (activePlayerId && document.querySelector('[data-member-editor-backdrop].open')) {
+        ensureSupportSection();
+        hydrateEditor(activePlayerId);
+      }
+    }, delay);
   }
 
   function beginEditor(playerId) {
@@ -287,17 +317,16 @@
         if (select) select.disabled = true;
       }
       hydrateEditor(activePlayerId);
-      window.setTimeout(() => {
-        ensureSupportSection();
-        hydrateEditor(activePlayerId);
-      }, 50);
+      scheduleEditorSync(60);
     });
 
     if (!supportByPlayerId.has(activePlayerId)) {
       loadSupportDirectory().catch(() => {
         const section = ensureSupportSection();
         const note = section?.querySelector('[data-member-support-note]');
-        if (note) note.textContent = 'Support controls are temporarily unavailable. Player access can still be managed.';
+        if (note && note.textContent !== 'Support controls are temporarily unavailable. Player access can still be managed.') {
+          note.textContent = 'Support controls are temporarily unavailable. Player access can still be managed.';
+        }
       });
     }
   }
@@ -390,12 +419,8 @@
   }, true);
 
   const observer = new MutationObserver(() => {
-    if (document.querySelector('[data-member-player]')) scheduleDecoration(0);
-    const openEditor = document.querySelector('[data-member-editor-backdrop].open');
-    if (openEditor && activePlayerId) {
-      ensureSupportSection();
-      hydrateEditor(activePlayerId);
-    }
+    if (document.querySelector('[data-member-player]')) scheduleDecoration(16);
+    if (activePlayerId && document.querySelector('[data-member-editor-backdrop].open')) scheduleEditorSync(16);
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
