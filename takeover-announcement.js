@@ -543,7 +543,7 @@
   });
 
   function installAdminRow() {
-    const list = document.querySelector('.rp-settings-overlay .rp-settings-list');
+    const list = document.querySelector('.rp-settings-overlay [data-rp-settings-root-list]') || document.querySelector('.rp-settings-overlay .rp-settings-list');
     if (!list) return false;
     const verified = window.__realPlayAdminVerified === true || window.RealPlayServerGate?.isAdminBypass?.() === true;
     if (!verified) return false;
@@ -553,7 +553,7 @@
       row.type = 'button';
       row.className = 'rp-settings-row rp-settings-takeover-row';
       row.dataset.rpSettingsAction = 'takeover';
-      row.innerHTML = '<span><strong>FULL-SCREEN ANNOUNCEMENT</strong><small>Photo/video takeover shown when the app opens</small></span><b>→</b>';
+      row.innerHTML = '<span><strong>APP MANAGEMENT</strong><small>Announcements and platform presentation controls</small></span><b>→</b>';
       row.addEventListener('click', openAdmin);
       const adminRow = list.querySelector('[data-rp-settings-action="admin"]');
       if (adminRow?.nextSibling) list.insertBefore(row, adminRow.nextSibling);
@@ -565,7 +565,7 @@
   function watchAdminRow() {
     if (installAdminRow()) return;
     if (adminRowWatch) adminRowWatch.disconnect();
-    const list = document.querySelector('.rp-settings-overlay .rp-settings-list');
+    const list = document.querySelector('.rp-settings-overlay [data-rp-settings-root-list]') || document.querySelector('.rp-settings-overlay .rp-settings-list');
     if (!list) return;
     adminRowWatch = new MutationObserver(() => {
       if (installAdminRow()) {
