@@ -2,6 +2,8 @@
   if (window.__realPlaySettingsPanelInstalled) return;
   window.__realPlaySettingsPanelInstalled = true;
 
+  // Settings v2: keep the landing page quiet and group detailed controls by purpose.
+
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
 
@@ -20,7 +22,7 @@
   document.head.appendChild(relocationStyle);
 
   const settingsSummary = settingsChoice.querySelector('span');
-  if (settingsSummary) settingsSummary.textContent = 'IDENTITY · MEMBERSHIP · COMMUNITY · ACCOUNT';
+  if (settingsSummary) settingsSummary.textContent = 'ACCOUNT · COMMUNITY · ADMIN';
 
   const panel = document.createElement('div');
   panel.className = 'rp-settings-overlay';
@@ -48,9 +50,31 @@
         </button>
       </div>
 
+      <div class="rp-settings-list" data-rp-settings-root-list>
+        <button type="button" class="rp-settings-row" data-rp-settings-section="account">
+          <span><strong>ACCOUNT</strong><small>Identity, player number, profile art and membership</small></span><b>→</b>
+        </button>
+        <button type="button" class="rp-settings-row" data-rp-settings-action="community">
+          <span><strong>COMMUNITY</strong><small>Standards, sportsmanship and participation</small></span><b>→</b>
+        </button>
+      </div>
+
+      <button class="rp-settings-logout" type="button" data-rp-settings-action="logout">LOG OUT</button>
+      <p class="rp-settings-version">REAL PLAY BASKETBALL · BETA SEASON</p>
+    </section>
+
+    <section class="rp-settings-panel rp-settings-account" data-rp-settings-account hidden role="dialog" aria-modal="true" aria-labelledby="rp-account-title">
+      <header class="rp-settings-head">
+        <button class="rp-settings-back" type="button" data-rp-account-back aria-label="Back to settings">←</button>
+        <div>
+          <small>SETTINGS</small>
+          <h2 id="rp-account-title">ACCOUNT</h2>
+        </div>
+      </header>
+      <div class="rp-settings-section-intro">Everything connected to your Real Play identity and access.</div>
       <div class="rp-settings-list">
         <button type="button" class="rp-settings-row" data-rp-settings-action="identity">
-          <span><strong>IDENTITY & NUMBER MANAGEMENT</strong><small>Manage your Real Play player name and number</small></span><b>→</b>
+          <span><strong>IDENTITY & NUMBER</strong><small>Manage your player name and jersey number</small></span><b>→</b>
         </button>
         <button type="button" class="rp-settings-row" data-rp-settings-action="profile-art" data-rp-settings-profile-art hidden>
           <span><strong>PROFILE ART STUDIO</strong><small>Upload or adjust premium player artwork</small></span><b>→</b>
@@ -58,13 +82,7 @@
         <button type="button" class="rp-settings-row" data-rp-settings-action="membership">
           <span><strong>MEMBERSHIP</strong><small>View status and membership access</small></span><b>→</b>
         </button>
-        <button type="button" class="rp-settings-row" data-rp-settings-action="community">
-          <span><strong>COMMUNITY STANDARD</strong><small>Christian community, sportsmanship and conduct</small></span><b>→</b>
-        </button>
       </div>
-
-      <button class="rp-settings-logout" type="button" data-rp-settings-action="logout">LOG OUT</button>
-      <p class="rp-settings-version">REAL PLAY BASKETBALL · BETA SEASON</p>
     </section>
 
     <section class="rp-settings-panel rp-settings-community" data-rp-settings-community hidden role="dialog" aria-modal="true" aria-labelledby="rp-community-title">
@@ -87,6 +105,7 @@
   document.body.appendChild(panel);
 
   const mainPanel = panel.querySelector('[data-rp-settings-main]');
+  const accountPanel = panel.querySelector('[data-rp-settings-account]');
   const communityPanel = panel.querySelector('[data-rp-settings-community]');
   const nameNode = panel.querySelector('[data-rp-settings-name]');
   const emailNode = panel.querySelector('[data-rp-settings-email]');
@@ -231,6 +250,7 @@
     syncIdentity();
     syncProfileArtAccess();
     if (mainPanel) mainPanel.hidden = false;
+    if (accountPanel) accountPanel.hidden = true;
     if (communityPanel) communityPanel.hidden = true;
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
@@ -253,6 +273,7 @@
     panel.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-settings-open');
     if (mainPanel) mainPanel.hidden = false;
+    if (accountPanel) accountPanel.hidden = true;
     if (communityPanel) communityPanel.hidden = true;
 
     if (restoreFocus) {
@@ -260,8 +281,17 @@
     }
   }
 
+  function showAccount() {
+    syncProfileArtAccess();
+    if (mainPanel) mainPanel.hidden = true;
+    if (accountPanel) accountPanel.hidden = false;
+    if (communityPanel) communityPanel.hidden = true;
+    accountPanel?.querySelector('[data-rp-account-back]')?.focus();
+  }
+
   function showCommunity() {
     if (mainPanel) mainPanel.hidden = true;
+    if (accountPanel) accountPanel.hidden = true;
     if (communityPanel) communityPanel.hidden = false;
     communityPanel?.querySelector('[data-rp-community-back]')?.focus();
   }
@@ -370,6 +400,8 @@
   playerIdButton?.addEventListener('click', copyPlayerId);
   panel.querySelector('[data-rp-settings-back]')?.addEventListener('click', closeSettings);
   panel.querySelector('[data-rp-community-back]')?.addEventListener('click', showMainSettings);
+  panel.querySelector('[data-rp-account-back]')?.addEventListener('click', showMainSettings);
+  panel.querySelector('[data-rp-settings-section="account"]')?.addEventListener('click', showAccount);
 
   panel.querySelectorAll('[data-rp-settings-action]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -391,7 +423,7 @@
 
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !panel.classList.contains('open')) return;
-    if (communityPanel && !communityPanel.hidden) showMainSettings();
+    if ((communityPanel && !communityPanel.hidden) || (accountPanel && !accountPanel.hidden)) showMainSettings();
     else closeSettings();
   });
 })();
