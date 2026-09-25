@@ -272,3 +272,26 @@
   width:100%!important;
   text-align:center!important;
 }
+
+
+/* Help chooser: keep title truly centered and reserve the top-right for back. */
+.rp-team-support-overlay[data-rp-team-support-help-choice="true"] .rp-team-sheet-head{
+  position:relative!important;
+  min-height:38px!important;
+  padding-right:0!important;
+}
+.rp-team-support-overlay[data-rp-team-support-help-choice="true"] .rp-team-sheet-close{
+  position:absolute!important;
+  top:0!important;
+  right:0!important;
+  z-index:3!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  margin:0!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+.rp-team-support-overlay[data-rp-team-support-help-choice="true"] .rp-team-sheet-head>div{
+  padding:0 44px!important;
+}
