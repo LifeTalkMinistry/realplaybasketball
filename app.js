@@ -283,16 +283,35 @@
     'world-results.css',
   ];
 
-  // Only these first-frame styles are allowed to participate in the boot gate.
-  // All feature-specific CSS loads after the usable Home/navigation shell is up.
+  // First-frame presentation contract. These styles define everything that can
+  // be visible on Home at boot; they must settle before the boot gate opens.
+  // Feature-specific screens remain progressive enhancements.
   const criticalStylesheetHrefs = new Set([
     'mobile-lobby.css',
+    'lobby-topbar-cleanup.css',
     'mobile-entry.css',
     'public-landing.css',
-    'public-landing-cleanup.css',
+    'ambient-brand-glow.css',
+    'public-landing-premium.css',
+    'public-landing-ball-focus.css',
     'mobile-shell-fix.css',
+    'mobile-lobby-cleanup.css',
     'main-menu.css',
+    'real-play-brand-system.css',
+    'main-menu-brand-overrides.css',
+    'main-menu-cinematic.css',
+    'main-menu-ball-background.css',
+    'main-menu-card-premium.css',
+    'main-menu-physics.css',
+    'main-menu-fast-snap.css',
+    'public-landing-cleanup.css',
+    'public-origin-center-force.css',
+    'public-founder-credit.css',
+    'visitor-mode.css',
     'simple-navigation.css',
+    'home-main-announcement-art.css',
+    'home-open-rank-art.css',
+    'home-why-real-play.css',
   ]);
 
   (async () => {
@@ -338,17 +357,22 @@
       if (!loaded) console.warn(`[Real Play] Critical shell stylesheet did not settle at index ${index}.`);
     });
 
+    // Home schedule/navigation authority can mutate the first visible Home
+    // frame, so settle it before exposing the shell. Failure remains non-fatal.
+    const navAuthorityLoaded = await loadScript('simple-navigation-state-authority.js', 6500);
+    if (!navAuthorityLoaded) {
+      console.warn('[Real Play] Navigation authority layer did not load; base navigation remains available.');
+    }
+
+    // Do not expose Home until its first-frame presentation is stable. This is
+    // resource readiness, not an artificial delay: fonts/images get bounded
+    // waits and the final two paints prevent a half-styled frame from leaking.
+    await waitForVisualStability();
+
     bootResourcesReady = true;
     if (!revealNewShell()) {
       showBootFailure('Real Play core shell is unavailable.');
       return;
-    }
-
-    // Home schedule authority enhances an already-visible shell. If it is slow
-    // or unavailable, base Home/navigation remains usable.
-    const navAuthorityLoaded = await loadScript('simple-navigation-state-authority.js', 6500);
-    if (!navAuthorityLoaded) {
-      console.warn('[Real Play] Navigation authority layer did not load; base navigation remains available.');
     }
 
     const enhancements = [
