@@ -57,7 +57,30 @@
     .rp-takeover-deactivate-btn{grid-column:1/-1;background:rgba(255,41,77,.08);color:#ff7187;border-color:rgba(255,41,77,.28)!important}
     .rp-takeover-status{min-height:20px;margin:2px 0 0;color:#9aa9bc;font-size:.76rem;line-height:1.45}
     .rp-takeover-status.ok{color:#6ee7b7}.rp-takeover-status.error{color:#ff8798}
-    @media(max-width:560px){.rp-takeover-grid,.rp-takeover-actions{grid-template-columns:1fr}.rp-takeover-deactivate-btn{grid-column:auto}.rp-takeover-canvas{bottom:80px}.rp-takeover-cta{bottom:max(16px,calc(env(safe-area-inset-bottom) + 12px));min-height:50px}}
+    @media(max-width:560px){
+      .rp-takeover-grid,.rp-takeover-actions{grid-template-columns:1fr}
+      .rp-takeover-deactivate-btn{grid-column:auto}
+      .rp-takeover{background:rgba(2,3,6,.96)}
+      .rp-takeover-canvas{
+        inset:max(18px,env(safe-area-inset-top)) 14px calc(92px + env(safe-area-inset-bottom)) 14px;
+        border:1px solid rgba(255,255,255,.12);
+        border-radius:20px;
+        background:#020306;
+        box-shadow:0 22px 70px rgba(0,0,0,.58);
+      }
+      .rp-takeover-media{border-radius:19px}
+      .rp-takeover-label{
+        left:28px;
+        top:calc(max(18px,env(safe-area-inset-top)) + 14px);
+        max-width:calc(100vw - 112px)
+      }
+      .rp-takeover-cta{
+        bottom:max(18px,calc(env(safe-area-inset-bottom) + 14px));
+        width:calc(100vw - 56px);
+        max-width:346px;
+        min-height:50px
+      }
+    }
   `;
   document.head.appendChild(style);
 
@@ -265,6 +288,13 @@
     if (!takeover.classList.contains('open')) return;
     const item = current;
     const preview = currentPreview;
+    // Move focus out of the modal before hiding it from the accessibility tree.
+    // Chrome blocks aria-hidden when the focused CTA is still a descendant.
+    if (previousFocus && typeof previousFocus.focus === 'function') {
+      try { previousFocus.focus({ preventScroll: true }); } catch (_error) {}
+    } else if (ctaButton === document.activeElement) {
+      try { ctaButton.blur(); } catch (_error) {}
+    }
     takeover.classList.remove('open');
     takeover.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-takeover-open');
@@ -272,9 +302,6 @@
     current = null;
     currentPreview = false;
     if (!preview && item) markDismissed(item);
-    if (previousFocus && typeof previousFocus.focus === 'function') {
-      try { previousFocus.focus({ preventScroll: true }); } catch (_error) {}
-    }
     previousFocus = null;
   }
 
