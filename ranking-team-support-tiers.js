@@ -97,6 +97,7 @@
 
   function helpScreen() {
     return shell('HELP REAL PLAY CONTINUE', 'HOW WOULD YOU LIKE TO HELP?', `
+      <button class="rp-team-sheet-close rp-team-support-header-back" type="button" aria-label="Back" data-rp-team-support-screen="main">←</button>
       <p class="rp-team-support-copy">Every player can contribute differently. Choose the kind of support that fits you right now.</p>
       <div class="rp-team-support-paths">
         <button class="rp-team-support-path" type="button" data-rp-team-support-screen="volunteer">
@@ -230,16 +231,6 @@
       : screenName.startsWith('money:')
         ? moneyDetailScreen(screenName.slice('money:'.length))
         : (screens[screenName] || mainScreen)();
-
-    if (screenName === 'help') {
-      const closeButton = panel.querySelector('[data-rp-team-support-close]');
-      if (closeButton) {
-        closeButton.removeAttribute('data-rp-team-support-close');
-        closeButton.setAttribute('aria-label', 'Back');
-        closeButton.textContent = '←';
-        closeButton.addEventListener('click', () => renderScreen(overlay, 'main'));
-      }
-    }
 
     if (screenName === 'volunteer' || screenName === 'money') {
       const closeButton = panel.querySelector('[data-rp-team-support-close]');
