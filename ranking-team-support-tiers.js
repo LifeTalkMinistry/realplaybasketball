@@ -58,9 +58,6 @@
       .rp-team-support-benefit-icon{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:rgba(66,216,255,.10);color:#62e2ff;font-size:.68rem;font-weight:950;line-height:1}
       .rp-team-support-benefit strong{display:block;margin:0;color:#f7fbff;font-size:.72rem;letter-spacing:.01em}
       .rp-team-support-benefit p{margin:3px 0 0;color:#8199a7;font-size:.61rem;line-height:1.4}
-      .rp-team-support-guarantee{margin:10px 0 12px;padding:10px 11px;border:1px solid rgba(76,214,255,.12);border-radius:11px;background:rgba(255,255,255,.025)}
-      .rp-team-support-guarantee strong{display:block;color:#bfefff;font-size:.54rem;font-weight:950;letter-spacing:.12em}
-      .rp-team-support-guarantee p{margin:4px 0 0;color:#7f96a4;font-size:.59rem;line-height:1.45}
       @media (min-width:560px){
         .rp-team-support-grid{grid-template-columns:1fr 1fr}
         .rp-team-support-tier{grid-template-columns:1fr}
@@ -234,10 +231,6 @@
         <button class="rp-team-support-role" type="button" data-rp-team-support-money-tier="founding_supporter"><strong>₱499 / MONTH — FOUNDING SUPPORTER</strong></button>
         <button class="rp-team-support-role" type="button" data-rp-team-support-money-tier="sponsor"><strong>₱999 / MONTH — SPONSOR</strong></button>
       </div>
-      <div class="rp-team-support-guarantee">
-        <strong>FAIR PLAY GUARANTEE</strong>
-        <p>Support unlocks recognition, identity, and convenience — never basketball advantage.</p>
-      </div>
     `);
   }
 
@@ -260,10 +253,6 @@
       </div>
       <p class="rp-team-support-money-intro">${tier.intro}</p>
       <div class="rp-team-support-benefits">${benefits}</div>
-      <div class="rp-team-support-guarantee">
-        <strong>FAIR PLAY GUARANTEE</strong>
-        <p>Support never changes OVR, Rank, Stats, MVP, matchmaking, or a spot another player already secured.</p>
-      </div>
       <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>${tier.cta} — ${tier.price}/MONTH</button>
     `);
   }
