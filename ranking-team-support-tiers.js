@@ -158,8 +158,7 @@
       extra_camera: 'Lend your phone during games so Real Play can record an additional camera angle. Your phone stays yours and is only used temporarily during the game.',
       session_support: 'Help keep the session organized by assisting with player flow, game preparation, court setup, rotations, and other simple tasks that keep games moving smoothly.',
     };
-    return shell(role.kicker, role.title, `
-      <button class="rp-team-support-back" type="button" data-rp-team-support-screen="volunteer">← BACK</button>
+    return shell('', role.title, `
       <div class="rp-team-support-role-description">
         <strong>JOB DESCRIPTION:</strong>
         <p>${descriptions[roleKey] || role.copy}</p>
