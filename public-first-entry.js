@@ -59,6 +59,9 @@
       if (state.fallbackTimer) window.clearTimeout(state.fallbackTimer);
       await nextPaint();
       if (originalFetch && window.fetch === trackedFetch) window.fetch = originalFetch;
+      // Durable readiness prevents an event-ordering race from trapping the
+      // loader if Home settles before app.js observes the event.
+      window.__realPlayInitialHomeReady = true;
       try {
         window.dispatchEvent(new CustomEvent('realplay:initial-home-ready', { detail: { reason } }));
       } catch (_error) {}
