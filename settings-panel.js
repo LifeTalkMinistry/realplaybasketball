@@ -57,6 +57,9 @@
         <button type="button" class="rp-settings-row" data-rp-settings-action="community">
           <span><strong>COMMUNITY</strong><small>Standards, sportsmanship and participation</small></span><b>→</b>
         </button>
+        <button type="button" class="rp-settings-row" data-rp-settings-section="team-volunteers">
+          <span><strong>TEAM &amp; VOLUNTEERS</strong><small>Volunteer roles, staff assignments and community helpers</small></span><b>→</b>
+        </button>
       </div>
 
       <button class="rp-settings-logout" type="button" data-rp-settings-action="logout">LOG OUT</button>
@@ -85,6 +88,31 @@
       </div>
     </section>
 
+    <section class="rp-settings-panel rp-settings-team-volunteers" data-rp-settings-team-volunteers hidden role="dialog" aria-modal="true" aria-labelledby="rp-team-volunteers-title">
+      <header class="rp-settings-head">
+        <button class="rp-settings-back" type="button" data-rp-team-volunteers-back aria-label="Back to settings">←</button>
+        <div>
+          <small>REAL PLAY OPERATIONS</small>
+          <h2 id="rp-team-volunteers-title">TEAM &amp; VOLUNTEERS</h2>
+        </div>
+      </header>
+      <div class="rp-settings-section-intro">People who help Real Play operate on and around the court.</div>
+      <div class="rp-settings-list">
+        <button type="button" class="rp-settings-row" data-rp-volunteer-group="game-operations">
+          <span><strong>GAME OPERATIONS</strong><small>Game auditors, scorers and court operations</small></span><b>→</b>
+        </button>
+        <button type="button" class="rp-settings-row" data-rp-volunteer-group="media-crew">
+          <span><strong>MEDIA CREW</strong><small>Cameramen and game content support</small></span><b>→</b>
+        </button>
+        <button type="button" class="rp-settings-row" data-rp-volunteer-group="extra-camera">
+          <span><strong>EXTRA CAMERA / EQUIPMENT</strong><small>Phones and equipment temporarily shared for sessions</small></span><b>→</b>
+        </button>
+        <button type="button" class="rp-settings-row" data-rp-volunteer-group="session-support">
+          <span><strong>SESSION SUPPORT</strong><small>Setup, player flow, rotations and session helpers</small></span><b>→</b>
+        </button>
+      </div>
+    </section>
+
     <section class="rp-settings-panel rp-settings-community" data-rp-settings-community hidden role="dialog" aria-modal="true" aria-labelledby="rp-community-title">
       <header class="rp-settings-head">
         <button class="rp-settings-back" type="button" data-rp-community-back aria-label="Back to settings">←</button>
@@ -107,6 +135,7 @@
   const mainPanel = panel.querySelector('[data-rp-settings-main]');
   const accountPanel = panel.querySelector('[data-rp-settings-account]');
   const communityPanel = panel.querySelector('[data-rp-settings-community]');
+  const teamVolunteersPanel = panel.querySelector('[data-rp-settings-team-volunteers]');
   const nameNode = panel.querySelector('[data-rp-settings-name]');
   const emailNode = panel.querySelector('[data-rp-settings-email]');
   const playerIdButton = panel.querySelector('[data-rp-settings-player-id]');
@@ -252,6 +281,7 @@
     if (mainPanel) mainPanel.hidden = false;
     if (accountPanel) accountPanel.hidden = true;
     if (communityPanel) communityPanel.hidden = true;
+    if (teamVolunteersPanel) teamVolunteersPanel.hidden = true;
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-settings-open');
@@ -275,6 +305,7 @@
     if (mainPanel) mainPanel.hidden = false;
     if (accountPanel) accountPanel.hidden = true;
     if (communityPanel) communityPanel.hidden = true;
+    if (teamVolunteersPanel) teamVolunteersPanel.hidden = true;
 
     if (restoreFocus) {
       window.setTimeout(() => settingsChoice.focus({ preventScroll: true }), 30);
@@ -286,7 +317,16 @@
     if (mainPanel) mainPanel.hidden = true;
     if (accountPanel) accountPanel.hidden = false;
     if (communityPanel) communityPanel.hidden = true;
+    if (teamVolunteersPanel) teamVolunteersPanel.hidden = true;
     accountPanel?.querySelector('[data-rp-account-back]')?.focus();
+  }
+
+  function showTeamVolunteers() {
+    if (mainPanel) mainPanel.hidden = true;
+    if (accountPanel) accountPanel.hidden = true;
+    if (communityPanel) communityPanel.hidden = true;
+    if (teamVolunteersPanel) teamVolunteersPanel.hidden = false;
+    teamVolunteersPanel?.querySelector('[data-rp-team-volunteers-back]')?.focus();
   }
 
   function showCommunity() {
@@ -401,7 +441,9 @@
   panel.querySelector('[data-rp-settings-back]')?.addEventListener('click', closeSettings);
   panel.querySelector('[data-rp-community-back]')?.addEventListener('click', showMainSettings);
   panel.querySelector('[data-rp-account-back]')?.addEventListener('click', showMainSettings);
+  panel.querySelector('[data-rp-team-volunteers-back]')?.addEventListener('click', showMainSettings);
   panel.querySelector('[data-rp-settings-section="account"]')?.addEventListener('click', showAccount);
+  panel.querySelector('[data-rp-settings-section="team-volunteers"]')?.addEventListener('click', showTeamVolunteers);
 
   panel.querySelectorAll('[data-rp-settings-action]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -423,7 +465,7 @@
 
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !panel.classList.contains('open')) return;
-    if ((communityPanel && !communityPanel.hidden) || (accountPanel && !accountPanel.hidden)) showMainSettings();
+    if ((communityPanel && !communityPanel.hidden) || (accountPanel && !accountPanel.hidden) || (teamVolunteersPanel && !teamVolunteersPanel.hidden)) showMainSettings();
     else closeSettings();
   });
 })();
