@@ -159,7 +159,7 @@
   }
 
   function settingsList() {
-    return document.querySelector('.rp-settings-overlay .rp-settings-list');
+    return document.querySelector('.rp-settings-overlay [data-rp-settings-root-list]') || document.querySelector('.rp-settings-overlay .rp-settings-list');
   }
 
   function syncSettingsRow() {
@@ -178,7 +178,7 @@
       row.type = 'button';
       row.className = 'rp-settings-row rp-settings-admin-row';
       row.dataset.rpSettingsAction = 'admin';
-      row.innerHTML = '<span><strong>ADMIN</strong><small>Season setup, players, game control and scoring</small></span><b>→</b>';
+      row.innerHTML = '<span><strong>ADMINISTRATION</strong><small>Sessions, players, game control and scoring</small></span><b>→</b>';
       list.appendChild(row);
       row.addEventListener('click', openAdmin);
     }
