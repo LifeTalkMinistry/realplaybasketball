@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260921-audit-stamp-filter-v32';
+  const ADMIN_ASSET_VERSION = '20260925-support-levels-v33';
   const REPLAY_ADMIN_ROOT_VERSION = '20260915-replay-editor-root-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
@@ -54,6 +54,7 @@
     'admin-score-dom-sync.js',
     'admin-season-control.js',
     'admin-season-players.js',
+    'admin-support-levels.js',
     'admin-membership-token-control.js',
     'admin-player-temp-password.js',
   ];
