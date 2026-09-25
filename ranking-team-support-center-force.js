@@ -83,7 +83,7 @@
     // Keep this screen as clean as the first prompt: one title and exactly two
     // choices. Deeper volunteer/money screens retain their own back controls.
     panel.querySelector('.rp-team-sheet-head small')?.remove();
-    panel.querySelector('.rp-team-sheet-close')?.remove();
+    panel.querySelector('.rp-team-sheet-close:not(.rp-team-support-header-back)')?.remove();
     panel.querySelector('.rp-team-support-back')?.remove();
     panel.querySelectorAll('.rp-team-support-copy, .rp-team-support-tertiary')
       .forEach((node) => node.remove());
