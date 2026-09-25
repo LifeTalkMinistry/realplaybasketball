@@ -169,7 +169,6 @@
 
   function moneyScreen() {
     return shell('OPTIONAL MONTHLY SUPPORT', 'HELP FUND REAL PLAY.', `
-      <button class="rp-team-support-back" type="button" data-rp-team-support-screen="help">← BACK</button>
       <p class="rp-team-support-copy"><strong>Your team and session spot are already secured.</strong> Choose financial support only if it fits you and you want to help sustain the platform.</p>
       <div class="rp-team-support-grid" aria-label="Real Play monthly support levels">
         <article class="rp-team-support-tier">
@@ -226,7 +225,7 @@
       ? volunteerDetailScreen(screenName.slice('volunteer:'.length))
       : (screens[screenName] || mainScreen)();
 
-    if (screenName === 'volunteer') {
+    if (screenName === 'volunteer' || screenName === 'money') {
       const closeButton = panel.querySelector('[data-rp-team-support-close]');
       if (closeButton) {
         closeButton.removeAttribute('data-rp-team-support-close');
