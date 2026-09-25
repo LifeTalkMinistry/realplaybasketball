@@ -11,62 +11,6 @@
   if (!window.__realPlayInitialHomeReadinessGateInstalled) {
     window.__realPlayInitialHomeReadinessGateInstalled = true;
 
-    const html = document.documentElement;
-    html.classList.add('rp-home-readiness-pending');
-
-    const style = document.createElement('style');
-    style.id = 'rp-home-readiness-gate-style';
-    style.textContent = `
-      html.rp-home-readiness-pending body{
-        margin:0!important;
-        min-height:100dvh!important;
-        overflow:hidden!important;
-        background:#020306!important;
-        pointer-events:none!important;
-        user-select:none!important;
-      }
-      html.rp-home-readiness-pending body>*{
-        visibility:hidden!important;
-        pointer-events:none!important;
-      }
-      html.rp-home-readiness-pending body::before,
-      html.rp-home-readiness-pending body::after{
-        position:fixed;
-        left:50%;
-        z-index:2147483647;
-        visibility:visible!important;
-        pointer-events:none;
-        transform:translateX(-50%);
-        text-align:center;
-        white-space:nowrap;
-      }
-      html.rp-home-readiness-pending body::before{
-        content:'REAL PLAY';
-        top:45%;
-        color:#f6f9ff;
-        font-family:Impact,'Arial Narrow',Arial,sans-serif;
-        font-size:clamp(2rem,9vw,3.25rem);
-        font-style:italic;
-        font-weight:950;
-        letter-spacing:.025em;
-      }
-      html.rp-home-readiness-pending body::after{
-        content:'BASKETBALL  ·  LOADING';
-        top:calc(45% + 58px);
-        color:#42d8ff;
-        font-family:Arial,sans-serif;
-        font-size:.56rem;
-        font-weight:900;
-        letter-spacing:.22em;
-        animation:rpHomeReadinessPulse 1.1s ease-in-out infinite alternate;
-      }
-      @keyframes rpHomeReadinessPulse{from{opacity:.38}to{opacity:1}}
-      @media(prefers-reduced-motion:reduce){
-        html.rp-home-readiness-pending body::after{animation:none;opacity:.78}
-      }
-    `;
-    document.head.appendChild(style);
-
     const originalFetch = window.fetch?.bind(window);
     const state = {
       appReady: false,
@@ -114,8 +58,6 @@
       state.released = true;
       if (state.fallbackTimer) window.clearTimeout(state.fallbackTimer);
       await nextPaint();
-      html.classList.remove('rp-home-readiness-pending');
-      style.remove();
       if (originalFetch && window.fetch === trackedFetch) window.fetch = originalFetch;
       try {
         window.dispatchEvent(new CustomEvent('realplay:initial-home-ready', { detail: { reason } }));
