@@ -43,14 +43,16 @@
       white-space:nowrap;
     }
     html.rp-shell-booting body::after{
-      content:'BASKETBALL  ·  LOADING';
+      content:'APPLYING THE LATEST UPDATES\\A This may take a little longer than usual.\\A Thank you for your patience.';
       top:calc(45% + 58px);
+      width:min(88vw,420px);
       color:#42d8ff;
       font-family:Arial,sans-serif;
       font-size:.56rem;
       font-weight:900;
-      letter-spacing:.22em;
-      white-space:nowrap;
+      line-height:1.55;
+      letter-spacing:.08em;
+      white-space:pre-line;
       animation:rpShellBootPulse 1.1s ease-in-out infinite alternate;
     }
     html.rp-shell-booting.rp-shell-failed body::after{
