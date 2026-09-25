@@ -258,3 +258,17 @@
     transition:none!important;
   }
 }
+
+
+/* Center the selection-screen titles while preserving the top-right back control. */
+.rp-team-support-overlay[data-rp-team-support-screen="volunteer"] .rp-team-sheet-head>div,
+.rp-team-support-overlay[data-rp-team-support-screen="money"] .rp-team-sheet-head>div{
+  flex:1 1 auto!important;
+  padding-left:44px!important;
+  text-align:center!important;
+}
+.rp-team-support-overlay[data-rp-team-support-screen="volunteer"] .rp-team-sheet-head h3,
+.rp-team-support-overlay[data-rp-team-support-screen="money"] .rp-team-sheet-head h3{
+  width:100%!important;
+  text-align:center!important;
+}
