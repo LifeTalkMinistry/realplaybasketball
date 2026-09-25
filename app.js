@@ -1,5 +1,5 @@
 (() => {
-  const version = '20260925-support-header-back-v121';
+  const version = '20260925-settings-grouped-v122';
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
