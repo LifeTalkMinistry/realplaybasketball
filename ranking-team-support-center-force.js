@@ -322,6 +322,8 @@
     if (home) {
       event.preventDefault();
       event.stopImmediatePropagation();
+      // Exit the volunteer overlay only. This intentionally preserves the
+      // underlying Open Rank / Team Reservation screen the player came from.
       closeSupportOverlay(overlay);
       return;
     }
