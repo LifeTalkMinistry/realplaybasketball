@@ -2,10 +2,16 @@
   if (window.__realPlayTeamSupportTiersInstalled) return;
   window.__realPlayTeamSupportTiersInstalled = true;
 
+  const API_BASE_URL = 'https://api.clarapmc.com';
+  const TOKEN_KEY = 'real_play_access_token';
+  const SUPPORT_TIER_ENDPOINT = `${API_BASE_URL}/api/real-play/support/tier`;
+  const PAYMENT_CONFIG_ENDPOINT = `${API_BASE_URL}/api/real-play/support/payment-config`;
   const PROMPT_DELAY_MS = 260;
   let baselineReady = false;
   let hadTeam = false;
   let promptTimer = 0;
+  let paymentConfig = null;
+  let lastPaymentResult = null;
 
   function ensureStyle() {
     if (document.getElementById('rp-team-support-tier-style')) return;
@@ -32,7 +38,7 @@
       .rp-team-support-path.money{border-color:rgba(255,211,91,.28);background:rgba(34,27,7,.32)}
       .rp-team-support-path.money small{color:#ffd35b}
       .rp-team-support-roles{display:grid;gap:8px;margin:12px 0}
-      .rp-team-support-role{padding:11px 12px;cursor:default}
+      .rp-team-support-role{padding:11px 12px;cursor:pointer}
       .rp-team-support-role span{display:block;color:#53dcff;font-size:.55rem;font-weight:950;letter-spacing:.11em}
       .rp-team-support-role strong{display:block;margin:3px 0;color:#f7fbff;font-size:.82rem}
       .rp-team-support-role p{margin:0;color:#8299a7;font-size:.62rem;line-height:1.4}
@@ -58,6 +64,37 @@
       .rp-team-support-benefit-icon{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:rgba(66,216,255,.10);color:#62e2ff;font-size:.68rem;font-weight:950;line-height:1}
       .rp-team-support-benefit strong{display:block;margin:0;color:#f7fbff;font-size:.72rem;letter-spacing:.01em}
       .rp-team-support-benefit p{margin:3px 0 0;color:#8199a7;font-size:.61rem;line-height:1.4}
+      .rp-team-support-payment-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 13px;padding:12px 13px;border:1px solid rgba(76,214,255,.2);border-radius:13px;background:rgba(4,20,29,.76)}
+      .rp-team-support-payment-summary span{display:block;color:#7e98a7;font-size:.55rem;font-weight:900;letter-spacing:.1em}
+      .rp-team-support-payment-summary strong{display:block;margin-top:3px;color:#f7fbff;font-size:.86rem}
+      .rp-team-support-payment-summary b{color:#62e2ff;font-size:1rem;white-space:nowrap}
+      .rp-team-support-payment-label{display:block;margin:11px 0 6px;color:#7f98a8;font-size:.55rem;font-weight:950;letter-spacing:.1em}
+      .rp-team-support-methods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:11px}
+      .rp-team-support-method{min-height:43px;padding:8px 5px;border:1px solid rgba(76,214,255,.17);border-radius:11px;background:rgba(4,20,29,.72);color:#91a8b5;font-size:.6rem;font-weight:950;letter-spacing:.04em;cursor:pointer}
+      .rp-team-support-method.is-selected{border-color:#42d8ff;background:rgba(25,167,205,.16);color:#ecfbff;box-shadow:inset 0 0 0 1px rgba(66,216,255,.1)}
+      .rp-team-support-field{display:grid;gap:5px;margin:9px 0}
+      .rp-team-support-field span{color:#7f98a8;font-size:.54rem;font-weight:950;letter-spacing:.09em}
+      .rp-team-support-field input{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid rgba(76,214,255,.18);border-radius:11px;outline:0;background:#061521;color:#f7fbff;font:inherit;font-size:.7rem}
+      .rp-team-support-field input:focus{border-color:#42d8ff;box-shadow:0 0 0 2px rgba(66,216,255,.09)}
+      .rp-team-support-payment-pane{margin:11px 0;padding:12px;border:1px solid rgba(76,214,255,.14);border-radius:12px;background:rgba(4,20,29,.62)}
+      .rp-team-support-payment-pane[hidden]{display:none!important}
+      .rp-team-support-payment-pane>strong{display:block;color:#eefbff;font-size:.7rem}
+      .rp-team-support-payment-pane>p{margin:4px 0 0;color:#8299a7;font-size:.61rem;line-height:1.45}
+      .rp-team-support-recipient{display:grid;gap:7px;margin:10px 0}
+      .rp-team-support-recipient div{padding:8px 9px;border-radius:9px;background:rgba(66,216,255,.055)}
+      .rp-team-support-recipient span{display:block;color:#7893a2;font-size:.5rem;font-weight:950;letter-spacing:.08em}
+      .rp-team-support-recipient b{display:block;margin-top:2px;color:#f7fbff;font-size:.72rem;word-break:break-word}
+      .rp-team-support-qr{display:block;width:min(190px,72%);height:auto;margin:10px auto;border-radius:12px;background:#fff;padding:7px}
+      .rp-team-support-upload{display:block;margin-top:10px;padding:10px;border:1px dashed rgba(76,214,255,.28);border-radius:10px;cursor:pointer;text-align:center}
+      .rp-team-support-upload input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+      .rp-team-support-upload strong{display:block;color:#60ddff;font-size:.61rem;letter-spacing:.05em}
+      .rp-team-support-upload small{display:block;margin-top:3px;color:#78909d;font-size:.55rem}
+      .rp-team-support-payment-status{min-height:18px;margin:8px 0 0;color:#8ea6b4;font-size:.59rem;line-height:1.4;text-align:center}
+      .rp-team-support-payment-status.is-error{color:#ff8c9a}
+      .rp-team-support-login-card,.rp-team-support-success-card{padding:14px;border:1px solid rgba(76,214,255,.18);border-radius:13px;background:rgba(4,20,29,.7);text-align:center}
+      .rp-team-support-login-card strong,.rp-team-support-success-card strong{display:block;color:#f7fbff;font-size:.84rem}
+      .rp-team-support-login-card p,.rp-team-support-success-card p{margin:7px 0 0;color:#8aa1af;font-size:.64rem;line-height:1.5}
+      .rp-team-support-success-check{display:flex;align-items:center;justify-content:center;width:42px;height:42px;margin:0 auto 10px;border-radius:999px;background:rgba(66,216,255,.12);color:#62e2ff;font-size:1.2rem;font-weight:950}
       @media (min-width:560px){
         .rp-team-support-grid{grid-template-columns:1fr 1fr}
         .rp-team-support-tier{grid-template-columns:1fr}
@@ -75,6 +112,25 @@
     overlay.classList.remove('is-open');
     overlay.setAttribute('aria-hidden', 'true');
     window.setTimeout(() => overlay.remove(), 180);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[char]);
+  }
+
+  function token() {
+    return window.localStorage.getItem(TOKEN_KEY) || '';
+  }
+
+  function currentAccountEmail() {
+    return String(
+      document.querySelector('.rp-settings-overlay [data-rp-settings-email]')?.textContent ||
+      document.querySelector('[data-auth-account-email]')?.textContent ||
+      document.querySelector('.auth-account-email')?.textContent ||
+      ''
+    ).trim().toLowerCase();
   }
 
   function shell(kicker, title, body) {
@@ -175,8 +231,10 @@
 
   const MONEY_TIERS = {
     supporter: {
+      backendCode: 'supporter',
       name: 'SUPPORTER',
       price: '₱99',
+      amount: 99,
       intro: 'A simple way to support Real Play and unlock your first identity perks.',
       cta: 'SUPPORT REAL PLAY',
       benefits: [
@@ -186,8 +244,10 @@
       ],
     },
     builder: {
+      backendCode: 'builder',
       name: 'BUILDER',
       price: '₱199',
+      amount: 199,
       intro: 'For players who want stronger identity perks and added convenience.',
       cta: 'BECOME A BUILDER',
       benefits: [
@@ -198,8 +258,10 @@
       ],
     },
     founding_supporter: {
+      backendCode: 'founding',
       name: 'FOUNDING SUPPORTER',
       price: '₱499',
+      amount: 499,
       intro: 'Premium early-supporter status with stronger Real Play identity benefits.',
       cta: 'BECOME A FOUNDING SUPPORTER',
       benefits: [
@@ -210,8 +272,10 @@
       ],
     },
     sponsor: {
+      backendCode: 'sponsor',
       name: 'SPONSOR',
       price: '₱999',
+      amount: 999,
       intro: 'For supporters or brands who want official visibility inside Real Play.',
       cta: 'BECOME A SPONSOR',
       benefits: [
@@ -253,7 +317,125 @@
       </div>
       <p class="rp-team-support-money-intro">${tier.intro}</p>
       <div class="rp-team-support-benefits">${benefits}</div>
-      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>${tier.cta} — ${tier.price}/MONTH</button>
+      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-start-payment="${tierKey}">${tier.cta} — ${tier.price}/MONTH</button>
+    `);
+  }
+
+  function emptyPaymentConfig() {
+    return {
+      gcash: { enabled: true, account_name: '', number: '', qr_image: '' },
+      maya: { enabled: true, account_name: '', number: '', qr_image: '' },
+      cash_on_hand: { enabled: true },
+    };
+  }
+
+  async function loadPaymentConfig() {
+    if (paymentConfig) return paymentConfig;
+    try {
+      const response = await fetch(PAYMENT_CONFIG_ENDPOINT, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      if (!response.ok) throw new Error('Payment configuration unavailable.');
+      const data = await response.json();
+      paymentConfig = { ...emptyPaymentConfig(), ...(data || {}) };
+    } catch (_error) {
+      paymentConfig = emptyPaymentConfig();
+    }
+    return paymentConfig;
+  }
+
+  function digitalPaymentMarkup(method) {
+    const config = paymentConfig?.[method] || {};
+    const label = method === 'maya' ? 'MAYA' : 'GCASH';
+    const qr = config.qr_image
+      ? `<img class="rp-team-support-qr" src="${config.qr_image}" alt="Real Play ${label} QR code">`
+      : '';
+    const recipients = [
+      config.account_name ? `<div><span>ACCOUNT NAME</span><b>${escapeHtml(config.account_name)}</b></div>` : '',
+      config.number ? `<div><span>${label} NUMBER</span><b>${escapeHtml(config.number)}</b></div>` : '',
+    ].filter(Boolean).join('');
+    const hasDestination = Boolean(config.qr_image || config.number);
+
+    return `
+      <div class="rp-team-support-payment-pane" data-rp-support-payment-pane="${method}" ${method === 'gcash' ? '' : 'hidden'}>
+        <strong>${hasDestination ? `PAY WITH ${label}` : `${label} DETAILS UNAVAILABLE`}</strong>
+        <p>${hasDestination ? 'Send the exact monthly support amount using the verified details below, then upload your transfer confirmation.' : `Real Play has not published ${label} receiving details yet. Choose another payment method for now.`}</p>
+        ${qr}
+        ${recipients ? `<div class="rp-team-support-recipient">${recipients}</div>` : ''}
+        ${hasDestination ? `
+          <label class="rp-team-support-upload">
+            <input type="file" accept="image/png,image/jpeg,image/webp" data-rp-support-proof="${method}">
+            <strong>UPLOAD PAYMENT PROOF</strong>
+            <small data-rp-support-proof-name>PNG, JPG, or WEBP · max 2 MB after processing</small>
+          </label>` : ''}
+      </div>`;
+  }
+
+  function paymentScreen(tierKey) {
+    const tier = MONEY_TIERS[tierKey] || MONEY_TIERS.supporter;
+    const email = currentAccountEmail();
+    const sponsorFields = tierKey === 'sponsor' ? `
+      <label class="rp-team-support-field">
+        <span>SPONSOR DISPLAY NAME</span>
+        <input type="text" maxlength="120" data-rp-support-sponsor-name placeholder="Player, business, or brand name">
+      </label>
+      <label class="rp-team-support-field">
+        <span>WEBSITE / SOCIAL LINK · OPTIONAL</span>
+        <input type="url" maxlength="300" data-rp-support-sponsor-url placeholder="https://...">
+      </label>` : '';
+
+    return shell('MONTHLY SUPPORT', `COMPLETE ${tier.name}`, `
+      <div class="rp-team-support-payment-summary">
+        <div><span>SUPPORT LEVEL</span><strong>${tier.name}</strong></div>
+        <b>${tier.price}/MO</b>
+      </div>
+      <span class="rp-team-support-payment-label">PAYMENT METHOD</span>
+      <div class="rp-team-support-methods" role="group" aria-label="Choose payment method">
+        <button class="rp-team-support-method is-selected" type="button" data-rp-support-method="gcash">GCASH</button>
+        <button class="rp-team-support-method" type="button" data-rp-support-method="maya">MAYA</button>
+        <button class="rp-team-support-method" type="button" data-rp-support-method="cash_on_hand">CASH</button>
+      </div>
+      <label class="rp-team-support-field">
+        <span>REAL PLAY EMAIL</span>
+        <input type="email" data-rp-support-email value="${escapeHtml(email)}" placeholder="you@example.com" autocomplete="email">
+      </label>
+      ${sponsorFields}
+      ${digitalPaymentMarkup('gcash')}
+      ${digitalPaymentMarkup('maya')}
+      <div class="rp-team-support-payment-pane" data-rp-support-payment-pane="cash_on_hand" hidden>
+        <strong>CASH ON HAND</strong>
+        <p>No screenshot is needed. Submit the request here, then give the exact amount to an authorized Real Play organizer. Your status activates only after the cash is confirmed received.</p>
+      </div>
+      <button class="rp-team-sheet-submit" type="button" data-rp-support-submit="${tierKey}">SUBMIT GCASH PROOF — ${tier.price}</button>
+      <p class="rp-team-support-payment-status" data-rp-support-payment-status aria-live="polite"></p>
+    `);
+  }
+
+  function loginRequiredScreen(tierKey) {
+    const tier = MONEY_TIERS[tierKey] || MONEY_TIERS.supporter;
+    return shell('REAL PLAY ACCOUNT', 'LOG IN TO CONTINUE', `
+      <div class="rp-team-support-login-card">
+        <strong>${tier.name} · ${tier.price}/MONTH</strong>
+        <p>Your support status must be connected to your Real Play account so payment verification can activate the correct benefits.</p>
+      </div>
+      <button class="rp-team-sheet-submit" type="button" data-rp-support-login>LOG IN TO REAL PLAY</button>
+    `);
+  }
+
+  function paymentSuccessScreen() {
+    const result = lastPaymentResult || {};
+    const tier = MONEY_TIERS[result.tierKey] || MONEY_TIERS.supporter;
+    const cash = result.method === 'cash_on_hand';
+    return shell('SUPPORT RECEIVED', cash ? 'CASH REQUEST RECORDED' : 'PAYMENT SUBMITTED', `
+      <div class="rp-team-support-success-card">
+        <span class="rp-team-support-success-check">✓</span>
+        <strong>${tier.name} · ${tier.price}/MONTH</strong>
+        <p>${cash
+          ? 'Give the cash to an authorized Real Play organizer. Your support level activates after the cash is confirmed received.'
+          : 'Your payment proof is now pending verification. Your support level activates after Real Play confirms the contribution.'}</p>
+        ${['builder', 'founding_supporter', 'sponsor'].includes(result.tierKey)
+          ? '<p><strong>4 Play Tokens</strong> are issued when this monthly support is verified.</p>'
+          : ''}
+      </div>
+      <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>DONE</button>
     `);
   }
 
@@ -263,6 +445,178 @@
       <p class="rp-team-support-footnote"><strong>— REAL PLAY BASKETBALL</strong></p>
       <button class="rp-team-sheet-submit" type="button" data-rp-team-support-close>CONTINUE TO MY TEAM</button>
     `);
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('Unable to read that payment image.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('Unable to open that payment image.'));
+      image.src = src;
+    });
+  }
+
+  async function prepareProofImage(file) {
+    if (!file) throw new Error('Upload your payment proof first.');
+    if (!/^image\/(png|jpe?g|webp)$/i.test(file.type || '')) {
+      throw new Error('Use a PNG, JPG, JPEG, or WEBP payment screenshot.');
+    }
+    if (file.size <= 1.8 * 1024 * 1024) return readFileAsDataUrl(file);
+    if (file.size > 8 * 1024 * 1024) throw new Error('Choose a payment screenshot smaller than 8 MB.');
+
+    const raw = await readFileAsDataUrl(file);
+    const image = await loadImage(raw);
+    const maxDimension = 1400;
+    const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Your browser could not prepare the payment screenshot.');
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const compressed = canvas.toDataURL('image/jpeg', 0.82);
+    const base64 = compressed.split(',')[1] || '';
+    const approximateBytes = Math.floor(base64.length * 3 / 4);
+    if (!approximateBytes || approximateBytes > 2 * 1024 * 1024) {
+      throw new Error('The payment screenshot is still too large. Crop it closer and try again.');
+    }
+    return compressed;
+  }
+
+  function setPaymentMethod(panel, method) {
+    if (!['gcash', 'maya', 'cash_on_hand'].includes(method)) return;
+    panel.dataset.rpSupportPaymentMethod = method;
+    panel.querySelectorAll('[data-rp-support-method]').forEach((button) => {
+      button.classList.toggle('is-selected', button.dataset.rpSupportMethod === method);
+    });
+    panel.querySelectorAll('[data-rp-support-payment-pane]').forEach((pane) => {
+      pane.hidden = pane.dataset.rpSupportPaymentPane !== method;
+    });
+    const submit = panel.querySelector('[data-rp-support-submit]');
+    if (submit) {
+      const tier = MONEY_TIERS[submit.dataset.rpSupportSubmit] || MONEY_TIERS.supporter;
+      submit.textContent = method === 'cash_on_hand'
+        ? `SUBMIT CASH REQUEST — ${tier.price}`
+        : `SUBMIT ${method === 'maya' ? 'MAYA' : 'GCASH'} PROOF — ${tier.price}`;
+    }
+    const status = panel.querySelector('[data-rp-support-payment-status]');
+    if (status) {
+      status.textContent = '';
+      status.classList.remove('is-error');
+    }
+  }
+
+  async function submitSupportPayment(overlay, panel, button) {
+    const tierKey = button.dataset.rpSupportSubmit;
+    const tier = MONEY_TIERS[tierKey];
+    const method = panel.dataset.rpSupportPaymentMethod || 'gcash';
+    const status = panel.querySelector('[data-rp-support-payment-status]');
+    const auth = token();
+
+    const fail = (message) => {
+      if (status) {
+        status.textContent = message;
+        status.classList.add('is-error');
+      }
+    };
+
+    if (!auth) {
+      renderScreen(overlay, `login:${tierKey}`);
+      return;
+    }
+
+    const email = String(panel.querySelector('[data-rp-support-email]')?.value || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      fail('Enter the email connected to your Real Play account.');
+      return;
+    }
+
+    let sponsorName = '';
+    let sponsorUrl = '';
+    if (tierKey === 'sponsor') {
+      sponsorName = String(panel.querySelector('[data-rp-support-sponsor-name]')?.value || '').trim();
+      sponsorUrl = String(panel.querySelector('[data-rp-support-sponsor-url]')?.value || '').trim();
+      if (!sponsorName) {
+        fail('Add the player, business, or brand name to display as the sponsor.');
+        return;
+      }
+    }
+
+    let proofImageDataUrl = null;
+    if (method !== 'cash_on_hand') {
+      const config = paymentConfig?.[method] || {};
+      if (!config.qr_image && !config.number) {
+        fail(`${method === 'maya' ? 'Maya' : 'GCash'} receiving details are not available yet. Choose another payment method.`);
+        return;
+      }
+      const proofInput = panel.querySelector(`[data-rp-support-proof="${method}"]`);
+      const file = proofInput?.files?.[0] || null;
+      try {
+        proofImageDataUrl = await prepareProofImage(file);
+      } catch (error) {
+        fail(error.message || 'Upload a valid payment proof.');
+        return;
+      }
+    }
+
+    button.disabled = true;
+    if (status) {
+      status.classList.remove('is-error');
+      status.textContent = method === 'cash_on_hand' ? 'Recording cash support request…' : 'Submitting payment proof…';
+    }
+
+    try {
+      const response = await fetch(SUPPORT_TIER_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${auth}`,
+        },
+        body: JSON.stringify({
+          tierCode: tier.backendCode,
+          paymentMethod: method,
+          email,
+          proofImageDataUrl,
+          ...(tierKey === 'sponsor' ? { sponsorName, sponsorUrl } : {}),
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.message || data?.error || 'Support payment could not be submitted.');
+
+      lastPaymentResult = { tierKey, method, support: data?.support || null };
+      window.dispatchEvent(new CustomEvent('realplay:support-tier-submitted', {
+        detail: { tierKey, method, support: data?.support || null },
+      }));
+      renderScreen(overlay, 'payment-success');
+    } catch (error) {
+      button.disabled = false;
+      fail(error.message || 'Support payment could not be submitted.');
+    }
+  }
+
+  async function startPaymentFlow(overlay, tierKey, button) {
+    if (!MONEY_TIERS[tierKey]) return;
+    if (!token()) {
+      renderScreen(overlay, `login:${tierKey}`);
+      return;
+    }
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'LOADING PAYMENT OPTIONS…';
+    await loadPaymentConfig();
+    button.disabled = false;
+    button.textContent = originalText;
+    renderScreen(overlay, `payment:${tierKey}`);
   }
 
   function renderScreen(overlay, screenName) {
@@ -275,12 +629,20 @@
       volunteer: volunteerScreen,
       money: moneyScreen,
       playing: playingScreen,
+      'payment-success': paymentSuccessScreen,
     };
-    panel.innerHTML = screenName.startsWith('volunteer:')
-      ? volunteerDetailScreen(screenName.slice('volunteer:'.length))
-      : screenName.startsWith('money:')
-        ? moneyDetailScreen(screenName.slice('money:'.length))
-        : (screens[screenName] || mainScreen)();
+
+    if (screenName.startsWith('volunteer:')) {
+      panel.innerHTML = volunteerDetailScreen(screenName.slice('volunteer:'.length));
+    } else if (screenName.startsWith('payment:')) {
+      panel.innerHTML = paymentScreen(screenName.slice('payment:'.length));
+    } else if (screenName.startsWith('login:')) {
+      panel.innerHTML = loginRequiredScreen(screenName.slice('login:'.length));
+    } else if (screenName.startsWith('money:')) {
+      panel.innerHTML = moneyDetailScreen(screenName.slice('money:'.length));
+    } else {
+      panel.innerHTML = (screens[screenName] || mainScreen)();
+    }
 
     if (screenName === 'volunteer' || screenName === 'money') {
       const closeButton = panel.querySelector('[data-rp-team-support-close]');
@@ -312,6 +674,23 @@
       }
     }
 
+    if (screenName.startsWith('payment:') || screenName.startsWith('login:')) {
+      const tierKey = screenName.slice(screenName.indexOf(':') + 1);
+      const closeButton = panel.querySelector('[data-rp-team-support-close]');
+      if (closeButton) {
+        closeButton.removeAttribute('data-rp-team-support-close');
+        closeButton.setAttribute('aria-label', 'Back to support level');
+        closeButton.textContent = '←';
+        closeButton.addEventListener('click', () => renderScreen(overlay, `money:${tierKey}`));
+      }
+    }
+
+    if (screenName.startsWith('payment:')) {
+      panel.dataset.rpSupportPaymentMethod = 'gcash';
+    } else {
+      delete panel.dataset.rpSupportPaymentMethod;
+    }
+
     panel.querySelectorAll('[data-rp-team-support-close]').forEach((button) => button.addEventListener('click', closePrompt));
     panel.querySelectorAll('[data-rp-team-support-screen]').forEach((button) => button.addEventListener('click', () => {
       renderScreen(overlay, button.dataset.rpTeamSupportScreen || 'main');
@@ -322,19 +701,36 @@
     panel.querySelectorAll('[data-rp-team-support-money-tier]').forEach((button) => button.addEventListener('click', () => {
       renderScreen(overlay, `money:${button.dataset.rpTeamSupportMoneyTier}`);
     }));
+    panel.querySelectorAll('[data-rp-team-support-start-payment]').forEach((button) => button.addEventListener('click', () => {
+      startPaymentFlow(overlay, button.dataset.rpTeamSupportStartPayment, button);
+    }));
+    panel.querySelectorAll('[data-rp-support-method]').forEach((button) => button.addEventListener('click', () => {
+      setPaymentMethod(panel, button.dataset.rpSupportMethod);
+    }));
+    panel.querySelectorAll('[data-rp-support-proof]').forEach((input) => input.addEventListener('change', () => {
+      const name = input.closest('.rp-team-support-upload')?.querySelector('[data-rp-support-proof-name]');
+      if (name) name.textContent = input.files?.[0]?.name || 'PNG, JPG, or WEBP · max 2 MB after processing';
+    }));
+    panel.querySelectorAll('[data-rp-support-submit]').forEach((button) => button.addEventListener('click', () => {
+      submitSupportPayment(overlay, panel, button);
+    }));
+    panel.querySelectorAll('[data-rp-support-login]').forEach((button) => button.addEventListener('click', () => {
+      closePrompt();
+      window.setTimeout(() => document.querySelector('[data-auth-open]')?.click(), 220);
+    }));
     panel.querySelectorAll('[data-rp-team-support-interest]').forEach((button) => button.addEventListener('click', async () => {
       const status = panel.querySelector('[data-rp-team-support-interest-status]');
-      const token = window.localStorage.getItem('real_play_access_token') || '';
-      if (!token) {
+      const auth = token();
+      if (!auth) {
         if (status) status.textContent = 'Log in to your Real Play account first.';
         return;
       }
       button.disabled = true;
       if (status) status.textContent = 'Saving your interest…';
       try {
-        const response = await fetch('https://api.clarapmc.com/api/real-play/volunteer/interest', {
+        const response = await fetch(`${API_BASE_URL}/api/real-play/volunteer/interest`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth}` },
           body: JSON.stringify({ role: button.dataset.rpTeamSupportInterest }),
         });
         if (!response.ok) throw new Error('Volunteer interest could not be saved.');
