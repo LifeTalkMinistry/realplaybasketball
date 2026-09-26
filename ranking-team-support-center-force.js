@@ -37,6 +37,12 @@
     style.id = 'rp-volunteer-followup-style';
     style.textContent = `
       .rp-volunteer-followup-card{margin:12px 0 14px;padding:14px;border:1px solid rgba(76,214,255,.2);border-radius:13px;background:rgba(4,20,29,.72);text-align:center}
+      [data-rp-volunteer-flow-view="choice"] [data-rp-team-support-panel]{text-align:center}
+      [data-rp-volunteer-flow-view="choice"] .rp-team-sheet-head{position:relative;justify-content:center;text-align:center}
+      [data-rp-volunteer-flow-view="choice"] .rp-team-sheet-head>div{width:100%;text-align:center}
+      [data-rp-volunteer-flow-view="choice"] .rp-team-sheet-head h3{text-align:center}
+      [data-rp-volunteer-flow-view="choice"] .rp-team-sheet-close{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+      [data-rp-volunteer-flow-view="choice"] .rp-team-support-actions button{text-align:center}
       .rp-volunteer-followup-check{display:flex;align-items:center;justify-content:center;width:42px;height:42px;margin:0 auto 10px;border-radius:999px;background:rgba(66,216,255,.12);color:#62e2ff;font-size:1.2rem;font-weight:950}
       .rp-volunteer-followup-card strong{display:block;color:#f7fbff;font-size:.82rem;letter-spacing:.02em}
       .rp-volunteer-followup-card p{margin:6px 0 0;color:#8aa1af;font-size:.64rem;line-height:1.5}
@@ -56,13 +62,12 @@
     return `
       <div class="rp-team-sheet-grab" aria-hidden="true"></div>
       <div class="rp-team-sheet-head">
-        <div><small>TEAM &amp; VOLUNTEERS</small><h3 id="rp-team-support-title">INTEREST RECORDED</h3></div>
+        <div><h3 id="rp-team-support-title">INTEREST RECORDED</h3></div>
         <button class="rp-team-sheet-close" type="button" aria-label="Close" data-rp-volunteer-flow-close>×</button>
       </div>
       <div class="rp-volunteer-followup-card">
         <span class="rp-volunteer-followup-check" aria-hidden="true">✓</span>
         <strong>${escapeHtml(roleTitle)}</strong>
-        <p>You’re on the interested list. Choose what you want to see next.</p>
       </div>
       <div class="rp-team-support-actions">
         <button class="rp-team-sheet-submit" type="button" data-rp-volunteer-roster-status="active">SHOW MY TEAM NOW</button>
