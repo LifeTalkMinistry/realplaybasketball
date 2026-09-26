@@ -41,7 +41,7 @@
       [data-rp-volunteer-flow-view="choice"] .rp-team-sheet-head{position:relative;justify-content:center;text-align:center}
       [data-rp-volunteer-flow-view="choice"] .rp-team-sheet-head>div{width:100%;text-align:center}
       [data-rp-volunteer-flow-view="choice"] .rp-team-sheet-head h3{text-align:center}
-      [data-rp-volunteer-flow-view="choice"] .rp-team-sheet-close{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+      [data-rp-volunteer-flow-view="choice"] .rp-team-sheet-close{position:absolute;right:8px;top:8px;transform:none;margin:0}
       [data-rp-volunteer-flow-view="choice"] .rp-team-support-actions button{text-align:center}
       .rp-volunteer-followup-check{display:flex;align-items:center;justify-content:center;width:42px;height:42px;margin:0 auto 10px;border-radius:999px;background:rgba(66,216,255,.12);color:#62e2ff;font-size:1.2rem;font-weight:950}
       .rp-volunteer-followup-card strong{display:block;color:#f7fbff;font-size:.82rem;letter-spacing:.02em}
