@@ -109,15 +109,9 @@
 
     window.addEventListener('realplay:app-ready', () => {
       state.appReady = true;
-      // This is only a deadlock escape if the Home authority itself fails to
-      // load or never starts its initial request. It is not the normal reveal
-      // condition and does not intentionally delay a healthy startup.
-      state.fallbackTimer = window.setTimeout(() => {
-        if (!state.released) {
-          console.warn('[Real Play] Initial Home readiness gate used its failure fallback.');
-          releaseGate('failure-fallback');
-        }
-      }, 10_000);
+      // Never uncover a partially initialized interface just because a timer
+      // expired. If Home authority does not settle, the boot gate remains in
+      // place and app.js can surface a real startup failure instead.
       queueMicrotask(maybeRelease);
     }, { once: true });
   }
