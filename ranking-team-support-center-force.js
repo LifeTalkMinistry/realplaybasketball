@@ -32,8 +32,6 @@
       title.textContent = 'WOULD YOU LIKE TO HELP US?';
     }
 
-    // The first prompt is intentionally only a two-way choice. Remove the
-    // explanatory paragraphs, footnote, third option, and header close button.
     panel.querySelectorAll('.rp-team-support-copy, .rp-team-support-footnote, .rp-team-support-tertiary')
       .forEach((node) => node.remove());
     panel.querySelector('.rp-team-sheet-close')?.remove();
@@ -44,9 +42,6 @@
 
     const playingButton = actions.querySelector('[data-rp-team-support-screen="playing"]');
     if (playingButton && playingButton.textContent !== "I'LL SUPPORT BY PLAYING") {
-      // Keep the renderer-owned navigation attribute and listener intact.
-      // Normalization may simplify the label, but it must not turn this
-      // navigation choice into a direct overlay exit.
       playingButton.textContent = "I'LL SUPPORT BY PLAYING";
     }
   }
@@ -68,8 +63,6 @@
       title.textContent = 'HOW WOULD YOU LIKE TO HELP?';
     }
 
-    // Keep this screen as clean as the first prompt: one title and exactly two
-    // choices. Deeper volunteer/money screens retain their own back controls.
     panel.querySelector('.rp-team-sheet-head small')?.remove();
     panel.querySelector('.rp-team-sheet-close:not(.rp-team-support-header-back)')?.remove();
     panel.querySelector('.rp-team-support-back')?.remove();
@@ -84,13 +77,19 @@
 
     panel.querySelectorAll('.rp-team-support-benefit').forEach((benefit) => {
       const title = benefit.querySelector('strong');
+      const description = benefit.querySelector('p');
       const currentTitle = String(title?.textContent || '').trim();
       if (!title || !['Earlier Booking Access', 'Play Token Protection', '4 Play Tokens'].includes(currentTitle)) return;
 
-      title.textContent = '4 Play Tokens';
-      const description = benefit.querySelector('p');
-      if (description) {
-        description.textContent = 'Get 4 Play Tokens each month to secure protected session reservations.';
+      const wantedTitle = '4 Play Tokens';
+      const wantedDescription = 'Get 4 Play Tokens each month to secure protected session reservations.';
+
+      // MutationObserver watches childList changes. Only write when the DOM is
+      // actually stale; rewriting identical text here creates a self-triggering
+      // mutation loop that can peg the browser tab.
+      if (currentTitle !== wantedTitle) title.textContent = wantedTitle;
+      if (description && String(description.textContent || '').trim() !== wantedDescription) {
+        description.textContent = wantedDescription;
       }
     });
   }
@@ -99,9 +98,6 @@
     const overlay = getSupportOverlay(root);
     if (!overlay) return;
 
-    // Detach this flow from the shared bottom-sheet classes. Those classes are
-    // intentionally anchored to the bottom for team creation/join sheets and
-    // were overriding the support funnel even when its CSS requested centering.
     if (overlay.classList.contains('rp-team-sheet-overlay')) {
       overlay.classList.remove('rp-team-sheet-overlay');
     }
@@ -142,10 +138,6 @@
 
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
-  // The initial prompt is mandatory: the player must choose either to see how
-  // they can help or to support simply by playing. Backdrop/Escape must not act
-  // as a hidden third "not now" path. After choosing the help path, normal
-  // close controls on the deeper support screens remain available.
   document.addEventListener('click', (event) => {
     const overlay = document.querySelector('[data-rp-team-support-overlay]');
     if (!overlay || overlay.dataset.rpTeamSupportMainChoice !== 'true') return;
