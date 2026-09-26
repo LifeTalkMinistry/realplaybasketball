@@ -5,6 +5,7 @@
   const TOKEN_KEY = 'real_play_access_token';
   const API_URL = 'https://api.clarapmc.com/api/real-play/admin/player';
   let selectedPlayerId = null;
+  let selectedPlayerIdentity = null;
   let sheetBody = null;
   let bodyObserver = null;
   let mainMarkup = '';
@@ -53,7 +54,16 @@
     const row=event.target instanceof Element ? event.target.closest('.rp-world-player-row[data-world-player-id]') : null;
     if (!row) return;
     const id=Number(row.dataset.worldPlayerId);
-    if (Number.isSafeInteger(id)&&id>0) selectedPlayerId=id;
+    if (Number.isSafeInteger(id)&&id>0) {
+      selectedPlayerId=id;
+      const label=String(row.querySelector('strong')?.textContent || row.textContent || '').trim();
+      const numbered=label.match(/^(.*?)\s+#(\d{1,2})(?:\b|\s|$)/);
+      selectedPlayerIdentity={
+        id,
+        name:(numbered?.[1] || label.split(/\n/)[0] || '').trim(),
+        playerNumber:numbered ? Number(numbered[2]) : null,
+      };
+    }
   }
 
   function enhanceMain() {
@@ -111,8 +121,16 @@
       <div class="rp-player-admin-form-actions" style="margin-top:10px"><button type="button" data-admin-schedule-back>BACK</button><button type="button" disabled>TEAM RESERVATION</button></div>`;
   }
 
+  function reservationPlayerPayload() {
+    const payload={playerId:selectedPlayerId};
+    if (selectedPlayerIdentity?.name) payload.playerName=selectedPlayerIdentity.name;
+    if (Number.isInteger(selectedPlayerIdentity?.playerNumber)) payload.playerNumber=selectedPlayerIdentity.playerNumber;
+    payload.allowUnclaimed=true;
+    return payload;
+  }
+
   async function loadState(message='',type='') {
-    try { const state=await adminCall('team_reservation_access',{playerId:selectedPlayerId}); renderState(state,message,type); }
+    try { const state=await adminCall('team_reservation_access',reservationPlayerPayload()); renderState(state,message,type); }
     catch(error){ renderState(null,error.message||'Could not load reservation.','error'); }
   }
 
@@ -129,7 +147,7 @@
     actionBusy=true;
     sheetBody?.querySelectorAll('button').forEach(b=>{ if(!b.matches('[data-admin-schedule-back]')) b.disabled=true; });
     try {
-      const result=await adminCall('team_reservation_cancel',{playerId:selectedPlayerId});
+      const result=await adminCall('team_reservation_cancel',reservationPlayerPayload());
       await loadState(result?.message||'Reservation cancelled.','success');
       try{window.RealPlayRankingGames?.refresh?.();}catch(_){}
       window.dispatchEvent(new CustomEvent('realplay:ranking-session-changed',{detail:{source:'admin-player-schedule',playerId:selectedPlayerId}}));
@@ -142,7 +160,7 @@
     actionBusy=true;
     sheetBody?.querySelectorAll('button').forEach(b=>{ if(!b.matches('[data-admin-schedule-back]')) b.disabled=true; });
     try {
-      const result=await adminCall('team_reservation_update',{playerId:selectedPlayerId,...payload});
+      const result=await adminCall('team_reservation_update',{...reservationPlayerPayload(),...payload});
       renderState(result,result?.message||'Reservation updated.','success');
       try{window.RealPlayRankingGames?.refresh?.();}catch(_){}
       window.dispatchEvent(new CustomEvent('realplay:ranking-session-changed',{detail:{source:'admin-player-schedule',playerId:selectedPlayerId}}));
