@@ -84,9 +84,6 @@
       const wantedTitle = '4 Play Tokens';
       const wantedDescription = 'Get 4 Play Tokens each month to secure protected session reservations.';
 
-      // MutationObserver watches childList changes. Only write when the DOM is
-      // actually stale; rewriting identical text here creates a self-triggering
-      // mutation loop that can peg the browser tab.
       if (currentTitle !== wantedTitle) title.textContent = wantedTitle;
       if (description && String(description.textContent || '').trim() !== wantedDescription) {
         description.textContent = wantedDescription;
@@ -94,16 +91,25 @@
     });
   }
 
-  function syncPaymentInstructionCopy(overlay) {
+  function syncDigitalPaymentChrome(overlay) {
     const panel = overlay?.querySelector?.('[data-rp-team-support-panel]');
     if (!panel) return;
 
     panel.querySelectorAll(
-      '[data-rp-support-payment-pane="gcash"] > p, [data-rp-support-payment-pane="maya"] > p'
-    ).forEach((copy) => {
-      const pane = copy.parentElement;
-      const heading = String(pane?.querySelector('strong')?.textContent || '').trim();
-      if (!heading.includes('DETAILS UNAVAILABLE')) copy.remove();
+      '[data-rp-support-payment-pane="gcash"], [data-rp-support-payment-pane="maya"]'
+    ).forEach((pane) => {
+      const heading = pane.querySelector(':scope > strong');
+      const copy = pane.querySelector(':scope > p');
+      const headingText = String(heading?.textContent || '').trim();
+
+      // Keep the unavailable-state message because it is actionable.
+      // When payment details are available, the QR/account details already make
+      // the selected method obvious, so the extra heading and instruction copy
+      // are intentionally removed.
+      if (!headingText.includes('DETAILS UNAVAILABLE')) {
+        heading?.remove();
+        copy?.remove();
+      }
     });
   }
 
@@ -127,7 +133,7 @@
     syncMainChoice(overlay);
     syncHelpChoice(overlay);
     syncTierBenefitCopy(overlay);
-    syncPaymentInstructionCopy(overlay);
+    syncDigitalPaymentChrome(overlay);
   }
 
   const observer = new MutationObserver((mutations) => {
