@@ -106,7 +106,8 @@
           <button type="button" class="rp-player-admin-action" data-admin-reservation-op="standby"><div><strong>ADD AS STANDBY</strong><small>No secured spot until space becomes available.</small></div><span>›</span></button>
         </div>
         ${available && teamButtons?`<div class="rp-admin-team-list"><div class="rp-admin-schedule-meta"><span>ASSIGN TO EXISTING TEAM</span><small>Choose any existing team with an available slot.</small></div>${teamButtons}</div>`:''}
-      ` : current ? `<div class="rp-admin-schedule-meta"><span>RESERVATION SET</span><strong>${esc(current.name)}</strong><small>This player already occupies a team slot for the upcoming session.</small></div>` : ''}
+      ` : current ? `<div class="rp-admin-schedule-meta"><span>RESERVATION SET</span><strong>${esc(current.name)}</strong><small>This player already occupies a team slot for the upcoming session.</small></div>
+        <button type="button" class="rp-player-admin-action danger" data-admin-reservation-cancel><div><strong>CANCEL RESERVATION</strong><small>Remove this player from the team and release their secured session spot.</small></div><span>›</span></button>` : ''}
       <div class="rp-player-admin-form-actions" style="margin-top:10px"><button type="button" data-admin-schedule-back>BACK</button><button type="button" disabled>TEAM RESERVATION</button></div>`;
   }
 
@@ -120,6 +121,20 @@
     mainMarkup=sheetBody.innerHTML;
     identityMarkup=sheetBody.querySelector('.rp-player-admin-identity')?.outerHTML||'';
     renderLoading(); await loadState();
+  }
+
+  async function cancelReservation() {
+    if (actionBusy) return;
+    if (!window.confirm('Cancel this player’s reservation? This will remove them from their team and release their secured session spot.')) return;
+    actionBusy=true;
+    sheetBody?.querySelectorAll('button').forEach(b=>{ if(!b.matches('[data-admin-schedule-back]')) b.disabled=true; });
+    try {
+      const result=await adminCall('team_reservation_cancel',{playerId:selectedPlayerId});
+      await loadState(result?.message||'Reservation cancelled.','success');
+      try{window.RealPlayRankingGames?.refresh?.();}catch(_){}
+      window.dispatchEvent(new CustomEvent('realplay:ranking-session-changed',{detail:{source:'admin-player-schedule',playerId:selectedPlayerId}}));
+    } catch(error) { await loadState(error.message||'Could not cancel reservation.','error'); }
+    finally { actionBusy=false; }
   }
 
   async function updateReservation(payload) {
@@ -166,6 +181,7 @@
     if(target.closest('[data-admin-schedule-open]')){event.preventDefault();openSchedule();return;}
     if(target.closest('[data-admin-schedule-back]')){event.preventDefault();restoreMain();return;}
     if(target.closest('[data-admin-create-open]')){event.preventDefault();renderCreateForm();return;}
+    if(target.closest('[data-admin-reservation-cancel]')){event.preventDefault();cancelReservation();return;}
     if(target.closest('[data-admin-create-cancel]')){event.preventDefault();loadState();return;}
     const team=target.closest('[data-admin-team-id]');if(team){event.preventDefault();updateReservation({operation:'team',teamId:Number(team.dataset.adminTeamId)});return;}
     const op=target.closest('[data-admin-reservation-op]');if(op){event.preventDefault();updateReservation({operation:op.dataset.adminReservationOp});}
