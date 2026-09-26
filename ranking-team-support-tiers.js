@@ -194,7 +194,7 @@
         ['Everything in Supporter', 'Includes all Supporter benefits.'],
         ['Builder Badge', 'A higher supporter status on your profile.'],
         ['Enhanced Profile Customization', 'Unlock more ways to personalize your identity.'],
-        ['Earlier Booking Access', 'Get earlier access to available session reservations.'],
+        ['4 Play Tokens', 'Get 4 Play Tokens each month to secure protected session reservations.'],
       ],
     },
     founding_supporter: {
