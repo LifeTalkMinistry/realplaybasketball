@@ -90,9 +90,9 @@
     const currentId=Number(state?.currentTeamId||0);
     const current=teams.find(t=>Number(t.id)===currentId);
     const available=Boolean(state?.teamReservationAvailable);
-    const teamButtons=teams.filter(t=>t.visibility==='open' && Number(t.memberCount||0)<Number(t.capacity||4) && Number(t.id)!==currentId).map(t=>`
+    const teamButtons=teams.filter(t=>Number(t.memberCount||0)<Number(t.capacity||4) && Number(t.id)!==currentId).map(t=>`
       <button type="button" class="rp-player-admin-action rp-admin-team-choice" data-admin-team-id="${Number(t.id)}">
-        <div><strong>${esc(t.name)}</strong><small>${Number(t.memberCount||0)}/${Number(t.capacity||4)} PLAYERS · OPEN TEAM</small></div><span>›</span>
+        <div><strong>${esc(t.name)}</strong><small>${Number(t.memberCount||0)}/${Number(t.capacity||4)} PLAYERS · \${String(t.visibility||'open').toUpperCase()} TEAM</small></div><span>›</span>
       </button>`).join('');
 
     sheetBody.innerHTML=`
@@ -105,7 +105,7 @@
           <button type="button" class="rp-player-admin-action schedule" data-admin-create-open><div><strong>CREATE TEAM FOR PLAYER</strong><small>Create a new team with this player occupying the first spot.</small></div><span>›</span></button>`:''}
           <button type="button" class="rp-player-admin-action" data-admin-reservation-op="standby"><div><strong>ADD AS STANDBY</strong><small>No secured spot until space becomes available.</small></div><span>›</span></button>
         </div>
-        ${available && teamButtons?`<div class="rp-admin-team-list"><div class="rp-admin-schedule-meta"><span>ASSIGN TO EXISTING OPEN TEAM</span><small>Choose a team with an available slot.</small></div>${teamButtons}</div>`:''}
+        ${available && teamButtons?`<div class="rp-admin-team-list"><div class="rp-admin-schedule-meta"><span>ASSIGN TO EXISTING TEAM</span><small>Choose any existing team with an available slot.</small></div>${teamButtons}</div>`:''}
       ` : current ? `<div class="rp-admin-schedule-meta"><span>RESERVATION SET</span><strong>${esc(current.name)}</strong><small>This player already occupies a team slot for the upcoming session.</small></div>` : ''}
       <div class="rp-player-admin-form-actions" style="margin-top:10px"><button type="button" data-admin-schedule-back>BACK</button><button type="button" disabled>TEAM RESERVATION</button></div>`;
   }
