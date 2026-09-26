@@ -287,14 +287,19 @@
     }, 1400);
   }
 
+  function showOnlySettingsPanel(targetPanel) {
+    [mainPanel, accountPanel, communityPanel, teamVolunteersPanel, volunteerRosterPanel].forEach((item) => {
+      if (!item) return;
+      item.hidden = item !== targetPanel;
+      item.style.display = item === targetPanel ? '' : 'none';
+      item.setAttribute('aria-hidden', item === targetPanel ? 'false' : 'true');
+    });
+  }
+
   function showMainSettings() {
     syncIdentity();
     syncProfileArtAccess();
-    if (mainPanel) mainPanel.hidden = false;
-    if (accountPanel) accountPanel.hidden = true;
-    if (communityPanel) communityPanel.hidden = true;
-    if (teamVolunteersPanel) teamVolunteersPanel.hidden = true;
-    if (volunteerRosterPanel) volunteerRosterPanel.hidden = true;
+    showOnlySettingsPanel(mainPanel);
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-settings-open');
@@ -328,19 +333,13 @@
 
   function showAccount() {
     syncProfileArtAccess();
-    if (mainPanel) mainPanel.hidden = true;
-    if (accountPanel) accountPanel.hidden = false;
-    if (communityPanel) communityPanel.hidden = true;
-    if (teamVolunteersPanel) teamVolunteersPanel.hidden = true;
-    if (volunteerRosterPanel) volunteerRosterPanel.hidden = true;
+    showOnlySettingsPanel(accountPanel);
     accountPanel?.querySelector('[data-rp-account-back]')?.focus();
   }
 
   function showTeamVolunteers() {
-    if (mainPanel) mainPanel.hidden = true;
-    if (accountPanel) accountPanel.hidden = true;
-    if (communityPanel) communityPanel.hidden = true;
-    if (teamVolunteersPanel) teamVolunteersPanel.hidden = false;
+    volunteerRole = '';
+    showOnlySettingsPanel(teamVolunteersPanel);
     teamVolunteersPanel?.querySelector('[data-rp-team-volunteers-back]')?.focus();
   }
 
@@ -348,11 +347,7 @@
 
   async function showVolunteerRoster(role) {
     volunteerRole = role;
-    if (mainPanel) mainPanel.hidden = true;
-    if (accountPanel) accountPanel.hidden = true;
-    if (communityPanel) communityPanel.hidden = true;
-    if (teamVolunteersPanel) teamVolunteersPanel.hidden = true;
-    if (volunteerRosterPanel) volunteerRosterPanel.hidden = false;
+    showOnlySettingsPanel(volunteerRosterPanel);
     const title = panel.querySelector('[data-rp-volunteer-roster-title]');
     if (title) title.textContent = VOLUNTEER_TITLES[role] || 'VOLUNTEERS';
     await loadVolunteerRoster();
@@ -384,9 +379,7 @@
   }
 
   function showCommunity() {
-    if (mainPanel) mainPanel.hidden = true;
-    if (accountPanel) accountPanel.hidden = true;
-    if (communityPanel) communityPanel.hidden = false;
+    showOnlySettingsPanel(communityPanel);
     communityPanel?.querySelector('[data-rp-community-back]')?.focus();
   }
 
