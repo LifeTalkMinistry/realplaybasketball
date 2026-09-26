@@ -80,6 +80,7 @@
   let bootResourcesReady = false;
   let coreAppReady = false;
   let initialHomeReady = Boolean(window.__realPlayInitialHomeReady);
+  let initialInteractionReady = false;
   let shellReadyObserver = null;
 
   function announceCoreAppReady() {
@@ -115,7 +116,7 @@
 
   function revealNewShell() {
     if (shellReady) return true;
-    if (!bootResourcesReady || !initialHomeReady || !hasNewShell()) return false;
+    if (!bootResourcesReady || !initialHomeReady || !initialInteractionReady || !hasNewShell()) return false;
 
     shellReady = true;
     clearStaticBootFallback();
@@ -485,7 +486,35 @@
       'admin-live-refresh-fix.js',
     ];
 
-    for (const href of enhancements) {
+    // Do not reveal a shell whose visible navigation is present but whose
+    // click handlers still live later in the enhancement chain. These are the
+    // interaction authorities reachable from the first frame.
+    const initialInteractionScripts = new Set([
+      'public-landing.js',
+      'visitor-mode.js',
+      'career-beta.js',
+      'career-beta-play.js',
+      'real-play-updates.js',
+      'real-play-world.js',
+      'real-play-world-players.js',
+      'visitor-world-players.js',
+      'ranking-games.js',
+      'ranking-session-teams.js',
+      'settings-panel.js',
+    ]);
+
+    // Load the first-frame interaction authorities before opening the boot
+    // gate. The rest can continue progressively after the UI is actually
+    // clickable.
+    for (const href of enhancements.filter((item) => initialInteractionScripts.has(item))) {
+      const loaded = await loadScript(href, 6500);
+      if (!loaded) console.warn(`[Real Play] Initial interaction layer failed to load: ${href}`);
+    }
+
+    initialInteractionReady = true;
+    revealNewShell();
+
+    for (const href of enhancements.filter((item) => !initialInteractionScripts.has(item))) {
       const loaded = await loadScript(href, 4500);
       if (!loaded) console.warn(`[Real Play] Optional layer failed to load: ${href}`);
     }
