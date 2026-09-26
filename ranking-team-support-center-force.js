@@ -96,7 +96,7 @@
       <div class="rp-team-sheet-grab" aria-hidden="true"></div>
       <div class="rp-team-sheet-head">
         <div><small>${escapeHtml(VOLUNTEER_ROLE_TITLES[roleKey] || 'TEAM & VOLUNTEERS')}</small><h3 id="rp-team-support-title">${title}</h3></div>
-        <button class="rp-team-sheet-close" type="button" aria-label="Back" data-rp-volunteer-flow-back>←</button>
+        <button class="rp-team-sheet-close" type="button" aria-label="Back home" data-rp-volunteer-flow-home>⌂</button>
       </div>
       <p class="rp-volunteer-roster-note">${intro}</p>
       <div class="rp-volunteer-roster-list" data-rp-volunteer-roster-list>
@@ -318,11 +318,11 @@
       return;
     }
 
-    const back = event.target.closest?.('[data-rp-volunteer-flow-back]');
-    if (back) {
+    const home = event.target.closest?.('[data-rp-volunteer-flow-home]');
+    if (home) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      renderVolunteerChoice(overlay, overlay.dataset.rpVolunteerFlowRole || 'game_operations');
+      closeSupportOverlay(overlay);
       return;
     }
 
