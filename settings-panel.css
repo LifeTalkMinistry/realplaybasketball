@@ -12,6 +12,9 @@ body.rp-settings-open{overflow:hidden}
   -webkit-backdrop-filter:blur(20px);
 }
 .rp-settings-overlay.open{display:flex}
+.rp-settings-panel[hidden]{display:none!important}
+.rp-settings-overlay>.rp-settings-panel{flex:0 1 520px;min-width:0;box-sizing:border-box}
+.rp-settings-overlay{overflow-x:hidden}
 .rp-settings-panel{
   width:min(100%,520px);
   max-height:min(90vh,760px);
