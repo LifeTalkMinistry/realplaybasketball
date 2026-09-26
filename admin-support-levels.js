@@ -12,13 +12,12 @@
   });
 
   const nativeFetch = window.fetch.bind(window);
-  let supportByPlayerId = new Map();
+  let statusByPlayerId = new Map();
   let activePlayerId = null;
-  let loadPromise = null;
-  let loadSequence = 0;
+  let loadingPromise = null;
   let bypassSaveCapture = false;
   let decorateTimer = 0;
-  let editorSyncTimer = 0;
+  let editorTimer = 0;
 
   function authToken() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -77,16 +76,19 @@
     }).format(date).toUpperCase();
   }
 
-  function cleanSupportEntry(entry) {
-    const playerId = Number(entry?.playerId ?? entry?.player_id);
-    if (!Number.isSafeInteger(playerId) || playerId <= 0) return null;
+  function playerIdOf(entry) {
+    const id = Number(entry?.playerId ?? entry?.player_id);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+  }
+
+  function cleanDirectoryEntry(entry) {
+    const playerId = playerIdOf(entry);
+    if (!playerId) return null;
     const support = entry?.support && typeof entry.support === 'object' ? entry.support : null;
     const tierCode = normalizeTierCode(support?.tierCode ?? support?.tier_code);
-    const accountId = Number(entry?.accountUserId ?? entry?.userId);
     return {
       playerId,
-      accountAvailable: entry?.accountAvailable !== false && Number.isSafeInteger(accountId) && accountId > 0,
-      accountUserId: Number.isSafeInteger(accountId) && accountId > 0 ? accountId : null,
+      accountUserId: Number.isSafeInteger(Number(entry?.accountUserId)) ? Number(entry.accountUserId) : null,
       support: tierCode
         ? {
             ...support,
@@ -94,7 +96,6 @@
             amountPhp: Number(support?.amountPhp ?? support?.amount_php ?? TIER_META[tierCode]?.amount ?? 0),
             startedAt: support?.startedAt ?? support?.validFrom ?? support?.valid_from ?? null,
             endsAt: support?.endsAt ?? support?.validUntil ?? support?.valid_until ?? null,
-            active: support?.active !== false,
           }
         : null,
     };
@@ -108,18 +109,17 @@
       .rp-member-editor{max-height:calc(100dvh - 28px);overflow-y:auto;overscroll-behavior:contain}
       .rp-member-summary,.rp-member-filters{display:none!important}
       .rp-member-tools{grid-template-columns:1fr!important}
+      .rp-member-editor-access-retired{display:none!important}
+      .rp-member-support-section{display:grid;gap:12px;margin:0;padding:0;border:0}
+      .rp-member-support-section [hidden]{display:none!important}
+      .rp-member-support-amount input[readonly]{color:#9edfec;background:#06131e;cursor:default}
+      .rp-member-support-note{margin:0;color:#73889a;font-size:.59rem;line-height:1.45}
+      .rp-member-support-note:empty{display:none}
       .rp-member-support-status{align-self:start;padding:6px 8px;border:1px solid rgba(85,222,255,.24);border-radius:999px;background:rgba(41,189,222,.07);color:#6eeaff;font-size:.46rem;font-weight:950;letter-spacing:.07em;white-space:nowrap}
       .rp-member-support-status.builder{border-color:rgba(103,169,255,.28);background:rgba(70,119,255,.08);color:#a9c5ff}
       .rp-member-support-status.founding{border-color:rgba(194,147,255,.3);background:rgba(142,87,255,.09);color:#d8bdff}
       .rp-member-support-status.sponsor{border-color:rgba(255,205,86,.32);background:rgba(255,190,45,.08);color:#ffd56d}
       .rp-member-status-controls{flex-wrap:wrap;justify-content:flex-end;max-width:160px}
-      .rp-member-support-section{display:grid;gap:12px;margin:0;padding:0;border:0}
-      .rp-member-support-amount input[readonly]{color:#9edfec;background:#06131e;cursor:default}
-      .rp-member-support-note{margin:0;color:#73889a;font-size:.59rem;line-height:1.45}
-      .rp-member-support-note:empty{display:none}
-      .rp-member-support-section.is-unavailable{opacity:.7}
-      .rp-member-support-section.is-unavailable select{cursor:not-allowed}
-      .rp-member-editor-access-retired{display:none!important}
       @media(max-width:430px){
         .rp-member-status-controls{max-width:142px;gap:5px}
         .rp-member-support-status{padding:5px 7px;font-size:.43rem}
@@ -154,30 +154,25 @@
   function cacheDirectory(data) {
     const next = new Map();
     (Array.isArray(data?.players) ? data.players : []).forEach((entry) => {
-      const clean = cleanSupportEntry(entry);
+      const clean = cleanDirectoryEntry(entry);
       if (clean) next.set(clean.playerId, clean);
     });
-    supportByPlayerId = next;
-    scheduleDecoration(0);
-    if (activePlayerId) scheduleEditorSync(0);
+    statusByPlayerId = next;
+    scheduleDecoration();
+    scheduleEditorSync();
   }
 
-  async function loadSupportDirectory({ force = false } = {}) {
-    if (loadPromise && !force) return loadPromise;
-    const sequence = ++loadSequence;
-    loadPromise = api({ action: 'support_tier_directory' })
+  async function loadDirectory({ force = false } = {}) {
+    if (loadingPromise && !force) return loadingPromise;
+    loadingPromise = api({ action: 'support_tier_directory' })
       .then((data) => {
-        if (sequence === loadSequence) cacheDirectory(data);
+        cacheDirectory(data);
         return data;
       })
-      .catch((error) => {
-        console.warn('[Real Play] Player status directory could not load.', error);
-        throw error;
-      })
       .finally(() => {
-        if (sequence === loadSequence) loadPromise = null;
+        loadingPromise = null;
       });
-    return loadPromise;
+    return loadingPromise;
   }
 
   function decorateCards() {
@@ -185,9 +180,9 @@
     ensureStyles();
     document.querySelectorAll('[data-member-player]').forEach((card) => {
       const playerId = Number(card.dataset.memberPlayer);
-      const entry = supportByPlayerId.get(playerId);
+      const entry = statusByPlayerId.get(playerId);
       const support = entry?.support || null;
-      const code = normalizeTierCode(support?.tierCode ?? support?.tier_code);
+      const code = normalizeTierCode(support?.tierCode);
       const meta = code && support?.active !== false ? TIER_META[code] : null;
       const controls = card.querySelector('.rp-member-status-controls');
       if (!controls) return;
@@ -207,14 +202,14 @@
       const subtitle = card.querySelector('.rp-member-identity small');
       if (subtitle) subtitle.textContent = meta ? (meta.fullLabel || meta.label) : 'PLAYER';
 
-      const dateValues = card.querySelectorAll('.rp-member-dates .rp-member-date strong');
-      if (dateValues[0]) dateValues[0].textContent = support ? formatDate(support.startedAt) : '—';
-      if (dateValues[1]) dateValues[1].textContent = support ? formatDate(support.endsAt) : '—';
+      const dates = card.querySelectorAll('.rp-member-dates .rp-member-date strong');
+      if (dates[0]) dates[0].textContent = support ? formatDate(support.startedAt) : '—';
+      if (dates[1]) dates[1].textContent = support ? formatDate(support.endsAt) : '—';
     });
   }
 
   function scheduleDecoration(delay = 0) {
-    if (decorateTimer) window.clearTimeout(decorateTimer);
+    if (decorateTimer) clearTimeout(decorateTimer);
     decorateTimer = window.setTimeout(decorateCards, delay);
   }
 
@@ -242,27 +237,27 @@
       </section>`;
   }
 
-  function retireAccessControls(backdrop) {
-    const accessSelect = backdrop?.querySelector('[data-member-editor-type]');
-    const accessField = accessSelect?.closest('.rp-member-editor-field');
+  function retireLegacyAccess(backdrop) {
+    const accessType = backdrop?.querySelector('[data-member-editor-type]');
+    const accessField = accessType?.closest('.rp-member-editor-field');
     const amountWrap = backdrop?.querySelector('[data-member-editor-amount-wrap]');
     const accessNote = backdrop?.querySelector('[data-member-editor-note]');
     const dates = backdrop?.querySelector('[data-member-editor-dates]');
 
-    if (accessField) accessField.classList.add('rp-member-editor-access-retired');
-    if (amountWrap) amountWrap.classList.add('rp-member-editor-access-retired');
-    if (accessNote) accessNote.classList.add('rp-member-editor-access-retired');
-    if (accessSelect) accessSelect.value = 'free';
+    accessField?.classList.add('rp-member-editor-access-retired');
+    amountWrap?.classList.add('rp-member-editor-access-retired');
+    accessNote?.classList.add('rp-member-editor-access-retired');
+    if (accessType) accessType.value = 'free';
     if (dates) dates.hidden = false;
   }
 
-  function ensureSupportSection() {
+  function ensureEditor() {
     ensureStyles();
     const backdrop = document.querySelector('[data-member-editor-backdrop]');
     const fields = backdrop?.querySelector('.rp-member-editor-fields');
     if (!backdrop || !fields) return null;
 
-    retireAccessControls(backdrop);
+    retireLegacyAccess(backdrop);
 
     let section = fields.querySelector('[data-member-support-section]');
     if (!section) {
@@ -280,14 +275,15 @@
       dates.insertAdjacentElement('afterend', tokenControl);
     }
 
-    const headKicker = backdrop.querySelector('.rp-member-editor-head small');
-    if (headKicker) headKicker.textContent = 'PLAYER STATUS';
+    const kicker = backdrop.querySelector('.rp-member-editor-head small');
+    if (kicker) kicker.textContent = 'PLAYER STATUS';
     const save = backdrop.querySelector('[data-member-editor-save]');
     if (save && !save.disabled) save.textContent = 'SAVE STATUS';
+
     return section;
   }
 
-  function syncSupportFields(section = ensureSupportSection()) {
+  function syncFields(section = ensureEditor()) {
     if (!section) return;
     const backdrop = section.closest('[data-member-editor-backdrop]');
     const select = section.querySelector('[data-member-support-tier]');
@@ -299,90 +295,82 @@
     const end = backdrop?.querySelector('[data-member-editor-end]');
     const tierCode = normalizeTierCode(select?.value);
     const meta = TIER_META[tierCode] || null;
-    const entry = supportByPlayerId.get(Number(activePlayerId));
-    const accountAvailable = Boolean(entry?.accountAvailable);
 
+    if (select) select.disabled = false;
+    section.classList.remove('is-unavailable');
     if (amountWrap) amountWrap.hidden = !meta;
     if (amount) amount.value = meta ? String(meta.amount) : '';
     if (sponsorWrap) sponsorWrap.hidden = tierCode !== 'sponsor';
-    if (start) start.disabled = !meta || !accountAvailable;
-    if (end) end.disabled = !meta || !accountAvailable;
-
-    section.classList.toggle('is-unavailable', !accountAvailable);
-    if (select) select.disabled = !accountAvailable;
-    if (note) {
-      note.innerHTML = !accountAvailable
-        ? 'A claimed Real Play account is required before a supporter status can be assigned.'
-        : '';
-    }
+    if (start) start.disabled = !meta;
+    if (end) end.disabled = !meta;
+    if (note) note.textContent = '';
   }
 
   function hydrateEditor(playerId) {
     if (Number(playerId) !== Number(activePlayerId)) return;
-    const section = ensureSupportSection();
+    const section = ensureEditor();
     if (!section) return;
     const backdrop = section.closest('[data-member-editor-backdrop]');
-    const entry = supportByPlayerId.get(Number(playerId));
+    const entry = statusByPlayerId.get(Number(playerId));
     const support = entry?.support || null;
-    const tierCode = normalizeTierCode(support?.tierCode ?? support?.tier_code);
+    const tierCode = normalizeTierCode(support?.tierCode);
     const select = section.querySelector('[data-member-support-tier]');
     const sponsor = section.querySelector('[data-member-support-sponsor-name]');
-    const startInput = backdrop?.querySelector('[data-member-editor-start]');
-    const endInput = backdrop?.querySelector('[data-member-editor-end]');
+    const start = backdrop?.querySelector('[data-member-editor-start]');
+    const end = backdrop?.querySelector('[data-member-editor-end]');
 
-    if (!entry) {
-      if (select) select.disabled = true;
-      const note = section.querySelector('[data-member-support-note]');
-      if (note) note.textContent = 'Loading player status…';
-      return;
-    }
-
-    const startValue = inputDate(support?.startedAt) || todayInput();
-    const endValue = inputDate(support?.endsAt) || oneMonthAfter(startValue);
+    const startValue = inputDate(support?.startedAt) || start?.value || todayInput();
+    const endValue = inputDate(support?.endsAt) || end?.value || oneMonthAfter(startValue);
     const sponsorValue = String(support?.sponsorName ?? support?.sponsor_name ?? '');
 
-    if (select) select.value = tierCode;
+    if (select) {
+      select.disabled = false;
+      select.value = tierCode;
+    }
     if (sponsor) sponsor.value = sponsorValue;
-    if (startInput) startInput.value = startValue;
-    if (endInput) endInput.value = endValue;
+    if (start) start.value = startValue;
+    if (end) end.value = endValue;
 
     section.dataset.supportInitialTier = tierCode;
     section.dataset.supportInitialSponsor = sponsorValue.trim();
     section.dataset.supportInitialStart = tierCode ? startValue : '';
     section.dataset.supportInitialEnd = tierCode ? endValue : '';
-    syncSupportFields(section);
+    syncFields(section);
   }
 
   function scheduleEditorSync(delay = 0) {
-    if (editorSyncTimer) window.clearTimeout(editorSyncTimer);
-    editorSyncTimer = window.setTimeout(() => {
-      editorSyncTimer = 0;
-      if (activePlayerId && document.querySelector('[data-member-editor-backdrop].open')) {
-        ensureSupportSection();
-      }
+    if (editorTimer) clearTimeout(editorTimer);
+    editorTimer = window.setTimeout(() => {
+      editorTimer = 0;
+      if (!activePlayerId || !document.querySelector('[data-member-editor-backdrop].open')) return;
+      const section = ensureEditor();
+      if (!section) return;
+      const select = section.querySelector('[data-member-support-tier]');
+      if (select) select.disabled = false;
     }, delay);
   }
 
   function beginEditor(playerId) {
     activePlayerId = Number(playerId);
     window.requestAnimationFrame(() => {
-      ensureSupportSection();
+      ensureEditor();
       hydrateEditor(activePlayerId);
       scheduleEditorSync(60);
     });
 
-    if (!supportByPlayerId.has(activePlayerId)) {
-      loadSupportDirectory().then(() => hydrateEditor(activePlayerId)).catch(() => {
-        const section = ensureSupportSection();
-        const note = section?.querySelector('[data-member-support-note]');
-        if (note) note.textContent = 'Player status controls are temporarily unavailable.';
+    loadDirectory({ force: true })
+      .then(() => hydrateEditor(activePlayerId))
+      .catch(() => {
+        const section = ensureEditor();
+        const select = section?.querySelector('[data-member-support-tier]');
+        if (select) select.disabled = false;
+        syncFields(section);
       });
-    }
   }
 
-  function prepareLegacyAccessForSave() {
+  function prepareLegacySave() {
     const backdrop = document.querySelector('[data-member-editor-backdrop]');
-    retireAccessControls(backdrop);
+    retireLegacyAccess(backdrop);
     const type = backdrop?.querySelector('[data-member-editor-type]');
     const amount = backdrop?.querySelector('[data-member-editor-amount]');
     if (type) type.value = 'free';
@@ -390,7 +378,7 @@
   }
 
   function replayBaseSave(button) {
-    prepareLegacyAccessForSave();
+    prepareLegacySave();
     button.disabled = false;
     button.textContent = 'SAVE STATUS';
     bypassSaveCapture = true;
@@ -400,12 +388,15 @@
 
   async function saveStatus(button, event) {
     if (bypassSaveCapture || !activePlayerId) return false;
-    const section = ensureSupportSection();
+    const section = ensureEditor();
     if (!section) return false;
-    const entry = supportByPlayerId.get(Number(activePlayerId));
-    if (!entry) return false;
 
     const backdrop = section.closest('[data-member-editor-backdrop]');
+    const existing = statusByPlayerId.get(Number(activePlayerId)) || {
+      playerId: Number(activePlayerId),
+      accountUserId: null,
+      support: null,
+    };
     const tierCode = normalizeTierCode(section.querySelector('[data-member-support-tier]')?.value);
     const sponsorName = String(section.querySelector('[data-member-support-sponsor-name]')?.value || '').trim();
     const startedAt = String(backdrop?.querySelector('[data-member-editor-start]')?.value || '');
@@ -420,17 +411,13 @@
       || (tierCode && startedAt !== initialStart)
       || (tierCode && endsAt !== initialEnd);
 
-    prepareLegacyAccessForSave();
+    prepareLegacySave();
     if (!changed) return false;
 
     event.preventDefault();
     event.stopImmediatePropagation();
 
     const message = backdrop?.querySelector('[data-member-editor-message]');
-    if (tierCode && !entry.accountAvailable) {
-      if (message) message.textContent = 'This player needs a claimed Real Play account before a support level can be assigned.';
-      return true;
-    }
     if (tierCode && (!startedAt || !endsAt)) {
       if (message) message.textContent = 'Choose the status start and end dates.';
       return true;
@@ -458,11 +445,12 @@
         endsAt: tierCode ? endsAt : null,
       });
 
-      supportByPlayerId.set(Number(activePlayerId), {
-        ...entry,
+      statusByPlayerId.set(Number(activePlayerId), {
+        ...existing,
+        accountUserId: result?.accountUserId ?? existing.accountUserId,
         support: result?.support || null,
       });
-      scheduleDecoration(0);
+      scheduleDecoration();
       replayBaseSave(button);
       return true;
     } catch (error) {
@@ -475,7 +463,7 @@
 
   document.addEventListener('change', (event) => {
     if (!event.target.matches?.('[data-member-support-tier]')) return;
-    syncSupportFields(event.target.closest('[data-member-support-section]'));
+    syncFields(event.target.closest('[data-member-support-section]'));
   });
 
   document.addEventListener('click', (event) => {
@@ -486,8 +474,7 @@
       return;
     }
 
-    const close = event.target.closest?.('[data-member-editor-close]');
-    if (close) {
+    if (event.target.closest?.('[data-member-editor-close]')) {
       activePlayerId = null;
       return;
     }
@@ -505,17 +492,17 @@
 
   window.addEventListener('realplay:admin-render', () => {
     window.setTimeout(() => {
-      scheduleDecoration(0);
-      loadSupportDirectory({ force: true }).catch(() => {});
+      scheduleDecoration();
+      loadDirectory({ force: true }).catch(() => {});
     }, 0);
   });
 
   window.addEventListener('focus', () => {
     if (!document.querySelector('.rp-admin-control.open')) return;
     if (document.querySelector('[data-member-editor-backdrop].open')) return;
-    loadSupportDirectory({ force: true }).catch(() => {});
+    loadDirectory({ force: true }).catch(() => {});
   });
 
   ensureStyles();
-  window.setTimeout(() => loadSupportDirectory().catch(() => {}), 300);
+  window.setTimeout(() => loadDirectory().catch(() => {}), 300);
 })();
