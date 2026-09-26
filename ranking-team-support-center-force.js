@@ -94,6 +94,19 @@
     });
   }
 
+  function syncPaymentInstructionCopy(overlay) {
+    const panel = overlay?.querySelector?.('[data-rp-team-support-panel]');
+    if (!panel) return;
+
+    panel.querySelectorAll(
+      '[data-rp-support-payment-pane="gcash"] > p, [data-rp-support-payment-pane="maya"] > p'
+    ).forEach((copy) => {
+      const pane = copy.parentElement;
+      const heading = String(pane?.querySelector('strong')?.textContent || '').trim();
+      if (!heading.includes('DETAILS UNAVAILABLE')) copy.remove();
+    });
+  }
+
   function normalizeOverlay(root = document) {
     const overlay = getSupportOverlay(root);
     if (!overlay) return;
@@ -114,6 +127,7 @@
     syncMainChoice(overlay);
     syncHelpChoice(overlay);
     syncTierBenefitCopy(overlay);
+    syncPaymentInstructionCopy(overlay);
   }
 
   const observer = new MutationObserver((mutations) => {
