@@ -84,12 +84,13 @@
 
     panel.querySelectorAll('.rp-team-support-benefit').forEach((benefit) => {
       const title = benefit.querySelector('strong');
-      if (!title || String(title.textContent || '').trim() !== 'Earlier Booking Access') return;
+      const currentTitle = String(title?.textContent || '').trim();
+      if (!title || !['Earlier Booking Access', 'Play Token Protection', '4 Play Tokens'].includes(currentTitle)) return;
 
-      title.textContent = 'Play Token Protection';
+      title.textContent = '4 Play Tokens';
       const description = benefit.querySelector('p');
       if (description) {
-        description.textContent = 'Use Play Tokens to secure your reserved spot under Real Play’s existing protection rules.';
+        description.textContent = 'Get 4 Play Tokens each month to secure protected session reservations.';
       }
     });
   }
