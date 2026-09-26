@@ -51,7 +51,6 @@
     }
   }
 
-
   function syncHelpChoice(overlay) {
     const panel = overlay?.querySelector?.('[data-rp-team-support-panel]');
     if (!panel) return;
@@ -79,6 +78,22 @@
     paths.querySelectorAll('p').forEach((node) => node.remove());
   }
 
+  function syncTierBenefitCopy(overlay) {
+    const panel = overlay?.querySelector?.('[data-rp-team-support-panel]');
+    if (!panel) return;
+
+    panel.querySelectorAll('.rp-team-support-benefit').forEach((benefit) => {
+      const title = benefit.querySelector('strong');
+      if (!title || String(title.textContent || '').trim() !== 'Earlier Booking Access') return;
+
+      title.textContent = 'Play Token Protection';
+      const description = benefit.querySelector('p');
+      if (description) {
+        description.textContent = 'Use Play Tokens to secure your reserved spot under Real Play’s existing protection rules.';
+      }
+    });
+  }
+
   function normalizeOverlay(root = document) {
     const overlay = getSupportOverlay(root);
     if (!overlay) return;
@@ -101,6 +116,7 @@
 
     syncMainChoice(overlay);
     syncHelpChoice(overlay);
+    syncTierBenefitCopy(overlay);
   }
 
   const observer = new MutationObserver((mutations) => {
