@@ -209,6 +209,16 @@
 .rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-intro{
   display:none!important;
 }
+
+/* The Team Reservation strip owns this row completely. Hide the legacy session
+ * status/title/copy so labels such as STANDBY cannot sit underneath the live
+ * player count and overlap the SPOTS LEFT text. */
+.rp-ranking-next.rp-team-reservation-enabled .rp-ranking-session > [data-rp-ranking-session-status],
+.rp-ranking-next.rp-team-reservation-enabled .rp-ranking-session > [data-rp-ranking-session-title],
+.rp-ranking-next.rp-team-reservation-enabled .rp-ranking-session > [data-rp-ranking-session-copy]{
+  display:none!important;
+}
+
 @media(max-width:390px){
   .rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity strong{font-size:.66rem}
   .rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity span{font-size:.56rem}
