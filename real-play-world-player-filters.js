@@ -362,6 +362,7 @@
   function matchesFilter(meta) {
     if (filterMode === 'ranked') return !rankAuthorityReady || meta.ranked;
     if (filterMode === 'unranked') return !rankAuthorityReady || !meta.ranked;
+    if (sortKey === 'winrate') return rankAuthorityReady && meta.ranked;
     if (sortKey === 'shooting') return meta.shootingQualified;
     if (sortKey === 'rebounding') return meta.reboundQualified;
     if (GAME_STAT_KEYS.has(sortKey)) return Number(meta.games || 0) > 0;
@@ -495,6 +496,7 @@
         sortKey = key;
         directions[key] = defaultDirection;
       }
+      if (key === 'winrate') refreshRankAuthority(false).then(scheduleSort);
     }
 
     renderControls();
