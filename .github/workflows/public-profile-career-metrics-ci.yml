@@ -1,0 +1,30 @@
+name: Public Profile Career Metrics CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - fix/public-profile-career-metrics-lifecycle
+
+jobs:
+  public-profile-career-metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check changed JavaScript syntax
+        run: |
+          node --check real-play-world-players.js
+          node --check real-play-profile-metrics.js
+          node --check tests/public-profile-career-metrics-lifecycle.test.js
+
+      - name: Run public profile career metrics regression tests
+        run: node --test tests/public-profile-career-metrics-lifecycle.test.js
