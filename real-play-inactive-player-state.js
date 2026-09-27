@@ -8,7 +8,8 @@
   const PUBLIC_COMMUNITY_URL = `${API_BASE_URL}/api/real-play/public/community`;
   const REFRESH_MS = 30_000;
 
-  let playersById = new Map();
+  let playersByCanonicalId = new Map();
+  let playersByAccountUserId = new Map();
   let loadedAt = 0;
   let loading = null;
   let inactiveMode = false;
@@ -37,11 +38,17 @@
     document.head.appendChild(style);
   }
 
-  function playerIds(player) {
-    const values = [player?.playerId, player?.userId, player?.accountUserId]
-      .map((value) => Number(value))
-      .filter((value) => Number.isSafeInteger(value) && value > 0);
-    return [...new Set(values)].map(String);
+  function positiveId(value) {
+    const id = Number(value);
+    return Number.isSafeInteger(id) && id > 0 ? String(id) : '';
+  }
+
+  function canonicalPlayerId(player) {
+    return positiveId(player?.playerId ?? player?.userId);
+  }
+
+  function accountUserId(player) {
+    return positiveId(player?.accountUserId);
   }
 
   async function fetchPlayers() {
@@ -74,11 +81,16 @@
       try {
         const data = await fetchPlayers();
         if (!data || !Array.isArray(data.players)) return;
-        const next = new Map();
+        const nextByCanonicalId = new Map();
+        const nextByAccountUserId = new Map();
         data.players.forEach((player) => {
-          playerIds(player).forEach((id) => next.set(id, player));
+          const canonicalId = canonicalPlayerId(player);
+          const accountId = accountUserId(player);
+          if (canonicalId) nextByCanonicalId.set(canonicalId, player);
+          if (accountId) nextByAccountUserId.set(accountId, player);
         });
-        playersById = next;
+        playersByCanonicalId = nextByCanonicalId;
+        playersByAccountUserId = nextByAccountUserId;
         loadedAt = Date.now();
       } catch (_error) {
         // Keep the last authoritative state during a temporary network failure.
@@ -96,8 +108,8 @@
   }
 
   function playerForRow(row) {
-    const id = String(row?.dataset?.worldPlayerId || '').trim();
-    return id ? playersById.get(id) || null : null;
+    const id = positiveId(row?.dataset?.worldPlayerId);
+    return id ? playersByCanonicalId.get(id) || null : null;
   }
 
   function rankingStatus(player) {
@@ -269,26 +281,39 @@
   }
 
   function profilePlayer(profile) {
-    const source = profile?.classList?.contains('rp-public-player-profile')
+    const isPublicProfile = profile?.classList?.contains('rp-public-player-profile');
+    const source = isPublicProfile
       ? profile.__realPlayPublicPlayer
       : profile.__realPlayProfileState;
-    const candidates = [
-      profile?.dataset?.rpPublicPlayerId,
-      profile?.dataset?.rpProfilePlayerId,
+
+    const canonicalCandidates = [
       source?.playerId,
-      source?.userId,
-      source?.accountUserId,
       source?.player?.playerId,
-      source?.player?.userId,
       source?.profile?.playerId,
-      source?.profile?.userId,
     ];
-    for (const candidate of candidates) {
-      const id = Number(candidate);
-      if (!Number.isSafeInteger(id) || id <= 0) continue;
-      const player = playersById.get(String(id));
+    for (const candidate of canonicalCandidates) {
+      const id = positiveId(candidate);
+      if (!id) continue;
+      const player = playersByCanonicalId.get(id);
       if (player) return player;
     }
+
+    const accountCandidates = [
+      source?.accountUserId,
+      source?.player?.accountUserId,
+      source?.profile?.accountUserId,
+      source?.userId,
+      source?.player?.userId,
+      source?.profile?.userId,
+      isPublicProfile ? null : profile?.dataset?.rpProfilePlayerId,
+    ];
+    for (const candidate of accountCandidates) {
+      const id = positiveId(candidate);
+      if (!id) continue;
+      const player = playersByAccountUserId.get(id);
+      if (player) return player;
+    }
+
     return null;
   }
 
