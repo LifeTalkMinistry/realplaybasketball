@@ -197,17 +197,6 @@
     );
   }
 
-  async function refreshReplayCanonicalTitle() {
-    try {
-      await window.RealPlayOpenRankIdentity?.refresh?.();
-    } catch (_) {
-      // The replay itself remains usable if the shared identity refresh fails.
-    }
-    const number = canonicalReplayNumber();
-    if (number) applyReplayTitle(number);
-    return number;
-  }
-
   async function replayNumberFromBackend(sessionId, auth) {
     const response = await fetch(
       `${API_BASE_URL}/api/real-play/career/games/${encodeURIComponent(sessionId)}/replay`,
@@ -224,6 +213,27 @@
       throw new Error(data?.message || data?.error || `Could not verify the saved Open Rank number (${response.status}).`);
     }
     return positiveOpenRankNumber(data?.game?.openRankNumber ?? data?.game?.open_rank_number);
+  }
+
+  async function refreshReplayCanonicalTitle() {
+    let backendNumber = null;
+    const auth = localStorage.getItem(TOKEN_KEY) || '';
+    if (auth && Number.isSafeInteger(replaySessionId) && replaySessionId > 0) {
+      try {
+        backendNumber = await replayNumberFromBackend(replaySessionId, auth);
+      } catch (_) {
+        // Shared identity remains a safe display fallback when replay verification is unavailable.
+      }
+    }
+
+    try {
+      await window.RealPlayOpenRankIdentity?.refresh?.();
+    } catch (_) {
+      // The replay itself remains usable if the shared identity refresh fails.
+    }
+    const number = backendNumber || canonicalReplayNumber();
+    if (number) applyReplayTitle(number);
+    return number;
   }
 
   async function renumberReplay(button) {
@@ -317,9 +327,6 @@
   function syncReplayNumberEditor() {
     const root = replayRoot();
     if (!root) return;
-
-    const canonical = canonicalReplayNumber();
-    if (canonical) applyReplayTitle(canonical);
 
     const topbar = root.querySelector('.rp-career-replay-topbar');
     if (!topbar) return;
