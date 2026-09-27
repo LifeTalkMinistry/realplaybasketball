@@ -46,3 +46,14 @@ test('manual Open Rank correction is produced only as repair for recorded result
   assert.doesNotMatch(admin, /dataset\.rpManualOpenRankNumber/);
   assert.doesNotMatch(admin, /EDIT OPEN RANK NUMBER/);
 });
+
+test('recorded replay rehydrates its title from shared canonical Open Rank identity', () => {
+  const replayRepair = read('career-game-replay-marker-cleanup.js');
+
+  assert.match(replayRepair, /function canonicalReplayNumber\(\)/);
+  assert.match(replayRepair, /RealPlayOpenRankIdentity\?\.numberForSession\?\.\(replaySessionId\)/);
+  assert.match(replayRepair, /RealPlayOpenRankIdentity\?\.refresh\?\.\(\)/);
+  assert.match(replayRepair, /const canonical = canonicalReplayNumber\(\)/);
+  assert.match(replayRepair, /if \(canonical\) applyReplayTitle\(canonical\)/);
+  assert.match(replayRepair, /applyReplayTitle\(canonical \|\| saved\)/);
+});
