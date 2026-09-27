@@ -204,3 +204,68 @@
     opacity: .86;
   }
 }
+
+/* Mobile browser takeover fit: keep the full creative + CTA inside the usable viewport. */
+@media (max-width: 560px) {
+  .rp-takeover:not(.open) {
+    display: none !important;
+  }
+
+  .rp-takeover.open {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    box-sizing: border-box !important;
+    padding: max(14px, env(safe-area-inset-top)) 12px max(14px, env(safe-area-inset-bottom)) !important;
+    overflow: hidden !important;
+  }
+
+  .rp-takeover-canvas {
+    position: relative !important;
+    inset: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: min(84vw, 380px) !important;
+    max-height: calc(100dvh - 96px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    flex: 0 1 auto !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+  }
+
+  .rp-takeover-media {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: min(84vw, 380px) !important;
+    max-height: calc(100dvh - 112px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    border-radius: 17px !important;
+  }
+
+  .rp-takeover-label {
+    left: 12px !important;
+    top: 12px !important;
+    max-width: calc(100% - 24px) !important;
+  }
+
+  .rp-takeover-cta {
+    position: relative !important;
+    left: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: min(84vw, 346px) !important;
+    min-height: 48px !important;
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+  }
+
+  .rp-takeover-cta:active {
+    transform: translateY(1px) !important;
+  }
+}
