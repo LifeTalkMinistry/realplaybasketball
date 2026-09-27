@@ -225,32 +225,253 @@
     });
   }
 
+  function canonicalPlayerIdFromProfile(profile) {
+    if (!profile) return null;
+    const loaded = profile.__realPlayPublicPlayer || null;
+    return positiveId(
+      profile.dataset?.rpPublicCanonicalPlayerId
+      ?? loaded?.playerId
+      ?? loaded?.canonicalPlayerId
+      ?? loaded?.canonical_player_id
+    ) || positiveId(profile.dataset?.rpPublicPlayerId);
+  }
+
+  function accountUserIdFromProfile(profile) {
+    if (!profile) return null;
+    const loaded = profile.__realPlayPublicPlayer || null;
+    return positiveId(
+      profile.dataset?.rpPublicAccountUserId
+      ?? loaded?.accountUserId
+      ?? loaded?.account_user_id
+      ?? loaded?.userId
+      ?? loaded?.user_id
+    );
+  }
+
   function publicProfileById(playerId) {
     const id = positiveId(playerId);
     if (!id) return null;
     return [...document.querySelectorAll('.rp-public-player-profile, [data-rp-public-profile], [data-rp-visitor-public-profile]')]
-      .find((profile) => positiveId(profile.dataset?.rpPublicPlayerId) === id) || null;
+      .find((profile) => {
+        const loaded = profile.__realPlayPublicPlayer || null;
+        const canonical = positiveId(
+          profile.dataset?.rpPublicCanonicalPlayerId
+          ?? loaded?.playerId
+          ?? loaded?.canonicalPlayerId
+          ?? loaded?.canonical_player_id
+        );
+        if (canonical) return canonical === id;
+        return positiveId(profile.dataset?.rpPublicPlayerId) === id;
+      }) || null;
+  }
+
+  function activePublicProfile() {
+    return document.querySelector(
+      '.rp-public-player-profile.open, [data-rp-public-profile].open, [data-rp-visitor-public-profile].open, [data-rp-public-history-overlay].open[data-rp-public-profile]'
+    );
+  }
+
+  function activeReplayIdentity() {
+    const profile = activePublicProfile();
+    if (!profile) return null;
+    const canonicalPlayerId = canonicalPlayerIdFromProfile(profile);
+    const accountUserId = accountUserIdFromProfile(profile);
+    const playerName = String(
+      profile.querySelector('.rp-profile-name h1')?.textContent
+      || profile.__realPlayPublicPlayer?.playerName
+      || profile.__realPlayPublicPlayer?.player_name
+      || ''
+    ).trim();
+    const numberText = String(profile.querySelector('.rp-profile-number strong')?.textContent || '').trim();
+    const rawNumber = Number(numberText.replace(/^#/, ''));
+    const playerNumber = Number.isSafeInteger(rawNumber) && rawNumber >= 0 ? rawNumber : null;
+
+    const playerIds = new Set();
+    if (accountUserId) playerIds.add(accountUserId);
+    if (canonicalPlayerId) {
+      playerIds.add(canonicalPlayerId);
+      playerIds.add(-canonicalPlayerId);
+    }
+    if (!playerIds.size && !playerName) return null;
+    return {
+      profile,
+      canonicalPlayerId,
+      accountUserId,
+      playerName,
+      playerNameKey: normalize(playerName),
+      playerNumber,
+      playerIds,
+    };
+  }
+
+  function eventPlayerId(event) {
+    const raw = event?.playerId ?? event?.player_id ?? event?.userId ?? event?.user_id;
+    const id = Number(raw);
+    return Number.isSafeInteger(id) && id !== 0 ? id : null;
+  }
+
+  function eventPlayerName(event) {
+    return String(event?.playerName ?? event?.player_name ?? event?.name ?? '').trim();
+  }
+
+  function isReplayEvent(value) {
+    if (!value || typeof value !== 'object') return false;
+    return value.videoTimestampMs !== undefined
+      || value.video_timestamp_ms !== undefined
+      || value.timestampMs !== undefined
+      || value.timestamp_ms !== undefined
+      || value.eventType !== undefined
+      || value.event_type !== undefined
+      || value.shotResult !== undefined
+      || value.shot_result !== undefined
+      || value.statKey !== undefined
+      || value.stat_key !== undefined;
+  }
+
+  function eventMatchesIdentity(event, identity) {
+    const id = eventPlayerId(event);
+    if (id !== null && identity.playerIds.has(id)) return true;
+    const name = normalize(eventPlayerName(event));
+    return Boolean(name && identity.playerNameKey && name === identity.playerNameKey);
+  }
+
+  function normalizeReplayEvent(event, identity) {
+    if (!eventMatchesIdentity(event, identity)) return false;
+    let changed = false;
+
+    if (identity.playerName && normalize(eventPlayerName(event)) !== identity.playerNameKey) {
+      event.playerName = identity.playerName;
+      changed = true;
+    }
+    if (identity.playerNumber !== null && (event.playerNumber === undefined || event.playerNumber === null || event.playerNumber === '')) {
+      event.playerNumber = identity.playerNumber;
+      changed = true;
+    }
+
+    const type = normalize(event?.eventType ?? event?.event_type ?? event?.type);
+    const result = normalize(event?.shotResult ?? event?.shot_result ?? event?.result);
+    if (type === 'shot' && (result === 'make' || result === 'made')) {
+      const shotValue = Number(event?.shotValue ?? event?.shot_value ?? event?.points ?? event?.value ?? 0);
+      const statKey = Number.isFinite(shotValue) && shotValue >= 2 ? 'two_point_make' : 'one_point_make';
+      if (!event.statKey && !event.stat_key) {
+        event.statKey = statKey;
+        changed = true;
+      }
+    }
+
+    return changed;
+  }
+
+  function normalizeReplayPayload(data, identity) {
+    if (!data || typeof data !== 'object' || !identity) return false;
+    let changed = false;
+    const walked = new Set();
+
+    function walk(value, depth) {
+      if (depth > 8 || value === null || value === undefined) return;
+      if (Array.isArray(value)) {
+        value.forEach((child) => walk(child, depth + 1));
+        return;
+      }
+      if (typeof value !== 'object' || walked.has(value)) return;
+      walked.add(value);
+      if (isReplayEvent(value) && normalizeReplayEvent(value, identity)) changed = true;
+      Object.values(value).forEach((child) => walk(child, depth + 1));
+    }
+
+    walk(data, 0);
+    return changed;
+  }
+
+  function requestUrl(input) {
+    if (typeof input === 'string') return input;
+    if (input instanceof URL) return input.href;
+    return String(input?.url || '');
+  }
+
+  function canonicalizePublicProfileRequest(url, options, identity) {
+    if (!identity?.canonicalPlayerId || !identity?.accountUserId) return options;
+    if (identity.canonicalPlayerId === identity.accountUserId) return options;
+    if (!/\/api\/real-play\/(?:public\/)?community(?:\?|$)/i.test(url)) return options;
+    if (!options || typeof options.body !== 'string') return options;
+
+    try {
+      const body = JSON.parse(options.body);
+      if (normalize(body?.action) !== 'player_profile') return options;
+      const requested = positiveId(body?.playerId ?? body?.userId);
+      if (requested !== identity.accountUserId) return options;
+      return {
+        ...options,
+        body: JSON.stringify({ ...body, playerId: identity.canonicalPlayerId }),
+      };
+    } catch (_) {
+      return options;
+    }
+  }
+
+  function installReplayFetchPatch() {
+    if (window.fetch?.__realPlayHighlightIdentityWrapped) return;
+    const originalFetch = window.fetch.bind(window);
+
+    const wrappedFetch = async function realPlayHighlightIdentityFetch(input, options = {}) {
+      const url = requestUrl(input);
+      const identityBefore = activeReplayIdentity();
+      const nextOptions = canonicalizePublicProfileRequest(url, options, identityBefore);
+      const response = await originalFetch(input, nextOptions);
+
+      if (!response.ok || !/\/api\/real-play\/career\/games\/\d+\/replay(?:\?|$)/i.test(url)) return response;
+      const identity = activeReplayIdentity() || identityBefore;
+      if (!identity) return response;
+
+      try {
+        const data = await response.clone().json();
+        if (!normalizeReplayPayload(data, identity)) return response;
+        const headers = new Headers(response.headers);
+        headers.delete('content-length');
+        headers.set('content-type', 'application/json; charset=utf-8');
+        return new Response(JSON.stringify(data), {
+          status: response.status,
+          statusText: response.statusText,
+          headers,
+        });
+      } catch (_) {
+        return response;
+      }
+    };
+
+    try {
+      Object.defineProperty(wrappedFetch, '__realPlayHighlightIdentityWrapped', { value: true });
+    } catch (_) {
+      wrappedFetch.__realPlayHighlightIdentityWrapped = true;
+    }
+    window.fetch = wrappedFetch;
   }
 
   function makeHistoryArchivePublic(button) {
     const source = button?.closest?.('.rp-public-player-profile, [data-rp-public-profile], [data-rp-visitor-public-profile]');
     if (!source) return;
 
-    const playerId = positiveId(source.dataset?.rpPublicPlayerId)
-      || positiveId(source.__realPlayPublicPlayer?.playerId ?? source.__realPlayPublicPlayer?.userId);
+    const loaded = source.__realPlayPublicPlayer || {};
+    const canonicalPlayerId = canonicalPlayerIdFromProfile(source);
+    const accountUserId = accountUserIdFromProfile(source);
+    const replayAuthorityId = positiveId(source.dataset?.rpPublicPlayerId) || accountUserId || canonicalPlayerId;
     const name = String(source.querySelector('.rp-profile-name h1')?.textContent || '').trim();
-    if (!playerId) return;
+    if (!canonicalPlayerId && !replayAuthorityId) return;
 
     window.setTimeout(() => {
       const archive = document.querySelector('[data-rp-public-history-overlay]');
       if (!archive) return;
       archive.dataset.rpPublicProfile = 'true';
-      archive.dataset.rpPublicPlayerId = String(playerId);
+      if (replayAuthorityId) archive.dataset.rpPublicPlayerId = String(replayAuthorityId);
+      if (canonicalPlayerId) archive.dataset.rpPublicCanonicalPlayerId = String(canonicalPlayerId);
+      if (accountUserId) archive.dataset.rpPublicAccountUserId = String(accountUserId);
       archive.__realPlayPublicPlayer = {
-        ...(source.__realPlayPublicPlayer || {}),
-        playerId,
-        playerName: name || source.__realPlayPublicPlayer?.playerName || 'REAL PLAY PLAYER',
+        ...loaded,
+        ...(canonicalPlayerId ? { playerId: canonicalPlayerId } : {}),
+        ...(accountUserId ? { accountUserId } : {}),
+        playerName: name || loaded?.playerName || 'REAL PLAY PLAYER',
       };
+      attachSessions(archive, recentGamesFrom(loaded));
     }, 0);
   }
 
@@ -294,7 +515,12 @@
     const player = event?.detail?.player || null;
     const playerId = positiveId(event?.detail?.playerId ?? player?.playerId ?? player?.userId);
     const profile = publicProfileById(playerId);
-    if (profile) attachSessions(profile, recentGamesFrom(player));
+    if (profile) {
+      if (playerId) profile.dataset.rpPublicCanonicalPlayerId = String(playerId);
+      const accountUserId = positiveId(player?.accountUserId ?? player?.account_user_id ?? player?.userId ?? player?.user_id);
+      if (accountUserId) profile.dataset.rpPublicAccountUserId = String(accountUserId);
+      attachSessions(profile, recentGamesFrom(player));
+    }
   });
 
   window.addEventListener('storage', (event) => {
@@ -319,6 +545,7 @@
   });
 
   function start() {
+    installReplayFetchPatch();
     installYouTubePatch();
     if (document.body) observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     enrichOwnProfile();
