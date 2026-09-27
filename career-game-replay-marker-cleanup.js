@@ -163,6 +163,12 @@
     return document.querySelector('[data-rp-career-replay].open');
   }
 
+  function positiveOpenRankNumber(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const number = Number(value);
+    return Number.isSafeInteger(number) && number > 0 ? number : null;
+  }
+
   function visibleReplayNumber() {
     const title = String(replayRoot()?.querySelector('[data-rp-career-replay-title]')?.textContent || '');
     const match = title.match(/OPEN\s+RANK(?:ING\s+SESSION)?\s*#\s*(\d+)/i);
@@ -186,8 +192,9 @@
   }
 
   function canonicalReplayNumber() {
-    const number = Number(window.RealPlayOpenRankIdentity?.numberForSession?.(replaySessionId));
-    return Number.isSafeInteger(number) && number > 0 ? number : null;
+    return positiveOpenRankNumber(
+      window.RealPlayOpenRankIdentity?.numberForSession?.(replaySessionId)
+    );
   }
 
   async function refreshReplayCanonicalTitle() {
@@ -199,6 +206,24 @@
     const number = canonicalReplayNumber();
     if (number) applyReplayTitle(number);
     return number;
+  }
+
+  async function replayNumberFromBackend(sessionId, auth) {
+    const response = await fetch(
+      `${API_BASE_URL}/api/real-play/career/games/${encodeURIComponent(sessionId)}/replay`,
+      {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${auth}`,
+        },
+        cache: 'no-store',
+      }
+    );
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data?.message || data?.error || `Could not verify the saved Open Rank number (${response.status}).`);
+    }
+    return positiveOpenRankNumber(data?.game?.openRankNumber ?? data?.game?.open_rank_number);
   }
 
   async function renumberReplay(button) {
@@ -252,14 +277,30 @@
         throw new Error(data?.message || data?.error || `Could not change this Open Rank number (${response.status}).`);
       }
 
-      const saved = Number(data?.control?.renumberedSession?.openRankNumber ?? value);
-      if (!Number.isSafeInteger(saved) || saved < 1) {
+      const saved = positiveOpenRankNumber(
+        data?.control?.renumberedSession?.openRankNumber
+          ?? data?.control?.renumberedSession?.open_rank_number
+      );
+      if (!saved) {
         throw new Error('The backend did not return the saved Open Rank number.');
       }
 
       replaySessionId = sessionId;
-      const canonical = await refreshReplayCanonicalTitle();
-      applyReplayTitle(canonical || saved);
+      try {
+        await window.RealPlayOpenRankIdentity?.refresh?.();
+      } catch (_) {
+        // A fresh replay GET below remains the persistence authority.
+      }
+
+      const refetched = await replayNumberFromBackend(sessionId, auth);
+      if (!refetched) {
+        throw new Error('The replay GET did not return the saved Open Rank number.');
+      }
+      if (refetched !== saved) {
+        throw new Error(`Open Rank verification mismatch: save returned #${saved}, replay returned #${refetched}.`);
+      }
+
+      applyReplayTitle(refetched);
       button.textContent = '✓';
       window.setTimeout(() => {
         if (button.isConnected) button.textContent = '#';
