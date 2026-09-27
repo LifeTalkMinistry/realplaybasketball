@@ -12,6 +12,7 @@
   let meUserId = null;
   let loadingPlayers = false;
   let loadingProfile = false;
+  let publicProfileRequestId = 0;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -418,7 +419,10 @@
   }
 
   async function openPublicProfile(playerId) {
-    if (loadingProfile) return;
+    const requestedPlayerId = Number(playerId);
+    if (!Number.isSafeInteger(requestedPlayerId) || requestedPlayerId <= 0) return;
+
+    const requestId = ++publicProfileRequestId;
     createPublicProfilePanel();
     publicProfilePanel.__realPlayPublicPlayer = null;
     delete publicProfilePanel.dataset.rpPublicPlayerId;
@@ -430,23 +434,37 @@
     if (root) root.innerHTML = '';
     setPublicProfileStatus('LOADING PLAYER PROFILE...');
     loadingProfile = true;
+
     try {
-      const data = await community('player_profile', { playerId });
-      renderPublicProfile(data?.player || null);
+      const data = await community('player_profile', { playerId: requestedPlayerId });
+      if (requestId !== publicProfileRequestId || !publicProfilePanel?.classList.contains('open')) return;
+
+      const player = data?.player || null;
+      const returnedPlayerId = Number(player?.playerId || 0);
+      if (!player || returnedPlayerId !== requestedPlayerId) {
+        throw new Error('Could not load this player profile.');
+      }
+
+      renderPublicProfile(player);
       setPublicProfileStatus('');
     } catch (error) {
+      if (requestId !== publicProfileRequestId) return;
       setPublicProfileStatus(error.message || 'Could not load this player profile.', 'error');
       if (error.status === 401) {
         closePublicProfile();
         document.querySelector('[data-auth-open]')?.click();
       }
     } finally {
-      loadingProfile = false;
+      if (requestId === publicProfileRequestId) loadingProfile = false;
     }
   }
 
   function closePublicProfile() {
     if (!publicProfilePanel) return;
+    publicProfileRequestId += 1;
+    loadingProfile = false;
+    publicProfilePanel.__realPlayPublicPlayer = null;
+    delete publicProfilePanel.dataset.rpPublicPlayerId;
     publicProfilePanel.classList.remove('open');
     publicProfilePanel.setAttribute('aria-hidden', 'true');
     if (!document.querySelector('[data-rp-profile].open')) document.body.classList.remove('rp-profile-open');
