@@ -35,6 +35,32 @@
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 
+  function positiveReplayOpenRankNumber(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const number = Number(value);
+    return Number.isSafeInteger(number) && number > 0 ? number : null;
+  }
+
+  function canonicalReplayTitle(number) {
+    return `OPEN RANKING SESSION #${String(number).padStart(3, '0')}`;
+  }
+
+  function canonicalReplayNumber(game) {
+    const direct = positiveReplayOpenRankNumber(game?.openRankNumber ?? game?.open_rank_number);
+    if (direct) return direct;
+
+    const sessionId = Number(game?.sessionId ?? game?.session_id ?? 0);
+    if (!Number.isSafeInteger(sessionId) || sessionId < 1) return null;
+    return positiveReplayOpenRankNumber(
+      window.RealPlayOpenRankIdentity?.numberForSession?.(sessionId)
+    );
+  }
+
+  function replayDisplayTitle(game) {
+    const number = canonicalReplayNumber(game);
+    return number ? canonicalReplayTitle(number) : String(game?.title || 'REAL PLAY GAME');
+  }
+
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
   }
@@ -328,19 +354,20 @@
     const main = ensureViewer().querySelector('[data-rp-career-replay-main]');
     if (!main) return;
     const game = data?.game || {};
+    const replayTitle = replayDisplayTitle(game);
     const markers = Array.isArray(data?.markers)
       ? [...data.markers].sort((a, b) => Number(a.videoTimestampMs || 0) - Number(b.videoTimestampMs || 0))
       : [];
     const sourceType = data?.recording?.sourceType === 'youtube' ? 'youtube' : 'uploaded';
     main.innerHTML = `
       <div class="rp-career-replay-gamehead">
-        <div><small>OFFICIAL CAREER FOOTAGE</small><h2>${esc(game.title || 'REAL PLAY GAME')}</h2></div>
+        <div><small>OFFICIAL CAREER FOOTAGE</small><h2>${esc(replayTitle)}</h2></div>
         <div class="rp-career-replay-score"><b>${Number(game.westScore || 0)}</b><span>WEST — EAST</span><b>${Number(game.eastScore || 0)}</b></div>
       </div>
       <div class="rp-career-replay-stage" data-rp-career-replay-stage>
         <div data-rp-career-replay-media></div>
         <div class="rp-career-replay-brand-cover" data-rp-career-replay-brand-cover aria-hidden="true">
-          <div class="rp-career-replay-brand-session" data-rp-career-replay-brand-session>${esc(game.title || 'OPEN RANK')}</div>
+          <div class="rp-career-replay-brand-session" data-rp-career-replay-brand-session>${esc(replayTitle)}</div>
           <button type="button" class="rp-career-replay-brand-play" data-rp-career-replay-brand-play aria-label="Play or pause replay">▶</button>
         </div>
         <button type="button" class="rp-career-replay-expand-fixed" data-rp-career-replay-expand-fixed aria-label="Open replay fullscreen">⛶</button>
@@ -366,7 +393,7 @@
       <div class="rp-career-replay-hostnote">${sourceType === 'youtube' ? 'VIDEO HOSTED BY YOUTUBE · OFFICIAL REAL PLAY GAME DATA' : 'VIDEO HOSTED BY REAL PLAY · OFFICIAL REAL PLAY GAME DATA'}</div>`;
 
     const titleNode = ensureViewer().querySelector('[data-rp-career-replay-title]');
-    if (titleNode) titleNode.textContent = game.title || 'REAL PLAY GAME';
+    if (titleNode) titleNode.textContent = replayTitle;
     bindControls();
     if (sourceType === 'youtube') mountYouTube(data.recording?.youtubeVideoId);
     else mountDirect(data.streamUrl);
@@ -392,6 +419,13 @@
     try {
       const data = await api(`/api/real-play/career/games/${encodeURIComponent(id)}/replay`);
       await hydrateReplayPlayerNumbers(data);
+      if (!positiveReplayOpenRankNumber(data?.game?.openRankNumber ?? data?.game?.open_rank_number)) {
+        try {
+          await window.RealPlayOpenRankIdentity?.refresh?.();
+        } catch (_) {
+          // The replay GET remains authoritative even if shared identity refresh is unavailable.
+        }
+      }
       renderReplay(data);
     } catch (error) {
       renderReplayError(error.message || 'This full-game replay is not available yet.');
