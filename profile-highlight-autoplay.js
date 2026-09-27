@@ -16,7 +16,7 @@
   function loadConsistencyLayer() {
     if (window.__realPlayHighlightConsistencyInstalled || document.querySelector('script[data-rp-highlight-consistency-loader]')) return;
     const script = document.createElement('script');
-    script.src = 'profile-highlight-consistency.js?v=20260921-canonical-highlight-v2';
+    script.src = 'profile-highlight-consistency.js?v=20260927-highlight-identity-v3';
     script.async = false;
     script.dataset.rpHighlightConsistencyLoader = '1';
     script.onerror = () => console.warn('[Real Play] Highlight consistency layer could not load.');
