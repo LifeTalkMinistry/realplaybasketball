@@ -6,6 +6,7 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const ADMIN_API_URL = `${API_BASE_URL}/api/real-play/admin/player`;
   const ROSTER_API_URL = `${API_BASE_URL}/api/real-play/career/session-roster`;
+  const TEAM_API_URL = `${API_BASE_URL}/api/real-play/career/session-teams`;
 
   let clearing = false;
   let mountedBackdrop = null;
@@ -26,6 +27,21 @@
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data?.message || data?.error || `Could not load the current player list (${response.status}).`);
+    return data || {};
+  }
+
+  async function fetchTeamSnapshot() {
+    const auth = token();
+    if (!auth) throw new Error('Admin session is not available. Log in again.');
+    const response = await fetch(TEAM_API_URL, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${auth}`,
+      },
+      cache: 'no-store',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.message || data?.error || `Could not load the current team reservations (${response.status}).`);
     return data || {};
   }
 
@@ -131,22 +147,40 @@
     try {
       const result = await clearSchedule();
 
-      // Verify against the same authoritative roster endpoint the Open Rank screen uses.
-      const roster = await fetchRoster();
+      // Verify the complete current-session reset against both authoritative snapshots.
+      const [roster, teamSnapshot] = await Promise.all([
+        fetchRoster(),
+        fetchTeamSnapshot(),
+      ]);
       const remaining = Math.max(0, Number(roster?.confirmedCount || 0))
         + Math.max(0, Number(roster?.standbyCount || 0));
       if (remaining > 0) {
         throw new Error(`Clear did not finish: ${remaining} player${remaining === 1 ? '' : 's'} still remain in this session.`);
       }
 
+      const remainingTeams = Array.isArray(teamSnapshot?.teams) ? teamSnapshot.teams.length : 0;
+      if (remainingTeams > 0) {
+        throw new Error(`Clear did not finish: ${remainingTeams} team reservation${remainingTeams === 1 ? '' : 's'} still remain in this session.`);
+      }
+
+      const sessionIds = [
+        ['clear_schedule', Number(result?.session?.id || 0)],
+        ['session-roster', Number(roster?.sessionId || 0)],
+        ['session-teams', Number(teamSnapshot?.session?.id || 0)],
+      ].filter(([, value]) => Number.isSafeInteger(value) && value > 0);
+      if (sessionIds.length > 1 && sessionIds.some(([, value]) => value !== sessionIds[0][1])) {
+        throw new Error('Clear verification failed: current session IDs do not match.');
+      }
+
       const successMessage = result?.message || 'Current Ranking Game player list cleared.';
-      setConfirmStatus('PLAYER LIST CLEARED.');
+      setConfirmStatus('CURRENT SESSION CLEARED.');
       editorStatus(successMessage);
 
       const detail = {
         source: 'home-open-rank-admin-clear-list',
-        sessionId: result?.session?.id || roster?.sessionId || null,
+        sessionId: result?.session?.id || null,
         removedPlayers: Number(result?.removedPlayers || 0),
+        removedSessionTeams: Number(result?.removedSessionTeams || 0),
         releasedTokens: Number(result?.releasedTokens || 0),
       };
       window.dispatchEvent(new CustomEvent('realplay:ranking-session-changed', { detail }));
@@ -179,17 +213,17 @@
         editorStatus('There is no open Ranking Game to clear.', true);
         return;
       }
-      if (total <= 0) {
-        editorStatus('The current Ranking Game player list is already empty.');
-        return;
-      }
 
       const confirm = getConfirm();
       if (!confirm) return;
       const title = confirm.querySelector('#rp-home-open-rank-clear-title');
       const action = confirm.querySelector('[data-rp-home-open-rank-clear-confirm-button]');
-      if (title) title.textContent = `CLEAR ${total} PLAYER${total === 1 ? '' : 'S'}?`;
-      if (action) action.textContent = `CLEAR ${total} PLAYER${total === 1 ? '' : 'S'}`;
+      if (title) title.textContent = total > 0
+        ? `CLEAR ${total} PLAYER${total === 1 ? '' : 'S'}?`
+        : 'CLEAR CURRENT SESSION?';
+      if (action) action.textContent = total > 0
+        ? `CLEAR ${total} PLAYER${total === 1 ? '' : 'S'}`
+        : 'CLEAR CURRENT SESSION';
       setConfirmStatus('');
       confirm.hidden = false;
       editorStatus('');
@@ -230,7 +264,7 @@
           <button type="button" class="rp-home-open-rank-clear-close" data-rp-home-open-rank-clear-close aria-label="Close confirmation">×</button>
           <small>CLEAR CURRENT PLAYER LIST</small>
           <strong id="rp-home-open-rank-clear-title">CLEAR ALL PLAYERS?</strong>
-          <p>Removes everyone from Secured, Standby, and Overflow for the current Ranking Game only. The schedule, completed games, stats, OVR, and player history stay untouched. Eligible committed Play Tokens are returned.</p>
+          <p>Resets the current unstarted Ranking Game setup: Secured, Standby, Overflow, and Team Reservation. The schedule, completed games, stats, OVR, and player history stay untouched. Eligible committed Play Tokens are returned.</p>
           <p class="rp-home-open-rank-clear-result" data-rp-home-open-rank-clear-result aria-live="polite"></p>
           <button type="button" class="rp-home-open-rank-clear-confirm-button" data-rp-home-open-rank-clear-confirm-button>CLEAR PLAYER LIST</button>
         </section>`;
