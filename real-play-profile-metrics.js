@@ -401,6 +401,22 @@
     openMetricKey = null;
   }
 
+  function ensureMetricsShell(section, grid) {
+    let shell = section.querySelector('[data-rp-metrics-shell]');
+    if (!shell) {
+      shell = document.createElement('div');
+      shell.className = 'rp-profile-metrics-shell';
+      shell.dataset.rpMetricsShell = 'true';
+      grid.insertAdjacentElement('afterend', shell);
+    }
+    return shell;
+  }
+
+  function renderMetricsState(section, grid, message) {
+    const shell = ensureMetricsShell(section, grid);
+    shell.innerHTML = `<div class="rp-profile-metric-no-games" role="status">${escapeHtml(message)}</div>`;
+  }
+
   async function enhanceProfile() {
     const profile = activeProfile();
     const grid = profile?.querySelector('.rp-profile-stat-grid');
@@ -409,12 +425,38 @@
     if (!section) return;
     grid.dataset.rpMetricsReplaced = 'true';
 
-    const expectedPublicId = isPublicProfile(profile) ? Number(profile.dataset.rpPublicPlayerId || 0) : null;
-    const { profile: data, metricGames } = await fetchDataForProfile(profile);
-    const sameIdentity = !isPublicProfile(profile)
-      || (expectedPublicId > 0 && Number(data?.playerId || 0) === expectedPublicId);
+    const publicProfile = isPublicProfile(profile);
+    const expectedPublicId = publicProfile ? Number(profile.__realPlayPublicPlayer?.playerId || 0) : null;
+    let data = null;
+    let metricGames = null;
 
-    if (!data || !metricGames || !sameIdentity || !profile.classList.contains('open') || !grid.isConnected) {
+    try {
+      ({ profile: data, metricGames } = await fetchDataForProfile(profile));
+    } catch (_) {
+      if (publicProfile && profile.classList.contains('open') && grid.isConnected) {
+        renderMetricsState(section, grid, 'Career metrics unavailable.');
+        return;
+      }
+      grid.dataset.rpMetricsReplaced = 'false';
+      return;
+    }
+
+    const sameIdentity = !publicProfile
+      || (expectedPublicId > 0 && Number(data?.playerId || 0) === expectedPublicId);
+    const currentPublicId = publicProfile ? Number(profile.__realPlayPublicPlayer?.playerId || 0) : null;
+    const stillCurrentIdentity = !publicProfile || currentPublicId === expectedPublicId;
+    const stillRenderable = profile.classList.contains('open') && grid.isConnected;
+
+    if (!stillRenderable || !stillCurrentIdentity) {
+      grid.dataset.rpMetricsReplaced = 'false';
+      return;
+    }
+
+    if (!data || !sameIdentity || !metricGames || !Array.isArray(metricGames?.games)) {
+      if (publicProfile) {
+        renderMetricsState(section, grid, 'Career metrics unavailable.');
+        return;
+      }
       grid.dataset.rpMetricsReplaced = 'false';
       return;
     }
@@ -422,18 +464,16 @@
     profile.__realPlayMetricProfile = data;
     profile.__realPlayMetricGames = metricGames;
 
-    const metrics = buildSummaryMetrics(data);
     section.querySelector('.rp-profile-section-head small')?.replaceChildren(document.createTextNode('CAREER METRICS'));
     section.querySelector('.rp-profile-section-head h2')?.replaceChildren(document.createTextNode('THE COURT KEEPS THE RECEIPTS.'));
 
-    let shell = section.querySelector('[data-rp-metrics-shell]');
-    if (!shell) {
-      shell = document.createElement('div');
-      shell.className = 'rp-profile-metrics-shell';
-      shell.dataset.rpMetricsShell = 'true';
-      grid.insertAdjacentElement('afterend', shell);
+    if (publicProfile && metricGames.games.length === 0) {
+      renderMetricsState(section, grid, 'No career metrics yet.');
+      return;
     }
 
+    const metrics = buildSummaryMetrics(data);
+    const shell = ensureMetricsShell(section, grid);
     shell.innerHTML = `<div class="rp-profile-metrics-hint"><span>SWIPE METRICS</span><span>TAP TO OPEN →</span></div>
       <div class="rp-profile-metrics-carousel">${metrics.map(metricCard).join('')}</div>`;
 
