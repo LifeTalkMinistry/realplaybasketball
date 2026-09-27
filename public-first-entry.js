@@ -133,7 +133,7 @@
   if (!window.__realPlayTakeoverLoaderInstalled) {
     window.__realPlayTakeoverLoaderInstalled = true;
     const script = document.createElement('script');
-    script.src = 'takeover-announcement.js?v=20260921-takeover-ui-v2';
+    script.src = 'takeover-announcement.js?v=20260928-mobile-takeover-fit-v134';
     script.async = false;
     script.onerror = () => console.warn('[Real Play] Takeover announcement UI failed to load.');
     document.head.appendChild(script);
