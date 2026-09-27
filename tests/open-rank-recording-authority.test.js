@@ -47,13 +47,33 @@ test('manual Open Rank correction is produced only as repair for recorded result
   assert.doesNotMatch(admin, /EDIT OPEN RANK NUMBER/);
 });
 
-test('recorded replay rehydrates its title from shared canonical Open Rank identity', () => {
+test('recorded replay renderer gives canonical Open Rank identity priority over technical title', () => {
+  const replay = read('career-game-replay.js');
+
+  assert.match(replay, /function positiveReplayOpenRankNumber\(value\)/);
+  assert.match(replay, /function canonicalReplayTitle\(number\)/);
+  assert.match(replay, /OPEN RANKING SESSION #\$\{String\(number\)\.padStart\(3, '0'\)\}/);
+  assert.match(replay, /game\?\.openRankNumber \?\? game\?\.open_rank_number/);
+  assert.match(replay, /RealPlayOpenRankIdentity\?\.numberForSession\?\.\(sessionId\)/);
+  assert.match(replay, /return number \? canonicalReplayTitle\(number\) : String\(game\?\.title \|\| 'REAL PLAY GAME'\)/);
+  assert.match(replay, /const replayTitle = replayDisplayTitle\(game\)/);
+  assert.match(replay, /<h2>\$\{esc\(replayTitle\)\}<\/h2>/);
+  assert.match(replay, /data-rp-career-replay-brand-session>\$\{esc\(replayTitle\)\}<\/div>/);
+  assert.match(replay, /titleNode\.textContent = replayTitle/);
+  assert.doesNotMatch(replay, /openRankNumber:\s*Number\(game\?\.sessionId/);
+});
+
+test('recorded replay renumber verifies save response and fresh replay GET before rendering', () => {
   const replayRepair = read('career-game-replay-marker-cleanup.js');
 
   assert.match(replayRepair, /function canonicalReplayNumber\(\)/);
   assert.match(replayRepair, /RealPlayOpenRankIdentity\?\.numberForSession\?\.\(replaySessionId\)/);
   assert.match(replayRepair, /RealPlayOpenRankIdentity\?\.refresh\?\.\(\)/);
-  assert.match(replayRepair, /const canonical = canonicalReplayNumber\(\)/);
-  assert.match(replayRepair, /if \(canonical\) applyReplayTitle\(canonical\)/);
-  assert.match(replayRepair, /applyReplayTitle\(canonical \|\| saved\)/);
+  assert.match(replayRepair, /data\?\.control\?\.renumberedSession\?\.openRankNumber/);
+  assert.doesNotMatch(replayRepair, /renumberedSession\?\.openRankNumber \?\? value/);
+  assert.match(replayRepair, /function replayNumberFromBackend\(sessionId, auth\)/);
+  assert.match(replayRepair, /career\/games\/\$\{encodeURIComponent\(sessionId\)\}\/replay/);
+  assert.match(replayRepair, /data\?\.game\?\.openRankNumber \?\? data\?\.game\?\.open_rank_number/);
+  assert.match(replayRepair, /if \(refetched !== saved\)/);
+  assert.match(replayRepair, /applyReplayTitle\(refetched\)/);
 });
