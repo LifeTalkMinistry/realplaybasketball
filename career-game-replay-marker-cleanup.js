@@ -185,6 +185,22 @@
     if (brand) brand.textContent = title;
   }
 
+  function canonicalReplayNumber() {
+    const number = Number(window.RealPlayOpenRankIdentity?.numberForSession?.(replaySessionId));
+    return Number.isSafeInteger(number) && number > 0 ? number : null;
+  }
+
+  async function refreshReplayCanonicalTitle() {
+    try {
+      await window.RealPlayOpenRankIdentity?.refresh?.();
+    } catch (_) {
+      // The replay itself remains usable if the shared identity refresh fails.
+    }
+    const number = canonicalReplayNumber();
+    if (number) applyReplayTitle(number);
+    return number;
+  }
+
   async function renumberReplay(button) {
     if (renumberBusy || window.__realPlayAdminVerified !== true) return;
     const sessionId = Number(button?.dataset?.rpReplayOpenRankEdit || replaySessionId || 0);
@@ -242,7 +258,8 @@
       }
 
       replaySessionId = sessionId;
-      applyReplayTitle(saved);
+      const canonical = await refreshReplayCanonicalTitle();
+      applyReplayTitle(canonical || saved);
       button.textContent = '✓';
       window.setTimeout(() => {
         if (button.isConnected) button.textContent = '#';
@@ -259,6 +276,10 @@
   function syncReplayNumberEditor() {
     const root = replayRoot();
     if (!root) return;
+
+    const canonical = canonicalReplayNumber();
+    if (canonical) applyReplayTitle(canonical);
+
     const topbar = root.querySelector('.rp-career-replay-topbar');
     if (!topbar) return;
 
@@ -291,7 +312,10 @@
     if (replayTrigger) {
       const id = Number(replayTrigger.dataset.rpCareerReplaySession || 0);
       if (Number.isSafeInteger(id) && id > 0) replaySessionId = id;
-      window.setTimeout(syncReplayNumberEditor, 140);
+      window.setTimeout(() => {
+        syncReplayNumberEditor();
+        refreshReplayCanonicalTitle().catch(() => {});
+      }, 140);
     }
   }, true);
 
