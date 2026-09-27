@@ -9,6 +9,8 @@
   let teamState = null;
   let membershipState = null;
   let loading = false;
+  let officialRankRequestId = 0;
+  let officialRankState = { status: 'idle', rank: null };
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -30,6 +32,140 @@
     return Number.isFinite(parsed) ? parsed : fallback;
   }
 
+  function normalizeId(value) {
+    const normalized = String(value ?? '').trim();
+    return normalized && normalized !== '0' ? normalized : '';
+  }
+
+  function uniqueIds(values) {
+    return [...new Set(values.map(normalizeId).filter(Boolean))];
+  }
+
+  function positiveRank(value) {
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  function canonicalOfficialRank() {
+    return officialRankState.status === 'resolved' ? positiveRank(officialRankState.rank) : null;
+  }
+
+  function applyOfficialRankDisplay(fallbackCaption = '') {
+    const rankNode = panel?.querySelector('.rp-profile-rank');
+    const strong = rankNode?.querySelector('strong');
+    const small = rankNode?.querySelector('small');
+    if (!rankNode || !strong) return;
+
+    const rank = canonicalOfficialRank();
+    strong.textContent = rank === null ? '—' : `#${rank}`;
+
+    if (small) {
+      if (rank !== null) {
+        small.textContent = 'OFFICIAL RANK';
+      } else if (officialRankState.status === 'resolved') {
+        small.textContent = fallbackCaption && fallbackCaption !== 'OFFICIAL RANK'
+          ? fallbackCaption
+          : 'UNRANKED';
+      } else if (fallbackCaption) {
+        small.textContent = fallbackCaption;
+      }
+    }
+
+    rankNode.dataset.rpCanonicalRank = rank !== null
+      ? String(rank)
+      : officialRankState.status === 'resolved'
+        ? 'unranked'
+        : officialRankState.status;
+  }
+
+  function beginOfficialRankResolution() {
+    const requestId = ++officialRankRequestId;
+    officialRankState = { status: 'loading', rank: null };
+    applyOfficialRankDisplay('OFFICIAL RANK');
+    return requestId;
+  }
+
+  function profileCanonicalIds() {
+    return uniqueIds([
+      state?.playerId,
+      state?.player_id,
+      state?.profile?.playerId,
+      state?.profile?.player_id,
+    ]);
+  }
+
+  function profileAccountIds() {
+    return uniqueIds([
+      state?.accountUserId,
+      state?.account_user_id,
+      state?.profile?.accountUserId,
+      state?.profile?.account_user_id,
+      state?.profile?.userAccountId,
+      state?.profile?.user_account_id,
+    ]);
+  }
+
+  function findCanonicalOwnPlayer(data) {
+    const players = Array.isArray(data?.players) ? data.players : [];
+    if (!players.length) return null;
+
+    const canonicalIds = uniqueIds([
+      data?.mePlayerId,
+      data?.meUserId,
+      ...profileCanonicalIds(),
+    ]);
+    const accountIds = uniqueIds([
+      data?.meAccountUserId,
+      ...profileAccountIds(),
+    ]);
+
+    for (const canonicalId of canonicalIds) {
+      const player = players.find((row) => uniqueIds([
+        row?.playerId,
+        row?.player_id,
+        row?.userId,
+        row?.user_id,
+      ]).includes(canonicalId));
+      if (player) return player;
+    }
+
+    for (const accountId of accountIds) {
+      const player = players.find((row) => uniqueIds([
+        row?.accountUserId,
+        row?.account_user_id,
+        row?.userAccountId,
+        row?.user_account_id,
+      ]).includes(accountId));
+      if (player) return player;
+    }
+
+    return null;
+  }
+
+  async function resolveOfficialRank(requestId) {
+    try {
+      if (typeof window.RealPlayWorld?.community !== 'function') {
+        throw new Error('Players rank authority is unavailable.');
+      }
+
+      const data = await window.RealPlayWorld.community('players');
+      if (requestId !== officialRankRequestId) return;
+
+      const player = findCanonicalOwnPlayer(data);
+      if (!player) {
+        officialRankState = { status: 'unavailable', rank: null };
+      } else {
+        officialRankState = { status: 'resolved', rank: positiveRank(player?.rank) };
+      }
+    } catch (_error) {
+      if (requestId !== officialRankRequestId) return;
+      officialRankState = { status: 'unavailable', rank: null };
+    }
+
+    if (requestId !== officialRankRequestId) return;
+    applyOfficialRankDisplay();
+  }
+
   function playerName() {
     return String(pick(state?.profile?.player_name, state?.profile?.playerName, state?.profile?.name, 'REAL PLAY PLAYER')).trim();
   }
@@ -45,11 +181,6 @@
 
   function ovr() {
     const value = pick(state?.ovr, state?.career?.ovr, state?.careerStats?.ovr, state?.rating);
-    return value === undefined || value === null || value === '' ? null : Number(value);
-  }
-
-  function rank() {
-    const value = pick(state?.rank, state?.career?.rank, state?.careerStats?.rank);
     return value === undefined || value === null || value === '' ? null : Number(value);
   }
 
@@ -296,7 +427,7 @@
     const name = playerName();
     const jersey = playerNumber();
     const rating = ovr();
-    const playerRank = rank();
+    const playerRank = canonicalOfficialRank();
     const club = team();
     const games = number(pick(stats.games, stats.gamesPlayed));
     const wins = number(stats.wins);
@@ -344,9 +475,14 @@
       : rankingEligible
         ? 'OFFICIAL RANKING'
         : `EARLY OVR · ${rankingCompleted}/${rankingRequired}`;
-    const rankCaption = rankingEligible
+    const fallbackRankCaption = rankingEligible
       ? 'OFFICIAL RANK'
       : `${rankingCompleted}/${rankingRequired} VERIFIED`;
+    const rankCaption = playerRank !== null
+      ? 'OFFICIAL RANK'
+      : officialRankState.status === 'resolved' && fallbackRankCaption === 'OFFICIAL RANK'
+        ? 'UNRANKED'
+        : fallbackRankCaption;
 
     root.innerHTML = `
       <section class="rp-profile-hero">
@@ -361,7 +497,7 @@
         </div>
         <div class="rp-profile-rating-row">
           <div class="rp-profile-ovr"><span>OVR</span><strong>${rating === null ? '—' : rating}</strong><small>${esc(ovrCaption)}</small></div>
-          <div class="rp-profile-rank"><span>RANK</span><strong>${rankingEligible && playerRank !== null ? `#${playerRank}` : '—'}</strong><small>${esc(rankCaption)}</small></div>
+          <div class="rp-profile-rank"><span>RANK</span><strong>${playerRank === null ? '—' : `#${playerRank}`}</strong><small>${esc(rankCaption)}</small></div>
           <div class="rp-profile-record"><span>RECORD</span><strong>${wins}-${losses}</strong><small>${games} GAME${games === 1 ? '' : 'S'}</small></div>
         </div>
       </section>
@@ -387,6 +523,7 @@
         <button type="button" class="rp-profile-settings-placeholder" aria-label="Settings">SETTINGS</button>
       </section>`;
 
+    applyOfficialRankDisplay(rankCaption);
     panel.__realPlayProfileState = state;
     const profilePlayerId = Number(pick(
       state?.playerId,
@@ -451,6 +588,8 @@
 
   function openProfile() {
     createPanel();
+    const rankRequestId = beginOfficialRankResolution();
+    resolveOfficialRank(rankRequestId);
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-profile-open');
@@ -460,6 +599,8 @@
 
   function closeProfile() {
     if (!panel) return;
+    officialRankRequestId += 1;
+    officialRankState = { status: 'idle', rank: null };
     const focused = document.activeElement;
     if (focused && panel.contains(focused)) {
       try { focused.blur?.(); } catch (_error) {}

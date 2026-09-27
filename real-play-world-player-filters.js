@@ -51,8 +51,6 @@
   let rankRefreshPromise = null;
   let rankAuthorityAt = 0;
   let rankBackoffUntil = 0;
-  let ownWorldPlayerId = '';
-  let ownAccountUserId = '';
 
   function installStyles() {
     if (document.querySelector('[data-rp-world-player-filter-styles]')) return;
@@ -146,8 +144,6 @@
     authorityPlayerById = nextPlayers;
     rankByUserId = nextByPlayer;
     rankByAccountUserId = nextByAccount;
-    ownWorldPlayerId = String(data?.meUserId ?? '').trim();
-    ownAccountUserId = String(data?.meAccountUserId ?? '').trim();
     rankAuthorityReady = true;
     rankAuthorityAt = Date.now();
     rankBackoffUntil = 0;
@@ -189,29 +185,6 @@
     return rankRefreshPromise;
   }
 
-  function ownRankFromAuthority() {
-    if (!rankAuthorityReady) return null;
-    if (ownWorldPlayerId && rankByUserId.has(ownWorldPlayerId)) return rankByUserId.get(ownWorldPlayerId);
-    if (ownAccountUserId && rankByAccountUserId.has(ownAccountUserId)) return rankByAccountUserId.get(ownAccountUserId);
-    return null;
-  }
-
-  function renderAuthoritativeProfileRank(rank) {
-    const numericRank = Number(rank);
-    const hasRank = Number.isFinite(numericRank) && numericRank > 0;
-    const ownProfile = document.querySelector('.rp-profile.open:not(.rp-public-player-profile)');
-    if (!ownProfile) return;
-    ownProfile.querySelectorAll('.rp-profile-rank').forEach((node) => {
-      const strong = node.querySelector('strong');
-      const small = node.querySelector('small');
-      if (!strong) return;
-      const nextStrong = hasRank ? `#${numericRank}` : '—';
-      const nextSmall = hasRank ? 'OFFICIAL RANK' : 'UNRANKED';
-      if (strong.textContent !== nextStrong) strong.textContent = nextStrong;
-      if (small && small.textContent !== nextSmall) small.textContent = nextSmall;
-    });
-  }
-
   function publicRankFromAuthority(profile, player) {
     if (!rankAuthorityReady) return null;
     const playerId = String(player?.playerId ?? profile?.dataset?.rpPublicPlayerId ?? player?.userId ?? '').trim();
@@ -243,7 +216,6 @@
   function applyCachedRankAuthority() {
     if (!rankAuthorityReady) return;
     enforcePublicProfileRank();
-    renderAuthoritativeProfileRank(ownRankFromAuthority());
   }
 
   async function enforceRankAuthority(force = false) {
