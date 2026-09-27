@@ -9,6 +9,8 @@
   let teamState = null;
   let membershipState = null;
   let loading = false;
+  let officialRankState = { status: 'idle', rank: null };
+  let officialRankRequestId = 0;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -48,9 +50,104 @@
     return value === undefined || value === null || value === '' ? null : Number(value);
   }
 
-  function rank() {
-    const value = pick(state?.rank, state?.career?.rank, state?.careerStats?.rank);
-    return value === undefined || value === null || value === '' ? null : Number(value);
+  function stablePlayerId(value) {
+    const id = Number(value);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+  }
+
+  function rankingProgress() {
+    const stats = career();
+    const games = number(pick(stats.games, stats.gamesPlayed));
+    const rankingState = state?.ranking || {};
+    const required = Math.max(1, number(pick(
+      rankingState.requiredGames,
+      rankingState.required_games,
+      state?.officialRankingGamesRequired,
+      state?.official_ranking_games_required,
+      state?.rankingGamesRequired,
+      state?.ranking_games_required,
+      5
+    ), 5));
+    const completed = Math.min(required, Math.max(0, number(pick(
+      rankingState.completedGames,
+      rankingState.completed_games,
+      state?.rankingGamesCompleted,
+      state?.ranking_games_completed,
+      games
+    ), games)));
+    return { required, completed };
+  }
+
+  function officialRankCaption() {
+    if (officialRankState.status !== 'resolved') return 'OFFICIAL RANK';
+    if (officialRankState.rank !== null) return 'OFFICIAL RANK';
+    const { required, completed } = rankingProgress();
+    return completed < required ? `${completed}/${required} VERIFIED` : 'UNRANKED';
+  }
+
+  function applyOfficialRankDisplay() {
+    const rankNode = panel?.querySelector('.rp-profile-rank');
+    if (!rankNode) return;
+    const strong = rankNode.querySelector('strong');
+    const small = rankNode.querySelector('small');
+    const numericRank = Number(officialRankState.rank);
+    const hasRank = officialRankState.status === 'resolved'
+      && Number.isSafeInteger(numericRank)
+      && numericRank > 0;
+    if (strong) strong.textContent = hasRank ? `#${numericRank}` : '—';
+    if (small) small.textContent = officialRankCaption();
+    rankNode.dataset.rpCanonicalRank = officialRankState.status === 'resolved'
+      ? (hasRank ? String(numericRank) : 'unranked')
+      : 'pending';
+  }
+
+  function findCanonicalOwnPlayer(data) {
+    const players = Array.isArray(data?.players) ? data.players : [];
+    const ownPlayerId = stablePlayerId(data?.meUserId);
+    const ownAccountUserId = stablePlayerId(data?.meAccountUserId);
+    if (!ownPlayerId && !ownAccountUserId) return null;
+
+    return players.find((player) => {
+      const playerId = stablePlayerId(player?.playerId ?? player?.userId);
+      const accountUserId = stablePlayerId(player?.accountUserId ?? player?.account_user_id);
+      return Boolean(
+        (ownPlayerId && playerId === ownPlayerId)
+        || (ownAccountUserId && accountUserId === ownAccountUserId)
+      );
+    }) || null;
+  }
+
+  function refreshOfficialRankAuthority({ reset = false } = {}) {
+    const requestId = ++officialRankRequestId;
+    if (reset) {
+      officialRankState = { status: 'loading', rank: null };
+      applyOfficialRankDisplay();
+    }
+
+    Promise.resolve().then(async () => {
+      const community = window.RealPlayWorld?.community;
+      if (typeof community !== 'function') throw new Error('Players rank authority is unavailable.');
+      const data = await community('players');
+      if (requestId !== officialRankRequestId) return;
+
+      const player = findCanonicalOwnPlayer(data);
+      if (!player) {
+        officialRankState = { status: 'unavailable', rank: null };
+        applyOfficialRankDisplay();
+        return;
+      }
+
+      const numericRank = Number(player?.rank);
+      officialRankState = {
+        status: 'resolved',
+        rank: Number.isSafeInteger(numericRank) && numericRank > 0 ? numericRank : null,
+      };
+      applyOfficialRankDisplay();
+    }).catch(() => {
+      if (requestId !== officialRankRequestId) return;
+      officialRankState = { status: 'unavailable', rank: null };
+      applyOfficialRankDisplay();
+    });
   }
 
   function team() {
@@ -296,7 +393,7 @@
     const name = playerName();
     const jersey = playerNumber();
     const rating = ovr();
-    const playerRank = rank();
+    const playerRank = officialRankState.status === 'resolved' ? officialRankState.rank : null;
     const club = team();
     const games = number(pick(stats.games, stats.gamesPlayed));
     const wins = number(stats.wins);
@@ -344,9 +441,7 @@
       : rankingEligible
         ? 'OFFICIAL RANKING'
         : `EARLY OVR · ${rankingCompleted}/${rankingRequired}`;
-    const rankCaption = rankingEligible
-      ? 'OFFICIAL RANK'
-      : `${rankingCompleted}/${rankingRequired} VERIFIED`;
+    const rankCaption = officialRankCaption();
 
     root.innerHTML = `
       <section class="rp-profile-hero">
@@ -361,7 +456,7 @@
         </div>
         <div class="rp-profile-rating-row">
           <div class="rp-profile-ovr"><span>OVR</span><strong>${rating === null ? '—' : rating}</strong><small>${esc(ovrCaption)}</small></div>
-          <div class="rp-profile-rank"><span>RANK</span><strong>${rankingEligible && playerRank !== null ? `#${playerRank}` : '—'}</strong><small>${esc(rankCaption)}</small></div>
+          <div class="rp-profile-rank" data-rp-canonical-rank="${officialRankState.status === 'resolved' ? (playerRank === null ? 'unranked' : playerRank) : 'pending'}"><span>RANK</span><strong>${playerRank === null ? '—' : `#${playerRank}`}</strong><small>${esc(rankCaption)}</small></div>
           <div class="rp-profile-record"><span>RECORD</span><strong>${wins}-${losses}</strong><small>${games} GAME${games === 1 ? '' : 'S'}</small></div>
         </div>
       </section>
@@ -421,8 +516,9 @@
     node.classList.toggle('error', type === 'error');
   }
 
-  async function refresh() {
+  async function refresh(options = {}) {
     if (loading) return;
+    if (options.refreshOfficialRank !== false) refreshOfficialRankAuthority();
     loading = true;
     setStatus('LOADING PLAYER PROFILE...');
     try {
@@ -451,11 +547,12 @@
 
   function openProfile() {
     createPanel();
+    refreshOfficialRankAuthority({ reset: true });
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-profile-open');
     panel.scrollTop = 0;
-    refresh();
+    refresh({ refreshOfficialRank: false });
   }
 
   function closeProfile() {
