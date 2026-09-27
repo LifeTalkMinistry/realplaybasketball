@@ -27,6 +27,10 @@ jobs:
           node --check updates-session-title-admin.js
           node --check career-game-replay.js
           node --check career-game-replay-marker-cleanup.js
+          node --check real-play-inactive-player-state.js
+          node --check tests/inactive-player-identity-lookup.test.js
 
       - name: Run Open Rank identity contract tests
-        run: node --test tests/open-rank-recording-authority.test.js
+        run: |
+          node --test tests/open-rank-recording-authority.test.js
+          node --test tests/inactive-player-identity-lookup.test.js
