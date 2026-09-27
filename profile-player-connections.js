@@ -181,8 +181,10 @@
     const section = createSection(profile);
     if (!section || section.dataset.rpConnectionsReady === 'true') return;
 
-    const playerId = positiveId(profile.dataset.rpPublicPlayerId);
     const ownProfile = Boolean(profile.matches('[data-rp-profile]') && !profile.matches('.rp-public-player-profile'));
+    const playerId = ownProfile
+      ? null
+      : positiveId(profile?.__realPlayPublicPlayer?.playerId);
     if (!playerId && !ownProfile) return;
 
     section.dataset.rpConnectionsReady = 'true';
