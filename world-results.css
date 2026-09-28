@@ -375,3 +375,16 @@ body.rp-simple-navigation-active.rp-updates-open:has(.rp-updates.rp-world-result
     gap:3%!important;
   }
 }
+
+/* The trophy already communicates the award. Remove the redundant GAME MVP
+ * label while preserving the trophy and the hard divider wall. */
+.rp-updates.rp-world-results-entry
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span{
+  width:0!important;
+  flex:0 0 0!important;
+  overflow:visible!important;
+  color:transparent!important;
+  font-size:0!important;
+  letter-spacing:0!important;
+  text-shadow:none!important;
+}
