@@ -340,3 +340,38 @@ body.rp-simple-navigation-active.rp-updates-open:has(.rp-updates.rp-world-result
     font-size:clamp(.78rem,4.15vw,1.08rem)!important;
   }
 }
+
+/* Treat the artwork divider between the trophy well and the text as a hard wall.
+ * The MVP copy starts to the right of that wall no matter how long the player
+ * name is, so a long name can shrink/ellipsis but can never push GAME MVP back
+ * into the divider or trophy area. */
+.rp-updates.rp-world-results-entry
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp{
+  box-sizing:border-box!important;
+  padding-left:23.5%!important;
+  padding-right:4.5%!important;
+  justify-content:flex-start!important;
+  gap:3.5%!important;
+  text-align:left!important;
+}
+
+.rp-updates.rp-world-results-entry
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span{
+  flex:0 0 auto!important;
+}
+
+.rp-updates.rp-world-results-entry
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp strong{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  text-align:left!important;
+}
+
+@media(max-width:420px){
+  .rp-updates.rp-world-results-entry
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp{
+    padding-left:23.5%!important;
+    padding-right:4%!important;
+    gap:3%!important;
+  }
+}
