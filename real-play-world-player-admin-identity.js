@@ -111,9 +111,7 @@
     const style = document.createElement('style');
     style.dataset.rpAdminIdentityDetailsStyles = '1';
     style.textContent = `
-      .rp-player-admin-identity:has([data-rp-admin-identity-meta]){display:block}
-      .rp-player-admin-identity:has([data-rp-admin-identity-meta])>div:first-child{min-width:0}
-      .rp-player-admin-identity-meta{grid-column:1/-1;display:grid!important;gap:7px!important;margin-top:11px!important;padding-top:10px!important;border-top:1px solid rgba(255,255,255,.065)}
+      .rp-player-admin-identity-meta{grid-column:1/-1;display:grid!important;gap:7px!important;margin-top:2px!important;padding-top:10px!important;border-top:1px solid rgba(255,255,255,.065)}
       .rp-player-admin-identity-meta>div{display:grid!important;grid-template-columns:92px minmax(0,1fr)!important;gap:9px!important;align-items:start!important;min-width:0}
       .rp-player-admin-identity-meta small{display:block;color:#53647a;font-size:.43rem;font-weight:950;letter-spacing:.09em;line-height:1.35}
       .rp-player-admin-identity-meta span{display:block!important;margin:0!important;min-width:0;color:#aebdcd!important;font-size:.5rem!important;font-weight:850!important;letter-spacing:.025em!important;line-height:1.4;overflow-wrap:anywhere;white-space:normal!important}
