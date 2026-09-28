@@ -388,3 +388,45 @@ body.rp-simple-navigation-active.rp-updates-open:has(.rp-updates.rp-world-result
   letter-spacing:0!important;
   text-shadow:none!important;
 }
+
+/* MVP name alignment: every name uses the same visual center point, regardless
+ * of character count. The left trophy/divider area stays reserved; long names
+ * ellipsize inside a symmetric safe zone instead of shifting short names. */
+.rp-updates.rp-world-results-entry
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp{
+  position:absolute!important;
+  padding-left:0!important;
+  padding-right:0!important;
+  justify-content:center!important;
+  gap:0!important;
+  text-align:center!important;
+}
+
+.rp-updates.rp-world-results-entry
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp strong{
+  position:absolute!important;
+  left:50%!important;
+  width:56%!important;
+  max-width:56%!important;
+  flex:none!important;
+  transform:translateX(-50%)!important;
+  text-align:center!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+
+@media(max-width:420px){
+  .rp-updates.rp-world-results-entry
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp{
+    padding-left:0!important;
+    padding-right:0!important;
+    gap:0!important;
+  }
+
+  .rp-updates.rp-world-results-entry
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp strong{
+    width:56%!important;
+    max-width:56%!important;
+  }
+}
