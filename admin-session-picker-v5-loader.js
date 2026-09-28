@@ -30,4 +30,21 @@
     commentaryScript.onerror = () => console.error('[Real Play] Commentary Stats Viewer failed to load.');
     document.head.appendChild(commentaryScript);
   }
+
+  if (!document.querySelector('link[data-rp-race-target-correction-style]')) {
+    const style = document.createElement('link');
+    style.dataset.rpRaceTargetCorrectionStyle = '1';
+    style.rel = 'stylesheet';
+    style.href = 'admin-race-target-correction.css?v=20260928-race-target-correction-v1';
+    document.head.appendChild(style);
+  }
+
+  if (!document.querySelector('script[data-rp-race-target-correction-loader]')) {
+    const correctionScript = document.createElement('script');
+    correctionScript.dataset.rpRaceTargetCorrectionLoader = '1';
+    correctionScript.src = 'admin-race-target-correction.js?v=20260928-race-target-correction-v1';
+    correctionScript.async = false;
+    correctionScript.onerror = () => console.error('[Real Play] Race To target correction controls failed to load.');
+    document.head.appendChild(correctionScript);
+  }
 })();
