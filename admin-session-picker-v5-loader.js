@@ -21,4 +21,13 @@
     scheduleScript.onerror = () => console.error('[Real Play] Admin player schedule controls failed to load.');
     document.head.appendChild(scheduleScript);
   }
+
+  if (!document.querySelector('script[data-rp-commentary-stats-loader]')) {
+    const commentaryScript = document.createElement('script');
+    commentaryScript.dataset.rpCommentaryStatsLoader = '1';
+    commentaryScript.src = 'admin-commentary-stats-viewer.js?v=20260928-commentary-stats-viewer-v1';
+    commentaryScript.async = false;
+    commentaryScript.onerror = () => console.error('[Real Play] Commentary Stats Viewer failed to load.');
+    document.head.appendChild(commentaryScript);
+  }
 })();
