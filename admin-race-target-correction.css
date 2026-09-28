@@ -1,0 +1,238 @@
+.rp-race-target-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 10px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 12px;
+  background: rgba(5, 12, 28, 0.92);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.rp-race-target-current,
+.rp-race-target-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.rp-race-target-current {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.rp-race-target-current small,
+.rp-race-target-detail small,
+.rp-race-target-dialog-head small,
+.rp-race-target-previous-reason small {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  opacity: 0.62;
+}
+
+.rp-race-target-current strong {
+  font-size: 17px;
+  letter-spacing: 0.03em;
+}
+
+.rp-race-target-actions > span {
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  font-weight: 900;
+  opacity: 0.72;
+}
+
+.rp-race-target-actions > span.corrected {
+  border-color: rgba(255, 191, 71, 0.48);
+  background: rgba(255, 191, 71, 0.1);
+  color: #ffd57a;
+  opacity: 1;
+}
+
+.rp-race-target-actions button,
+.rp-race-target-dialog-actions button,
+.rp-race-target-dialog-head > button {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.rp-race-target-actions button {
+  padding: 8px 10px;
+}
+
+.rp-race-target-dialog {
+  width: min(92vw, 480px);
+  max-width: 480px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  background: #091121;
+  color: #f7f9ff;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+
+.rp-race-target-dialog::backdrop {
+  background: rgba(1, 5, 14, 0.74);
+  backdrop-filter: blur(4px);
+}
+
+.rp-race-target-dialog form {
+  display: grid;
+  gap: 15px;
+  padding: 18px;
+}
+
+.rp-race-target-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rp-race-target-dialog-head h2 {
+  margin: 3px 0 0;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.rp-race-target-dialog-head > button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.rp-race-target-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rp-race-target-detail,
+.rp-race-target-previous-reason {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.rp-race-target-detail {
+  display: grid;
+  gap: 4px;
+}
+
+.rp-race-target-detail strong {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.rp-race-target-previous-reason p {
+  margin: 5px 0 0;
+  line-height: 1.45;
+  font-size: 13px;
+}
+
+.rp-race-target-field {
+  display: grid;
+  gap: 7px;
+}
+
+.rp-race-target-field > span {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.rp-race-target-field input,
+.rp-race-target-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.055);
+  color: inherit;
+  font: inherit;
+  padding: 11px 12px;
+  outline: none;
+}
+
+.rp-race-target-field input:focus,
+.rp-race-target-field textarea:focus {
+  border-color: rgba(93, 161, 255, 0.75);
+  box-shadow: 0 0 0 3px rgba(93, 161, 255, 0.12);
+}
+
+.rp-race-target-field textarea {
+  resize: vertical;
+  min-height: 82px;
+}
+
+.rp-race-target-error {
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 92, 92, 0.36);
+  border-radius: 9px;
+  background: rgba(255, 65, 65, 0.08);
+  color: #ffb5b5;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.rp-race-target-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.rp-race-target-dialog-actions button {
+  min-height: 38px;
+  padding: 9px 13px;
+}
+
+.rp-race-target-dialog-actions .primary {
+  border-color: rgba(78, 143, 255, 0.65);
+  background: #1d62d8;
+  color: white;
+}
+
+.rp-race-target-dialog-actions button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+@media (max-width: 640px) {
+  .rp-race-target-control {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .rp-race-target-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .rp-race-target-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .rp-race-target-dialog-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
