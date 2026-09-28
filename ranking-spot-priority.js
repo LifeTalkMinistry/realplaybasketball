@@ -18,12 +18,14 @@
     style.id = STYLE_ID;
     style.textContent = `
       .rp-ranking-next .rp-spot-priority-trigger{
-        position:absolute;left:0;top:50%;z-index:5;width:34px;height:34px;margin:0;padding:0;
+        position:static;flex:0 0 auto;align-self:center;width:34px;height:34px;margin:0 0 0 auto;padding:0;
         display:grid;place-items:center;border:1px solid rgba(68,207,242,.28);border-radius:11px;
         background:linear-gradient(180deg,rgba(7,25,37,.96),rgba(4,13,21,.98));color:#76dff6;
         box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 6px 16px rgba(0,0,0,.20);
-        transform:translateY(-50%);appearance:none;-webkit-appearance:none;cursor:pointer;
+        transform:none;visibility:hidden;appearance:none;-webkit-appearance:none;cursor:pointer;
       }
+      .rp-ranking-next.rp-team-reservation-enabled .rp-spot-priority-trigger{visibility:visible}
+      .rp-ranking-next .rp-ranking-section-head>div:first-child{min-width:0}
       .rp-ranking-next .rp-spot-priority-trigger:hover,
       .rp-ranking-next .rp-spot-priority-trigger:focus-visible{
         border-color:rgba(75,218,250,.48);background:linear-gradient(180deg,rgba(8,31,45,.98),rgba(5,17,27,.99));outline:none;
