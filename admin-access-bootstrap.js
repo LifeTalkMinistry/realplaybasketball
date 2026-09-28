@@ -23,6 +23,7 @@
     'admin-recorded-scoring-score-confirmation.css',
     'admin-recorded-scoring-youtube.css',
     'admin-recorded-scoring-desktop.css',
+    'admin-race-target-correction.css',
     'real-play-admin-brand-overrides.css',
   ];
   const ADMIN_SCRIPTS = [
