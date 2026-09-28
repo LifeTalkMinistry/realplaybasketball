@@ -6,7 +6,9 @@
   const VISITOR_KEY = 'real_play_visitor_mode';
 
   const hasToken = () => Boolean(localStorage.getItem(TOKEN_KEY));
-  const isActive = () => !hasToken() && localStorage.getItem(VISITOR_KEY) === '1';
+  // Logged-out users are public visitors by definition. Do not require the
+  // legacy visitor-mode flag before allowing public directory/profile reads.
+  const isActive = () => !hasToken();
 
   function emit(active) {
     window.dispatchEvent(new CustomEvent('realplay:visitorchange', { detail: { visitor: Boolean(active) } }));
