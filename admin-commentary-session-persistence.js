@@ -4,6 +4,7 @@
 
   const STORAGE_KEY = 'real_play_commentary_session_v1';
   let restoring = false;
+  let hydrating = false;
   let scheduled = false;
   let retryTimer = null;
 
@@ -41,6 +42,7 @@
 
   function clearState() {
     try { localStorage.removeItem(STORAGE_KEY); } catch (_error) {}
+    hydrating = false;
   }
 
   function viewer() {
@@ -105,7 +107,6 @@
   function restoreOneMissing(root, state) {
     const current = setupSnapshot(root);
     if (!current) return false;
-
     const desired = [
       ...state.west.map((key) => ({ side: 'west', key })),
       ...state.east.map((key) => ({ side: 'east', key })),
@@ -134,9 +135,28 @@
     } finally {
       restoring = false;
     }
-
-    scheduleRetry(40);
+    scheduleRetry(50);
     return true;
+  }
+
+  function restoreSelected(root, key) {
+    if (!key || !root) return;
+    const button = [...root.querySelectorAll('[data-cv2-select]')]
+      .find((item) => String(item.dataset.cv2Select || '') === key);
+    button?.click();
+  }
+
+  function finishHydration(root, state) {
+    hydrating = false;
+    if (state.mode !== 'live') return;
+    const begin = root.querySelector('[data-cv2-begin]');
+    if (!begin || begin.disabled) return;
+    restoring = true;
+    try { begin.click(); } finally { restoring = false; }
+    window.setTimeout(() => {
+      restoreSelected(viewer(), state.selectedKey);
+      scheduleSync();
+    }, 30);
   }
 
   function restoreSavedSetup(root, state) {
@@ -144,23 +164,19 @@
     const current = setupSnapshot(root);
     if (!current) return;
 
-    if (hasPlayers(current)) {
-      if (!restoring && !sameLineup(current, state)) {
-        writeState({ ...current, mode: state.mode, selectedKey: state.selectedKey });
-      }
+    if (sameLineup(current, state)) {
+      if (hydrating) finishHydration(root, state);
       return;
     }
 
-    if (restoreOneMissing(root, state)) return;
+    if (!hasPlayers(current)) hydrating = true;
 
-    if (state.mode === 'live') {
-      const begin = root.querySelector('[data-cv2-begin]');
-      if (begin && !begin.disabled) {
-        restoring = true;
-        try { begin.click(); } finally { restoring = false; }
-        scheduleRetry(40);
-      }
+    if (hydrating) {
+      if (!restoreOneMissing(root, state)) finishHydration(root, state);
+      return;
     }
+
+    writeState({ ...current, mode: state.mode, selectedKey: state.selectedKey });
   }
 
   function ensureResumeLabel(root, state) {
@@ -186,7 +202,8 @@
       badge.className = 'rp-cv2-saved-badge';
       head.appendChild(badge);
     }
-    badge.textContent = `LINEUP SAVED · ${state.west.length + state.east.length} PLAYER${state.west.length + state.east.length === 1 ? '' : 'S'}`;
+    const total = state.west.length + state.east.length;
+    badge.textContent = `LINEUP SAVED · ${total} PLAYER${total === 1 ? '' : 'S'}`;
   }
 
   function ensureFinishButton(root) {
@@ -218,12 +235,14 @@
     const state = readState() || { west: [], east: [], mode: 'setup', selectedKey: null };
     state[side] = state[side].filter((item) => item !== key);
     if (state.selectedKey === key) state.selectedKey = null;
+    hydrating = false;
     writeState(state);
   }
 
   function finishCommentary(root) {
     if (!window.confirm('Finish commentary and clear the saved West/East lineup?')) return;
     restoring = true;
+    hydrating = false;
     try {
       clearState();
       root?.querySelector('[data-cv2-edit]')?.click();
@@ -253,11 +272,10 @@
 
     if (root.querySelector('.rp-cv2-sides')) {
       const current = setupSnapshot(root);
-      if (!restoring && hasPlayers(current)) {
-        const previous = state || { west: [], east: [], mode: 'setup', selectedKey: null };
-        writeState({ ...current, mode: previous.mode === 'live' ? 'live' : 'setup', selectedKey: previous.selectedKey });
-      } else if (hasPlayers(state)) {
+      if (hasPlayers(state)) {
         restoreSavedSetup(root, state);
+      } else if (!restoring && hasPlayers(current)) {
+        writeState(current);
       }
     } else if (root.querySelector('.rp-cv2-live')) {
       const current = liveSnapshot(root);
@@ -288,7 +306,10 @@
     const begin = event.target.closest?.('[data-cv2-begin]');
     if (begin) {
       const snapshot = setupSnapshot(begin.closest('.rp-commentary-viewer-v2'));
-      if (snapshot) writeState({ ...snapshot, mode: 'live' });
+      if (snapshot) {
+        hydrating = false;
+        writeState({ ...snapshot, mode: 'live' });
+      }
     }
 
     const exit = event.target.closest?.('[data-cv2-exit]');
@@ -302,11 +323,11 @@
 
   window.addEventListener('beforeunload', () => {
     const snapshot = currentSnapshot();
-    if (!restoring && hasPlayers(snapshot)) writeState(snapshot);
+    if (!restoring && !hydrating && hasPlayers(snapshot)) writeState(snapshot);
   });
   window.addEventListener('pagehide', () => {
     const snapshot = currentSnapshot();
-    if (!restoring && hasPlayers(snapshot)) writeState(snapshot);
+    if (!restoring && !hydrating && hasPlayers(snapshot)) writeState(snapshot);
   });
 
   const observer = new MutationObserver(scheduleSync);
