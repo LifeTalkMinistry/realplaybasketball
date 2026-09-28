@@ -314,3 +314,29 @@ body.rp-simple-navigation-active.rp-updates-open:has(.rp-updates.rp-world-result
 body.rp-simple-navigation-active.rp-updates-open:has(.rp-updates.rp-world-results-entry.open) .rp-updates-shell{
   padding-bottom:calc(var(--rp-simple-nav-height) + env(safe-area-inset-bottom) + 18px)!important;
 }
+
+/* Result-card MVP hierarchy: the rail already has room, so let the award read
+ * like an award instead of a caption. Keep the trophy/layout untouched. */
+.rp-updates.rp-world-results-entry
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span{
+  font-size:clamp(.62rem,3vw,1rem)!important;
+  letter-spacing:.055em!important;
+}
+
+.rp-updates.rp-world-results-entry
+.rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp strong{
+  font-size:clamp(.82rem,4vw,1.38rem)!important;
+  letter-spacing:.012em!important;
+}
+
+@media(max-width:420px){
+  .rp-updates.rp-world-results-entry
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp span{
+    font-size:clamp(.60rem,3.15vw,.82rem)!important;
+  }
+
+  .rp-updates.rp-world-results-entry
+  .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] .rp-update-mvp strong{
+    font-size:clamp(.78rem,4.15vw,1.08rem)!important;
+  }
+}
