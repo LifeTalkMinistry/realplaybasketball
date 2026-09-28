@@ -31,13 +31,13 @@
     }
 
     const oldPersistence = document.querySelector('script[data-rp-commentary-persistence-loader]');
-    if (oldPersistence && !String(oldPersistence.src || '').includes('commentary-persistence-v2')) {
+    if (oldPersistence && !String(oldPersistence.src || '').includes('commentary-persistence-v3')) {
       oldPersistence.remove();
     }
     if (!document.querySelector('script[data-rp-commentary-persistence-loader]')) {
       const persistenceScript = document.createElement('script');
       persistenceScript.dataset.rpCommentaryPersistenceLoader = '1';
-      persistenceScript.src = 'admin-commentary-session-persistence.js?v=20260928-commentary-persistence-v2';
+      persistenceScript.src = 'admin-commentary-session-persistence.js?v=20260928-commentary-persistence-v3';
       persistenceScript.async = false;
       persistenceScript.onerror = () => console.error('[Real Play] Commentary session persistence failed to load.');
       document.head.appendChild(persistenceScript);
