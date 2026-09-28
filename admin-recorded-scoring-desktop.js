@@ -129,15 +129,6 @@
     rulesTimer = setTimeout(() => syncSavedRaceRules(force), 20);
   }
 
-  function panelTitleHtml() {
-    return `
-      <div class="rp-video-desktop-panel-title" data-rp-video-desktop-panel-title>
-        <span>DRAFT SCORE SHEET</span>
-        <strong>SCORE DESK</strong>
-        <small>Select a player, then record the event without losing sight of the game.</small>
-      </div>`;
-  }
-
   function restoreMobileLayout(adminRoot, scoring) {
     adminRoot?.classList.remove('rp-recorded-desktop-mode');
     scoring?.classList.remove('rp-video-desktop-ready');
@@ -151,14 +142,13 @@
     const autoNote = scoring.querySelector('.rp-video-auto-note');
     const draftBanner = scoring.querySelector('[data-rp-draft-banner]');
     const cancelCard = scoring.querySelector('[data-rp-cancel-video-card]');
-    const correction = scoring.querySelector('[data-rp-race-target-correction]');
     const scoreboard = scoring.querySelector('.rp-video-scoreboard');
     const rosters = scoring.querySelector('.rp-video-score-rosters');
     const selectedPanel = scoring.querySelector('[data-rp-video-selected-panel]');
     const reviewActions = scoring.querySelector('.rp-video-review-actions');
 
     const anchor = grids[0];
-    [playerWrap, autoNote, draftBanner, cancelCard, correction, scoreboard, rosters, selectedPanel, reviewActions]
+    [playerWrap, autoNote, draftBanner, cancelCard, scoreboard, rosters, selectedPanel, reviewActions]
       .filter(Boolean)
       .forEach((node) => scoring.insertBefore(node, anchor));
 
@@ -179,7 +169,6 @@
     moveIfNeeded(scoring.querySelector('[data-rp-draft-banner]'), left);
     moveIfNeeded(scoring.querySelector('[data-rp-cancel-video-card]'), left);
 
-    moveIfNeeded(scoring.querySelector('[data-rp-race-target-correction]'), right);
     moveIfNeeded(scoring.querySelector('.rp-video-scoreboard'), right);
     moveIfNeeded(scoring.querySelector('.rp-video-score-rosters'), right);
     moveIfNeeded(scoring.querySelector('[data-rp-video-selected-panel]'), right);
@@ -251,7 +240,6 @@
     const right = document.createElement('section');
     right.className = 'rp-video-desktop-right';
     right.dataset.rpVideoDesktopRight = '1';
-    right.insertAdjacentHTML('afterbegin', panelTitleHtml());
 
     playerWrap.insertAdjacentElement('beforebegin', grid);
     grid.append(left, right);
@@ -311,164 +299,4 @@
     scheduleLayout();
     scheduleRulesSync(true);
   }
-})();
-
-(() => {
-  if (window.__realPlayRaceTargetCorrectionInstalled) return;
-  window.__realPlayRaceTargetCorrectionInstalled = true;
-
-  const API_BASE_URL = 'https://api.clarapmc.com';
-  const TOKEN_KEY = 'real_play_access_token';
-  let current = null;
-  let currentSessionId = 0;
-  let timer = null;
-  let loading = false;
-
-  const esc = (value) => String(value ?? '')
-    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
-
-  function scoring() { return document.querySelector('.rp-admin-control .rp-video-scoring-screen'); }
-
-  async function request(path, options = {}) {
-    const auth = localStorage.getItem(TOKEN_KEY) || '';
-    if (!auth) throw new Error('Admin session is not available.');
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      method: options.method || 'GET',
-      headers: {
-        Accept: 'application/json', Authorization: `Bearer ${auth}`,
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-      cache: 'no-store',
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data?.message || data?.error || `Request failed (${response.status}).`);
-    return data;
-  }
-
-  function removeControl() {
-    document.querySelectorAll('[data-rp-race-target-correction]').forEach((node) => node.remove());
-  }
-
-  function renderControl() {
-    const screen = scoring();
-    if (!screen || !current) return removeControl();
-    let node = screen.querySelector('[data-rp-race-target-correction]');
-    if (!node) {
-      node = document.createElement('section');
-      node.className = 'rp-race-target-correction';
-      node.dataset.rpRaceTargetCorrection = '1';
-      const scoreboard = screen.querySelector('.rp-video-scoreboard');
-      scoreboard?.insertAdjacentElement('beforebegin', node);
-    }
-    const original = Number(current.originalRules?.targetScore || 0);
-    const effective = Number(current.effectiveRules?.targetScore || original || 0);
-    const corrected = Boolean(current.correction && effective !== original);
-    const signature = `${original}:${effective}:${corrected ? 1 : 0}`;
-    if (node.dataset.rpRaceTargetSignature === signature) return;
-    node.innerHTML = `<div class="rp-race-target-label"><span>RACE TARGET</span><strong>RACE TO ${effective}</strong><small>${corrected ? 'CORRECTED' : 'LOCKED RULE'}</small></div><button type="button" data-rp-race-target-edit>${corrected ? 'CORRECTED · EDIT' : 'EDIT TARGET'}</button>`;
-    node.dataset.rpRaceTargetSignature = signature;
-  }
-
-  async function refresh() {
-    if (!scoring() || loading) return;
-    loading = true;
-    try {
-      const controlData = await request('/api/real-play/admin/career/control');
-      const id = Number(controlData?.control?.session?.id || 0);
-      if (!id) throw new Error('No active game.');
-      const [rulesData, recordingData] = await Promise.all([
-        request(`/api/real-play/admin/games/${id}/race-target-correction`),
-        request(`/api/real-play/admin/recorded-scoring?session_id=${encodeURIComponent(id)}`),
-      ]);
-      const allowed = Boolean(rulesData?.originalRules?.rulesetFamily === 'race_to'
-        && rulesData?.gameRulesLockedAt && rulesData?.gamePhase === 'video_review'
-        && rulesData?.gameStatus !== 'final' && !recordingData?.recording?.reviewCompletedAt);
-      currentSessionId = id;
-      current = allowed ? rulesData : null;
-      renderControl();
-    } catch (_) {
-      current = null;
-      removeControl();
-    } finally {
-      loading = false;
-    }
-  }
-
-  function modal() {
-    let node = document.querySelector('[data-rp-race-target-modal]');
-    if (node) return node;
-    node = document.createElement('div');
-    node.className = 'rp-race-target-modal';
-    node.dataset.rpRaceTargetModal = '1';
-    node.setAttribute('aria-hidden', 'true');
-    node.innerHTML = '<div class="rp-race-target-backdrop" data-rp-race-target-cancel></div><section class="rp-race-target-dialog" role="dialog" aria-modal="true"><div class="rp-race-target-dialog-head"><div><span>ADMIN RULE CORRECTION</span><h2>ADJUST RACE TARGET</h2></div><button type="button" data-rp-race-target-cancel>×</button></div><div data-rp-race-target-modal-body></div></section>';
-    document.body.appendChild(node);
-    return node;
-  }
-
-  function closeModal() {
-    const node = document.querySelector('[data-rp-race-target-modal]');
-    node?.classList.remove('open');
-    node?.setAttribute('aria-hidden', 'true');
-  }
-
-  function openModal() {
-    if (!current) return;
-    const node = modal();
-    const body = node.querySelector('[data-rp-race-target-modal-body]');
-    const original = Number(current.originalRules?.targetScore || 0);
-    const effective = Number(current.effectiveRules?.targetScore || original || 0);
-    const correction = current.correction || null;
-    const at = correction?.correctedAt ? new Date(correction.correctedAt).toLocaleString() : '—';
-    body.innerHTML = `<div class="rp-race-target-audit-grid"><div><span>ORIGINAL TARGET</span><strong>${original}</strong></div><div><span>${correction ? 'CURRENT CORRECTED TARGET' : 'CURRENT TARGET'}</span><strong>${effective}</strong></div></div>${correction ? `<div class="rp-race-target-existing"><p><span>CORRECTED BY</span><strong>${correction.correctedByUserId ? `ADMIN #${Number(correction.correctedByUserId)}` : 'REAL PLAY ADMIN'}</strong></p><p><span>CORRECTED AT</span><strong>${esc(at)}</strong></p><p class="wide"><span>REASON</span><strong>${esc(correction.reason || '—')}</strong></p></div>` : ''}<form data-rp-race-target-form><label>CORRECTED TARGET<input name="targetScore" type="number" inputmode="numeric" min="1" max="100" step="1" value="${effective}" required></label><label>REASON<textarea name="reason" maxlength="500" required placeholder="Actual recorded game was played Race to 9"></textarea></label><p class="rp-race-target-form-status" data-rp-race-target-status></p><div class="rp-race-target-actions"><button type="button" data-rp-race-target-cancel>CANCEL</button><button type="submit" class="save">SAVE CORRECTION</button></div></form>`;
-    node.classList.add('open');
-    node.setAttribute('aria-hidden', 'false');
-  }
-
-  async function save(form) {
-    const data = new FormData(form);
-    const status = form.querySelector('[data-rp-race-target-status]');
-    const submit = form.querySelector('button[type="submit"]');
-    if (submit) submit.disabled = true;
-    if (status) status.textContent = 'Saving audited correction…';
-    try {
-      await request(`/api/real-play/admin/games/${currentSessionId}/race-target-correction`, {
-        method: 'POST',
-        body: { targetScore: Number(data.get('targetScore')), reason: String(data.get('reason') || '').trim() },
-      });
-      await refresh();
-      closeModal();
-      renderControl();
-    } catch (error) {
-      if (status) status.textContent = error.message || 'Could not save correction.';
-      if (submit) submit.disabled = false;
-    }
-  }
-
-  function schedule() {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      if (current) renderControl();
-      else refresh();
-    }, 90);
-  }
-
-  document.addEventListener('click', (event) => {
-    if (event.target.closest('[data-rp-race-target-edit]')) return openModal();
-    if (event.target.closest('[data-rp-race-target-cancel]')) closeModal();
-  }, true);
-  document.addEventListener('submit', (event) => {
-    const form = event.target.closest('[data-rp-race-target-form]');
-    if (!form) return;
-    event.preventDefault();
-    save(form);
-  }, true);
-
-  window.addEventListener('realplay:admin-render', refresh);
-  window.addEventListener('focus', refresh);
-  new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refresh, { once: true });
-  else refresh();
 })();
