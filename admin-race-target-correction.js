@@ -101,6 +101,10 @@
     return wrap;
   }
 
+  function setText(node, value) {
+    if (node && node.textContent !== value) node.textContent = value;
+  }
+
   function placeControl() {
     const board = scoreboard();
     if (!board || !activeContext?.correctionAllowed || activeContext?.originalRules?.rulesetFamily !== 'race_to') {
@@ -119,17 +123,18 @@
     }
 
     const target = Number(activeContext.effectiveTarget || activeContext.effectiveRules?.targetScore || 0);
-    const current = control.querySelector('[data-rp-race-target-value]');
-    if (current) current.textContent = `RACE TO ${target}`;
+    setText(control.querySelector('[data-rp-race-target-value]'), `RACE TO ${target}`);
 
     const hasCorrection = Boolean(correction());
     const status = control.querySelector('[data-rp-race-target-status]');
     if (status) {
-      status.textContent = hasCorrection ? 'CORRECTED' : 'LOCKED RULE';
+      setText(status, hasCorrection ? 'CORRECTED' : 'LOCKED RULE');
       status.classList.toggle('corrected', hasCorrection);
     }
-    const edit = control.querySelector('[data-rp-race-target-edit]');
-    if (edit) edit.textContent = hasCorrection ? 'EDIT CORRECTION' : 'EDIT TARGET';
+    setText(
+      control.querySelector('[data-rp-race-target-edit]'),
+      hasCorrection ? 'EDIT CORRECTION' : 'EDIT TARGET'
+    );
   }
 
   function closeDialog() {
