@@ -365,7 +365,10 @@
     const original = Number(current.originalRules?.targetScore || 0);
     const effective = Number(current.effectiveRules?.targetScore || original || 0);
     const corrected = Boolean(current.correction && effective !== original);
+    const signature = `${original}:${effective}:${corrected ? 1 : 0}`;
+    if (node.dataset.rpRaceTargetSignature === signature) return;
     node.innerHTML = `<div class="rp-race-target-label"><span>RACE TARGET</span><strong>RACE TO ${effective}</strong><small>${corrected ? 'CORRECTED' : 'LOCKED RULE'}</small></div><button type="button" data-rp-race-target-edit>${corrected ? 'CORRECTED · EDIT' : 'EDIT TARGET'}</button>`;
+    node.dataset.rpRaceTargetSignature = signature;
   }
 
   async function refresh() {
