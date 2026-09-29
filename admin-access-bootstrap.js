@@ -330,6 +330,7 @@
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
     syncSettingsRow();
+    if (token()) queueMicrotask(verifyAdmin);
   }
 
   window.addEventListener('realplay:settings-open', () => {
