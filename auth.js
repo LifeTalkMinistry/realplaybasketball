@@ -21,6 +21,56 @@
     document.head.appendChild(link);
   }
 
+  // Keep Settings aligned with the live support/donation system. The Settings
+  // panel is installed by a separate enhancement, so patch it whether it is
+  // already mounted or arrives later in the boot sequence.
+  function installSettingsSupportBridge() {
+    const patchSettings = () => {
+      const settingsOverlay = document.querySelector('[data-rp-settings-overlay]');
+      if (!settingsOverlay) return false;
+
+      const accountSummary = settingsOverlay.querySelector('[data-rp-settings-section="account"] small');
+      if (accountSummary) accountSummary.textContent = 'Identity, player number, profile art and support';
+
+      const supportRow = settingsOverlay.querySelector('[data-rp-settings-action="membership"], [data-rp-settings-action="support"]');
+      if (!supportRow) return true;
+
+      supportRow.dataset.rpSettingsAction = 'support';
+      const title = supportRow.querySelector('strong');
+      const detail = supportRow.querySelector('small');
+      if (title) title.textContent = 'SUPPORT REAL PLAY';
+      if (detail) detail.textContent = 'One-time or recurring support for Real Play';
+
+      if (supportRow.dataset.rpSupportBridgeInstalled !== 'true') {
+        supportRow.dataset.rpSupportBridgeInstalled = 'true';
+        supportRow.addEventListener('click', () => {
+          settingsOverlay.classList.remove('open');
+          settingsOverlay.setAttribute('aria-hidden', 'true');
+          document.body.classList.remove('rp-settings-open');
+
+          window.setTimeout(() => {
+            window.location.hash = 'support';
+            window.setTimeout(() => {
+              document.querySelector('#support')?.scrollIntoView({ block: 'start' });
+            }, 30);
+          }, 20);
+        });
+      }
+
+      return true;
+    };
+
+    if (patchSettings()) return;
+
+    const observer = new MutationObserver(() => {
+      if (!patchSettings()) return;
+      observer.disconnect();
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  }
+
+  installSettingsSupportBridge();
+
   // Independent Open Rank enhancement. It waits for the ranking view to mount,
   // so loading it here keeps the guide available without extending app.js boot.
   loadScript('ranking-spot-priority.js?v=20260916-spot-priority-v1');
