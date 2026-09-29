@@ -748,8 +748,14 @@
     }, 50);
   }
 
-  function openPrompt() {
-    if (document.querySelector('[data-rp-team-support-overlay]')) return;
+  function openPrompt(initialScreen = 'main') {
+    const existing = document.querySelector('[data-rp-team-support-overlay]');
+    if (existing) {
+      renderScreen(existing, initialScreen);
+      existing.setAttribute('aria-hidden', 'false');
+      existing.classList.add('is-open');
+      return existing;
+    }
     ensureStyle();
 
     const overlay = document.createElement('div');
@@ -759,12 +765,13 @@
     overlay.innerHTML = '<section class="rp-team-sheet rp-team-support-sheet" role="dialog" aria-modal="true" aria-labelledby="rp-team-support-title" data-rp-team-support-panel></section>';
 
     document.body.appendChild(overlay);
-    renderScreen(overlay, 'main');
+    renderScreen(overlay, initialScreen);
     overlay.addEventListener('click', (event) => { if (event.target === overlay) closePrompt(); });
     window.requestAnimationFrame(() => {
       overlay.setAttribute('aria-hidden', 'false');
       overlay.classList.add('is-open');
     });
+    return overlay;
   }
 
   function queuePrompt() {
@@ -795,6 +802,12 @@
 
   window.addEventListener('realplay:ranking-session-changed', () => window.setTimeout(scanTeamState, 80));
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closePrompt(); });
+
+  window.RealPlayTeamSupport = {
+    open: (screen = 'main') => openPrompt(screen),
+    close: closePrompt,
+  };
+  window.dispatchEvent(new CustomEvent('realplay:team-support-ready'));
 
   scanTeamState();
 })();
