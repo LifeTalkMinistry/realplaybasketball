@@ -260,38 +260,6 @@
   display:none!important;
 }
 
-/* Place the info control beside IDENTITY & NUMBER, not beside the month status. */
-.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title{
-  display:inline-block!important;
-  width:auto!important;
-  vertical-align:middle!important;
-}
-
-.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-identity-info-wrap{
-  position:relative!important;
-  display:inline-flex!important;
-  align-items:center!important;
-  margin-left:8px!important;
-  vertical-align:middle!important;
-  transform:translateY(-3px)!important;
-  z-index:30!important;
-}
-
-.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-identity-info-wrap[hidden]{
-  display:none!important;
-}
-
-.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-identity-info-wrap .auth-number-info-popover{
-  position:absolute!important;
-  top:22px!important;
-  right:-18px!important;
-  width:min(270px,72vw)!important;
-  max-width:none!important;
-  margin:0!important;
-  z-index:40!important;
-  box-shadow:0 12px 30px rgba(0,0,0,.38)!important;
-}
-
 /* The old large identity card becomes one compact RP ID section. */
 .auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-profile-shell .auth-account-card{
   order:30!important;
@@ -334,4 +302,39 @@
 
 .auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-account-footer-v2{
   order:40!important;
+}
+
+/* Lock the info control to the right edge of the IDENTITY & NUMBER heading. */
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title{
+  position:relative!important;
+  display:inline-block!important;
+  width:max-content!important;
+  max-width:calc(100% - 42px)!important;
+  vertical-align:middle!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title > .auth-identity-info-wrap{
+  position:absolute!important;
+  left:calc(100% + 8px)!important;
+  top:50%!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  margin:0!important;
+  transform:translateY(-50%)!important;
+  z-index:30!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title > .auth-identity-info-wrap[hidden]{
+  display:none!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title > .auth-identity-info-wrap .auth-number-info-popover{
+  position:absolute!important;
+  top:24px!important;
+  right:-18px!important;
+  width:min(270px,72vw)!important;
+  max-width:none!important;
+  margin:0!important;
+  z-index:40!important;
+  box-shadow:0 12px 30px rgba(0,0,0,.38)!important;
 }
