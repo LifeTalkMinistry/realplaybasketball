@@ -155,6 +155,9 @@
     }
 
     window.__realPlayAdminVerified = verifiedAdmin;
+    if (verifiedAdmin) {
+      window.dispatchEvent(new CustomEvent('realplay:admin-render'));
+    }
     syncSettingsRow();
     if (verifiedAdmin) scheduleAdminWarm();
     return verifiedAdmin;
