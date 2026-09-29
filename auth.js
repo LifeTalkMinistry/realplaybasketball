@@ -39,7 +39,7 @@
       const title = supportRow.querySelector('strong');
       const detail = supportRow.querySelector('small');
       if (title) title.textContent = 'SUPPORT REAL PLAY';
-      if (detail) detail.textContent = 'One-time or recurring support for Real Play';
+      if (detail) detail.textContent = 'Monthly support levels and ways to help Real Play';
 
       if (supportRow.dataset.rpSupportBridgeInstalled !== 'true') {
         supportRow.dataset.rpSupportBridgeInstalled = 'true';
@@ -48,12 +48,28 @@
           settingsOverlay.setAttribute('aria-hidden', 'true');
           document.body.classList.remove('rp-settings-open');
 
-          window.setTimeout(() => {
-            window.location.hash = 'support';
-            window.setTimeout(() => {
-              document.querySelector('#support')?.scrollIntoView({ block: 'start' });
-            }, 30);
-          }, 20);
+          const openLiveSupport = () => {
+            const support = window.RealPlayTeamSupport;
+            if (typeof support?.open !== 'function') return false;
+            support.open('money');
+            return true;
+          };
+
+          if (openLiveSupport()) return;
+
+          const onReady = () => openLiveSupport();
+          window.addEventListener('realplay:team-support-ready', onReady, { once: true });
+
+          let attempts = 0;
+          const waitForSupport = () => {
+            if (openLiveSupport()) {
+              window.removeEventListener('realplay:team-support-ready', onReady);
+              return;
+            }
+            attempts += 1;
+            if (attempts < 40) window.setTimeout(waitForSupport, 100);
+          };
+          window.setTimeout(waitForSupport, 40);
         });
       }
 
