@@ -110,7 +110,7 @@
       Manage your permanent Real Play player identity and jersey number.
     </span>
   `;
-  panelTitle?.insertAdjacentElement('afterend', identityInfoWrap);
+  panelTitle?.appendChild(identityInfoWrap);
 
   const numberInfoTrigger = identityInfoWrap.querySelector('[data-auth-number-info-trigger]');
   const numberInfo = identityInfoWrap.querySelector('[data-auth-number-info]');
