@@ -79,18 +79,42 @@
     }
   }
 
+  function restoreAdminActions(topbar) {
+    if (!topbar) return;
+    const wrap = topbar.querySelector('[data-rp-replay-admin-actions]');
+    if (!wrap) {
+      topbar.classList.remove('rp-replay-admin-actions-visible');
+      return;
+    }
+    const pencil = wrap.querySelector('[data-rp-replay-admin-edit]');
+    if (pencil) topbar.appendChild(pencil);
+    wrap.remove();
+    topbar.classList.remove('rp-replay-admin-actions-visible');
+  }
+
   function syncFullGameDataButton() {
     const viewer = document.querySelector('[data-rp-career-replay].open');
     const topbar = viewer?.querySelector('.rp-career-replay-topbar');
     if (!topbar) return;
 
-    let button = topbar.querySelector('[data-rp-full-game-data]');
     const shouldShow = window.__realPlayAdminVerified === true && currentReplaySessionId > 0;
     if (!shouldShow) {
-      button?.remove();
+      restoreAdminActions(topbar);
       return;
     }
 
+    let wrap = topbar.querySelector('[data-rp-replay-admin-actions]');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.className = 'rp-replay-admin-actions';
+      wrap.dataset.rpReplayAdminActions = '1';
+      topbar.appendChild(wrap);
+    }
+
+    const pencil = topbar.querySelector('[data-rp-replay-admin-edit]');
+    if (pencil && pencil.parentElement !== wrap) wrap.appendChild(pencil);
+
+    let button = wrap.querySelector('[data-rp-full-game-data]');
     if (!button) {
       button = document.createElement('button');
       button.type = 'button';
@@ -99,15 +123,15 @@
       button.textContent = 'FULL GAME DATA';
       button.setAttribute('aria-label', 'Open full finalized game data');
       button.setAttribute('title', 'Open read-only full finalized game data');
-      topbar.appendChild(button);
+      wrap.appendChild(button);
     }
+
+    topbar.classList.add('rp-replay-admin-actions-visible');
   }
 
   function openFullGameData() {
     if (window.__realPlayAdminVerified !== true || currentReplaySessionId < 1) return;
-    const url = `full-game-data.html?game=${encodeURIComponent(currentReplaySessionId)}`;
-    const opened = window.open(url, '_blank', 'noopener');
-    if (!opened) window.location.href = url;
+    window.location.href = `full-game-data.html?game=${encodeURIComponent(currentReplaySessionId)}`;
   }
 
   document.addEventListener('click', async (event) => {
@@ -186,6 +210,17 @@
     .rp-replay-admin-edit.rp-replay-admin-edit-loading svg{
       animation:rpReplayEditPulse .7s ease-in-out infinite alternate;
     }
+    .rp-career-replay-topbar.rp-replay-admin-actions-visible{
+      grid-template-columns:42px minmax(0,1fr) auto!important;
+    }
+    .rp-replay-admin-actions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:7px;
+      min-width:0;
+      justify-self:end;
+    }
     .rp-replay-full-game-data{
       min-height:38px;
       display:inline-flex;
@@ -210,7 +245,10 @@
       to{opacity:1;transform:scale(1)}
     }
     @media(max-width:520px){
-      .rp-replay-full-game-data{padding:0 9px;font-size:.49rem;letter-spacing:.06em}
+      .rp-career-replay-topbar.rp-replay-admin-actions-visible{gap:6px!important;padding-left:10px!important;padding-right:10px!important}
+      .rp-replay-admin-actions{gap:5px}
+      .rp-replay-full-game-data{padding:0 8px;font-size:.47rem;letter-spacing:.045em}
+      .rp-replay-admin-actions .rp-replay-admin-edit{width:36px;height:36px;flex:0 0 36px}
     }
     @media(prefers-reduced-motion:reduce){
       .rp-replay-admin-edit.rp-replay-admin-edit-loading svg{animation:none}
