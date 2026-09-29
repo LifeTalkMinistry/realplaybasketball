@@ -176,7 +176,7 @@
   display:none!important;
 }
 
-/* The explanation now lives behind the Player Number info control. */
+/* The explanation now lives behind the heading info control. */
 .auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-subtitle{
   display:none!important;
 }
@@ -258,6 +258,38 @@
 
 .auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-number-info-popover[hidden]{
   display:none!important;
+}
+
+/* Place the info control beside IDENTITY & NUMBER, not beside the month status. */
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title{
+  display:inline-block!important;
+  width:auto!important;
+  vertical-align:middle!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-identity-info-wrap{
+  position:relative!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  margin-left:8px!important;
+  vertical-align:middle!important;
+  transform:translateY(-3px)!important;
+  z-index:30!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-identity-info-wrap[hidden]{
+  display:none!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-identity-info-wrap .auth-number-info-popover{
+  position:absolute!important;
+  top:22px!important;
+  right:-18px!important;
+  width:min(270px,72vw)!important;
+  max-width:none!important;
+  margin:0!important;
+  z-index:40!important;
+  box-shadow:0 12px 30px rgba(0,0,0,.38)!important;
 }
 
 /* The old large identity card becomes one compact RP ID section. */
