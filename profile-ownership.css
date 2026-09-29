@@ -176,6 +176,11 @@
   display:none!important;
 }
 
+/* The explanation now lives behind the Player Number info control. */
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-subtitle{
+  display:none!important;
+}
+
 .auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-profile-intro{
   display:none!important;
 }
@@ -192,6 +197,67 @@
 
 .auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-number-manager-v2:not(.auth-name-manager){
   order:20!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-number-summary-line{
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  margin-top:3px!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-number-summary-line > strong{
+  margin:0!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-number-info-trigger{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex:0 0 auto!important;
+  width:17px!important;
+  height:17px!important;
+  margin:0!important;
+  border:1px solid rgba(66,216,255,.38)!important;
+  border-radius:50%!important;
+  color:#6fdfff!important;
+  background:rgba(66,216,255,.06)!important;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+  font-size:.58rem!important;
+  font-style:normal!important;
+  font-weight:900!important;
+  line-height:1!important;
+  text-align:center!important;
+  cursor:pointer!important;
+  user-select:none!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-number-info-trigger:hover,
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-number-info-trigger:focus-visible{
+  border-color:rgba(66,216,255,.72)!important;
+  color:#b8f3ff!important;
+  outline:none!important;
+  box-shadow:0 0 0 2px rgba(66,216,255,.08)!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-number-info-popover{
+  display:block!important;
+  max-width:285px!important;
+  margin-top:9px!important;
+  padding:9px 10px!important;
+  border:1px solid rgba(66,216,255,.16)!important;
+  border-radius:8px!important;
+  color:#8ea1b4!important;
+  background:rgba(5,12,20,.94)!important;
+  font-size:.64rem!important;
+  font-weight:600!important;
+  line-height:1.45!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-number-info-popover[hidden]{
+  display:none!important;
 }
 
 /* The old large identity card becomes one compact RP ID section. */
