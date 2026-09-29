@@ -62,7 +62,21 @@
     <summary>
       <span>
         <small>PLAYER NUMBER</small>
-        <strong data-auth-number-summary>NUMBER DETAILS</strong>
+        <span class="auth-number-summary-line">
+          <strong data-auth-number-summary>NUMBER DETAILS</strong>
+          <span
+            class="auth-number-info-trigger"
+            role="button"
+            tabindex="0"
+            aria-label="About player number"
+            aria-expanded="false"
+            aria-controls="real-play-player-number-info"
+            data-auth-number-info-trigger
+          >i</span>
+        </span>
+        <span id="real-play-player-number-info" class="auth-number-info-popover" data-auth-number-info hidden>
+          Manage your permanent Real Play player identity and jersey number.
+        </span>
       </span>
       <b>MANAGE</b>
     </summary>
@@ -92,6 +106,8 @@
 
   const welcomeName = welcome.querySelector('[data-auth-welcome-name]');
   const numberSummary = numberManager.querySelector('[data-auth-number-summary]');
+  const numberInfoTrigger = numberManager.querySelector('[data-auth-number-info-trigger]');
+  const numberInfo = numberManager.querySelector('[data-auth-number-info]');
   const enterProfileButton = welcome.querySelector('[data-auth-enter-profile]');
   const playButton = welcome.querySelector('[data-auth-go-play]');
 
@@ -105,6 +121,21 @@
     if (welcomeName) welcomeName.textContent = playerName();
     const number = (accountNumber?.textContent || '#--').trim();
     if (numberSummary) numberSummary.textContent = number === '#--' ? 'NOT ASSIGNED' : `${number} · SECURED THIS MONTH`;
+  }
+
+  function closeNumberInfo() {
+    if (!numberInfo || !numberInfoTrigger) return;
+    numberInfo.hidden = true;
+    numberInfoTrigger.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleNumberInfo(event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!numberInfo || !numberInfoTrigger) return;
+    const willOpen = numberInfo.hidden;
+    numberInfo.hidden = !willOpen;
+    numberInfoTrigger.setAttribute('aria-expanded', String(willOpen));
   }
 
   function restoreAccessHeader() {
@@ -143,6 +174,7 @@
   function syncPanelMode() {
     if (accountView.hidden) {
       panel.classList.remove('profile-mode', 'welcome-mode');
+      closeNumberInfo();
       restoreAccessHeader();
       return;
     }
@@ -168,6 +200,20 @@
   syncIdentity();
   syncPanelMode();
   markNumberNotice();
+
+  if (numberInfoTrigger) {
+    numberInfoTrigger.addEventListener('click', toggleNumberInfo);
+    numberInfoTrigger.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      toggleNumberInfo(event);
+    });
+  }
+
+  document.addEventListener('click', (event) => {
+    if (!numberInfo || numberInfo.hidden) return;
+    if (numberInfo.contains(event.target) || numberInfoTrigger?.contains(event.target)) return;
+    closeNumberInfo();
+  });
 
   const identityObserver = new MutationObserver(syncIdentity);
   [accountName, accountNumber].forEach((node) => {
@@ -200,7 +246,10 @@
 
   if (overlay) {
     const overlayObserver = new MutationObserver(() => {
-      if (!overlay.classList.contains('open')) retireWelcome();
+      if (!overlay.classList.contains('open')) {
+        closeNumberInfo();
+        retireWelcome();
+      }
     });
     overlayObserver.observe(overlay, { attributes: true, attributeFilter: ['class'] });
   }
