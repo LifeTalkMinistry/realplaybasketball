@@ -229,8 +229,7 @@
 }
 
 .auth-account-footer-v2 {
-  margin-top: 0;
-  padding-top: 2px;
+  display: none !important;
 }
 
 .auth-panel.profile-mode > .auth-status:empty,
@@ -289,11 +288,6 @@
     grid-row: 3;
   }
 
-  .auth-account-footer-v2 {
-    grid-column: 1 / -1;
-    grid-row: 4;
-  }
-
   .auth-profile-shell .auth-account-name {
     font-size: 2rem;
   }
@@ -314,10 +308,6 @@
 
   .auth-record-stats strong {
     font-size: 1.45rem;
-  }
-
-  .auth-account-footer-v2 .auth-logout {
-    min-height: 38px;
   }
 
   .auth-welcome-screen {
