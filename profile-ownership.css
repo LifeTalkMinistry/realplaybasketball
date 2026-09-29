@@ -304,23 +304,35 @@
   order:40!important;
 }
 
-/* Lock the info control to the right edge of the IDENTITY & NUMBER heading. */
+/* Center the complete IDENTITY & NUMBER + info-icon unit in the panel. */
 .auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title{
   position:relative!important;
-  display:inline-block!important;
-  width:max-content!important;
-  max-width:calc(100% - 42px)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0 auto 12px!important;
+  text-align:center!important;
   vertical-align:middle!important;
 }
 
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title::after{
+  display:inline-block!important;
+  flex:0 0 auto!important;
+}
+
 .auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title > .auth-identity-info-wrap{
-  position:absolute!important;
-  left:calc(100% + 8px)!important;
-  top:50%!important;
+  position:relative!important;
+  left:auto!important;
+  top:auto!important;
   display:inline-flex!important;
   align-items:center!important;
+  flex:0 0 auto!important;
   margin:0!important;
-  transform:translateY(-50%)!important;
+  transform:none!important;
+  vertical-align:middle!important;
   z-index:30!important;
 }
 
@@ -331,7 +343,7 @@
 .auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title > .auth-identity-info-wrap .auth-number-info-popover{
   position:absolute!important;
   top:24px!important;
-  right:-18px!important;
+  right:0!important;
   width:min(270px,72vw)!important;
   max-width:none!important;
   margin:0!important;
