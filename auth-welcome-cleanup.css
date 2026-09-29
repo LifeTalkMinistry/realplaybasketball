@@ -91,3 +91,116 @@
     min-height: 72px;
   }
 }
+
+/*
+  IDENTITY & NUMBER FOCUS
+  --------------------------------------------------------------------------
+  The authenticated account view is reached from Settings > Account >
+  Identity & Number. Present it as a player-identity workspace, not as a
+  second login/logout surface. Authentication remains handled elsewhere.
+*/
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-kicker {
+  font-size: 0 !important;
+  margin-bottom: 7px !important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-kicker::after {
+  content: 'SETTINGS · ACCOUNT';
+  display: block;
+  color: #42d8ff;
+  font-size: .56rem;
+  font-weight: 950;
+  letter-spacing: .18em;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title {
+  font-size: 0 !important;
+  line-height: 1 !important;
+  margin-bottom: 0 !important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title::after {
+  content: 'IDENTITY & NUMBER';
+  display: block;
+  color: #f7fbff;
+  font-family: Impact, 'Arial Narrow', Arial, sans-serif;
+  font-size: clamp(1.9rem, 8vw, 2.45rem);
+  font-style: italic;
+  font-weight: 950;
+  line-height: .96;
+  letter-spacing: -.025em;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-subtitle {
+  font-size: 0 !important;
+  max-width: 360px !important;
+  margin: 10px 0 22px !important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-subtitle::after {
+  content: 'Manage your permanent Real Play player identity and jersey number.';
+  display: block;
+  color: #7f90a4;
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] [data-auth-view="account"] > .auth-account-card {
+  border-color: rgba(66, 216, 255, .22) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(66, 216, 255, .055), transparent 35%),
+    #03080e !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .02) !important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] [data-auth-view="account"] > .auth-account-card > .auth-account-label {
+  font-size: 0 !important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] [data-auth-view="account"] > .auth-account-card > .auth-account-label::after {
+  content: 'PLAYER IDENTITY';
+  color: #7f93aa;
+  font-size: .6rem;
+  font-weight: 950;
+  letter-spacing: .14em;
+}
+
+/* Email is account plumbing, not the purpose of this section. */
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] [data-auth-view="account"] .auth-account-email {
+  display: none !important;
+}
+
+/* Name and number controls are the primary actions on this screen. */
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] [data-auth-view="account"] .auth-name-manager,
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] [data-auth-view="account"] .auth-number-manager-v2:not(.auth-name-manager) {
+  border-color: rgba(255, 255, 255, .09) !important;
+  background: rgba(2, 6, 11, .72) !important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] [data-auth-view="account"] .auth-name-manager summary b,
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] [data-auth-view="account"] .auth-number-manager-v2:not(.auth-name-manager) summary b {
+  color: #42d8ff !important;
+}
+
+/* Logout already belongs to the root Settings screen. Keep this page on task. */
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] [data-auth-view="account"] > .auth-logout,
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] [data-auth-view="account"] > .auth-divider:has(+ .auth-logout) {
+  display: none !important;
+}
+
+/* The generic competitive disclaimer is useful elsewhere, but it dilutes this
+   identity-management screen. Manager-specific number/name notes remain. */
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] [data-auth-view="account"] > .auth-note,
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] [data-auth-view="account"] > .auth-note + .auth-divider {
+  display: none !important;
+}
+
+@media (max-width: 620px) {
+  .auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-title::after {
+    font-size: 2rem;
+  }
+
+  .auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-subtitle::after {
+    font-size: .75rem;
+  }
+}
