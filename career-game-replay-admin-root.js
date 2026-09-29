@@ -9,6 +9,7 @@
   const handoffClicks = new WeakSet();
   let preparing = false;
   let playerCorrectionRuntimePromise = null;
+  let currentReplaySessionId = 0;
 
   function ensurePlayerCorrectionRuntime() {
     if (window.__realPlayReplayPlayerCorrectionInstalled) return Promise.resolve(true);
@@ -78,6 +79,61 @@
     }
   }
 
+  function restoreAdminActions(topbar) {
+    if (!topbar) return;
+    const wrap = topbar.querySelector('[data-rp-replay-admin-actions]');
+    if (!wrap) {
+      topbar.classList.remove('rp-replay-admin-actions-visible');
+      return;
+    }
+    const pencil = wrap.querySelector('[data-rp-replay-admin-edit]');
+    if (pencil) topbar.appendChild(pencil);
+    wrap.remove();
+    topbar.classList.remove('rp-replay-admin-actions-visible');
+  }
+
+  function syncFullGameDataButton() {
+    const viewer = document.querySelector('[data-rp-career-replay].open');
+    const topbar = viewer?.querySelector('.rp-career-replay-topbar');
+    if (!topbar) return;
+
+    const shouldShow = window.__realPlayAdminVerified === true && currentReplaySessionId > 0;
+    if (!shouldShow) {
+      restoreAdminActions(topbar);
+      return;
+    }
+
+    let wrap = topbar.querySelector('[data-rp-replay-admin-actions]');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.className = 'rp-replay-admin-actions';
+      wrap.dataset.rpReplayAdminActions = '1';
+      topbar.appendChild(wrap);
+    }
+
+    const pencil = topbar.querySelector('[data-rp-replay-admin-edit]');
+    if (pencil && pencil.parentElement !== wrap) wrap.appendChild(pencil);
+
+    let button = wrap.querySelector('[data-rp-full-game-data]');
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'rp-replay-full-game-data';
+      button.dataset.rpFullGameData = '1';
+      button.textContent = 'FULL GAME DATA';
+      button.setAttribute('aria-label', 'Open full finalized game data');
+      button.setAttribute('title', 'Open read-only full finalized game data');
+      wrap.appendChild(button);
+    }
+
+    topbar.classList.add('rp-replay-admin-actions-visible');
+  }
+
+  function openFullGameData() {
+    if (window.__realPlayAdminVerified !== true || currentReplaySessionId < 1) return;
+    window.location.href = `full-game-data.html?game=${encodeURIComponent(currentReplaySessionId)}`;
+  }
+
   document.addEventListener('click', async (event) => {
     const button = event.target?.closest?.('[data-rp-replay-admin-edit]');
     if (!button) return;
@@ -111,6 +167,33 @@
     }
   }, true);
 
+  document.addEventListener('click', (event) => {
+    const replayTrigger = event.target?.closest?.('[data-rp-career-replay-session]');
+    if (replayTrigger) {
+      const sessionId = Number(replayTrigger.dataset.rpCareerReplaySession || 0);
+      if (Number.isSafeInteger(sessionId) && sessionId > 0) {
+        currentReplaySessionId = sessionId;
+        window.setTimeout(syncFullGameDataButton, 120);
+      }
+      return;
+    }
+
+    if (event.target?.closest?.('[data-rp-full-game-data]')) {
+      event.preventDefault();
+      event.stopPropagation();
+      openFullGameData();
+    }
+  }, true);
+
+  const observer = new MutationObserver(syncFullGameDataButton);
+  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+
+  window.addEventListener('storage', (event) => {
+    if (event.key !== 'real_play_access_token') return;
+    currentReplaySessionId = 0;
+    syncFullGameDataButton();
+  });
+
   const style = document.createElement('style');
   style.textContent = `
     .rp-replay-admin-edit{
@@ -127,9 +210,45 @@
     .rp-replay-admin-edit.rp-replay-admin-edit-loading svg{
       animation:rpReplayEditPulse .7s ease-in-out infinite alternate;
     }
+    .rp-career-replay-topbar.rp-replay-admin-actions-visible{
+      grid-template-columns:42px minmax(0,1fr) auto!important;
+    }
+    .rp-replay-admin-actions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:7px;
+      min-width:0;
+      justify-self:end;
+    }
+    .rp-replay-full-game-data{
+      min-height:38px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:0 13px;
+      border:1px solid rgba(85,197,229,.28);
+      border-radius:11px;
+      background:#071a26;
+      color:#dffaff;
+      font:900 .56rem/1 Arial,sans-serif;
+      letter-spacing:.09em;
+      white-space:nowrap;
+      cursor:pointer;
+      touch-action:manipulation;
+      box-shadow:0 8px 22px rgba(0,0,0,.2);
+    }
+    .rp-replay-full-game-data:hover{border-color:rgba(85,224,245,.58);background:#0a2837;color:#fff}
+    .rp-replay-full-game-data:active{transform:scale(.97)}
     @keyframes rpReplayEditPulse{
       from{opacity:.35;transform:scale(.92)}
       to{opacity:1;transform:scale(1)}
+    }
+    @media(max-width:520px){
+      .rp-career-replay-topbar.rp-replay-admin-actions-visible{gap:6px!important;padding-left:10px!important;padding-right:10px!important}
+      .rp-replay-admin-actions{gap:5px}
+      .rp-replay-full-game-data{padding:0 8px;font-size:.47rem;letter-spacing:.045em}
+      .rp-replay-admin-actions .rp-replay-admin-edit{width:36px;height:36px;flex:0 0 36px}
     }
     @media(prefers-reduced-motion:reduce){
       .rp-replay-admin-edit.rp-replay-admin-edit-loading svg{animation:none}
