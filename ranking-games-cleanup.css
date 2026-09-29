@@ -198,3 +198,31 @@
   .rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity span{font-size:.56rem}
   .rp-ranking-next.rp-team-reservation-enabled .rp-session-teams-capacity strong::after{margin:0 8px}
 }
+
+/* Once a player has secured a spot, CANCEL SPOT owns the right side of the
+ * Team Reservation header. Move the existing Session Guide control to the left
+ * instead of letting both controls compete for the same right-side space. */
+.rp-ranking-next.rp-team-reservation-enabled .rp-ranking-section-head:has(> [data-rp-ranking-cancel]:not([hidden])){
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center!important;
+  column-gap:10px;
+}
+.rp-ranking-next.rp-team-reservation-enabled .rp-ranking-section-head:has(> [data-rp-ranking-cancel]:not([hidden])) > div:first-child{
+  grid-column:2;
+  grid-row:1;
+  justify-self:center;
+  text-align:center;
+}
+.rp-ranking-next.rp-team-reservation-enabled .rp-ranking-section-head:has(> [data-rp-ranking-cancel]:not([hidden])) > [data-rp-ranking-cancel]{
+  grid-column:3;
+  grid-row:1;
+  justify-self:end;
+  margin:0!important;
+}
+.rp-ranking-next.rp-team-reservation-enabled .rp-ranking-section-head:has(> [data-rp-ranking-cancel]:not([hidden])) > .rp-spot-priority-trigger{
+  grid-column:1;
+  grid-row:1;
+  justify-self:start;
+  margin:0!important;
+}
