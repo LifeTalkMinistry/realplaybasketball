@@ -6,10 +6,150 @@
   // tries to load it later. The root flow below owns replay-admin preparation.
   window.__realPlayReplayAdminEditBridgeInstalled = true;
 
+  const API_BASE_URL = 'https://api.clarapmc.com';
+  const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
   const handoffClicks = new WeakSet();
   let preparing = false;
   let playerCorrectionRuntimePromise = null;
   let currentReplaySessionId = 0;
+  let currentReplayOpenRankNumber = 0;
+  let sessionResolvePromise = null;
+  let lastResolveKey = '';
+  let lastResolveAt = 0;
+
+  function positiveId(value) {
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 0;
+  }
+
+  function positiveOpenRankNumber(value) {
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 0;
+  }
+
+  function replayOpenRankNumber(viewer) {
+    const title = String(
+      viewer?.querySelector('[data-rp-career-replay-title]')?.textContent
+      || viewer?.querySelector('.rp-career-replay-gamehead h2')?.textContent
+      || ''
+    );
+    const match = title.match(/OPEN\s+RANK(?:ING(?:\s+SESSION)?)?\s*#\s*(\d+)/i);
+    return positiveOpenRankNumber(match?.[1]);
+  }
+
+  function sessionIdFromSource(value) {
+    const direct = positiveId(
+      value?.metadata?.sessionId
+      ?? value?.metadata?.session_id
+      ?? value?.sessionId
+      ?? value?.session_id
+    );
+    if (direct) return direct;
+
+    const candidates = [
+      value?.id,
+      value?.source_key,
+      value?.sourceKey,
+      value?.metadata?.source_key,
+      value?.metadata?.sourceKey,
+    ];
+    for (const candidate of candidates) {
+      const match = String(candidate || '').match(/(?:^|\b)career-(\d+)-result(?:\b|$)/i);
+      const id = positiveId(match?.[1]);
+      if (id) return id;
+    }
+    return 0;
+  }
+
+  function openRankNumberFromUpdate(update) {
+    const candidates = [
+      update?.metadata?.openRankNumber,
+      update?.metadata?.open_rank_number,
+      update?.openRankNumber,
+      update?.open_rank_number,
+    ];
+    for (const candidate of candidates) {
+      const number = positiveOpenRankNumber(candidate);
+      if (number) return number;
+    }
+
+    const gameIds = [
+      update?.metadata?.officialGameId,
+      update?.metadata?.official_game_id,
+      update?.officialGameId,
+      update?.official_game_id,
+      update?.title,
+    ];
+    for (const value of gameIds) {
+      const match = String(value || '').match(/OPEN\s+RANK(?:ING(?:\s+SESSION)?)?\s*#\s*(\d+)/i);
+      const number = positiveOpenRankNumber(match?.[1]);
+      if (number) return number;
+    }
+    return 0;
+  }
+
+  function sessionIdFromRenderedResults(openRankNumber) {
+    if (!openRankNumber) return 0;
+    const cards = document.querySelectorAll('[data-update-id]');
+    for (const card of cards) {
+      const cardNumber = positiveOpenRankNumber(card.dataset.rpOfficialOpenRankNumber);
+      if (cardNumber !== openRankNumber) continue;
+      const match = String(card.dataset.updateId || '').match(/^career-(\d+)-result$/i);
+      const id = positiveId(match?.[1]);
+      if (id) return id;
+    }
+    return 0;
+  }
+
+  async function resolveReplaySessionId(viewer) {
+    if (currentReplaySessionId > 0) return currentReplaySessionId;
+    if (!viewer?.classList.contains('open') || window.__realPlayAdminVerified !== true) return 0;
+
+    const openRankNumber = replayOpenRankNumber(viewer);
+    if (!openRankNumber) return 0;
+    currentReplayOpenRankNumber = openRankNumber;
+
+    const renderedId = sessionIdFromRenderedResults(openRankNumber);
+    if (renderedId) {
+      currentReplaySessionId = renderedId;
+      return renderedId;
+    }
+
+    const resolveKey = String(openRankNumber);
+    const now = Date.now();
+    if (sessionResolvePromise) return sessionResolvePromise;
+    if (lastResolveKey === resolveKey && now - lastResolveAt < 10000) return 0;
+    lastResolveKey = resolveKey;
+    lastResolveAt = now;
+
+    sessionResolvePromise = (async () => {
+      try {
+        const response = await fetch(PUBLIC_UPDATES_URL, {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        });
+        if (!response.ok) return 0;
+        const data = await response.json().catch(() => ({}));
+        const updates = Array.isArray(data?.updates) ? data.updates : [];
+        const match = updates.find((item) =>
+          String(item?.category || '').toLowerCase() === 'result'
+          && openRankNumberFromUpdate(item) === openRankNumber
+        );
+        const sessionId = sessionIdFromSource(match);
+        if (sessionId && replayOpenRankNumber(viewer) === openRankNumber) {
+          currentReplaySessionId = sessionId;
+          return sessionId;
+        }
+        return 0;
+      } catch (_) {
+        return 0;
+      } finally {
+        sessionResolvePromise = null;
+      }
+    })();
+
+    return sessionResolvePromise;
+  }
 
   function ensurePlayerCorrectionRuntime() {
     if (window.__realPlayReplayPlayerCorrectionInstalled) return Promise.resolve(true);
@@ -92,10 +232,30 @@
     topbar.classList.remove('rp-replay-admin-actions-visible');
   }
 
-  function syncFullGameDataButton() {
+  async function syncFullGameDataButton() {
     const viewer = document.querySelector('[data-rp-career-replay].open');
-    const topbar = viewer?.querySelector('.rp-career-replay-topbar');
+    if (!viewer) {
+      currentReplaySessionId = 0;
+      currentReplayOpenRankNumber = 0;
+      lastResolveKey = '';
+      return;
+    }
+
+    const topbar = viewer.querySelector('.rp-career-replay-topbar');
     if (!topbar) return;
+
+    const visibleOpenRankNumber = replayOpenRankNumber(viewer);
+    if (visibleOpenRankNumber
+      && currentReplayOpenRankNumber
+      && visibleOpenRankNumber !== currentReplayOpenRankNumber) {
+      currentReplaySessionId = 0;
+      lastResolveKey = '';
+    }
+    if (visibleOpenRankNumber) currentReplayOpenRankNumber = visibleOpenRankNumber;
+
+    if (window.__realPlayAdminVerified === true && currentReplaySessionId < 1) {
+      await resolveReplaySessionId(viewer);
+    }
 
     const shouldShow = window.__realPlayAdminVerified === true && currentReplaySessionId > 0;
     if (!shouldShow) {
@@ -129,8 +289,14 @@
     topbar.classList.add('rp-replay-admin-actions-visible');
   }
 
-  function openFullGameData() {
-    if (window.__realPlayAdminVerified !== true || currentReplaySessionId < 1) return;
+  async function openFullGameData() {
+    if (window.__realPlayAdminVerified !== true) return;
+    const viewer = document.querySelector('[data-rp-career-replay].open');
+    if (currentReplaySessionId < 1) await resolveReplaySessionId(viewer);
+    if (currentReplaySessionId < 1) {
+      window.alert('Unable to resolve this finalized Game ID. Close and reopen the game, then try again.');
+      return;
+    }
     window.location.href = `full-game-data.html?game=${encodeURIComponent(currentReplaySessionId)}`;
   }
 
@@ -170,10 +336,12 @@
   document.addEventListener('click', (event) => {
     const replayTrigger = event.target?.closest?.('[data-rp-career-replay-session]');
     if (replayTrigger) {
-      const sessionId = Number(replayTrigger.dataset.rpCareerReplaySession || 0);
-      if (Number.isSafeInteger(sessionId) && sessionId > 0) {
+      const sessionId = positiveId(replayTrigger.dataset.rpCareerReplaySession);
+      if (sessionId) {
         currentReplaySessionId = sessionId;
-        window.setTimeout(syncFullGameDataButton, 120);
+        currentReplayOpenRankNumber = 0;
+        lastResolveKey = '';
+        window.setTimeout(() => syncFullGameDataButton().catch(() => {}), 120);
       }
       return;
     }
@@ -181,18 +349,24 @@
     if (event.target?.closest?.('[data-rp-full-game-data]')) {
       event.preventDefault();
       event.stopPropagation();
-      openFullGameData();
+      openFullGameData().catch(() => {});
     }
   }, true);
 
-  const observer = new MutationObserver(syncFullGameDataButton);
+  const observer = new MutationObserver(() => {
+    syncFullGameDataButton().catch(() => {});
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 
   window.addEventListener('storage', (event) => {
     if (event.key !== 'real_play_access_token') return;
     currentReplaySessionId = 0;
-    syncFullGameDataButton();
+    currentReplayOpenRankNumber = 0;
+    lastResolveKey = '';
+    syncFullGameDataButton().catch(() => {});
   });
+
+  window.setTimeout(() => syncFullGameDataButton().catch(() => {}), 0);
 
   const style = document.createElement('style');
   style.textContent = `
