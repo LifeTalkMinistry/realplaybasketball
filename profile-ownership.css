@@ -170,3 +170,70 @@
   font-size:.64rem;
   line-height:1.48;
 }
+
+/* Identity & Number screen: keep only the useful management rows. */
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-kicker{
+  display:none!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-profile-intro{
+  display:none!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-profile-shell{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:14px!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-name-manager{
+  order:10!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-number-manager-v2:not(.auth-name-manager){
+  order:20!important;
+}
+
+/* The old large identity card becomes one compact RP ID section. */
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-profile-shell .auth-account-card{
+  order:30!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:4px!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:14px 16px!important;
+  border:1px solid rgba(255,255,255,.09)!important;
+  border-radius:0!important;
+  background:rgba(255,255,255,.015)!important;
+  box-shadow:none!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-profile-shell .auth-account-card > *{
+  display:none!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-profile-shell .auth-account-card::before{
+  content:'RP ID';
+  display:block!important;
+  color:#6e8295;
+  font-size:.58rem;
+  font-weight:900;
+  letter-spacing:.10em;
+  line-height:1.35;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-profile-shell .auth-account-card .auth-ownership-player-id{
+  display:block!important;
+  margin:0!important;
+  color:#d9e4ed!important;
+  font-size:.82rem!important;
+  font-weight:900!important;
+  line-height:1.35!important;
+  letter-spacing:.02em!important;
+  text-align:left!important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] .auth-account-footer-v2{
+  order:40!important;
+}
