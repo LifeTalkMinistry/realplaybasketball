@@ -155,10 +155,13 @@
     welcomeActive = false;
     welcome.hidden = true;
     accountShell.hidden = false;
-    identityInfoWrap.hidden = false;
     panel.classList.remove('welcome-mode');
     panel.classList.add('profile-mode');
-    if (panelTitle) panelTitle.textContent = 'PLAYER ACCOUNT.';
+    if (panelTitle) {
+      panelTitle.textContent = 'PLAYER ACCOUNT.';
+      panelTitle.appendChild(identityInfoWrap);
+    }
+    identityInfoWrap.hidden = false;
     if (panelSubtitle) panelSubtitle.textContent = 'Manage your Real Play identity and player number. Your full player Profile lives in the main menu.';
   }
 
