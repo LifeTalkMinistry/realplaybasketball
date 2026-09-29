@@ -144,6 +144,30 @@
     numberInfoTrigger.setAttribute('aria-expanded', String(willOpen));
   }
 
+  function closeAccountImmediately() {
+    if (!overlay || accountView.hidden) return;
+
+    closeNumberInfo();
+    retireWelcome();
+
+    const previousTransition = overlay.style.transition;
+    overlay.style.transition = 'none';
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('auth-open');
+
+    if (status) {
+      status.textContent = '';
+      status.className = 'auth-status';
+    }
+
+    closeButton?.blur();
+
+    window.requestAnimationFrame(() => {
+      overlay.style.transition = previousTransition;
+    });
+  }
+
   function restoreAccessHeader() {
     identityInfoWrap.hidden = true;
     closeNumberInfo();
@@ -220,6 +244,20 @@
       if (event.key !== 'Enter' && event.key !== ' ') return;
       toggleNumberInfo(event);
     });
+  }
+
+  if (closeButton) {
+    closeButton.style.touchAction = 'manipulation';
+    closeButton.addEventListener('pointerdown', (event) => {
+      if (accountView.hidden) return;
+      event.preventDefault();
+      closeAccountImmediately();
+    });
+    closeButton.addEventListener('click', (event) => {
+      if (accountView.hidden) return;
+      event.preventDefault();
+      closeAccountImmediately();
+    }, true);
   }
 
   document.addEventListener('click', (event) => {
