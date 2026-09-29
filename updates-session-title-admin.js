@@ -432,4 +432,5 @@ This removes the session and its linked game data from Real Play.`)) return;
 
   injectStyles();
   attachFeedObserver();
+  queueMicrotask(refreshAuthorityAndDecorate);
 })();
