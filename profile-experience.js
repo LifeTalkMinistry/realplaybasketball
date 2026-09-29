@@ -62,21 +62,7 @@
     <summary>
       <span>
         <small>PLAYER NUMBER</small>
-        <span class="auth-number-summary-line">
-          <strong data-auth-number-summary>NUMBER DETAILS</strong>
-          <span
-            class="auth-number-info-trigger"
-            role="button"
-            tabindex="0"
-            aria-label="About player number"
-            aria-expanded="false"
-            aria-controls="real-play-player-number-info"
-            data-auth-number-info-trigger
-          >i</span>
-        </span>
-        <span id="real-play-player-number-info" class="auth-number-info-popover" data-auth-number-info hidden>
-          Manage your permanent Real Play player identity and jersey number.
-        </span>
+        <strong data-auth-number-summary>NUMBER DETAILS</strong>
       </span>
       <b>MANAGE</b>
     </summary>
@@ -106,8 +92,28 @@
 
   const welcomeName = welcome.querySelector('[data-auth-welcome-name]');
   const numberSummary = numberManager.querySelector('[data-auth-number-summary]');
-  const numberInfoTrigger = numberManager.querySelector('[data-auth-number-info-trigger]');
-  const numberInfo = numberManager.querySelector('[data-auth-number-info]');
+
+  const identityInfoWrap = document.createElement('span');
+  identityInfoWrap.className = 'auth-identity-info-wrap';
+  identityInfoWrap.hidden = true;
+  identityInfoWrap.innerHTML = `
+    <span
+      class="auth-number-info-trigger"
+      role="button"
+      tabindex="0"
+      aria-label="About Identity and Number"
+      aria-expanded="false"
+      aria-controls="real-play-identity-number-info"
+      data-auth-number-info-trigger
+    >i</span>
+    <span id="real-play-identity-number-info" class="auth-number-info-popover" data-auth-number-info hidden>
+      Manage your permanent Real Play player identity and jersey number.
+    </span>
+  `;
+  panelTitle?.insertAdjacentElement('afterend', identityInfoWrap);
+
+  const numberInfoTrigger = identityInfoWrap.querySelector('[data-auth-number-info-trigger]');
+  const numberInfo = identityInfoWrap.querySelector('[data-auth-number-info]');
   const enterProfileButton = welcome.querySelector('[data-auth-enter-profile]');
   const playButton = welcome.querySelector('[data-auth-go-play]');
 
@@ -139,6 +145,8 @@
   }
 
   function restoreAccessHeader() {
+    identityInfoWrap.hidden = true;
+    closeNumberInfo();
     if (panelTitle) panelTitle.textContent = 'YOUR COURT ID.';
     if (panelSubtitle) panelSubtitle.textContent = 'Log in to your Real Play account or create the player identity that will hold your official on-court history.';
   }
@@ -147,6 +155,7 @@
     welcomeActive = false;
     welcome.hidden = true;
     accountShell.hidden = false;
+    identityInfoWrap.hidden = false;
     panel.classList.remove('welcome-mode');
     panel.classList.add('profile-mode');
     if (panelTitle) panelTitle.textContent = 'PLAYER ACCOUNT.';
@@ -158,6 +167,8 @@
     welcomeActive = true;
     welcome.hidden = false;
     accountShell.hidden = true;
+    identityInfoWrap.hidden = true;
+    closeNumberInfo();
     panel.classList.remove('profile-mode');
     panel.classList.add('welcome-mode');
     if (panelTitle) panelTitle.textContent = 'WELCOME TO REAL PLAY.';
@@ -174,7 +185,6 @@
   function syncPanelMode() {
     if (accountView.hidden) {
       panel.classList.remove('profile-mode', 'welcome-mode');
-      closeNumberInfo();
       restoreAccessHeader();
       return;
     }
