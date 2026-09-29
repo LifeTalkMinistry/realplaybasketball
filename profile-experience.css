@@ -430,3 +430,25 @@
 .auth-panel.rp-auth-clean[data-rp-auth-mode="account"]:has(.auth-number-info-popover:not([hidden])) .auth-profile-shell {
   margin-top: 48px !important;
 }
+
+/* Keep the entire visible close control above the centered title/info layer so every pixel is tappable. */
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-close {
+  z-index: 250 !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  isolation: isolate !important;
+}
+
+.auth-panel.rp-auth-clean[data-rp-auth-mode="account"] > .auth-close::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  z-index: -1;
+}
