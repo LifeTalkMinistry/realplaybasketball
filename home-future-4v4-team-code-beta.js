@@ -12,6 +12,10 @@
     valiant: 'VALIANT',
     watchmen: 'WATCHMEN',
     conquerors: 'CONQUERORS',
+    chosen: 'CHOSEN',
+    eagles: 'EAGLES',
+    steadfast: 'STEADFAST',
+    warriors: 'WARRIORS',
   });
 
   let state = null;

@@ -6,7 +6,8 @@
   const TOKEN_KEY = 'real_play_access_token';
   const STYLE_ID = 'rp-4v4-team-ovr-header-style';
   const BALANCE_TOLERANCE = 2;
-  const CLUB_NAMES = Object.freeze({ lions:'LIONS', valiant:'VALIANT', watchmen:'WATCHMEN', conquerors:'CONQUERORS' });
+  const CLUB_NAMES = Object.freeze({ lions:'LIONS', valiant:'VALIANT', watchmen:'WATCHMEN', conquerors:'CONQUERORS', chosen:'CHOSEN', eagles:'EAGLES', steadfast:'STEADFAST', warriors:'WARRIORS' });
+  const BALANCE_CLUB_IDS = Object.freeze(['lions', 'valiant', 'watchmen', 'conquerors']);
 
   let preferencePlayers = [];
   let viewerAccountUserId = null;
@@ -49,7 +50,7 @@
     return teamOvr === null || cap === null || !validation ? null : { teamOvr, floor, cap, validation };
   }
   function balanceRangeState() {
-    const validByClub = Object.keys(CLUB_NAMES).map((clubId) => clubPlayers(clubId).map((p) => finite(p?.ovr)).filter((v) => v !== null && v > 0));
+    const validByClub = BALANCE_CLUB_IDS.map((clubId) => clubPlayers(clubId).map((p) => finite(p?.ovr)).filter((v) => v !== null && v > 0));
     const rosterComplete = validByClub.every((values) => values.length === 5);
     const values = validByClub.flat();
     if (!rosterComplete || values.length !== 20) return { sample:true, playerCount:values.length, target:71, lower:69, upper:73 };
@@ -68,6 +69,10 @@
       .rp-4v4-static-view[data-rp-active-club="valiant"]{--rp4v4-ovr-accent:#ff3340;--rp4v4-ovr-mid:#a70f19;--rp4v4-ovr-deep:#8f0d17;--rp4v4-ovr-dark:#21070b;--rp4v4-ovr-line:#ff3040;--rp4v4-ovr-line-deep:#7a0912;--rp4v4-ovr-soft:rgba(255,45,56,.22);--rp4v4-ovr-glow:rgba(235,28,42,.22);--rp4v4-ovr-shadow:#5a060c;--rp4v4-ovr-label:#ffd3d7}
       .rp-4v4-static-view[data-rp-active-club="watchmen"]{--rp4v4-ovr-accent:#f4c23f;--rp4v4-ovr-mid:#bd8215;--rp4v4-ovr-deep:#94620b;--rp4v4-ovr-dark:#352406;--rp4v4-ovr-line:#ffd257;--rp4v4-ovr-line-deep:#8d5d08;--rp4v4-ovr-soft:rgba(244,194,63,.24);--rp4v4-ovr-glow:rgba(244,194,63,.24);--rp4v4-ovr-shadow:#6c4905;--rp4v4-ovr-label:#ffe39a}
       .rp-4v4-static-view[data-rp-active-club="conquerors"]{--rp4v4-ovr-accent:#a454ff;--rp4v4-ovr-mid:#7225d1;--rp4v4-ovr-deep:#54179f;--rp4v4-ovr-dark:#21093f;--rp4v4-ovr-line:#b46cff;--rp4v4-ovr-line-deep:#51148f;--rp4v4-ovr-soft:rgba(164,84,255,.24);--rp4v4-ovr-glow:rgba(164,84,255,.25);--rp4v4-ovr-shadow:#451176;--rp4v4-ovr-label:#d8b5ff}
+      .rp-4v4-static-view[data-rp-active-club="chosen"]{--rp4v4-ovr-accent:#2dd4bf;--rp4v4-ovr-mid:#168d83;--rp4v4-ovr-deep:#0f655f;--rp4v4-ovr-dark:#062d2b;--rp4v4-ovr-line:#55ead6;--rp4v4-ovr-line-deep:#0d625b;--rp4v4-ovr-soft:rgba(45,212,191,.24);--rp4v4-ovr-glow:rgba(45,212,191,.25);--rp4v4-ovr-shadow:#0a514b;--rp4v4-ovr-label:#b4fff4}
+      .rp-4v4-static-view[data-rp-active-club="eagles"]{--rp4v4-ovr-accent:#47b7ff;--rp4v4-ovr-mid:#167fc6;--rp4v4-ovr-deep:#0d5e98;--rp4v4-ovr-dark:#06233d;--rp4v4-ovr-line:#6cc8ff;--rp4v4-ovr-line-deep:#0b568d;--rp4v4-ovr-soft:rgba(71,183,255,.24);--rp4v4-ovr-glow:rgba(71,183,255,.25);--rp4v4-ovr-shadow:#08436f;--rp4v4-ovr-label:#c2eaff}
+      .rp-4v4-static-view[data-rp-active-club="steadfast"]{--rp4v4-ovr-accent:#5fd16f;--rp4v4-ovr-mid:#2c943d;--rp4v4-ovr-deep:#1d6d2b;--rp4v4-ovr-dark:#092d12;--rp4v4-ovr-line:#7de98c;--rp4v4-ovr-line-deep:#1b6528;--rp4v4-ovr-soft:rgba(95,209,111,.24);--rp4v4-ovr-glow:rgba(95,209,111,.24);--rp4v4-ovr-shadow:#145321;--rp4v4-ovr-label:#c8ffd0}
+      .rp-4v4-static-view[data-rp-active-club="warriors"]{--rp4v4-ovr-accent:#ff8b35;--rp4v4-ovr-mid:#c95314;--rp4v4-ovr-deep:#96380d;--rp4v4-ovr-dark:#3b1406;--rp4v4-ovr-line:#ffa45f;--rp4v4-ovr-line-deep:#8a320b;--rp4v4-ovr-soft:rgba(255,139,53,.24);--rp4v4-ovr-glow:rgba(255,139,53,.24);--rp4v4-ovr-shadow:#6b2808;--rp4v4-ovr-label:#ffd8bc}
       .rp-4v4-static-view .rp-3v3-select-head{display:none!important}.rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand{min-width:0;display:flex;align-items:center;justify-content:center;text-align:center}.rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand strong{display:block;margin:0;color:#f5f9ff;font-family:var(--rp-display,Arial,sans-serif);font-size:1.05rem;font-weight:1000;letter-spacing:.09em;line-height:1;text-transform:uppercase;white-space:nowrap}.rp-4v4-static-view .rp-3v3-brand.rp-4v4-team-ovr-brand span{display:none!important}
       .rp-4v4-static-view .rp-3v3-topmark.rp-4v4-info-button{appearance:none;width:40px;height:40px;padding:0;display:grid;place-items:center;cursor:pointer;border:1px solid rgba(126,173,232,.16);border-radius:13px;color:#fff;background:#07111e;font-family:Georgia,serif;font-size:1.15rem;font-style:italic;font-weight:800;line-height:1;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
       .rp-4v4-static-view .rp-4v4-team-ovr-plaque{position:relative;z-index:7;width:214px;height:68px;margin:1px auto -19px;display:grid;place-items:center;pointer-events:none;filter:drop-shadow(0 8px 16px rgba(0,0,0,.62)) drop-shadow(0 0 11px var(--rp4v4-ovr-glow))}

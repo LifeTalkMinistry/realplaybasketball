@@ -26,6 +26,22 @@
   --rp-active-club-color:#a64dff;
   --rp-active-club-art:url('assets/3v3/clubs/conquerors-logo.png');
 }
+.rp-3v3-view[data-rp-active-club='chosen']{
+  --rp-active-club-color:#2dd4bf;
+  --rp-active-club-art:url('assets/3v3/clubs/chosen-logo.png');
+}
+.rp-3v3-view[data-rp-active-club='eagles']{
+  --rp-active-club-color:#47b7ff;
+  --rp-active-club-art:url('assets/3v3/clubs/eagles-logo.png');
+}
+.rp-3v3-view[data-rp-active-club='steadfast']{
+  --rp-active-club-color:#5fd16f;
+  --rp-active-club-art:url('assets/3v3/clubs/steadfast-logo.png');
+}
+.rp-3v3-view[data-rp-active-club='warriors']{
+  --rp-active-club-color:#ff8b35;
+  --rp-active-club-art:url('assets/3v3/clubs/warriors-logo.png');
+}
 
 /* Override the old basketball pseudo-element completely. */
 .rp-3v3-view::before{
@@ -111,6 +127,42 @@
   --club-secondary:#6d24db;
   --club-secondary-rgb:109,36,219;
   --club-glow:rgba(171,74,255,.24);
+}
+
+.rp-team-card[data-rp-three-club='chosen'],
+.rp-team-fixed-card.club-chosen{
+  --club-accent:#2dd4bf;
+  --club-accent-rgb:45,212,191;
+  --club-secondary:#167f75;
+  --club-secondary-rgb:22,127,117;
+  --club-glow:rgba(45,212,191,.23);
+}
+
+.rp-team-card[data-rp-three-club='eagles'],
+.rp-team-fixed-card.club-eagles{
+  --club-accent:#47b7ff;
+  --club-accent-rgb:71,183,255;
+  --club-secondary:#176ea8;
+  --club-secondary-rgb:23,110,168;
+  --club-glow:rgba(71,183,255,.23);
+}
+
+.rp-team-card[data-rp-three-club='steadfast'],
+.rp-team-fixed-card.club-steadfast{
+  --club-accent:#5fd16f;
+  --club-accent-rgb:95,209,111;
+  --club-secondary:#2d873a;
+  --club-secondary-rgb:45,135,58;
+  --club-glow:rgba(95,209,111,.23);
+}
+
+.rp-team-card[data-rp-three-club='warriors'],
+.rp-team-fixed-card.club-warriors{
+  --club-accent:#ff8b35;
+  --club-accent-rgb:255,139,53;
+  --club-secondary:#b94713;
+  --club-secondary-rgb:185,71,19;
+  --club-glow:rgba(255,139,53,.23);
 }
 
 .rp-team-card.has-club-art,

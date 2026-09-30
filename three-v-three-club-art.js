@@ -7,9 +7,13 @@
     VALIANT: 'assets/3v3/clubs/valiant-logo.png',
     WATCHMEN: 'assets/3v3/clubs/watchmen-logo.png',
     CONQUERORS: 'assets/3v3/clubs/conquerors-logo.png',
+    CHOSEN: 'assets/3v3/clubs/chosen-logo.png',
+    EAGLES: 'assets/3v3/clubs/eagles-logo.png',
+    STEADFAST: 'assets/3v3/clubs/steadfast-logo.png',
+    WARRIORS: 'assets/3v3/clubs/warriors-logo.png',
   };
 
-  const CLUB_CLASSES = ['club-lions', 'club-valiant', 'club-watchmen', 'club-conquerors'];
+  const CLUB_CLASSES = ['club-lions', 'club-valiant', 'club-watchmen', 'club-conquerors', 'club-chosen', 'club-eagles', 'club-steadfast', 'club-warriors'];
 
   function themeClass(name) {
     return `club-${String(name || '').trim().toLowerCase()}`;

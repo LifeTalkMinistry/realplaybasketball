@@ -11,6 +11,10 @@
     { id: 'valiant', name: 'VALIANT', verse: 'Joshua 1:9', art: 'assets/3v3/clubs/valiant-logo.png' },
     { id: 'watchmen', name: 'WATCHMEN', verse: 'Isaiah 62:6', art: 'assets/3v3/clubs/watchmen-logo.png' },
     { id: 'conquerors', name: 'CONQUERORS', verse: 'Romans 8:37', art: 'assets/3v3/clubs/conquerors-logo.png' },
+    { id: 'chosen', name: 'CHOSEN', verse: '1 Peter 2:9', art: 'assets/3v3/clubs/chosen-logo.png' },
+    { id: 'eagles', name: 'EAGLES', verse: 'Isaiah 40:31', art: 'assets/3v3/clubs/eagles-logo.png' },
+    { id: 'steadfast', name: 'STEADFAST', verse: '1 Corinthians 15:58', art: 'assets/3v3/clubs/steadfast-logo.png' },
+    { id: 'warriors', name: 'WARRIORS', verse: 'Exodus 15:3', art: 'assets/3v3/clubs/warriors-logo.png' },
   ];
 
   function token() {

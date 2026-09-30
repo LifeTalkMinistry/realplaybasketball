@@ -5,7 +5,7 @@
   const SLOT_KEY = 'real_play_4v4_time_slot';
   const API_BASE_URL = 'https://api.clarapmc.com';
   const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
-  const CURRENT_4V4_RUNTIME_VERSION = '20260930-slot-handoff-runtime-v7';
+  const CURRENT_4V4_RUNTIME_VERSION = '20260930-eight-team-runtime-v8';
   const SESSION_GRACE_MS = 12 * 60 * 60 * 1000;
 
   let slotOverlay = null;
