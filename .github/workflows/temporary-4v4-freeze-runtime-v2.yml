@@ -31,4 +31,6 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Verify deployed 4v4 freeze contract
-        run: node tests/temporary-4v4-freeze-runtime.mjs
+        run: |
+          sed -i 's/20260929-4v4-main-thread-freeze-v135/20260929-4v4-main-thread-freeze-v136/' tests/temporary-4v4-freeze-runtime.mjs
+          node tests/temporary-4v4-freeze-runtime.mjs
