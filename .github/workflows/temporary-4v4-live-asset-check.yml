@@ -1,0 +1,37 @@
+name: Temporary 4v4 Live Asset Check
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  asset-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Inspect live 4v4 assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          CB="$(date +%s)"
+          curl -fsSL --retry 3 "https://joinrealplay.com/?cb=${CB}" -o /tmp/rp-index.html
+          echo '--- LIVE INDEX SLOT SCRIPT ---'
+          grep -o 'home-4v4-slot-picker.js[^"<]*' /tmp/rp-index.html || true
+          echo '--- LIVE DEPLOY ID ---'
+          grep -o 'data-rp-deploy="[^"]*"' /tmp/rp-index.html | head -1 || true
+
+          curl -fsSL --retry 3 "https://joinrealplay.com/home-4v4-slot-picker.js?cb=${CB}" -o /tmp/rp-slot.js
+          echo '--- SLOT ID READ ---'
+          grep -n "getAttribute('data-rp-4v4-slot')" /tmp/rp-slot.js || true
+          echo '--- RUNTIME REQUEST FUNCTION ---'
+          grep -n 'requestCurrentFourVFourRuntime' /tmp/rp-slot.js || true
+          echo '--- SLOT HANDOFF ---'
+          grep -n 'rpSlotHandoff' /tmp/rp-slot.js || true
+
+          curl -fsSL --retry 3 "https://joinrealplay.com/home-future-4v4-card-cleanup.js?cb=${CB}" -o /tmp/rp-cleanup.js
+          echo '--- CLEANUP INSTALL FLAG ---'
+          grep -n '__realPlayFuture4v4CardCleanupInstalled' /tmp/rp-cleanup.js | head -3 || true
+          echo '--- CLEANUP CLICK LISTENER / OPEN ---'
+          grep -n -E 'function openView|rp-home-4v4-explore|rp-4v4-static-open' /tmp/rp-cleanup.js | tail -20 || true
