@@ -17,6 +17,30 @@
     { id: 'warriors', name: 'WARRIORS', verse: 'Exodus 15:3', art: 'assets/3v3/clubs/warriors-logo.png' },
   ];
 
+  function assignedTeamKeys() {
+    if (!Array.isArray(window.__realPlay4v4AssignedTeamKeys)) return null;
+    const seen = new Set();
+    return window.__realPlay4v4AssignedTeamKeys
+      .map((item) => String(item || '').trim().toLowerCase())
+      .filter((item) => {
+        if (!item || seen.has(item)) return false;
+        seen.add(item);
+        return true;
+      });
+  }
+
+  function currentClubFilterSignature() {
+    const keys = assignedTeamKeys();
+    return keys === null ? 'all' : `assigned:${keys.join(',')}`;
+  }
+
+  function currentClubs() {
+    const keys = assignedTeamKeys();
+    if (keys === null) return CLUBS;
+    const byId = new Map(CLUBS.map((club) => [club.id, club]));
+    return keys.map((key) => byId.get(key)).filter(Boolean);
+  }
+
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
   }
@@ -320,13 +344,21 @@
   }
 
   function ensureView() {
+    const filterSignature = currentClubFilterSignature();
     let view = document.querySelector(`[${VIEW_ATTR}]`);
+    if (view && view.dataset.rpClubFilterSignature !== filterSignature) {
+      view.remove();
+      view = null;
+    }
     if (view) return view;
+    const clubs = currentClubs();
 
     view = document.createElement('section');
     view.className = 'rp-3v3-view rp-4v4-static-view';
     view.setAttribute(VIEW_ATTR, 'true');
     view.setAttribute('aria-hidden', 'true');
+    view.dataset.rpClubFilterSignature = filterSignature;
+    if (!clubs.length && filterSignature.startsWith('assigned:')) view.dataset.rpNoAssignedTeams = 'true';
     view.innerHTML = `
       <div class="rp-3v3-shell">
         <header class="rp-3v3-topbar">
@@ -339,7 +371,7 @@
           <section class="rp-3v3-team-picker" aria-label="Choose a Real Play team">
             <button class="rp-team-arrow rp-team-arrow-left" type="button" aria-label="Previous team" data-rp-4v4-prev>‹</button>
             <div class="rp-team-carousel" data-rp-4v4-carousel tabindex="0" aria-live="polite">
-              ${CLUBS.map((club, index) => `
+              ${clubs.map((club, index) => `
                 <button class="rp-team-card has-club-art club-${club.id}" id="rp-4v4-team-${club.id}" type="button" data-rp-4v4-card="${index}" data-rp-three-club="${club.id}">
                   <small>REAL PLAY CLUB</small>
                   <img class="rp-team-card-logo" src="${club.art}" alt="${club.name} club logo" decoding="async" loading="eager" />
@@ -350,7 +382,7 @@
             </div>
             <button class="rp-team-arrow rp-team-arrow-right" type="button" aria-label="Next team" data-rp-4v4-next>›</button>
           </section>
-          <div class="rp-team-dots" data-rp-4v4-dots aria-hidden="true">${CLUBS.map(() => '<i></i>').join('')}</div>
+          <div class="rp-team-dots" data-rp-4v4-dots aria-hidden="true">${clubs.map(() => '<i></i>').join('')}</div>
         </div>
         <p class="rp-3v3-status" data-rp-4v4-status></p>
         <section class="rp-3v3-session rp-4v4-preference-panel">
@@ -373,6 +405,13 @@
 
     document.body.appendChild(view);
 
+    const preferencePanel = view.querySelector('.rp-4v4-preference-panel');
+    if (!clubs.length) {
+      const browse = view.querySelector('[data-rp-4v4-browse]');
+      if (browse) browse.innerHTML = '<div class="rp-4v4-preference-empty">NO TEAMS ARE ASSIGNED TO THIS TIME SLOT YET.</div>';
+      if (preferencePanel) preferencePanel.hidden = true;
+    }
+
     const cards = [...view.querySelectorAll('[data-rp-4v4-card]')];
     const dots = [...view.querySelectorAll('[data-rp-4v4-dots] i')];
     const carousel = view.querySelector('[data-rp-4v4-carousel]');
@@ -391,7 +430,7 @@
     let preferenceSaving = false;
     let preferenceCancelling = false;
     let preferenceError = '';
-    const normalize = (index) => (index + cards.length) % cards.length;
+    const normalize = (index) => cards.length ? (index + cards.length) % cards.length : 0;
 
     function setStatus(message = '', type = '') {
       status.textContent = message;
@@ -418,7 +457,18 @@
     }
 
     function renderPreferenceBoard() {
-      const club = CLUBS[activeIndex];
+      const club = clubs[activeIndex];
+      if (!club) {
+        if (preferenceTeam) preferenceTeam.textContent = 'THIS SLOT';
+        if (preferenceCount) preferenceCount.textContent = '0';
+        if (preferenceAction) {
+          preferenceAction.disabled = true;
+          preferenceAction.textContent = 'NO TEAM AVAILABLE';
+        }
+        if (preferenceCancel) preferenceCancel.hidden = true;
+        if (preferenceList) preferenceList.innerHTML = '<p class="rp-4v4-preference-empty">NO TEAMS ARE ASSIGNED TO THIS TIME SLOT YET.</p>';
+        return;
+      }
       const players = sortedClubPlayers(club.id);
       preferenceTeam.textContent = club.name;
 
@@ -484,7 +534,8 @@
 
     async function savePreference() {
       if (teamCodeOwnsControls()) return;
-      const club = CLUBS[activeIndex];
+      const club = clubs[activeIndex];
+      if (!club) return;
       if (!token()) {
         setStatus('SIGN IN TO SAVE YOUR TEAM PREFERENCE.', 'error');
         return;
@@ -510,7 +561,8 @@
 
     async function clearPreference() {
       if (teamCodeOwnsControls()) return;
-      const club = CLUBS[activeIndex];
+      const club = clubs[activeIndex];
+      if (!club) return;
       if (!token()) {
         setStatus('SIGN IN TO CHANGE YOUR TEAM PREFERENCE.', 'error');
         return;
@@ -535,6 +587,12 @@
     }
 
     function render(index = activeIndex) {
+      if (!cards.length || !clubs.length) {
+        delete view.dataset.rpActiveClub;
+        setStatus('NO TEAMS ARE ASSIGNED TO THIS TIME SLOT YET.', 'error');
+        renderPreferenceBoard();
+        return;
+      }
       activeIndex = normalize(index);
       const previous = normalize(activeIndex - 1);
       const next = normalize(activeIndex + 1);
@@ -553,7 +611,7 @@
       });
       dots.forEach((dot, dotIndex) => dot.classList.toggle('active', dotIndex === activeIndex));
       carousel?.setAttribute('aria-activedescendant', cards[activeIndex]?.id || '');
-      const club = CLUBS[activeIndex];
+      const club = clubs[activeIndex];
       view.dataset.rpActiveClub = club.id;
       setStatus(`${club.name} · ${club.verse}`);
       renderPreferenceBoard();

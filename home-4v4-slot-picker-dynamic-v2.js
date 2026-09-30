@@ -5,7 +5,7 @@
   const SLOT_KEY = 'real_play_4v4_time_slot';
   const API_BASE_URL = 'https://api.clarapmc.com';
   const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
-  const CURRENT_4V4_RUNTIME_VERSION = '20260930-eight-team-runtime-v8';
+  const CURRENT_4V4_RUNTIME_VERSION = '20260930-assigned-team-filter-v9';
   const SESSION_GRACE_MS = 12 * 60 * 60 * 1000;
 
   let slotOverlay = null;
@@ -14,6 +14,31 @@
   let currentFourVFourRuntimeRequested = false;
   let availableSlots = [];
   let slotsLoadPromise = null;
+
+  function normalizeTeamKeys(value) {
+    const seen = new Set();
+    return (Array.isArray(value) ? value : [])
+      .map((item) => String(item || '').trim().toLowerCase())
+      .filter((item) => {
+        if (!item || seen.has(item)) return false;
+        seen.add(item);
+        return true;
+      });
+  }
+
+  function publishSelectedSlotContext(slot) {
+    const assigned = slot?.filterMode === 'assigned';
+    const teamKeys = assigned ? normalizeTeamKeys(slot?.teamKeys) : null;
+    window.__realPlay4v4SelectedSlot = slot || null;
+    window.__realPlay4v4AssignedTeamKeys = assigned ? teamKeys : null;
+    window.dispatchEvent(new CustomEvent('realplay:4v4-slot-context', {
+      detail: {
+        slot: slot || null,
+        filterMode: assigned ? 'assigned' : 'all',
+        teamKeys: assigned ? teamKeys : null,
+      },
+    }));
+  }
 
   function escapeHtml(value) {
     return String(value ?? '')
@@ -45,6 +70,7 @@
       if (slot) sessionStorage.setItem(SLOT_KEY, JSON.stringify(slot));
       else sessionStorage.removeItem(SLOT_KEY);
     } catch (_error) {}
+    publishSelectedSlotContext(selectedSlotMemory);
   }
 
   function isSelectedSlotValid() {
@@ -105,16 +131,19 @@
     }
   }
 
-  function slotFromTimes(start, end) {
+  function slotFromTimes(start, end, options = {}) {
     const startClock = normalizeClock(start);
     const endClock = normalizeClock(end);
     if (!startClock || !endClock || startClock === endClock) return null;
+    const filterMode = options?.filterMode === 'assigned' ? 'assigned' : 'all';
     return {
       id: `${clockToId(startClock)}-${clockToId(endClock)}`,
       label: `${formatClock(startClock)} – ${formatClock(endClock)}`,
       start: startClock,
       end: endClock,
       active: true,
+      filterMode,
+      ...(filterMode === 'assigned' ? { teamKeys: normalizeTeamKeys(options?.teamKeys) } : {}),
     };
   }
 
@@ -169,7 +198,11 @@
 
     if (mode === 'assigned' && Array.isArray(schedule.blocks)) {
       schedule.blocks.forEach((block) => {
-        const slot = slotFromTimes(block?.start, block?.end);
+        const recoveredLegacy = Boolean(schedule?.recoveredLegacy || block?.recoveredLegacy);
+        const slot = slotFromTimes(block?.start, block?.end, {
+          filterMode: recoveredLegacy ? 'all' : 'assigned',
+          teamKeys: block?.teamKeys,
+        });
         if (!slot || seen.has(slot.id)) return;
         seen.add(slot.id);
         slots.push(slot);
@@ -178,7 +211,7 @@
       const start = eventClockInManila(update?.event_at || update?.eventAt);
       const endText = String(update?.body || '').match(/\bENDS\s+(.+?)\s*·/i)?.[1] || '';
       const end = parseTwelveHourClock(endText);
-      const slot = slotFromTimes(start, end);
+      const slot = slotFromTimes(start, end, { filterMode: 'all' });
       if (slot) slots.push(slot);
     }
 
@@ -422,14 +455,20 @@
     tryOpen();
   }
 
+  function resetOpenTeamSelection() {
+    const view = document.querySelector('[data-rp-4v4-static-view]');
+    const wasOpen = Boolean(view?.classList.contains('open') || document.body.classList.contains('rp-4v4-static-open'));
+    if (view) view.remove();
+    document.body.classList.remove('rp-4v4-static-open');
+    return wasOpen;
+  }
+
   function chooseSlot(slot) {
     if (!slot?.id || !availableSlots.some((item) => item.id === slot.id)) return;
+    const wasOpen = document.body.classList.contains('rp-4v4-static-open') || Boolean(document.querySelector('[data-rp-4v4-static-view].open'));
     setSelectedSlot(slot);
     closeSlotPicker();
-    if (document.body.classList.contains('rp-4v4-static-open')) {
-      ensureTeamSlotBanner();
-      return;
-    }
+    if (wasOpen) resetOpenTeamSelection();
     window.setTimeout(openTeamSelection, 20);
   }
 
@@ -467,9 +506,13 @@
     document.addEventListener('click', onCaptureClick, true);
     document.addEventListener('keydown', onKeydown);
     window.addEventListener('realplay:home-schedule-changed', async () => {
+      const wasOpen = document.body.classList.contains('rp-4v4-static-open') || Boolean(document.querySelector('[data-rp-4v4-static-view].open'));
       await refreshSlots();
       if (slotOverlay && !slotOverlay.hidden) renderSlotOptions();
-      if (document.body.classList.contains('rp-4v4-static-open')) ensureTeamSlotBanner();
+      if (!wasOpen) return;
+      resetOpenTeamSelection();
+      if (isSelectedSlotValid()) window.setTimeout(openTeamSelection, 20);
+      else window.setTimeout(openSlotPicker, 20);
     });
 
     observer = new MutationObserver(() => {

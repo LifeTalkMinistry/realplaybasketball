@@ -4,7 +4,7 @@
 
   const loadSlotPicker = () => {
     const script = document.createElement('script');
-    script.src = 'home-4v4-slot-picker-dynamic-v2.js?v=20260930-eight-team-catalog-v5';
+    script.src = 'home-4v4-slot-picker-dynamic-v2.js?v=20260930-assigned-team-filter-v6';
     script.async = false;
     script.addEventListener('load', () => {
       const headerScript = document.createElement('script');
