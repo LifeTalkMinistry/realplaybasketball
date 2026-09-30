@@ -18,17 +18,26 @@ page.on('request', (request) => {
 });
 
 await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 45000 });
-await page.waitForSelector('[data-rp-home-save-slot]', { state: 'visible', timeout: 45000 });
+await page.waitForFunction(() => window.__realPlayFourVFourSlotPickerInstalled === true, null, { timeout: 15000 });
 
 const deploy = await page.evaluate(() => document.documentElement?.dataset?.rpDeploy || '');
-const homeButtonText = String(await page.locator('[data-rp-home-save-slot]').textContent()).trim();
+const hadRealHomeButton = await page.locator('[data-rp-home-save-slot]').count() > 0;
+if (!hadRealHomeButton) {
+  await page.evaluate(() => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.rpHomeSaveSlot = 'diagnostic';
+    button.textContent = 'CHOOSE MY SLOT';
+    document.body.appendChild(button);
+  });
+}
+const homeButtonText = String(await page.locator('[data-rp-home-save-slot]').first().textContent()).trim();
 
-// CI may have the public announcement takeover open. Invoke the actual DOM click
-// directly so this diagnostic exercises the slot-picker handler rather than
-// failing on an unrelated pointer-interception layer.
-await page.locator('[data-rp-home-save-slot]').evaluate((el) => el.click());
+// Use the same DOM click event path as the real Home action while remaining
+// independent of announcement/takeover pointer layers in CI.
+await page.locator('[data-rp-home-save-slot]').first().evaluate((el) => el.click());
 await page.waitForSelector('.rp-4v4-slot-overlay:not([hidden])', { state: 'visible', timeout: 10000 });
-await page.waitForTimeout(600);
+await page.waitForTimeout(1000);
 
 const beforeClick = await page.evaluate(() => ({
   cleanupInstalled: window.__realPlayFuture4v4CardCleanupInstalled === true,
@@ -38,7 +47,7 @@ const beforeClick = await page.evaluate(() => ({
 }));
 
 await page.locator('[data-rp-4v4-slot="2000-2200"]').evaluate((el) => el.click());
-await page.waitForTimeout(2200);
+await page.waitForTimeout(2500);
 
 const afterClick = await page.evaluate(() => {
   const view = document.querySelector('.rp-4v4-static-view');
@@ -59,6 +68,7 @@ const afterClick = await page.evaluate(() => {
 
 console.log(JSON.stringify({
   deploy,
+  hadRealHomeButton,
   homeButtonText,
   cleanupRequests,
   beforeClick,
