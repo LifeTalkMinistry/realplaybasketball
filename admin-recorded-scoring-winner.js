@@ -194,6 +194,9 @@
   import(`./admin-game-recap.js?v=${encodeURIComponent(recapVersion)}`).catch((error) => {
     console.warn('[Real Play] Game recap enhancement did not load.', error);
   });
+  import(`./admin-game-recap-career-standing.js?v=${encodeURIComponent(`${recapVersion}-career-standing-v1`)}`).catch((error) => {
+    console.warn('[Real Play] Current player standing enhancement did not load.', error);
+  });
   import(`./admin-game-recap-wide.js?v=${encodeURIComponent(recapVersion)}`).catch((error) => {
     console.warn('[Real Play] Wide recap presentation did not load.', error);
   });
