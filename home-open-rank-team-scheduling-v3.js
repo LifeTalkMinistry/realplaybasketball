@@ -541,6 +541,15 @@
     return true;
   }
 
+  window.__realPlayHomeTeamScheduling = {
+    getSchedule() { return buildTeamSchedule(); },
+    validate(schedule = buildTeamSchedule()) { return validateSchedule(schedule); },
+    snapshot() {
+      const teamSchedule = buildTeamSchedule();
+      return { teamSchedule, validation: validateSchedule(teamSchedule) };
+    },
+  };
+
   window.fetch = function realPlayTeamScheduleFetch(input, init = {}) {
     try {
       const url = typeof input === 'string' ? input : String(input?.url || '');

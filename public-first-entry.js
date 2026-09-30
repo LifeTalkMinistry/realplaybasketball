@@ -158,7 +158,7 @@
   if (!window.__realPlayHomeScheduleLoaderInstalled) {
     window.__realPlayHomeScheduleLoaderInstalled = true;
     const script = document.createElement('script');
-    script.src = 'home-open-rank-admin-edit.js?v=20260930-team-cap-home-availability-v143';
+    script.src = 'home-open-rank-admin-edit.js?v=20260930-explicit-team-metadata-v1';
     script.async = false;
     script.onerror = () => console.warn('[Real Play] Home schedule editor failed to load.');
     document.head.appendChild(script);

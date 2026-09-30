@@ -92,9 +92,9 @@
   // already loaded globally, so it is also a stable lightweight bootstrap point
   // without forcing the full Game Control bundle onto normal Home visitors.
   if (!window.__realPlayHomeOpenRankAdminEditInstalled
-      && ![...document.scripts].some((script) => String(script.src || '').includes('home-open-rank-admin-edit.js'))) {
+      && ![...document.scripts].some((script) => String(script.src || '').includes('home-open-rank-admin-edit.js?v=20260930-explicit-team-metadata-v1'))) {
     const script = document.createElement('script');
-    script.src = 'home-open-rank-admin-edit.js?v=20260915-home-open-rank-admin-v1';
+    script.src = 'home-open-rank-admin-edit.js?v=20260930-explicit-team-metadata-v1';
     script.async = false;
     script.onerror = () => console.error('[Real Play] Home Open Ranking admin editor failed to load.');
     document.head.appendChild(script);
