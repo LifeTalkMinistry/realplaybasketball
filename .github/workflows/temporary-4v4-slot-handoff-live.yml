@@ -25,7 +25,7 @@ jobs:
       - name: Install Playwright
         run: |
           npm install --no-save playwright@1.55.0
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
 
       - name: Verify live slot handoff
         run: node tests/temporary-4v4-slot-handoff-live.mjs
