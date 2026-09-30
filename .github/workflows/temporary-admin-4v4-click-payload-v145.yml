@@ -1,0 +1,55 @@
+name: Temporary Admin 4v4 Click Payload v145
+
+on:
+  push:
+    branches:
+      - fix/admin-4v4-click-payload-v145
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/admin-4v4-click-payload-v145
+
+      - name: Fix 4v4 team click payload
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('admin-player-schedule.js')
+          text = path.read_text()
+          old = "moveToTeam(String(team.dataset.admin4v4Club || ''));"
+          new = "moveToTeam(String(team.getAttribute('data-admin-4v4-club') || ''));"
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected exactly one broken dataset read, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+
+          path = Path('index.html')
+          text = path.read_text()
+          old = 'data-rp-deploy="20260930-admin-4v4-team-management-v144"'
+          new = 'data-rp-deploy="20260930-admin-4v4-click-payload-v145"'
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected exactly one deploy id, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Verify exact fix
+        run: |
+          node --check admin-player-schedule.js
+          grep -F "team.getAttribute('data-admin-4v4-club')" admin-player-schedule.js
+          grep -F 'data-rp-deploy="20260930-admin-4v4-click-payload-v145"' index.html
+          git diff --check
+          git diff -- admin-player-schedule.js index.html
+
+      - name: Commit fix
+        run: |
+          git config user.name "LifeTalk Ministry"
+          git config user.email "96472293+LifeTalkMinistry@users.noreply.github.com"
+          git add admin-player-schedule.js index.html
+          git commit -m "Fix admin 4v4 team click payload"
+          git push origin HEAD:fix/admin-4v4-click-payload-v145
