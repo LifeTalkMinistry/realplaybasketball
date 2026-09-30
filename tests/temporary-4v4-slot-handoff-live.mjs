@@ -66,7 +66,7 @@ const afterClick = await page.evaluate(() => {
   };
 });
 
-console.log(JSON.stringify({
+const report = {
   deploy,
   hadRealHomeButton,
   homeButtonText,
@@ -75,7 +75,10 @@ console.log(JSON.stringify({
   afterClick,
   pageErrors: errors,
   consoleErrors,
-}, null, 2));
+};
+console.log(JSON.stringify(report, null, 2));
+
+await browser.close();
 
 assert.match(afterClick.storage || '', /2000-2200/, 'Selected slot was not stored.');
 assert.equal(afterClick.overlayHidden, true, 'Slot picker did not close.');
@@ -86,5 +89,3 @@ assert.equal(afterClick.ariaHidden, 'false', '4v4 static view aria-hidden is not
 assert.equal(afterClick.bodyOpen, true, 'body.rp-4v4-static-open is missing.');
 assert.equal(afterClick.selectedTeamHeading, 'SELECT YOUR TEAM.', 'SELECT YOUR TEAM heading is not present.');
 assert.equal(errors.length, 0, `Page errors: ${errors.join(' | ')}`);
-
-await browser.close();
