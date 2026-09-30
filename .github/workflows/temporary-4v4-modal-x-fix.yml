@@ -25,6 +25,7 @@ jobs:
           from pathlib import Path
 
           deploy_old = '20260930-4v4-team-code-window-capture-v139'
+          loader_old = '20260930-4v4-team-code-cancel-v138'
           deploy_new = '20260930-4v4-team-code-x-close-v140'
 
           js_path = Path('home-future-4v4-team-code-beta.js')
@@ -51,15 +52,16 @@ jobs:
 
           loader_path = Path('login-landing-fix.js')
           loader = loader_path.read_text()
-          if deploy_old not in loader:
+          if loader_old not in loader:
               raise SystemExit('Expected deploy fallback not found in login-landing-fix.js')
-          loader_path.write_text(loader.replace(deploy_old, deploy_new, 1))
+          loader_path.write_text(loader.replace(loader_old, deploy_new, 1))
           PY
       - name: Verify surgical diff
         shell: bash
         run: |
           git diff --check
           grep -q '20260930-4v4-team-code-x-close-v140' index.html
+          grep -q '20260930-4v4-team-code-x-close-v140' login-landing-fix.js
           grep -q 'rp-4v4-team-code-close' home-future-4v4-team-code-beta.js
           if grep -Fq '>CANCEL</button>' home-future-4v4-team-code-beta.js; then
             echo 'Bottom CANCEL still present in Team Code module' >&2
