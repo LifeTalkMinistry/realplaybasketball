@@ -58,7 +58,10 @@
       .rp-4v4-preference-action.rp-team-code-held{border-color:rgba(255,199,93,.30)!important}
       .rp-4v4-team-code-dialog{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:20px;background:rgba(0,4,9,.84);backdrop-filter:blur(10px)}
       .rp-4v4-team-code-dialog[hidden]{display:none!important}
-      .rp-4v4-team-code-card{position:relative;width:min(100%,390px);box-sizing:border-box;padding:20px;border:1px solid rgba(83,220,255,.23);border-radius:22px;background:linear-gradient(180deg,#071521,#030a11);box-shadow:0 26px 80px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.045);color:#eefaff;font-family:Arial,sans-serif}\n      .rp-4v4-team-code-close{position:absolute;top:10px;right:10px;width:42px;height:42px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:transparent;color:#91a6b8;font:700 1.65rem/1 Arial,sans-serif;cursor:pointer;transition:color .16s ease,background .16s ease,transform .16s ease}\n      .rp-4v4-team-code-close:hover{color:#e9faff;background:rgba(255,255,255,.06)}\n      .rp-4v4-team-code-close:active{transform:scale(.92)}
+      .rp-4v4-team-code-card{position:relative;width:min(100%,390px);box-sizing:border-box;padding:20px;border:1px solid rgba(83,220,255,.23);border-radius:22px;background:linear-gradient(180deg,#071521,#030a11);box-shadow:0 26px 80px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.045);color:#eefaff;font-family:Arial,sans-serif}
+      .rp-4v4-team-code-close{position:absolute;top:10px;right:10px;width:42px;height:42px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:transparent;color:#91a6b8;font:700 1.65rem/1 Arial,sans-serif;cursor:pointer;transition:color .16s ease,background .16s ease,transform .16s ease}
+      .rp-4v4-team-code-close:hover{color:#e9faff;background:rgba(255,255,255,.06)}
+      .rp-4v4-team-code-close:active{transform:scale(.92)}
       .rp-4v4-team-code-kicker{margin:0 0 7px;color:#53dfff;font-size:.58rem;font-weight:950;letter-spacing:.13em;text-transform:uppercase}
       .rp-4v4-team-code-card h3{margin:0;color:#f7fbff;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.55rem;font-style:italic;letter-spacing:.03em;text-transform:uppercase}
       .rp-4v4-team-code-copy{margin:9px 0 15px;color:#8fa6b8;font-size:.72rem;font-weight:700;line-height:1.5}
@@ -138,7 +141,7 @@
       button = document.createElement('button');
       button.type = 'button';
       button.className = 'rp-4v4-team-code-admin';
-      button.dataset.rp4v4TeamCodeAdmin = '';
+      button.setAttribute('data-rp-4v4-team-code-admin', '');
       button.setAttribute('aria-label', 'Admin team code');
       button.title = 'Admin: Create or view team code';
       button.innerHTML = '<span aria-hidden="true">🔒</span>';
@@ -205,7 +208,7 @@
     if (dialog) return dialog;
     dialog = document.createElement('div');
     dialog.className = 'rp-4v4-team-code-dialog';
-    dialog.dataset.rp4v4TeamCodeDialog = '';
+    dialog.setAttribute('data-rp-4v4-team-code-dialog', '');
     dialog.hidden = true;
     document.body.appendChild(dialog);
     return dialog;

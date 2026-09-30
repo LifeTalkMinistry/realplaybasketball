@@ -100,7 +100,7 @@
   }
 
   // Close the Team Code modal before document-level capture handlers can
-  // consume the pointer/click. The app already has capture handlers that use
+  // consume the click. The app already has capture handlers that use
   // stopImmediatePropagation(), so this guard must run at window capture.
   function closeTeamCodeDialog() {
     const dialog = document.querySelector('[data-rp-4v4-team-code-dialog]');
@@ -138,7 +138,6 @@
 
   // Window capture runs before document capture, so CANCEL/CLOSE cannot be
   // swallowed by another document-level stopImmediatePropagation() handler.
-  window.addEventListener('pointerdown', handleTeamCodeClose, true);
   window.addEventListener('click', handleTeamCodeClose, true);
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
