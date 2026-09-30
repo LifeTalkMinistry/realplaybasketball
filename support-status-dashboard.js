@@ -45,6 +45,9 @@
     const style = document.createElement('style');
     style.id = 'rp-support-status-dashboard-style';
     style.textContent = `
+      [data-rp-support-status-view="true"] .rp-team-sheet-head{justify-content:center!important;text-align:center!important}
+      [data-rp-support-status-view="true"] .rp-team-sheet-head>div{width:100%!important;text-align:center!important}
+      [data-rp-support-status-view="true"] .rp-team-sheet-head h3{width:100%!important;margin-left:auto!important;margin-right:auto!important;text-align:center!important}
       .rp-support-status-card{display:grid;gap:12px;margin:2px 0 14px;padding:16px;border:1px solid rgba(76,214,255,.2);border-radius:15px;background:rgba(4,20,29,.72)}
       .rp-support-status-hero{text-align:center;padding:4px 2px 8px}
       .rp-support-status-check{display:flex;align-items:center;justify-content:center;width:44px;height:44px;margin:0 auto 10px;border-radius:999px;background:rgba(66,216,255,.13);color:#62e2ff;font-size:1.3rem;font-weight:950}
