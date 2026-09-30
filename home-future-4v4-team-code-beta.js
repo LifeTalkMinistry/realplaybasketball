@@ -413,16 +413,9 @@
   function boot() {
     installStyle();
     discoverPanel();
-
-    // The 4v4 view is created only after the roadmap action is clicked.
-    // Listen at window capture (before the existing document capture handler),
-    // then bind or refresh after that handler has synchronously opened the view.
-    window.addEventListener('click', (event) => {
-      if (!event.target?.closest?.('.rp-home-4v4-explore')) return;
-      window.setTimeout(() => discoverPanel({ refresh: true }), 0);
-    }, true);
   }
 
+  window.addEventListener('realplay:4v4-open', () => discoverPanel({ refresh: true }));
   window.addEventListener('realplay:admin-render', queueRender);
   window.addEventListener('focus', () => {
     const view = document.querySelector('[data-rp-4v4-static-view].open');
