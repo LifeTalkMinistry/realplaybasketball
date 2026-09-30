@@ -186,8 +186,8 @@
   // Load presentation-only review focus before/alongside the read-only recap.
   // Keep an explicit feature suffix so a presentation update cannot reuse an
   // older cached module just because the page-level deploy marker is unchanged.
-  const deployVersion = String(document.documentElement?.dataset?.rpDeploy || '20260930-game-recap-v3').trim();
-  const recapVersion = `${deployVersion}-wide-dashboard-v1`;
+  const deployVersion = String(document.documentElement?.dataset?.rpDeploy || '20260930-game-recap-v4').trim();
+  const recapVersion = `${deployVersion}-recognitions-v1`;
   import(`./admin-review-focus.js?v=${encodeURIComponent(recapVersion)}`).catch((error) => {
     console.warn('[Real Play] Review focus enhancement did not load.', error);
   });
@@ -196,5 +196,8 @@
   });
   import(`./admin-game-recap-wide.js?v=${encodeURIComponent(recapVersion)}`).catch((error) => {
     console.warn('[Real Play] Wide recap presentation did not load.', error);
+  });
+  import(`./admin-game-recap-recognitions.js?v=${encodeURIComponent(recapVersion)}`).catch((error) => {
+    console.warn('[Real Play] Game recap recognitions did not load.', error);
   });
 })();
