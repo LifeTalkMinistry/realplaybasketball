@@ -1,0 +1,24 @@
+name: Temporary 4v4 Request Origin
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  request-origin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Trace duplicate 4v4 state request origins
+        run: node tests/temporary-4v4-request-origin.mjs
