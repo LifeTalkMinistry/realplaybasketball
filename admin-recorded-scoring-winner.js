@@ -183,8 +183,12 @@
     loadRules(true);
   }, 0);
 
-  // Load the separate read-only recap enhancement without changing scoring ownership.
+  // Load presentation-only review focus before/alongside the read-only recap.
+  // Neither enhancement owns scoring, draft submission, or finalization logic.
   const recapVersion = String(document.documentElement?.dataset?.rpDeploy || '20260930-game-recap-v1').trim();
+  import(`./admin-review-focus.js?v=${encodeURIComponent(recapVersion)}`).catch((error) => {
+    console.warn('[Real Play] Review focus enhancement did not load.', error);
+  });
   import(`./admin-game-recap.js?v=${encodeURIComponent(recapVersion)}`).catch((error) => {
     console.warn('[Real Play] Game recap enhancement did not load.', error);
   });
