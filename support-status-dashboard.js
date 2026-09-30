@@ -32,6 +32,33 @@
     }
   }
 
+  function manilaDateKey(value) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    try {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        timeZone: 'Asia/Manila',
+      }).formatToParts(date);
+      const get = (type) => parts.find((part) => part.type === type)?.value || '';
+      const year = get('year');
+      const month = get('month');
+      const day = get('day');
+      return year && month && day ? `${year}-${month}-${day}` : '';
+    } catch (_error) {
+      return '';
+    }
+  }
+
+  function isRenewalAvailable(support) {
+    if (!support?.endsAt) return false;
+    const dueDate = manilaDateKey(support.endsAt);
+    const today = manilaDateKey(new Date());
+    return Boolean(dueDate && today && today >= dueDate);
+  }
+
   function paymentMethodLabel(value) {
     const method = String(value || '').trim().toLowerCase();
     if (method === 'cash_on_hand') return 'CASH ON HAND';
@@ -62,6 +89,7 @@
       .rp-support-status-note strong{color:#dff7ff}
       .rp-support-status-actions{display:grid;gap:8px;margin-top:12px}
       .rp-support-status-actions button{width:100%}
+      .rp-support-renew[disabled]{cursor:not-allowed!important;opacity:.42!important;background:rgba(40,55,64,.72)!important;border-color:rgba(126,151,165,.16)!important;color:#8999a3!important;box-shadow:none!important;filter:saturate(.2)!important;pointer-events:none!important}
       .rp-support-status-secondary{min-height:43px;padding:10px 12px;border:1px solid rgba(76,214,255,.17);border-radius:12px;background:rgba(4,20,29,.72);color:#dff7ff;font-size:.62rem;font-weight:950;letter-spacing:.06em;cursor:pointer}
       @media (max-width:380px){.rp-support-status-grid{grid-template-columns:1fr}.rp-support-status-item.wide{grid-column:auto}}
     `;
@@ -101,6 +129,7 @@
     const mainDateValue = pending ? support?.createdAt : (support?.startedAt || support?.verifiedAt);
     const renewalLabel = pending ? 'RENEWAL' : 'NEXT RENEWAL DUE';
     const renewalValue = pending ? 'STARTS AFTER VERIFICATION' : formatDate(support?.endsAt);
+    const canRenew = !pending && isRenewalAvailable(support);
 
     return `
       <div class="rp-team-sheet-grab" aria-hidden="true"></div>
@@ -124,7 +153,7 @@
           : '<strong>No automatic charge.</strong> Renew manually when your current monthly support period ends.'}</p>
       </div>
       <div class="rp-support-status-actions">
-        <button class="rp-team-sheet-submit" type="button" data-rp-support-status-manage>${pending ? 'CHOOSE A DIFFERENT SUPPORT LEVEL' : 'RENEW / CHANGE SUPPORT LEVEL'}</button>
+        <button class="rp-team-sheet-submit rp-support-renew" type="button" data-rp-support-status-renew${canRenew ? '' : ' disabled aria-disabled="true"'}>RENEW</button>
         <button class="rp-support-status-secondary" type="button" data-rp-support-status-back>BACK TO SETTINGS</button>
       </div>
     `;
@@ -184,14 +213,17 @@
       backToSettings(overlay);
     });
 
-    panel.querySelector('[data-rp-support-status-manage]')?.addEventListener('click', () => {
-      overlay.dataset.rpSupportStatusBypass = 'true';
-      delete overlay.dataset.rpSupportStatusView;
-      delete overlay.dataset.rpSupportStateChecked;
-      if (typeof window.RealPlayTeamSupport?.open === 'function') {
-        window.RealPlayTeamSupport.open('money');
-      }
-    });
+    const renewButton = panel.querySelector('[data-rp-support-status-renew]');
+    if (renewButton && !renewButton.disabled) {
+      renewButton.addEventListener('click', () => {
+        overlay.dataset.rpSupportStatusBypass = 'true';
+        delete overlay.dataset.rpSupportStatusView;
+        delete overlay.dataset.rpSupportStateChecked;
+        if (typeof window.RealPlayTeamSupport?.open === 'function') {
+          window.RealPlayTeamSupport.open('money');
+        }
+      });
+    }
   }
 
   async function syncOverlay(overlay) {
