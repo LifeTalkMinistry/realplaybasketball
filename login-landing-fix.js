@@ -62,12 +62,32 @@
   if (window.__realPlay4v4TeamCodeBetaLoaderInstalled) return;
   window.__realPlay4v4TeamCodeBetaLoaderInstalled = true;
 
-  if ([...document.scripts].some((script) => String(script.src || '').includes('home-future-4v4-team-code-beta.js'))) return;
+  let loading = false;
 
-  const script = document.createElement('script');
-  const version = String(document.documentElement?.dataset?.rpDeploy || Date.now());
-  script.src = `home-future-4v4-team-code-beta.js?v=${encodeURIComponent(version)}`;
-  script.async = false;
-  script.onerror = () => console.error('[Real Play] 4v4 team-code Beta UI failed to load.');
-  document.head.appendChild(script);
+  function loadBeta() {
+    if (window.__realPlay4v4TeamCodeBetaInstalled || loading) return;
+    if ([...document.scripts].some((script) => String(script.src || '').includes('home-future-4v4-team-code-beta.js'))) return;
+
+    loading = true;
+    const script = document.createElement('script');
+    const version = String(document.documentElement?.dataset?.rpDeploy || Date.now());
+    script.src = `home-future-4v4-team-code-beta.js?v=${encodeURIComponent(version)}-freeze-fix-v2`;
+    script.async = false;
+    script.onload = () => { loading = false; };
+    script.onerror = () => {
+      loading = false;
+      console.error('[Real Play] 4v4 team-code Beta UI failed to load.');
+    };
+    document.head.appendChild(script);
+  }
+
+  // The existing roadmap click handler runs on document capture and stops
+  // propagation. Window capture runs first, so this safely starts the optional
+  // 4v4 layer only when the player actually opens that feature.
+  window.addEventListener('click', (event) => {
+    if (event.target?.closest?.('.rp-home-4v4-explore')) loadBeta();
+  }, true);
+
+  // Support a view that was already opened before this loader initialized.
+  if (document.querySelector('.rp-4v4-preference-panel')) loadBeta();
 })();
