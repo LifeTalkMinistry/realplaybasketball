@@ -1,0 +1,157 @@
+name: Temporary Explicit Team Schedule Persistence
+
+on:
+  push:
+    branches:
+      - fix/4v4-persist-assigned-team-schedule
+    paths:
+      - '.github/workflows/temporary-explicit-team-schedule-persistence.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/4v4-persist-assigned-team-schedule
+          fetch-depth: 0
+
+      - name: Patch explicit team schedule persistence
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace_once(path, old, new, label):
+              text = path.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'Could not find {label} in {path}')
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          scheduler = Path('home-open-rank-team-scheduling-v3.js')
+          replace_once(
+              scheduler,
+              """  window.fetch = function realPlayTeamScheduleFetch(input, init = {}) {""",
+              """  window.__realPlayHomeTeamScheduling = {
+    getSchedule() {
+      return buildTeamSchedule();
+    },
+    validate(schedule = buildTeamSchedule()) {
+      return validateSchedule(schedule);
+    },
+    snapshot() {
+      const teamSchedule = buildTeamSchedule();
+      return { teamSchedule, validation: validateSchedule(teamSchedule) };
+    },
+  };
+
+  window.fetch = function realPlayTeamScheduleFetch(input, init = {}) {""",
+              'scheduler public API')
+
+          admin = Path('home-open-rank-admin-edit.js')
+          replace_once(
+              admin,
+              """    if (!Number.isFinite(capacity) || capacity < 1 || capacity > 4) return editorStatus('Team cap must be between 1 and 4.', true);
+
+    setEditorBusy(true);""",
+              """    if (!Number.isFinite(capacity) || capacity < 1 || capacity > 4) return editorStatus('Team cap must be between 1 and 4.', true);
+
+    const schedulingApi = window.__realPlayHomeTeamScheduling;
+    if (!schedulingApi?.snapshot) return editorStatus('Team scheduling is still loading. Close this editor, reopen it, and try again.', true);
+    const scheduleSnapshot = schedulingApi.snapshot();
+    if (!scheduleSnapshot?.validation?.ok) {
+      return editorStatus(scheduleSnapshot?.validation?.message || 'Fix the team schedule before saving.', true);
+    }
+    const teamSchedule = scheduleSnapshot.teamSchedule;
+
+    setEditorBusy(true);""",
+              'explicit scheduler snapshot before save')
+
+          replace_once(
+              admin,
+              """        eventAt,
+        locationName,
+        pinned: true,
+      });
+
+      let updates = Array.isArray(published?.updates) ? published.updates : [];""",
+              """        eventAt,
+        locationName,
+        pinned: true,
+        metadata: { teamSchedule },
+      });
+
+      let updates = Array.isArray(published?.updates) ? published.updates : [];
+      const savedSchedule = updates.find((item) => {
+        if (!isManualHomeOverride(item)) return false;
+        const itemEvent = Date.parse(item?.event_at || item?.eventAt || '');
+        const requestedEvent = Date.parse(eventAt || '');
+        const sameTime = Number.isFinite(itemEvent) && Number.isFinite(requestedEvent) && Math.abs(itemEvent - requestedEvent) < 60_000;
+        const sameTitle = String(item?.title || '').trim() === title;
+        return sameTime && sameTitle;
+      });
+      const echoedTeamSchedule = savedSchedule?.metadata?.teamSchedule || savedSchedule?.metadata?.team_schedule;
+      if (!echoedTeamSchedule || String(echoedTeamSchedule.mode || '').toLowerCase() !== String(teamSchedule.mode || '').toLowerCase()) {
+        throw new Error('The Home schedule saved without its team assignments. Nothing was changed locally; please try saving again.');
+      }""",
+              'metadata in publish payload and response verification')
+
+          loader = Path('home-open-rank-team-scheduling.js')
+          text = loader.read_text(encoding='utf-8')
+          text = text.replace('home-open-rank-team-scheduling-v3.js?v=20260930-team-picker-v4',
+                              'home-open-rank-team-scheduling-v3.js?v=20260930-explicit-team-metadata-v5')
+          loader.write_text(text, encoding='utf-8')
+
+          index = Path('index.html')
+          text = index.read_text(encoding='utf-8')
+          text = text.replace('data-rp-deploy="20260930-assigned-team-filter-v151"',
+                              'data-rp-deploy="20260930-team-metadata-persistence-v152"')
+          text = text.replace('home-open-rank-team-scheduling.js?v=20260930-home-team-time-blocks-v1',
+                              'home-open-rank-team-scheduling.js?v=20260930-explicit-team-metadata-v2')
+          index.write_text(text, encoding='utf-8')
+
+          # Cache-bust any loader/reference that explicitly names the admin editor.
+          for path in list(Path('.').glob('*.js')) + [Path('index.html')]:
+              if not path.exists() or path == admin:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              if 'home-open-rank-admin-edit.js' not in text:
+                  continue
+              updated = re.sub(r'home-open-rank-admin-edit\.js(?:\?v=[A-Za-z0-9_.-]+)?',
+                               'home-open-rank-admin-edit.js?v=20260930-explicit-team-metadata-v1', text)
+              if updated != text:
+                  path.write_text(updated, encoding='utf-8')
+                  print(f'cache-busted admin editor reference in {path}')
+
+          # Contract assertions: this fix must not silently rely on the fetch monkey patch anymore.
+          admin_text = admin.read_text(encoding='utf-8')
+          scheduler_text = scheduler.read_text(encoding='utf-8')
+          assert 'metadata: { teamSchedule }' in admin_text
+          assert 'window.__realPlayHomeTeamScheduling' in scheduler_text
+          assert 'scheduleSnapshot = schedulingApi.snapshot()' in admin_text
+          assert 'saved without its team assignments' in admin_text
+          PY
+
+      - name: Syntax and contract checks
+        shell: bash
+        run: |
+          node --check home-open-rank-admin-edit.js
+          node --check home-open-rank-team-scheduling-v3.js
+          node --check home-open-rank-team-scheduling.js
+          grep -q "metadata: { teamSchedule }" home-open-rank-admin-edit.js
+          grep -q "__realPlayHomeTeamScheduling" home-open-rank-team-scheduling-v3.js
+          grep -q "team-metadata-persistence-v152" index.html
+
+      - name: Commit patch and remove temporary runner
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .github/workflows/temporary-explicit-team-schedule-persistence.yml
+          git add -A
+          git commit -m "Persist assigned teams explicitly with Home schedule"
+          git push origin HEAD:fix/4v4-persist-assigned-team-schedule
