@@ -1,0 +1,79 @@
+name: Temporary 4v4 Modal X Fix v2
+
+on:
+  push:
+    branches:
+      - fix/4v4-modal-x-close
+    paths:
+      - .github/workflows/temporary-4v4-modal-x-fix-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/4v4-modal-x-close
+          fetch-depth: 0
+      - name: Replace bottom cancel with top-right X
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          deploy_old = '20260930-4v4-team-code-window-capture-v139'
+          loader_old = '20260930-4v4-team-code-cancel-v138'
+          deploy_new = '20260930-4v4-team-code-x-close-v140'
+
+          js_path = Path('home-future-4v4-team-code-beta.js')
+          js = js_path.read_text()
+
+          old_card = ".rp-4v4-team-code-card{width:min(100%,390px);box-sizing:border-box;padding:20px;border:1px solid rgba(83,220,255,.23);border-radius:22px;background:linear-gradient(180deg,#071521,#030a11);box-shadow:0 26px 80px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.045);color:#eefaff;font-family:Arial,sans-serif}"
+          new_card = ".rp-4v4-team-code-card{position:relative;width:min(100%,390px);box-sizing:border-box;padding:20px;border:1px solid rgba(83,220,255,.23);border-radius:22px;background:linear-gradient(180deg,#071521,#030a11);box-shadow:0 26px 80px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.045);color:#eefaff;font-family:Arial,sans-serif}\\n      .rp-4v4-team-code-close{position:absolute;top:10px;right:10px;width:42px;height:42px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:transparent;color:#91a6b8;font:700 1.65rem/1 Arial,sans-serif;cursor:pointer;transition:color .16s ease,background .16s ease,transform .16s ease}\\n      .rp-4v4-team-code-close:hover{color:#e9faff;background:rgba(255,255,255,.06)}\\n      .rp-4v4-team-code-close:active{transform:scale(.92)}"
+          if old_card not in js:
+              raise SystemExit('Expected team-code card style not found')
+          js = js.replace(old_card, new_card, 1)
+
+          old_join = '<section class="rp-4v4-team-code-card" role="dialog" aria-modal="true" aria-labelledby="rp-team-code-title"><p class="rp-4v4-team-code-kicker">${CLUB_NAMES[club]} · TUNE-UP TEAM</p><h3 id="rp-team-code-title">JOIN MY TEAM</h3><p class="rp-4v4-team-code-copy">Enter the unique code Real Play gave your organizer. Four players using the same active code will secure this team.</p><input class="rp-4v4-team-code-input" data-rp-4v4-code-input autocomplete="one-time-code" maxlength="12" placeholder="RP-XXXXX" aria-label="Team code" /><p class="rp-4v4-team-code-error" data-rp-4v4-code-error></p><div class="rp-4v4-team-code-buttons"><button class="rp-4v4-team-code-primary" type="button" data-rp-4v4-code-submit>JOIN TEAM</button><button class="rp-4v4-team-code-secondary" type="button" data-rp-4v4-code-close>CANCEL</button></div></section>'
+          new_join = '<section class="rp-4v4-team-code-card" role="dialog" aria-modal="true" aria-labelledby="rp-team-code-title"><button class="rp-4v4-team-code-close" type="button" data-rp-4v4-code-close aria-label="Close team code dialog">×</button><p class="rp-4v4-team-code-kicker">${CLUB_NAMES[club]} · TUNE-UP TEAM</p><h3 id="rp-team-code-title">JOIN MY TEAM</h3><p class="rp-4v4-team-code-copy">Enter the unique code Real Play gave your organizer. Four players using the same active code will secure this team.</p><input class="rp-4v4-team-code-input" data-rp-4v4-code-input autocomplete="one-time-code" maxlength="12" placeholder="RP-XXXXX" aria-label="Team code" /><p class="rp-4v4-team-code-error" data-rp-4v4-code-error></p><div class="rp-4v4-team-code-buttons"><button class="rp-4v4-team-code-primary" type="button" data-rp-4v4-code-submit>JOIN TEAM</button></div></section>'
+          if old_join not in js:
+              raise SystemExit('Expected join modal markup not found')
+          js = js.replace(old_join, new_join, 1)
+          js_path.write_text(js)
+
+          index_path = Path('index.html')
+          index = index_path.read_text()
+          if deploy_old not in index:
+              raise SystemExit('Expected deploy id not found in index.html')
+          index_path.write_text(index.replace(deploy_old, deploy_new, 1))
+
+          loader_path = Path('login-landing-fix.js')
+          loader = loader_path.read_text()
+          if loader_old not in loader:
+              raise SystemExit('Expected deploy fallback not found in login-landing-fix.js')
+          loader_path.write_text(loader.replace(loader_old, deploy_new, 1))
+          PY
+      - name: Verify surgical diff
+        shell: bash
+        run: |
+          git diff --check
+          grep -q '20260930-4v4-team-code-x-close-v140' index.html
+          grep -q '20260930-4v4-team-code-x-close-v140' login-landing-fix.js
+          grep -q 'rp-4v4-team-code-close' home-future-4v4-team-code-beta.js
+          if grep -Fq '>CANCEL</button>' home-future-4v4-team-code-beta.js; then
+            echo 'Bottom CANCEL still present in Team Code module' >&2
+            exit 1
+          fi
+          node --check home-future-4v4-team-code-beta.js
+          git diff -- index.html login-landing-fix.js home-future-4v4-team-code-beta.js
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name 'LifeTalk Ministry'
+          git config user.email '96472293+LifeTalkMinistry@users.noreply.github.com'
+          git add index.html login-landing-fix.js home-future-4v4-team-code-beta.js
+          git commit -m 'Replace 4v4 Team Code cancel with X close'
+          git push origin HEAD:fix/4v4-modal-x-close
