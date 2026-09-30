@@ -70,7 +70,7 @@
 
     loading = true;
     const script = document.createElement('script');
-    const version = String(document.documentElement?.dataset?.rpDeploy || '20260929-4v4-main-thread-freeze-v135').trim();
+    const version = String(document.documentElement?.dataset?.rpDeploy || '20260929-4v4-main-thread-freeze-v136').trim();
     script.src = `home-future-4v4-team-code-beta.js?v=${encodeURIComponent(version)}`;
     script.async = false;
     script.onload = () => { loading = false; };
