@@ -5,13 +5,44 @@
   const FOCUS_CLASS = 'rp-admin-review-focus';
   const STYLE_ATTR = 'data-rp-review-focus-styles';
   const RETURN_ATTR = 'data-rp-review-focus-return';
+  const BACK_ATTR = 'data-rp-review-focus-back';
 
   function root() {
     return document.querySelector('.rp-admin-control');
   }
 
+  function body() {
+    return root()?.querySelector('[data-admin-body]') || null;
+  }
+
   function eventTarget(event) {
     return event.target instanceof Element ? event.target : null;
+  }
+
+  function insertBeforeBody(button) {
+    const adminRoot = root();
+    const adminBody = body();
+    if (!adminRoot || !button) return;
+    if (adminBody?.parentElement) adminBody.parentElement.insertBefore(button, adminBody);
+    else adminRoot.querySelector('.rp-admin-shell')?.appendChild(button);
+  }
+
+  function ensureReviewBackControl() {
+    const adminRoot = root();
+    if (!adminRoot) return null;
+
+    let button = adminRoot.querySelector(`[${BACK_ATTR}]`);
+    if (button) return button;
+
+    button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'rp-admin-review-focus-back';
+    button.setAttribute(BACK_ATTR, '1');
+    button.textContent = '←';
+    button.setAttribute('aria-label', 'Back to video scoring');
+    button.setAttribute('title', 'Back to video');
+    insertBeforeBody(button);
+    return button;
   }
 
   function ensureReturnControl() {
@@ -25,12 +56,10 @@
     button.type = 'button';
     button.className = 'rp-admin-review-focus-return';
     button.setAttribute(RETURN_ATTR, '1');
-    button.textContent = 'RETURN TO GAME CONTROL';
+    button.textContent = '←';
     button.setAttribute('aria-label', 'Return to Game Control');
-
-    const adminBody = adminRoot.querySelector('[data-admin-body]');
-    if (adminBody?.parentElement) adminBody.parentElement.insertBefore(button, adminBody);
-    else adminRoot.querySelector('.rp-admin-shell')?.appendChild(button);
+    button.setAttribute('title', 'Return to Game Control');
+    insertBeforeBody(button);
     return button;
   }
 
@@ -38,7 +67,19 @@
     const adminRoot = root();
     if (!adminRoot) return;
     adminRoot.classList.toggle(FOCUS_CLASS, Boolean(active));
-    if (active) ensureReturnControl();
+    if (active) {
+      ensureReviewBackControl();
+      ensureReturnControl();
+    }
+  }
+
+  function returnToVideo() {
+    const adminRoot = root();
+    if (!adminRoot) return;
+    const existingBack = adminRoot.querySelector('[data-rp-draft-back]');
+    if (!existingBack) return;
+    setFocus(false);
+    existingBack.click();
   }
 
   function returnToGameControl() {
@@ -47,8 +88,8 @@
 
     setFocus(false);
 
-    // Return through the existing Audit/LIVE navigation so current recap state
-    // is cleared by its normal owner. No scoring or backend action is performed.
+    // Return through the existing Audit/LIVE navigation so recap state is
+    // cleared by its normal owner. This performs no scoring/backend action.
     const auditTab = adminRoot.querySelector('[data-admin-tab="live"]')
       || adminRoot.querySelector('[data-admin-tab="audit"]')
       || adminRoot.querySelector('[data-rp-video-tab]');
@@ -60,22 +101,18 @@
     if (!target || !root()?.contains(target)) return;
 
     if (target.closest('[data-rp-video-finish]')) {
-      // The draft scorer stops the later click event immediately, so enter the
-      // presentation state at pointerdown without competing with its logic.
+      // The scorer consumes the later click. Enter presentation focus early,
+      // then let the scorer keep full ownership of review business state.
       setFocus(true);
       return;
     }
 
     if (target.closest('[data-rp-draft-back]')) {
-      // BACK TO SCORING already owns the real state transition. We only restore
-      // presentation chrome before that existing action runs.
       setFocus(false);
       return;
     }
 
-    if (target.closest('[data-admin-exit]')) {
-      setFocus(false);
-    }
+    if (target.closest('[data-admin-exit]')) setFocus(false);
   }
 
   function syncFromKeyboard(event) {
@@ -91,8 +128,15 @@
     const adminRoot = root();
     if (!target || !adminRoot?.contains(target)) return;
 
-    const returnButton = target.closest(`[${RETURN_ATTR}]`);
-    if (returnButton) {
+    if (target.closest(`[${BACK_ATTR}]`)) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      returnToVideo();
+      return;
+    }
+
+    if (target.closest(`[${RETURN_ATTR}]`)) {
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
@@ -102,7 +146,6 @@
 
     const tab = target.closest('[data-admin-tab]');
     if (tab && String(tab.dataset.adminTab || '') !== 'finalize') {
-      // Explicit normal navigation is a legitimate focused-sequence exit.
       setFocus(false);
     }
   }
@@ -122,41 +165,104 @@
         padding-top: 0 !important;
       }
 
+      /* Pure stat-view presentation: remove draft/admin chrome and duplicated
+         audit metadata while leaving all actual game/player data untouched. */
+      .rp-admin-control.${FOCUS_CLASS} .rp-video-sheet-review > .rp-admin-title,
+      .rp-admin-control.${FOCUS_CLASS} .rp-video-sheet-review:not(.rp-recap-official-screen) > .rp-video-scoreboard,
+      .rp-admin-control.${FOCUS_CLASS} .rp-video-sheet-review:not(.rp-recap-official-screen) > .rp-video-sheet-meta,
+      .rp-admin-control.${FOCUS_CLASS} .rp-video-sheet-review:not(.rp-recap-official-screen) > .rp-video-auto-note,
+      .rp-admin-control.${FOCUS_CLASS} .rp-recap-event-summary,
+      .rp-admin-control.${FOCUS_CLASS} .rp-recap-original-label {
+        display: none !important;
+      }
+
+      /* Remove the large action bar. Keep the real submit button itself as a
+         tiny check control so the existing Verify & Submit workflow is not broken. */
+      .rp-admin-control.${FOCUS_CLASS} .rp-video-sheet-review:not(.rp-recap-official-screen) > .rp-video-sheet-actions {
+        display: flex !important;
+        justify-content: flex-end !important;
+        gap: 0 !important;
+        margin: 12px 0 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+
+      .rp-admin-control.${FOCUS_CLASS} .rp-video-sheet-review:not(.rp-recap-official-screen) [data-rp-draft-back] {
+        display: none !important;
+      }
+
+      .rp-admin-control.${FOCUS_CLASS} .rp-video-sheet-review:not(.rp-recap-official-screen) [data-rp-draft-submit] {
+        width: 42px !important;
+        min-width: 42px !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        padding: 0 !important;
+        border: 1px solid rgba(73, 211, 255, .34) !important;
+        border-radius: 12px !important;
+        background: #07131d !important;
+        color: #48d7ff !important;
+        font-size: 0 !important;
+        line-height: 1 !important;
+        box-shadow: none !important;
+      }
+
+      .rp-admin-control.${FOCUS_CLASS} .rp-video-sheet-review:not(.rp-recap-official-screen) [data-rp-draft-submit]::before {
+        content: '✓';
+        display: block;
+        font-size: 18px;
+        font-weight: 950;
+      }
+
+      .rp-admin-control.${FOCUS_CLASS} .rp-video-sheet-review:not(.rp-recap-official-screen) [data-rp-draft-submit]:disabled {
+        opacity: .45;
+        cursor: wait;
+      }
+
+      .rp-admin-review-focus-back,
       .rp-admin-review-focus-return {
         display: none;
-        width: max-content;
-        max-width: calc(100% - 24px);
-        margin: 12px 12px 4px auto;
-        padding: 9px 12px;
-        border: 1px solid rgba(73, 211, 255, .28);
-        border-radius: 10px;
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        border: 1px solid rgba(73, 211, 255, .24);
+        border-radius: 12px;
         background: #07111b;
         color: #dff7ff;
         font: inherit;
-        font-size: .55rem;
+        font-size: 20px;
         font-weight: 950;
-        letter-spacing: .06em;
+        line-height: 1;
         cursor: pointer;
       }
 
-      .rp-admin-control.${FOCUS_CLASS} .rp-admin-review-focus-return {
+      .rp-admin-control.${FOCUS_CLASS}:has(.rp-video-sheet-review:not(.rp-recap-official-screen)) .rp-admin-review-focus-back {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        margin: 12px 0 8px 12px;
       }
 
-      /* Review already owns BACK TO SCORING, and the live scorer already owns
-         its own exit. Show this return control only once that local exit is gone. */
-      .rp-admin-control.${FOCUS_CLASS}:has(.rp-video-scoring-screen) .rp-admin-review-focus-return,
-      .rp-admin-control.${FOCUS_CLASS}:has(.rp-video-sheet-review:not(.rp-recap-official-screen)) .rp-admin-review-focus-return {
-        display: none;
+      .rp-admin-control.${FOCUS_CLASS}:not(:has(.rp-video-sheet-review:not(.rp-recap-official-screen))):not(:has(.rp-video-scoring-screen)) .rp-admin-review-focus-return {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 12px 0 8px 12px;
       }
 
       @media (max-width: 640px) {
-        .rp-admin-review-focus-return {
+        .rp-admin-control.${FOCUS_CLASS}:has(.rp-video-sheet-review:not(.rp-recap-official-screen)) .rp-admin-review-focus-back,
+        .rp-admin-control.${FOCUS_CLASS}:not(:has(.rp-video-sheet-review:not(.rp-recap-official-screen))):not(:has(.rp-video-scoring-screen)) .rp-admin-review-focus-return {
           margin-top: 8px;
-          margin-right: 8px;
-          max-width: calc(100% - 16px);
+          margin-left: 8px;
+        }
+
+        .rp-admin-control.${FOCUS_CLASS} .rp-video-sheet-review:not(.rp-recap-official-screen) [data-rp-draft-submit] {
+          width: 40px !important;
+          min-width: 40px !important;
+          height: 40px !important;
+          min-height: 40px !important;
         }
       }
     `;
@@ -164,15 +270,13 @@
   }
 
   installStyles();
+  ensureReviewBackControl();
   ensureReturnControl();
 
-  // Pointer/key events are presentation-only and deliberately separate from
-  // scoring/review business state. No MutationObserver is added.
+  // Presentation-only listeners. No observer and no scoring-state duplication.
   document.addEventListener('pointerdown', syncFromPointer, true);
   document.addEventListener('keydown', syncFromKeyboard, true);
   document.addEventListener('click', handleClick, true);
 
-  // Defensive cleanup on full page departure. Normal in-page Review -> Finalize
-  // transitions intentionally keep the class untouched.
   window.addEventListener('pagehide', () => setFocus(false), { once: true });
 })();
