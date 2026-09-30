@@ -1,0 +1,249 @@
+name: Temporary 4v4 Eight Team Patch
+
+on:
+  push:
+    branches:
+      - feat/4v4-eight-team-catalog
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/4v4-eight-team-catalog
+          fetch-depth: 0
+
+      - name: Expand 4v4 team catalog
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+
+          # 1) Premium 4v4 carousel: keep the same UI, expand the source list to all 8 uploaded teams.
+          path = root / 'home-future-4v4-card-cleanup.js'
+          text = path.read_text()
+          old = """  const CLUBS = [
+              { id: 'lions', name: 'LIONS', verse: 'Proverbs 28:1', art: 'assets/3v3/clubs/lions-logo.png' },
+              { id: 'valiant', name: 'VALIANT', verse: 'Joshua 1:9', art: 'assets/3v3/clubs/valiant-logo.png' },
+              { id: 'watchmen', name: 'WATCHMEN', verse: 'Isaiah 62:6', art: 'assets/3v3/clubs/watchmen-logo.png' },
+              { id: 'conquerors', name: 'CONQUERORS', verse: 'Romans 8:37', art: 'assets/3v3/clubs/conquerors-logo.png' },
+            ];"""
+          # Normalize indentation to the actual two-space source indentation.
+          old = old.replace('      {', '    {').replace('    ];', '  ];')
+          new = """  const CLUBS = [
+            { id: 'lions', name: 'LIONS', verse: 'Proverbs 28:1', art: 'assets/3v3/clubs/lions-logo.png' },
+            { id: 'valiant', name: 'VALIANT', verse: 'Joshua 1:9', art: 'assets/3v3/clubs/valiant-logo.png' },
+            { id: 'watchmen', name: 'WATCHMEN', verse: 'Isaiah 62:6', art: 'assets/3v3/clubs/watchmen-logo.png' },
+            { id: 'conquerors', name: 'CONQUERORS', verse: 'Romans 8:37', art: 'assets/3v3/clubs/conquerors-logo.png' },
+            { id: 'chosen', name: 'CHOSEN', verse: '1 Peter 2:9', art: 'assets/3v3/clubs/chosen-logo.png' },
+            { id: 'eagles', name: 'EAGLES', verse: 'Isaiah 40:31', art: 'assets/3v3/clubs/eagles-logo.png' },
+            { id: 'steadfast', name: 'STEADFAST', verse: '1 Corinthians 15:58', art: 'assets/3v3/clubs/steadfast-logo.png' },
+            { id: 'warriors', name: 'WARRIORS', verse: 'Exodus 15:3', art: 'assets/3v3/clubs/warriors-logo.png' },
+          ];"""
+          if old not in text:
+              raise SystemExit('Could not find carousel CLUBS block')
+          path.write_text(text.replace(old, new, 1))
+
+          # 2) Team Code: same behavior, additional valid club identities.
+          path = root / 'home-future-4v4-team-code-beta.js'
+          text = path.read_text()
+          old = """  const CLUB_NAMES = Object.freeze({
+            lions: 'LIONS',
+            valiant: 'VALIANT',
+            watchmen: 'WATCHMEN',
+            conquerors: 'CONQUERORS',
+          });"""
+          new = """  const CLUB_NAMES = Object.freeze({
+            lions: 'LIONS',
+            valiant: 'VALIANT',
+            watchmen: 'WATCHMEN',
+            conquerors: 'CONQUERORS',
+            chosen: 'CHOSEN',
+            eagles: 'EAGLES',
+            steadfast: 'STEADFAST',
+            warriors: 'WARRIORS',
+          });"""
+          if old not in text:
+              raise SystemExit('Could not find Team Code CLUB_NAMES block')
+          path.write_text(text.replace(old, new, 1))
+
+          # 3) Team OVR header: recognize all 8 without changing the existing four-team balance sample rule.
+          path = root / 'home-future-4v4-team-ovr-header.js'
+          text = path.read_text()
+          old = "  const CLUB_NAMES = Object.freeze({ lions:'LIONS', valiant:'VALIANT', watchmen:'WATCHMEN', conquerors:'CONQUERORS' });"
+          new = "  const CLUB_NAMES = Object.freeze({ lions:'LIONS', valiant:'VALIANT', watchmen:'WATCHMEN', conquerors:'CONQUERORS', chosen:'CHOSEN', eagles:'EAGLES', steadfast:'STEADFAST', warriors:'WARRIORS' });\n  const BALANCE_CLUB_IDS = Object.freeze(['lions', 'valiant', 'watchmen', 'conquerors']);"
+          if old not in text:
+              raise SystemExit('Could not find OVR CLUB_NAMES')
+          text = text.replace(old, new, 1)
+          old_balance = "    const validByClub = Object.keys(CLUB_NAMES).map((clubId) => clubPlayers(clubId).map((p) => finite(p?.ovr)).filter((v) => v !== null && v > 0));"
+          new_balance = "    const validByClub = BALANCE_CLUB_IDS.map((clubId) => clubPlayers(clubId).map((p) => finite(p?.ovr)).filter((v) => v !== null && v > 0));"
+          if old_balance not in text:
+              raise SystemExit('Could not find OVR balance club loop')
+          text = text.replace(old_balance, new_balance, 1)
+          # Add new team color variants to the OVR plaque without altering existing four.
+          marker = re.search(r'(      \.rp-4v4-static-view\[data-rp-active-club="conquerors"\]\{[^\n]+\}\n)', text)
+          if not marker:
+              raise SystemExit('Could not find OVR conquerors theme marker')
+          extra = (
+              "      .rp-4v4-static-view[data-rp-active-club=\"chosen\"]{--rp4v4-ovr-accent:#2dd4bf;--rp4v4-ovr-mid:#168d83;--rp4v4-ovr-deep:#0f655f;--rp4v4-ovr-dark:#062d2b;--rp4v4-ovr-line:#55ead6;--rp4v4-ovr-line-deep:#0d625b;--rp4v4-ovr-soft:rgba(45,212,191,.24);--rp4v4-ovr-glow:rgba(45,212,191,.25);--rp4v4-ovr-shadow:#0a514b;--rp4v4-ovr-label:#b4fff4}\n"
+              "      .rp-4v4-static-view[data-rp-active-club=\"eagles\"]{--rp4v4-ovr-accent:#47b7ff;--rp4v4-ovr-mid:#167fc6;--rp4v4-ovr-deep:#0d5e98;--rp4v4-ovr-dark:#06233d;--rp4v4-ovr-line:#6cc8ff;--rp4v4-ovr-line-deep:#0b568d;--rp4v4-ovr-soft:rgba(71,183,255,.24);--rp4v4-ovr-glow:rgba(71,183,255,.25);--rp4v4-ovr-shadow:#08436f;--rp4v4-ovr-label:#c2eaff}\n"
+              "      .rp-4v4-static-view[data-rp-active-club=\"steadfast\"]{--rp4v4-ovr-accent:#5fd16f;--rp4v4-ovr-mid:#2c943d;--rp4v4-ovr-deep:#1d6d2b;--rp4v4-ovr-dark:#092d12;--rp4v4-ovr-line:#7de98c;--rp4v4-ovr-line-deep:#1b6528;--rp4v4-ovr-soft:rgba(95,209,111,.24);--rp4v4-ovr-glow:rgba(95,209,111,.24);--rp4v4-ovr-shadow:#145321;--rp4v4-ovr-label:#c8ffd0}\n"
+              "      .rp-4v4-static-view[data-rp-active-club=\"warriors\"]{--rp4v4-ovr-accent:#ff8b35;--rp4v4-ovr-mid:#c95314;--rp4v4-ovr-deep:#96380d;--rp4v4-ovr-dark:#3b1406;--rp4v4-ovr-line:#ffa45f;--rp4v4-ovr-line-deep:#8a320b;--rp4v4-ovr-soft:rgba(255,139,53,.24);--rp4v4-ovr-glow:rgba(255,139,53,.24);--rp4v4-ovr-shadow:#6b2808;--rp4v4-ovr-label:#ffd8bc}\n"
+          )
+          text = text[:marker.end()] + extra + text[marker.end():]
+          path.write_text(text)
+
+          # 4) Shared club-art helper understands the new uploaded logo files.
+          path = root / 'three-v-three-club-art.js'
+          text = path.read_text()
+          text = text.replace(
+              "    CONQUERORS: 'assets/3v3/clubs/conquerors-logo.png',\n  };",
+              "    CONQUERORS: 'assets/3v3/clubs/conquerors-logo.png',\n    CHOSEN: 'assets/3v3/clubs/chosen-logo.png',\n    EAGLES: 'assets/3v3/clubs/eagles-logo.png',\n    STEADFAST: 'assets/3v3/clubs/steadfast-logo.png',\n    WARRIORS: 'assets/3v3/clubs/warriors-logo.png',\n  };",
+              1,
+          )
+          old_classes = "  const CLUB_CLASSES = ['club-lions', 'club-valiant', 'club-watchmen', 'club-conquerors'];"
+          new_classes = "  const CLUB_CLASSES = ['club-lions', 'club-valiant', 'club-watchmen', 'club-conquerors', 'club-chosen', 'club-eagles', 'club-steadfast', 'club-warriors'];"
+          if old_classes not in text:
+              raise SystemExit('Could not find club-art class list')
+          path.write_text(text.replace(old_classes, new_classes, 1))
+
+          # 5) Shared premium theme: new teams use their own uploaded logo as the atmospheric background.
+          path = root / 'three-v-three-club-themes.css'
+          text = path.read_text()
+          active_marker = ".rp-3v3-view[data-rp-active-club='conquerors']{\n  --rp-active-club-color:#a64dff;\n  --rp-active-club-art:url('assets/3v3/clubs/conquerors-logo.png');\n}\n"
+          active_extra = active_marker + """.rp-3v3-view[data-rp-active-club='chosen']{
+  --rp-active-club-color:#2dd4bf;
+  --rp-active-club-art:url('assets/3v3/clubs/chosen-logo.png');
+}
+.rp-3v3-view[data-rp-active-club='eagles']{
+  --rp-active-club-color:#47b7ff;
+  --rp-active-club-art:url('assets/3v3/clubs/eagles-logo.png');
+}
+.rp-3v3-view[data-rp-active-club='steadfast']{
+  --rp-active-club-color:#5fd16f;
+  --rp-active-club-art:url('assets/3v3/clubs/steadfast-logo.png');
+}
+.rp-3v3-view[data-rp-active-club='warriors']{
+  --rp-active-club-color:#ff8b35;
+  --rp-active-club-art:url('assets/3v3/clubs/warriors-logo.png');
+}
+"""
+          if active_marker not in text:
+              raise SystemExit('Could not find active conquerors theme')
+          text = text.replace(active_marker, active_extra, 1)
+          card_marker = ".rp-team-card[data-rp-three-club='conquerors'],\n.rp-team-fixed-card.club-conquerors{\n  --club-accent:#b45cff;\n  --club-accent-rgb:180,92,255;\n  --club-secondary:#6d24db;\n  --club-secondary-rgb:109,36,219;\n  --club-glow:rgba(171,74,255,.24);\n}\n"
+          card_extra = card_marker + """
+.rp-team-card[data-rp-three-club='chosen'],
+.rp-team-fixed-card.club-chosen{
+  --club-accent:#2dd4bf;
+  --club-accent-rgb:45,212,191;
+  --club-secondary:#167f75;
+  --club-secondary-rgb:22,127,117;
+  --club-glow:rgba(45,212,191,.23);
+}
+
+.rp-team-card[data-rp-three-club='eagles'],
+.rp-team-fixed-card.club-eagles{
+  --club-accent:#47b7ff;
+  --club-accent-rgb:71,183,255;
+  --club-secondary:#176ea8;
+  --club-secondary-rgb:23,110,168;
+  --club-glow:rgba(71,183,255,.23);
+}
+
+.rp-team-card[data-rp-three-club='steadfast'],
+.rp-team-fixed-card.club-steadfast{
+  --club-accent:#5fd16f;
+  --club-accent-rgb:95,209,111;
+  --club-secondary:#2d873a;
+  --club-secondary-rgb:45,135,58;
+  --club-glow:rgba(95,209,111,.23);
+}
+
+.rp-team-card[data-rp-three-club='warriors'],
+.rp-team-fixed-card.club-warriors{
+  --club-accent:#ff8b35;
+  --club-accent-rgb:255,139,53;
+  --club-secondary:#b94713;
+  --club-secondary-rgb:185,71,19;
+  --club-glow:rgba(255,139,53,.23);
+}
+"""
+          if card_marker not in text:
+              raise SystemExit('Could not find conquerors card theme')
+          path.write_text(text.replace(card_marker, card_extra, 1))
+
+          # 6) Cache bust the current 4v4 runtime chain so the eight-team catalog is actually requested.
+          path = root / 'home-4v4-slot-picker-dynamic-v2.js'
+          text = path.read_text()
+          old_version = "  const CURRENT_4V4_RUNTIME_VERSION = '20260930-slot-handoff-runtime-v7';"
+          new_version = "  const CURRENT_4V4_RUNTIME_VERSION = '20260930-eight-team-runtime-v8';"
+          if old_version not in text:
+              raise SystemExit('Could not find current 4v4 runtime version')
+          path.write_text(text.replace(old_version, new_version, 1))
+
+          path = root / 'home-4v4-slot-picker.js'
+          text = path.read_text().replace(
+              'home-4v4-slot-picker-dynamic-v2.js?v=20260930-admin-time-blocks-v4',
+              'home-4v4-slot-picker-dynamic-v2.js?v=20260930-eight-team-catalog-v5',
+              1,
+          )
+          path.write_text(text)
+
+          path = root / 'index.html'
+          text = path.read_text()
+          text = text.replace('data-rp-deploy="20260930-home-team-time-blocks-v149"', 'data-rp-deploy="20260930-eight-team-catalog-v150"', 1)
+          text = text.replace('home-4v4-slot-picker.js?v=20260930-slot-header-v10', 'home-4v4-slot-picker.js?v=20260930-eight-team-catalog-v11', 1)
+          path.write_text(text)
+
+          # Bump any explicit loaders for the auxiliary 4v4 modules if present.
+          version_targets = {
+              'home-future-4v4-team-code-beta.js': '20260930-eight-team-catalog-v2',
+              'home-future-4v4-team-ovr-header.js': '20260930-eight-team-catalog-v2',
+              'three-v-three-club-art.js': '20260930-eight-team-catalog-v2',
+              'three-v-three-club-themes.css': '20260930-eight-team-catalog-v2',
+          }
+          for candidate in list(root.glob('*.js')) + list(root.glob('*.html')) + list(root.glob('*.css')):
+              source = candidate.read_text()
+              updated = source
+              for filename, version in version_targets.items():
+                  updated = re.sub(re.escape(filename) + r'\?v=[^\"\'\)\s]+', f'{filename}?v={version}', updated)
+              if updated != source:
+                  candidate.write_text(updated)
+
+          # Sanity: every uploaded team must be present in the three critical 4v4 registries.
+          required = ['lions','valiant','watchmen','conquerors','chosen','eagles','steadfast','warriors']
+          for filename in ['home-future-4v4-card-cleanup.js','home-future-4v4-team-code-beta.js','home-future-4v4-team-ovr-header.js']:
+              source = (root / filename).read_text().lower()
+              missing = [club for club in required if club not in source]
+              if missing:
+                  raise SystemExit(f'{filename} missing: {missing}')
+          PY
+
+      - name: Syntax checks
+        run: |
+          node --check home-future-4v4-card-cleanup.js
+          node --check home-future-4v4-team-code-beta.js
+          node --check home-future-4v4-team-ovr-header.js
+          node --check three-v-three-club-art.js
+          node --check home-4v4-slot-picker-dynamic-v2.js
+          node --check home-4v4-slot-picker.js
+
+      - name: Commit surgical patch and remove runner
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temporary-4v4-eight-team-patch.yml
+          git add home-future-4v4-card-cleanup.js home-future-4v4-team-code-beta.js home-future-4v4-team-ovr-header.js three-v-three-club-art.js three-v-three-club-themes.css home-4v4-slot-picker-dynamic-v2.js home-4v4-slot-picker.js index.html
+          git add -u
+          git commit -m "Expand 4v4 catalog to eight teams"
+          git push origin HEAD:feat/4v4-eight-team-catalog
