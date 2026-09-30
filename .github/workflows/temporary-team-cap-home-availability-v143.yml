@@ -1,0 +1,249 @@
+name: Temporary Team Cap Home Availability v143
+
+on:
+  push:
+    branches:
+      - fix/team-cap-home-availability-v143
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/team-cap-home-availability-v143
+
+      - name: Convert Home schedule capacity to teams
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('home-open-rank-admin-edit.js')
+          text = path.read_text()
+
+          old = "return /^\\s*ENDS\\s+.+?\\s*·\\s*\\d{1,3}\\s+PLAYER\\s+CAP\\s*$/i.test(String(update.body || ''));"
+          new = "return /^\\s*ENDS\\s+.+?\\s*·\\s*\\d{1,3}\\s+(?:TEAM|PLAYER)\\s+CAP\\s*$/i.test(String(update.body || ''));"
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one editor override matcher, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+
+          old = """  function parseCapacity(update) {
+            const metadata = update?.metadata || {};
+            const direct = Number(metadata.capacity ?? update?.capacity);
+            if (Number.isFinite(direct) && direct > 0) return Math.round(direct);
+            const match = String(update?.body || '').match(/\\b(\\d{1,3})\\s+PLAYER\\s+CAP\\b/i);
+            const parsed = Number(match?.[1]);
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : 16;
+          }
+          """
+          new = """  function parseCapacity(update) {
+            const body = String(update?.body || '');
+            const teamCap = Number(body.match(/\\b(\\d{1,2})\\s+TEAM\\s+CAP\\b/i)?.[1]);
+            if (Number.isFinite(teamCap) && teamCap > 0) return Math.min(4, Math.round(teamCap));
+
+            // Legacy Home schedules stored individual player capacity. For the
+            // current 4v4 format, translate 16 PLAYER CAP into 4 TEAM CAP.
+            const playerCap = Number(body.match(/\\b(\\d{1,3})\\s+PLAYER\\s+CAP\\b/i)?.[1]);
+            if (Number.isFinite(playerCap) && playerCap > 0) return Math.min(4, Math.ceil(playerCap / 4));
+
+            const metadata = update?.metadata || {};
+            const direct = Number(metadata.capacity ?? update?.capacity);
+            if (Number.isFinite(direct) && direct > 0) return Math.min(4, Math.round(direct));
+            return 4;
+          }
+          """
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one editor parseCapacity block, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+
+          old = '<label>Player cap<input name="capacity" type="number" min="1" max="500" inputmode="numeric" required></label>'
+          new = '<label>Team cap<input name="capacity" type="number" min="1" max="4" inputmode="numeric" required></label>'
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one Player cap label, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+
+          old = "if (!Number.isFinite(capacity) || capacity < 1 || capacity > 500) return editorStatus('Player cap must be between 1 and 500.', true);"
+          new = "if (!Number.isFinite(capacity) || capacity < 1 || capacity > 4) return editorStatus('Team cap must be between 1 and 4.', true);"
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one Player cap validation, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+
+          old = 'body: `ENDS ${formatEndTimeFrom24(endsAt)} · ${Math.round(capacity)} PLAYER CAP`,'
+          new = 'body: `ENDS ${formatEndTimeFrom24(endsAt)} · ${Math.round(capacity)} TEAM CAP`,'
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one PLAYER CAP save body, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+
+          path = Path('simple-navigation-state-authority.js')
+          text = path.read_text()
+
+          old = """  const CURRENT_RANKING_ACCESS_URL = `${API_BASE_URL}/api/real-play/career/access`;
+          const PUBLIC_RANKING_ACCESS_URL = `${API_BASE_URL}/api/real-play/public/career/access`;
+          """
+          new = """  const PUBLIC_4V4_AVAILABILITY_URL = `${API_BASE_URL}/api/real-play/4v4/public`;
+          """
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected ranking availability constants once, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+
+          if text.count('configuredHomeCapacity = 16') != 2:
+              raise SystemExit(f'Expected two configured capacity 16 values, found {text.count("configuredHomeCapacity = 16")}')
+          text = text.replace('configuredHomeCapacity = 16', 'configuredHomeCapacity = 4')
+
+          old = """  function isHomeScheduleOverride(update) {
+            if (!update || update.category !== 'schedule') return false;
+            if (update.source_key || update.sourceKey) return false;
+            if (scheduleType(update) !== 'open-rank') return false;
+            return /\\bPLAYER\\s+CAP\\b/i.test(String(update.body || ''));
+          }
+          """
+          new = """  function isHomeScheduleOverride(update) {
+            if (!update || update.category !== 'schedule') return false;
+            if (update.source_key || update.sourceKey) return false;
+            return /^\\s*ENDS\\s+.+?\\s*·\\s*\\d{1,3}\\s+(?:TEAM|PLAYER)\\s+CAP\\s*$/i.test(String(update.body || ''));
+          }
+          """
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one Home override classifier, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+
+          old = '<span class="rp-home-spots-left" data-rp-home-open-rank-capacity>16 PLAYER CAP</span>'
+          new = '<span class="rp-home-spots-left" data-rp-home-open-rank-capacity>4 TEAM CAP</span>'
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one default player-cap badge, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+
+          old = """  function parseOpenRankCapacity(update) {
+            const metadata = update?.metadata || {};
+            const directCap = Number(metadata.capacity ?? update?.capacity);
+            if (Number.isFinite(directCap) && directCap > 0) return Math.round(directCap);
+            const bodyCap = Number(String(update?.body || '').match(/\\b(\\d{1,3})\\s+PLAYER\\s+CAP\\b/i)?.[1]);
+            return Number.isFinite(bodyCap) && bodyCap > 0 ? Math.round(bodyCap) : 16;
+          }
+          """
+          new = """  function parseOpenRankCapacity(update) {
+            const body = String(update?.body || '');
+            const teamCap = Number(body.match(/\\b(\\d{1,2})\\s+TEAM\\s+CAP\\b/i)?.[1]);
+            if (Number.isFinite(teamCap) && teamCap > 0) return Math.min(4, Math.round(teamCap));
+
+            const legacyPlayerCap = Number(body.match(/\\b(\\d{1,3})\\s+PLAYER\\s+CAP\\b/i)?.[1]);
+            if (Number.isFinite(legacyPlayerCap) && legacyPlayerCap > 0) return Math.min(4, Math.ceil(legacyPlayerCap / 4));
+
+            const metadata = update?.metadata || {};
+            const directCap = Number(metadata.capacity ?? update?.capacity);
+            if (Number.isFinite(directCap) && directCap > 0) return Math.min(4, Math.round(directCap));
+            return 4;
+          }
+          """
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one Home parse capacity block, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+
+          old = 'const nextText = `${configuredHomeCapacity} PLAYER CAP`;'
+          new = 'const nextText = `${configuredHomeCapacity} TEAM CAP`;'
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one configured player-cap text, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+
+          start = text.index('  function renderOpenRankAvailability(state) {')
+          end = text.index('\n  function renderOpenRank(update) {', start)
+          old = text[start:end]
+          new = """  function renderOpenRankAvailability(state) {
+            const node = homeRoot()?.querySelector('[data-rp-home-open-rank-capacity]');
+            if (!node || !state || typeof state !== 'object') return false;
+
+            const teamStates = Array.isArray(state.teamStates) ? state.teamStates : [];
+            if (!teamStates.length) return false;
+
+            const teamCap = Math.max(1, Math.min(4, Math.trunc(Number(configuredHomeCapacity) || 4)));
+            const occupiedTeams = Math.min(
+              teamCap,
+              teamStates.filter((team) => String(team?.status || '').toLowerCase() === 'secured').length,
+            );
+            const teamsLeft = Math.max(0, teamCap - occupiedTeams);
+            const nextText = teamsLeft === 0
+              ? 'FULL'
+              : `${teamsLeft} ${teamsLeft === 1 ? 'TEAM' : 'TEAMS'} LEFT`;
+
+            hasOpenRankAvailability = true;
+            if (node.textContent !== nextText) node.textContent = nextText;
+            return true;
+          }
+
+          async function refreshOpenRankAvailability() {
+            const requestId = ++availabilityRequestId;
+            const node = homeRoot()?.querySelector('[data-rp-home-open-rank-capacity]');
+            if (!node) return;
+
+            try {
+              const response = await fetch(PUBLIC_4V4_AVAILABILITY_URL, {
+                headers: { Accept: 'application/json' },
+                cache: 'no-store',
+              });
+              if (requestId !== availabilityRequestId) return;
+              if (!response.ok) throw new Error(`Could not load current 4v4 team availability (${response.status}).`);
+
+              const data = await response.json().catch(() => ({}));
+              if (requestId !== availabilityRequestId) return;
+              if (!renderOpenRankAvailability(data)) {
+                hasOpenRankAvailability = false;
+                renderConfiguredOpenRankCapacity({ force: true });
+              }
+            } catch (_error) {
+              if (requestId === availabilityRequestId && !hasOpenRankAvailability) {
+                renderConfiguredOpenRankCapacity({ force: true });
+              }
+            }
+          }
+          """
+          text = text[:start] + new + text[end:]
+          path.write_text(text)
+
+          path = Path('public-first-entry.js')
+          text = path.read_text()
+          old = "const HOME_RANKING_ACCESS_PATH = '/api/real-play/career/access';"
+          new = "const HOME_RANKING_ACCESS_PATH = '/api/real-play/4v4/public';"
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one Home availability readiness path, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+          old = 'home-open-rank-admin-edit.js?v=20260930-home-card-editable-title-v142'
+          new = 'home-open-rank-admin-edit.js?v=20260930-team-cap-home-availability-v143'
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one Home editor loader version, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+
+          path = Path('index.html')
+          text = path.read_text()
+          old = 'data-rp-deploy="20260930-home-card-editable-title-v142"'
+          new = 'data-rp-deploy="20260930-team-cap-home-availability-v143"'
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one deploy id, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Verify exact frontend fix
+        run: |
+          node --check home-open-rank-admin-edit.js
+          node --check simple-navigation-state-authority.js
+          node --check public-first-entry.js
+          grep -F 'Team cap<input name="capacity"' home-open-rank-admin-edit.js
+          grep -F 'TEAM CAP`' home-open-rank-admin-edit.js
+          grep -F 'PUBLIC_4V4_AVAILABILITY_URL' simple-navigation-state-authority.js
+          grep -F "'TEAMS'} LEFT" simple-navigation-state-authority.js
+          grep -F "/api/real-play/4v4/public" public-first-entry.js
+          grep -F 'data-rp-deploy="20260930-team-cap-home-availability-v143"' index.html
+          git diff --check
+          git diff -- home-open-rank-admin-edit.js simple-navigation-state-authority.js public-first-entry.js index.html
+
+      - name: Commit frontend fix
+        run: |
+          git config user.name "LifeTalk Ministry"
+          git config user.email "96472293+LifeTalkMinistry@users.noreply.github.com"
+          git add home-open-rank-admin-edit.js simple-navigation-state-authority.js public-first-entry.js index.html
+          git commit -m "Use team capacity on Home schedule"
+          git push origin HEAD:fix/team-cap-home-availability-v143
