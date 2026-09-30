@@ -4,6 +4,7 @@
 
   const SLOT_KEY = 'real_play_4v4_time_slot';
   const CURRENT_4V4_SLOT_ID = '2000-2200';
+  const CURRENT_4V4_RUNTIME_VERSION = '20260930-slot-handoff-runtime-v7';
   const SLOTS = [
     { id: '1600-1800', label: '4:00 PM – 6:00 PM', active: false },
     { id: '1800-2000', label: '6:00 PM – 8:00 PM', active: false },
@@ -42,8 +43,7 @@
 
     currentFourVFourRuntimeRequested = true;
     const script = document.createElement('script');
-    const deployId = String(document.documentElement?.dataset?.rpDeploy || '').trim();
-    script.src = `home-future-4v4-card-cleanup.js${deployId ? `?v=${encodeURIComponent(deployId)}` : ''}`;
+    script.src = `home-future-4v4-card-cleanup.js?v=${CURRENT_4V4_RUNTIME_VERSION}`;
     script.async = false;
     script.addEventListener('load', () => {
       if (window.__realPlayFuture4v4CardCleanupInstalled !== true) currentFourVFourRuntimeRequested = false;
@@ -348,6 +348,7 @@
   }
 
   function start() {
+    requestCurrentFourVFourRuntime();
     ensureStyles();
     enforceHomeCard();
     ensureTeamSlotBanner();
