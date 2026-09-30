@@ -15,7 +15,7 @@ let state = {
   preferredClub: null,
   preferenceUpdatedAt: null,
   preferencePlayers: [],
-  teamStates: clubs.map((club) => ({ club, status: 'available', memberCount: 0, capacity: 4, expiresAt: null, securedAt: null })),
+  teamStates: clubs.map((club) => ({ club, status: 'available', memberCount: 0, capacity: 6, expiresAt: null, securedAt: null })),
   formationState: 'team_code',
   rosterLocked: false,
 };
@@ -181,7 +181,7 @@ await page.waitForFunction(() => /JOINED/.test(document.querySelector('[data-rp-
 assert.equal(count('/api/real-play/4v4/join', 'POST'), joinPosts + 1, 'Join sent more than one POST.');
 assert.equal(meCount(), joinGets, 'Join caused an unnecessary GET refresh.');
 assert.match(await page.locator('.rp-4v4-preference-note').textContent(), /24-HOUR HOLD ACTIVE/);
-assert.equal(String(await page.locator('[data-rp-4v4-preference-count]').textContent()).trim(), '2/4');
+assert.equal(String(await page.locator('[data-rp-4v4-preference-count]').textContent()).trim(), '2/6');
 await page.waitForTimeout(5000);
 assert.equal(meCount(), joinGets, 'Join started repeated GETs.');
 
@@ -195,9 +195,9 @@ assert.equal(meCount(), leaveGets, 'Leave caused an unnecessary GET refresh.');
 await page.waitForTimeout(3000);
 assert.equal(meCount(), leaveGets, 'Leave started repeated GETs.');
 
-// 4/4 secured state through one explicit reopen refresh.
+// 6/6 secured state through one explicit reopen refresh.
 const activeClub = await page.evaluate(() => document.querySelector('[data-rp-4v4-static-view]')?.dataset?.rpActiveClub || 'lions');
-Object.assign(team(activeClub), { status: 'secured', memberCount: 4, expiresAt: null, securedAt: '2026-09-29T23:00:00.000Z' });
+Object.assign(team(activeClub), { status: 'secured', memberCount: 6, expiresAt: null, securedAt: '2026-09-29T23:00:00.000Z' });
 before = meCount();
 await page.locator('[data-rp-4v4-static-back]').click();
 await page.locator('.rp-home-4v4-explore').first().evaluate((el) => el.click());
@@ -205,7 +205,7 @@ await page.waitForSelector('[data-rp-4v4-static-view].open');
 await page.waitForTimeout(220);
 assert.equal(meCount(), before + 1, 'Secured-state reopen did not issue exactly one refresh.');
 assert.match(await page.locator('[data-rp-4v4-preference-action]').textContent(), /TEAM SECURED|MY TEAM · SECURED/);
-assert.match(await page.locator('.rp-4v4-preference-note').textContent(), /LINEUP LOCKED · 4\/4 CONFIRMED/);
+assert.match(await page.locator('.rp-4v4-preference-note').textContent(), /ROSTER LOCKED · 6\/6 CONFIRMED/);
 
 // J. Admin: one POST + one explicit GET; no repeated traffic.
 await page.evaluate(() => {

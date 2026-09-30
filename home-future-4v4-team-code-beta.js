@@ -104,7 +104,7 @@
   }
 
   function expectedUi(club) {
-    const team = getTeamState(club) || { status: 'available', memberCount: 0, capacity: 4 };
+    const team = getTeamState(club) || { status: 'available', memberCount: 0, capacity: 6 };
     const joinedHere = state?.joinedClub === club;
     const joinedElsewhere = Boolean(state?.joinedClub && !joinedHere);
     let actionText = 'JOIN MY TEAM';
@@ -116,18 +116,18 @@
       actionText = joinedHere ? 'MY TEAM · SECURED ✓' : 'TEAM SECURED 🔒';
       actionDisabled = true;
       actionClass = 'secured';
-      note = 'LINEUP LOCKED · 4/4 CONFIRMED';
+      note = 'ROSTER LOCKED · 6/6 CONFIRMED';
     } else if (joinedHere) {
-      actionText = `JOINED · ${team.memberCount || 0}/4 ✓`;
+      actionText = `JOINED · ${team.memberCount || 0}/6 ✓`;
       actionDisabled = true;
       actionClass = 'held';
-      note = `24-HOUR HOLD ACTIVE · ${team.memberCount || 0}/4 CONFIRMED`;
+      note = `24-HOUR HOLD ACTIVE · ${team.memberCount || 0}/6 CONFIRMED`;
     } else if (joinedElsewhere) {
       actionText = `JOINED ${CLUB_NAMES[state.joinedClub] || 'ANOTHER TEAM'}`;
       note = 'LEAVE YOUR CURRENT FORMING TEAM BEFORE JOINING ANOTHER';
     } else if (team.status === 'held') {
       actionClass = 'held';
-      note = `24-HOUR HOLD ACTIVE · ${team.memberCount || 0}/4 CONFIRMED`;
+      note = `24-HOUR HOLD ACTIVE · ${team.memberCount || 0}/6 CONFIRMED`;
     }
 
     return { team, joinedHere, actionText, actionDisabled, note, actionClass };
@@ -173,7 +173,7 @@
     action.classList.toggle('rp-team-code-secured', ui.actionClass === 'secured');
     if (note.textContent !== ui.note) note.textContent = ui.note;
 
-    const countText = `${ui.team.memberCount || 0}/4`;
+    const countText = `${ui.team.memberCount || 0}/6`;
     if (count && count.textContent !== countText) count.textContent = countText;
     if (heading?.firstChild?.nodeType === Node.TEXT_NODE && heading.firstChild.nodeValue !== 'LINEUP · ') heading.firstChild.nodeValue = 'LINEUP · ';
 
@@ -234,7 +234,7 @@
   function openJoinDialog(club) {
     const dialog = ensureDialog();
     dialog.hidden = false;
-    dialog.innerHTML = `<section class="rp-4v4-team-code-card" role="dialog" aria-modal="true" aria-labelledby="rp-team-code-title"><button class="rp-4v4-team-code-close" type="button" data-rp-4v4-code-close aria-label="Close team code dialog">×</button><p class="rp-4v4-team-code-kicker">${CLUB_NAMES[club]} · TUNE-UP TEAM</p><h3 id="rp-team-code-title">JOIN MY TEAM</h3><p class="rp-4v4-team-code-copy">Enter the unique code Real Play gave your organizer. Four players using the same active code will secure this team.</p><input class="rp-4v4-team-code-input" data-rp-4v4-code-input autocomplete="one-time-code" maxlength="12" placeholder="RP-XXXXX" aria-label="Team code" /><p class="rp-4v4-team-code-error" data-rp-4v4-code-error></p><div class="rp-4v4-team-code-buttons"><button class="rp-4v4-team-code-primary" type="button" data-rp-4v4-code-submit>JOIN TEAM</button></div></section>`;
+    dialog.innerHTML = `<section class="rp-4v4-team-code-card" role="dialog" aria-modal="true" aria-labelledby="rp-team-code-title"><button class="rp-4v4-team-code-close" type="button" data-rp-4v4-code-close aria-label="Close team code dialog">×</button><p class="rp-4v4-team-code-kicker">${CLUB_NAMES[club]} · TUNE-UP TEAM</p><h3 id="rp-team-code-title">JOIN MY TEAM</h3><p class="rp-4v4-team-code-copy">Enter the unique code Real Play gave your organizer. Six roster players using the same active code will secure this team.</p><input class="rp-4v4-team-code-input" data-rp-4v4-code-input autocomplete="one-time-code" maxlength="12" placeholder="RP-XXXXX" aria-label="Team code" /><p class="rp-4v4-team-code-error" data-rp-4v4-code-error></p><div class="rp-4v4-team-code-buttons"><button class="rp-4v4-team-code-primary" type="button" data-rp-4v4-code-submit>JOIN TEAM</button></div></section>`;
     const input = dialog.querySelector('[data-rp-4v4-code-input]');
     const submit = dialog.querySelector('[data-rp-4v4-code-submit]');
     const error = dialog.querySelector('[data-rp-4v4-code-error]');
@@ -271,7 +271,7 @@
   function openAdminCode(club, result) {
     const dialog = ensureDialog();
     dialog.hidden = false;
-    dialog.innerHTML = `<section class="rp-4v4-team-code-card" role="dialog" aria-modal="true" aria-labelledby="rp-admin-code-title"><p class="rp-4v4-team-code-kicker">ADMIN · ${CLUB_NAMES[club]}</p><h3 id="rp-admin-code-title">${result?.status === 'secured' ? 'TEAM SECURED' : '24-HOUR HOLD'}</h3><p class="rp-4v4-team-code-copy">Send this code only to the approved organizer. Their four players must use this same code on ${CLUB_NAMES[club]}.</p><div class="rp-4v4-team-code-display">${String(result?.code || '—')}</div><span class="rp-4v4-team-code-expiry">${result?.securedAt ? '4/4 LINEUP LOCKED' : formatExpiry(result?.expiresAt)}</span><p class="rp-4v4-team-code-error" data-rp-4v4-copy-status></p><div class="rp-4v4-team-code-buttons"><button class="rp-4v4-team-code-primary" type="button" data-rp-4v4-code-copy>COPY CODE</button><button class="rp-4v4-team-code-secondary" type="button" data-rp-4v4-code-close>CLOSE</button></div></section>`;
+    dialog.innerHTML = `<section class="rp-4v4-team-code-card" role="dialog" aria-modal="true" aria-labelledby="rp-admin-code-title"><p class="rp-4v4-team-code-kicker">ADMIN · ${CLUB_NAMES[club]}</p><h3 id="rp-admin-code-title">${result?.status === 'secured' ? 'TEAM SECURED' : '24-HOUR HOLD'}</h3><p class="rp-4v4-team-code-copy">Send this code only to the approved organizer. Their six roster players must use this same code on ${CLUB_NAMES[club]}.</p><div class="rp-4v4-team-code-display">${String(result?.code || '—')}</div><span class="rp-4v4-team-code-expiry">${result?.securedAt ? '6/6 ROSTER LOCKED' : formatExpiry(result?.expiresAt)}</span><p class="rp-4v4-team-code-error" data-rp-4v4-copy-status></p><div class="rp-4v4-team-code-buttons"><button class="rp-4v4-team-code-primary" type="button" data-rp-4v4-code-copy>COPY CODE</button><button class="rp-4v4-team-code-secondary" type="button" data-rp-4v4-code-close>CLOSE</button></div></section>`;
     dialog.querySelector('[data-rp-4v4-code-close]')?.addEventListener('click', closeDialog);
     dialog.querySelector('[data-rp-4v4-code-copy]')?.addEventListener('click', async () => {
       const status = dialog.querySelector('[data-rp-4v4-copy-status]');
@@ -353,7 +353,7 @@
       return;
     }
     const team = getTeamState(club);
-    if (team?.status === 'secured') return showToast('This team is already secured by four players.');
+    if (team?.status === 'secured') return showToast('This team is already secured by six roster players.');
     if (state?.joinedClub === club) return showToast(`You are already confirmed on ${CLUB_NAMES[club]}.`);
     if (state?.joinedClub) return showToast(`You are already on ${CLUB_NAMES[state.joinedClub] || 'another team'}. Leave it first.`);
     openJoinDialog(club);
@@ -366,7 +366,7 @@
     return Boolean(
       panel.querySelector('[data-rp-4v4-preference-action]')?.textContent !== ui.actionText ||
       panel.querySelector('.rp-4v4-preference-note')?.textContent !== ui.note ||
-      panel.querySelector('[data-rp-4v4-preference-count]')?.textContent !== `${ui.team.memberCount || 0}/4` ||
+      panel.querySelector('[data-rp-4v4-preference-count]')?.textContent !== `${ui.team.memberCount || 0}/6` ||
       (isAdmin() && !panel.querySelector('[data-rp-4v4-team-code-admin]'))
     );
   }
