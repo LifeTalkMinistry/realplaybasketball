@@ -3,7 +3,7 @@
   window.__realPlayLegacyBottomNavRemovalInstalled = true;
 
   const TOKEN_KEY = 'real_play_access_token';
-  const TEAM_ROUTE_MAX_ATTEMPTS = 30;
+  const TEAM_ROUTE_MAX_ATTEMPTS = 100;
   const TEAM_ROUTE_RETRY_MS = 100;
 
   function removeLegacyBottomNav(root = document) {
