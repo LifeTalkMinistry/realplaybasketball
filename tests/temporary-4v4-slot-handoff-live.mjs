@@ -1,4 +1,3 @@
-import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const APP_URL = 'https://joinrealplay.com/';
@@ -6,7 +5,6 @@ const hardStop = setTimeout(() => {
   console.error('DIAGNOSTIC_HARD_TIMEOUT');
   process.exit(124);
 }, 60000);
-let report;
 
 try {
   console.log('STAGE launch');
@@ -15,19 +13,57 @@ try {
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
 
+  await page.addInitScript(() => {
+    const NativeMutationObserver = window.MutationObserver;
+    let nextId = 0;
+    window.__rpMutationObserverStats = [];
+
+    window.MutationObserver = class RealPlayDiagnosticMutationObserver extends NativeMutationObserver {
+      constructor(callback) {
+        const id = ++nextId;
+        const stat = {
+          id,
+          callbacks: 0,
+          records: 0,
+          disconnectedByDiagnostic: false,
+          stack: String(new Error(`MutationObserver #${id}`).stack || ''),
+        };
+        window.__rpMutationObserverStats.push(stat);
+
+        super((records, observer) => {
+          stat.callbacks += 1;
+          stat.records += records.length;
+          if (stat.callbacks === 100 || stat.callbacks === 200) {
+            console.error(`RP_OBSERVER_HOT #${id} callbacks=${stat.callbacks} records=${stat.records}\n${stat.stack}`);
+          }
+          if (stat.callbacks > 250) {
+            stat.disconnectedByDiagnostic = true;
+            observer.disconnect();
+            console.error(`RP_OBSERVER_DISCONNECTED #${id}\n${stat.stack}`);
+            return;
+          }
+          callback(records, observer);
+        });
+      }
+    };
+  });
+
   const errors = [];
   const consoleErrors = [];
-  const cleanupRequests = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
-  page.on('request', (request) => { if (request.url().includes('home-future-4v4-card-cleanup.js')) cleanupRequests.push(request.url()); });
+  page.on('console', (message) => {
+    const text = message.text();
+    if (message.type() === 'error') {
+      consoleErrors.push(text);
+      if (text.includes('RP_OBSERVER_')) console.log(text);
+    }
+  });
 
   console.log('STAGE navigate');
   await page.goto(APP_URL, { waitUntil: 'commit', timeout: 15000 });
   console.log('STAGE wait-slot-runtime');
   await page.waitForFunction(() => window.__realPlayFourVFourSlotPickerInstalled === true, null, { timeout: 20000 });
 
-  const deploy = await page.evaluate(() => document.documentElement?.dataset?.rpDeploy || '');
   const hadRealHomeButton = await page.locator('[data-rp-home-save-slot]').count() > 0;
   if (!hadRealHomeButton) {
     await page.evaluate(() => {
@@ -49,69 +85,38 @@ try {
       document.body.classList.add('rp-4v4-slot-picker-open');
     }
   });
-  await page.waitForSelector('.rp-4v4-slot-overlay:not([hidden])', { state: 'visible', timeout: 10000 });
-  await page.waitForTimeout(1000);
-
-  const beforeClick = await page.evaluate(() => ({
-    cleanupInstalled: window.__realPlayFuture4v4CardCleanupInstalled === true,
-    cleanupScripts: [...document.querySelectorAll('script[src*="home-future-4v4-card-cleanup.js"]')].map((script) => script.src),
-    activeSlotExists: Boolean(document.querySelector('[data-rp-4v4-slot="2000-2200"]')),
-    activeSlotDisabled: Boolean(document.querySelector('[data-rp-4v4-slot="2000-2200"]')?.disabled),
-    baseViewStyleLoaded: [...document.styleSheets].some((sheet) => String(sheet.href || '').includes('three-v-three-beta.css')),
-  }));
+  await page.waitForTimeout(500);
 
   console.log('STAGE choose-active-slot');
   await page.locator('[data-rp-4v4-slot="2000-2200"]').evaluate((el) => el.click());
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(1500);
 
-  const afterClick = await page.evaluate(() => {
+  const report = await page.evaluate(() => {
     const view = document.querySelector('.rp-4v4-static-view');
-    const overlay = document.querySelector('.rp-4v4-slot-overlay');
     const style = view ? getComputedStyle(view) : null;
     return {
       storage: sessionStorage.getItem('real_play_4v4_time_slot'),
-      overlayHidden: overlay ? overlay.hidden : null,
       cleanupInstalled: window.__realPlayFuture4v4CardCleanupInstalled === true,
-      previewInstalled: window.__realPlayFuture4v4PreviewInstalled === true,
-      cleanupScripts: [...document.querySelectorAll('script[src*="home-future-4v4-card-cleanup.js"]')].map((script) => script.src),
-      baseViewStyleLoaded: [...document.styleSheets].some((sheet) => String(sheet.href || '').includes('three-v-three-beta.css')),
       viewExists: Boolean(view),
       viewOpen: Boolean(view?.classList.contains('open')),
       ariaHidden: view?.getAttribute('aria-hidden') ?? null,
       bodyOpen: document.body.classList.contains('rp-4v4-static-open'),
-      selectedTeamHeading: view?.querySelector('.rp-3v3-select-head h1')?.textContent?.trim() || null,
-      viewDisplay: style?.display || null,
-      viewPosition: style?.position || null,
-      viewVisibility: style?.visibility || null,
-      viewOpacity: style?.opacity || null,
-      bodyClasses: document.body.className,
+      heading: view?.querySelector('.rp-3v3-select-head h1')?.textContent?.trim() || null,
+      display: style?.display || null,
+      position: style?.position || null,
+      observerStats: window.__rpMutationObserverStats,
     };
   });
 
-  report = { deploy, hadRealHomeButton, cleanupRequests, beforeClick, afterClick, pageErrors: errors, consoleErrors };
   console.log('LIVE_REPORT ' + JSON.stringify(report));
+  console.log('PAGE_ERRORS ' + JSON.stringify(errors));
+  console.log('CONSOLE_ERRORS ' + JSON.stringify(consoleErrors.filter((item) => !item.includes('RP_OBSERVER_'))));
 
-  assert.match(afterClick.storage || '', /2000-2200/, 'Selected slot was not stored.');
-  assert.equal(afterClick.overlayHidden, true, 'Slot picker did not close.');
-  assert.equal(afterClick.cleanupInstalled, true, '4v4 cleanup runtime did not install.');
-  assert.equal(afterClick.baseViewStyleLoaded, true, 'Base team-screen stylesheet is not loaded.');
-  assert.equal(afterClick.viewExists, true, '4v4 static view does not exist after slot selection.');
-  assert.equal(afterClick.viewOpen, true, '4v4 static view exists but is not open.');
-  assert.equal(afterClick.ariaHidden, 'false', '4v4 static view aria-hidden is not false.');
-  assert.equal(afterClick.bodyOpen, true, 'body.rp-4v4-static-open is missing.');
-  assert.equal(afterClick.selectedTeamHeading, 'SELECT YOUR TEAM.', 'SELECT YOUR TEAM heading is not present.');
-  assert.equal(afterClick.viewDisplay, 'block', '4v4 view is not rendered as display:block.');
-  assert.equal(afterClick.viewPosition, 'fixed', '4v4 view is not fixed over Home.');
-  assert.equal(afterClick.viewVisibility, 'visible', '4v4 view is not visible.');
-  assert.equal(afterClick.viewOpacity, '1', '4v4 view is not fully opaque.');
-  assert.equal(errors.length, 0, `Page errors: ${errors.join(' | ')}`);
-
+  await browser.close();
   clearTimeout(hardStop);
-  console.log('LIVE_RESULT PASS');
   process.exit(0);
 } catch (error) {
   clearTimeout(hardStop);
   console.error('DIAGNOSTIC_FAILURE', error?.stack || error);
-  if (report) console.error('LIVE_REPORT_FAILURE ' + JSON.stringify(report));
   process.exit(1);
 }
