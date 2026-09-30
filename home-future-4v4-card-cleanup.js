@@ -595,9 +595,7 @@
     view.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-4v4-static-open');
     view.scrollTop = 0;
-    // Team Code owns the normal 4v4 state load. Its loader has an explicit
-    // legacy fallback if the Beta script itself fails, so the panel must not
-    // race it with a second /4v4/me request during first-open startup.
+    window.dispatchEvent(new CustomEvent('realplay:4v4-open'));
     window.setTimeout(() => view.querySelector('[data-rp-4v4-static-back]')?.focus({ preventScroll: true }), 0);
   }
 
