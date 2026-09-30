@@ -92,6 +92,14 @@
     return window.__realPlayAdminVerified === true;
   }
 
+  function syncLegacyPreferenceList() {
+    if (!state || !boundPanel) return;
+    const view = boundPanel.closest('[data-rp-4v4-static-view]');
+    if (typeof view?.__rpApply4v4PreferenceState === 'function') {
+      view.__rpApply4v4PreferenceState(state);
+    }
+  }
+
   function expectedUi(club) {
     const team = getTeamState(club) || { status: 'available', memberCount: 0, capacity: 4 };
     const joinedHere = state?.joinedClub === club;
@@ -241,6 +249,7 @@
       if (error) error.textContent = '';
       try {
         state = await api('/api/real-play/4v4/join', { method: 'POST', body: { club, code } });
+        syncLegacyPreferenceList();
         closeDialog();
         renderPanel();
         showToast(state?.message || `You joined ${CLUB_NAMES[club]}.`);
@@ -280,6 +289,7 @@
     loading = true;
     try {
       state = await api('/api/real-play/4v4/me');
+      syncLegacyPreferenceList();
     } catch (error) {
       if (!silent) console.warn('[Real Play] Could not load 4v4 team-code state.', error);
     } finally {
@@ -318,6 +328,7 @@
       cancel.disabled = true;
       try {
         state = await api('/api/real-play/4v4/preference', { method: 'DELETE' });
+        syncLegacyPreferenceList();
         renderPanel();
         showToast(state?.message || 'You left the forming team.');
       } catch (error) {
@@ -352,9 +363,13 @@
   }
 
   function bindPanel(panel) {
-    if (!panel || panel === boundPanel) return;
+    if (!panel) return false;
+    if (panel === boundPanel) return true;
+
     viewObserver?.disconnect();
     textObserver?.disconnect();
+    if (boundPanel) boundPanel.removeEventListener('click', handlePanelClick, true);
+
     boundPanel = panel;
     panel.addEventListener('click', handlePanelClick, true);
 
@@ -376,12 +391,17 @@
 
     renderPanel();
     loadState();
+    return true;
   }
 
-  function discoverPanel() {
+  function discoverPanel({ refresh = false } = {}) {
     const panel = document.querySelector('.rp-4v4-preference-panel');
-    if (panel && panel !== boundPanel) bindPanel(panel);
-    else if (panel) queueRender();
+    if (!panel) return false;
+    if (panel !== boundPanel) return bindPanel(panel);
+
+    queueRender();
+    if (refresh) loadState({ silent: true });
+    return true;
   }
 
   function boot() {
@@ -390,10 +410,10 @@
 
     // The 4v4 view is created only after the roadmap action is clicked.
     // Listen at window capture (before the existing document capture handler),
-    // then bind after that handler has synchronously created the view.
+    // then bind or refresh after that handler has synchronously opened the view.
     window.addEventListener('click', (event) => {
       if (!event.target?.closest?.('.rp-home-4v4-explore')) return;
-      window.setTimeout(discoverPanel, 0);
+      window.setTimeout(() => discoverPanel({ refresh: true }), 0);
     }, true);
   }
 
