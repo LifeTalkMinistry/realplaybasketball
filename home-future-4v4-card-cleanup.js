@@ -17,6 +17,10 @@
     return localStorage.getItem(TOKEN_KEY) || '';
   }
 
+  function teamCodeOwnsControls() {
+    return window.__realPlay4v4TeamCodeBetaInstalled === true;
+  }
+
   async function api(path, options = {}) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method: options.method || 'GET',
@@ -413,19 +417,21 @@
       const club = CLUBS[activeIndex];
       const players = sortedClubPlayers(club.id);
       preferenceTeam.textContent = club.name;
-      preferenceCount.textContent = String(players.length);
 
-      const selected = preferredClub === club.id;
-      preferenceAction.classList.toggle('is-selected', selected);
-      preferenceAction.disabled = preferenceSaving || preferenceCancelling || selected;
-      if (preferenceSaving) preferenceAction.textContent = 'SAVING…';
-      else if (selected) preferenceAction.textContent = `${club.name} PREFERRED ✓`;
-      else if (preferredClub) preferenceAction.textContent = `MAKE ${club.name} MY PREFERENCE`;
-      else preferenceAction.textContent = `I PREFER ${club.name}`;
+      if (!teamCodeOwnsControls()) {
+        preferenceCount.textContent = String(players.length);
+        const selected = preferredClub === club.id;
+        preferenceAction.classList.toggle('is-selected', selected);
+        preferenceAction.disabled = preferenceSaving || preferenceCancelling || selected;
+        if (preferenceSaving) preferenceAction.textContent = 'SAVING…';
+        else if (selected) preferenceAction.textContent = `${club.name} PREFERRED ✓`;
+        else if (preferredClub) preferenceAction.textContent = `MAKE ${club.name} MY PREFERENCE`;
+        else preferenceAction.textContent = `I PREFER ${club.name}`;
 
-      preferenceCancel.hidden = !selected;
-      preferenceCancel.disabled = preferenceSaving || preferenceCancelling;
-      preferenceCancel.textContent = preferenceCancelling ? 'CANCELLING…' : 'CANCEL';
+        preferenceCancel.hidden = !selected;
+        preferenceCancel.disabled = preferenceSaving || preferenceCancelling;
+        preferenceCancel.textContent = preferenceCancelling ? 'CANCELLING…' : 'CANCEL';
+      }
 
       if (preferenceLoading && !preferenceLoaded) {
         preferenceList.innerHTML = '<p class="rp-4v4-preference-loading">LOADING PLAYER PREFERENCES…</p>';
@@ -473,6 +479,7 @@
     }
 
     async function savePreference() {
+      if (teamCodeOwnsControls()) return;
       const club = CLUBS[activeIndex];
       if (!token()) {
         setStatus('SIGN IN TO SAVE YOUR TEAM PREFERENCE.', 'error');
@@ -498,6 +505,7 @@
     }
 
     async function clearPreference() {
+      if (teamCodeOwnsControls()) return;
       const club = CLUBS[activeIndex];
       if (!token()) {
         setStatus('SIGN IN TO CHANGE YOUR TEAM PREFERENCE.', 'error');
@@ -568,6 +576,14 @@
     });
     view.querySelector('[data-rp-4v4-static-back]')?.addEventListener('click', closeView);
     view.__rpLoad4v4Preferences = loadPreferences;
+    view.__rpApply4v4PreferenceState = (data) => {
+      preferredClub = String(data?.preferredClub || data?.joinedClub || '').toLowerCase() || null;
+      preferencePlayers = Array.isArray(data?.preferencePlayers) ? data.preferencePlayers : [];
+      preferenceLoaded = true;
+      preferenceLoading = false;
+      preferenceError = '';
+      renderPreferenceBoard();
+    };
     render(0);
     return view;
   }
@@ -579,7 +595,9 @@
     view.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-4v4-static-open');
     view.scrollTop = 0;
-    view.__rpLoad4v4Preferences?.();
+    if (window.__realPlay4v4TeamCodeBetaLoaderInstalled !== true) {
+      view.__rpLoad4v4Preferences?.();
+    }
     window.setTimeout(() => view.querySelector('[data-rp-4v4-static-back]')?.focus({ preventScroll: true }), 0);
   }
 
