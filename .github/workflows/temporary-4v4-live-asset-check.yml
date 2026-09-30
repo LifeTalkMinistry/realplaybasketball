@@ -16,6 +16,7 @@ jobs:
         run: |
           set -euo pipefail
           CB="$(date +%s)"
+          DEPLOY="20260930-home-team-time-blocks-v149"
           curl -fsSL --retry 3 "https://joinrealplay.com/?cb=${CB}" -o /tmp/rp-index.html
           echo '--- LIVE INDEX SLOT SCRIPT ---'
           grep -o 'home-4v4-slot-picker.js[^"<]*' /tmp/rp-index.html || true
@@ -30,8 +31,11 @@ jobs:
           echo '--- SLOT HANDOFF ---'
           grep -n 'rpSlotHandoff' /tmp/rp-slot.js || true
 
-          curl -fsSL --retry 3 "https://joinrealplay.com/home-future-4v4-card-cleanup.js?cb=${CB}" -o /tmp/rp-cleanup.js
-          echo '--- CLEANUP INSTALL FLAG ---'
-          grep -n '__realPlayFuture4v4CardCleanupInstalled' /tmp/rp-cleanup.js | head -3 || true
-          echo '--- CLEANUP CLICK LISTENER / OPEN ---'
-          grep -n -E 'function openView|rp-home-4v4-explore|rp-4v4-static-open' /tmp/rp-cleanup.js | tail -20 || true
+          curl -fsSL --retry 3 "https://joinrealplay.com/home-future-4v4-card-cleanup.js?cb=${CB}" -o /tmp/rp-cleanup-fresh.js
+          curl -fsSL --retry 3 "https://joinrealplay.com/home-future-4v4-card-cleanup.js?v=${DEPLOY}" -o /tmp/rp-cleanup-versioned.js
+          echo '--- CLEANUP FRESH/VERSIONED SHA256 ---'
+          sha256sum /tmp/rp-cleanup-fresh.js /tmp/rp-cleanup-versioned.js
+          echo '--- VERSIONED CLEANUP OPEN CHAIN ---'
+          grep -n -E '__realPlayFuture4v4CardCleanupInstalled|function openView|rp-home-4v4-explore|rp-4v4-static-open' /tmp/rp-cleanup-versioned.js | tail -24 || true
+          echo '--- VERSIONED CLEANUP RESPONSE HEADERS ---'
+          curl -fsSI --retry 3 "https://joinrealplay.com/home-future-4v4-card-cleanup.js?v=${DEPLOY}" | grep -iE '^(cache-control|age|etag|last-modified|x-cache|via|date):' || true
