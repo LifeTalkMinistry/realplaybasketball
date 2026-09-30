@@ -61,8 +61,7 @@
     const id = Number(update.id);
     if (!Number.isSafeInteger(id) || id <= 0) return false;
     if (update.source_key || update.sourceKey) return false;
-    if (scheduleType(update) !== 'open-rank') return false;
-    return /\bPLAYER\s+CAP\b/i.test(String(update.body || ''));
+    return /^\s*ENDS\s+.+?\s*·\s*\d{1,3}\s+PLAYER\s+CAP\s*$/i.test(String(update.body || ''));
   }
 
   function parseCapacity(update) {
@@ -399,7 +398,7 @@
     const list = Array.isArray(updates) ? updates : [];
     const now = Date.now();
     const candidates = list
-      .filter((item) => item?.category === 'schedule' && scheduleType(item) === 'open-rank')
+      .filter((item) => item?.category === 'schedule' && (isManualHomeOverride(item) || scheduleType(item) === 'open-rank'))
       .map((item) => ({ item, time: Date.parse(item.event_at || item.eventAt || '') }))
       .filter((entry) => Number.isFinite(entry.time) && entry.time >= now - 60_000)
       .sort((left, right) => left.time - right.time);
