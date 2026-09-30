@@ -70,12 +70,13 @@
 
     loading = true;
     const script = document.createElement('script');
-    const version = String(document.documentElement?.dataset?.rpDeploy || Date.now());
-    script.src = `home-future-4v4-team-code-beta.js?v=${encodeURIComponent(version)}-freeze-fix-v2`;
+    const version = String(document.documentElement?.dataset?.rpDeploy || '20260929-4v4-main-thread-freeze-v135').trim();
+    script.src = `home-future-4v4-team-code-beta.js?v=${encodeURIComponent(version)}`;
     script.async = false;
     script.onload = () => { loading = false; };
     script.onerror = () => {
       loading = false;
+      document.querySelector('[data-rp-4v4-static-view]')?.__rpLoad4v4Preferences?.();
       console.error('[Real Play] 4v4 team-code Beta UI failed to load.');
     };
     document.head.appendChild(script);
