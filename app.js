@@ -453,6 +453,7 @@
       'real-play-world-player-bar-vector.js',
       'real-play-world-player-admin.js',
       'real-play-world-player-admin-identity.js',
+      'admin-player-schedule.js',
       'real-play-player-claim.js',
       'main-menu-fast-snap-restore.js',
       'main-menu-touch-lite.js',
