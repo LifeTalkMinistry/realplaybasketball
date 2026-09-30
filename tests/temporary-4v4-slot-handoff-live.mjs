@@ -32,7 +32,9 @@ try {
       .map((script) => script.src)
       .find((src) => src.includes('home-4v4-slot-picker.js')) || ''
   );
-  assert.match(loadedSlotScript, /20260930-slot-banner-attr-v9/, `Live page did not load v9 slot picker: ${loadedSlotScript}`);
+  assert.match(loadedSlotScript, /20260930-slot-header-v10/, `Live page did not load v10 slot picker: ${loadedSlotScript}`);
+
+  await page.waitForFunction(() => window.__realPlayFourVFourSlotHeaderInstalled === true, null, { timeout: 20000 });
 
   console.log('STAGE wait-real-home-button');
   await page.waitForSelector('[data-rp-home-save-slot]', { state: 'attached', timeout: 20000 });
@@ -43,13 +45,6 @@ try {
     const overlay = document.querySelector('.rp-4v4-slot-overlay');
     return Boolean(overlay && !overlay.hidden);
   });
-
-  const slotState = await page.evaluate(() => ({
-    inactive1600: document.querySelector('[data-rp-4v4-slot="1600-1800"]')?.disabled === true,
-    inactive1800: document.querySelector('[data-rp-4v4-slot="1800-2000"]')?.disabled === true,
-    active2000: document.querySelector('[data-rp-4v4-slot="2000-2200"]')?.disabled === false,
-  }));
-  assert.deepEqual(slotState, { inactive1600: true, inactive1800: true, active2000: true });
 
   console.log('STAGE choose-8pm-slot');
   await page.locator('[data-rp-4v4-slot="2000-2200"]').evaluate((element) => element.click());
@@ -63,11 +58,17 @@ try {
     );
   }, null, { timeout: 15000 });
 
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(() => {
+    const heading = document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1');
+    return heading?.textContent?.trim() === '8:00 PM – 10:00 PM';
+  }, null, { timeout: 5000 });
+  await page.waitForTimeout(300);
 
   const firstOpen = await page.evaluate(() => {
     const view = document.querySelector('.rp-4v4-static-view');
-    const style = view ? getComputedStyle(view) : null;
+    const viewStyle = view ? getComputedStyle(view) : null;
+    const banner = view?.querySelector('[data-rp-4v4-team-slot]');
+    const bannerStyle = banner ? getComputedStyle(banner) : null;
     const overlay = document.querySelector('.rp-4v4-slot-overlay');
     return {
       storage: sessionStorage.getItem('real_play_4v4_time_slot'),
@@ -77,14 +78,16 @@ try {
       ariaHidden: view?.getAttribute('aria-hidden') || null,
       bodyOpen: document.body.classList.contains('rp-4v4-static-open'),
       heading: view?.querySelector('.rp-3v3-select-head h1')?.textContent?.trim() || null,
-      display: style?.display || null,
-      position: style?.position || null,
-      visibility: style?.visibility || null,
+      headingIsSlotControl: view?.querySelector('.rp-3v3-select-head h1')?.getAttribute('data-rp-4v4-slot-heading') === 'true',
+      display: viewStyle?.display || null,
+      position: viewStyle?.position || null,
+      visibility: viewStyle?.visibility || null,
       slotBannerCount: view?.querySelectorAll('[data-rp-4v4-team-slot]').length || 0,
+      slotBannerDisplay: bannerStyle?.display || null,
       preferenceActionExists: Boolean(view?.querySelector('[data-rp-4v4-preference-action]')),
       backExists: Boolean(view?.querySelector('[data-rp-4v4-static-back]')),
       cleanupInstalled: window.__realPlayFuture4v4CardCleanupInstalled === true,
-      teamCodeInstalled: window.__realPlay4v4TeamCodeBetaInstalled === true,
+      slotHeaderInstalled: window.__realPlayFourVFourSlotHeaderInstalled === true,
     };
   });
 
@@ -94,14 +97,17 @@ try {
   assert.equal(firstOpen.viewOpen, true);
   assert.equal(firstOpen.ariaHidden, 'false');
   assert.equal(firstOpen.bodyOpen, true);
-  assert.equal(firstOpen.heading, 'SELECT YOUR TEAM.');
+  assert.equal(firstOpen.heading, '8:00 PM – 10:00 PM');
+  assert.equal(firstOpen.headingIsSlotControl, true);
   assert.equal(firstOpen.display, 'block');
   assert.equal(firstOpen.position, 'fixed');
   assert.equal(firstOpen.visibility, 'visible');
-  assert.equal(firstOpen.slotBannerCount, 1, 'Selected-slot banner duplicated.');
+  assert.equal(firstOpen.slotBannerCount, 1, 'Internal selected-slot control duplicated.');
+  assert.equal(firstOpen.slotBannerDisplay, 'none', 'Old selected-slot banner is still visible.');
   assert.equal(firstOpen.preferenceActionExists, true, 'Team preference control disappeared.');
   assert.equal(firstOpen.backExists, true, 'Back button disappeared.');
   assert.equal(firstOpen.cleanupInstalled, true, 'Current 4v4 cleanup runtime is not installed.');
+  assert.equal(firstOpen.slotHeaderInstalled, true, 'Compact slot header runtime is not installed.');
 
   console.log('STAGE back-button');
   await page.locator('[data-rp-4v4-static-back]').click();
@@ -127,9 +133,11 @@ try {
     const counts = await page.evaluate(() => ({
       views: document.querySelectorAll('.rp-4v4-static-view').length,
       banners: document.querySelectorAll('.rp-4v4-static-view [data-rp-4v4-team-slot]').length,
+      heading: document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim() || null,
     }));
     assert.equal(counts.views, 1, `Cycle ${cycle + 1}: duplicate 4v4 views created.`);
-    assert.equal(counts.banners, 1, `Cycle ${cycle + 1}: duplicate selected-slot banners created.`);
+    assert.equal(counts.banners, 1, `Cycle ${cycle + 1}: duplicate internal slot controls created.`);
+    assert.equal(counts.heading, '8:00 PM – 10:00 PM', `Cycle ${cycle + 1}: slot heading was lost.`);
 
     await page.locator('[data-rp-4v4-static-back]').click();
     await page.waitForFunction(() => !document.body.classList.contains('rp-4v4-static-open'));
@@ -139,6 +147,7 @@ try {
     storage: sessionStorage.getItem('real_play_4v4_time_slot'),
     viewCount: document.querySelectorAll('.rp-4v4-static-view').length,
     bannerCount: document.querySelectorAll('.rp-4v4-static-view [data-rp-4v4-team-slot]').length,
+    heading: document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim() || null,
     preferencePanelExists: Boolean(document.querySelector('.rp-4v4-preference-panel')),
     preferenceActionExists: Boolean(document.querySelector('[data-rp-4v4-preference-action]')),
     teamCodeInstalled: window.__realPlay4v4TeamCodeBetaInstalled === true,
@@ -149,6 +158,7 @@ try {
   assert.match(regressionState.storage || '', /2000-2200/);
   assert.equal(regressionState.viewCount, 1);
   assert.equal(regressionState.bannerCount, 1);
+  assert.equal(regressionState.heading, '8:00 PM – 10:00 PM');
   assert.equal(regressionState.preferencePanelExists, true);
   assert.equal(regressionState.preferenceActionExists, true);
   assert.equal(regressionState.bodyOpen, false);
@@ -156,7 +166,6 @@ try {
 
   console.log('LIVE_RESULT ' + JSON.stringify({
     loadedSlotScript,
-    slotState,
     firstOpen,
     regressionState,
     pageErrors,
