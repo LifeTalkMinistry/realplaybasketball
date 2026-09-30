@@ -3,10 +3,11 @@
   window.__realPlayFourVFourSlotPickerInstalled = true;
 
   const SLOT_KEY = 'real_play_4v4_time_slot';
+  const CURRENT_4V4_SLOT_ID = '2000-2200';
   const SLOTS = [
-    { id: '1600-1800', label: '4:00 PM – 6:00 PM' },
-    { id: '1800-2000', label: '6:00 PM – 8:00 PM' },
-    { id: '2000-2200', label: '8:00 PM – 10:00 PM' },
+    { id: '1600-1800', label: '4:00 PM – 6:00 PM', active: false },
+    { id: '1800-2000', label: '6:00 PM – 8:00 PM', active: false },
+    { id: '2000-2200', label: '8:00 PM – 10:00 PM', active: true },
   ];
 
   let slotOverlay = null;
@@ -78,6 +79,9 @@
       }
       .rp-4v4-slot-option:hover,.rp-4v4-slot-option:focus-visible{border-color:rgba(47,216,255,.72);outline:none}
       .rp-4v4-slot-option.is-selected{border-color:#28ccff;box-shadow:inset 3px 0 0 #28ccff,0 0 0 1px rgba(40,204,255,.12)}
+      .rp-4v4-slot-option:disabled{cursor:default;opacity:.48}
+      .rp-4v4-slot-option:disabled:hover{border-color:rgba(47,216,255,.22)}
+      .rp-4v4-slot-option:disabled .rp-4v4-slot-arrow{opacity:.35}
       .rp-4v4-slot-option small{display:block;margin-bottom:4px;color:#70879b;font-size:.59rem;font-weight:900;letter-spacing:.15em;text-transform:uppercase}
       .rp-4v4-slot-option strong{display:block;font-size:1.03rem;letter-spacing:.035em}
       .rp-4v4-slot-arrow{color:#28ccff;font-size:1.25rem;font-weight:900}
@@ -149,7 +153,7 @@
 
     const selected = getSelectedSlot();
     list.innerHTML = SLOTS.map((slot) => `
-      <button class="rp-4v4-slot-option${selected?.id === slot.id ? ' is-selected' : ''}" type="button" data-rp-4v4-slot="${slot.id}">
+      <button class="rp-4v4-slot-option${selected?.id === slot.id ? ' is-selected' : ''}" type="button" data-rp-4v4-slot="${slot.id}"${slot.active ? '' : ' disabled aria-disabled="true"'}>
         <span><small>TIME SLOT</small><strong>${slot.label}</strong></span>
         <span class="rp-4v4-slot-arrow" aria-hidden="true">›</span>
       </button>`).join('');
@@ -157,7 +161,7 @@
     list.querySelectorAll('[data-rp-4v4-slot]').forEach((button) => {
       button.addEventListener('click', () => {
         const slot = SLOTS.find((item) => item.id === button.dataset.rp4v4Slot);
-        if (slot) chooseSlot(slot);
+        if (slot?.active) chooseSlot(slot);
       });
     });
   }
@@ -168,7 +172,7 @@
     const overlay = ensureOverlay();
     overlay.hidden = false;
     document.body.classList.add('rp-4v4-slot-picker-open');
-    window.setTimeout(() => overlay.querySelector('[data-rp-4v4-slot].is-selected, [data-rp-4v4-slot]')?.focus({ preventScroll: true }), 0);
+    window.setTimeout(() => overlay.querySelector('[data-rp-4v4-slot]:not(:disabled)')?.focus({ preventScroll: true }), 0);
   }
 
   function closeSlotPicker() {
@@ -182,7 +186,7 @@
     if (!view) return false;
 
     const selected = getSelectedSlot();
-    if (!selected) return false;
+    if (!selected || selected.id !== CURRENT_4V4_SLOT_ID) return false;
 
     let banner = view.querySelector('[data-rp-4v4-team-slot]');
     if (!banner) {
@@ -221,7 +225,7 @@
         return;
       }
 
-      // Keep the user in the slot flow instead of falling through to the old direct route.
+      // If the current 4v4 view is not ready yet, keep the player in the picker.
       openSlotPicker();
     };
 
@@ -229,6 +233,8 @@
   }
 
   function chooseSlot(slot) {
+    if (!slot?.active || slot.id !== CURRENT_4V4_SLOT_ID) return;
+
     setSelectedSlot(slot);
     closeSlotPicker();
 
@@ -251,7 +257,8 @@
     }
 
     const directTeamAction = event.target?.closest?.('.rp-home-4v4-explore');
-    if (directTeamAction && !getSelectedSlot()) {
+    const selected = getSelectedSlot();
+    if (directTeamAction && selected?.id !== CURRENT_4V4_SLOT_ID) {
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
