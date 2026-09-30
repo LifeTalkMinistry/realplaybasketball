@@ -219,16 +219,20 @@
       banner.className = 'rp-4v4-team-slot';
       banner.dataset.rp4v4TeamSlot = 'true';
       banner.addEventListener('click', openSlotPicker);
+      banner.innerHTML = `
+        <span class="rp-4v4-team-slot-copy"><small>YOUR TIME SLOT</small><strong>${selected.label}</strong></span>
+        <span class="rp-4v4-team-slot-change">CHANGE</span>`;
 
       const topbar = view.querySelector('.rp-3v3-topbar');
       if (topbar) topbar.insertAdjacentElement('afterend', banner);
       else view.prepend(banner);
     }
 
-    banner.setAttribute('aria-label', `Selected time slot ${selected.label}. Change time slot.`);
-    banner.innerHTML = `
-      <span class="rp-4v4-team-slot-copy"><small>YOUR TIME SLOT</small><strong>${selected.label}</strong></span>
-      <span class="rp-4v4-team-slot-change">CHANGE</span>`;
+    const ariaLabel = `Selected time slot ${selected.label}. Change time slot.`;
+    if (banner.getAttribute('aria-label') !== ariaLabel) banner.setAttribute('aria-label', ariaLabel);
+
+    const value = banner.querySelector('.rp-4v4-team-slot-copy strong');
+    if (value && value.textContent !== selected.label) value.textContent = selected.label;
     return true;
   }
 
