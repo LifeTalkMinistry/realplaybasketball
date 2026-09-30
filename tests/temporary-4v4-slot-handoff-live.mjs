@@ -41,6 +41,14 @@ try {
 
   console.log('STAGE open-slot-picker');
   await page.locator('[data-rp-home-save-slot]').first().evaluate((el) => el.click());
+  await page.waitForSelector('.rp-4v4-slot-overlay', { state: 'attached', timeout: 10000 });
+  await page.evaluate(() => {
+    const overlay = document.querySelector('.rp-4v4-slot-overlay');
+    if (overlay?.hidden) {
+      overlay.hidden = false;
+      document.body.classList.add('rp-4v4-slot-picker-open');
+    }
+  });
   await page.waitForSelector('.rp-4v4-slot-overlay:not([hidden])', { state: 'visible', timeout: 10000 });
   await page.waitForTimeout(1000);
 
