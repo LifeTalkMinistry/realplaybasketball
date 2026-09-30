@@ -312,7 +312,7 @@
     const team = target.closest('[data-admin-4v4-club]');
     if (team && !team.disabled) {
       event.preventDefault();
-      moveToTeam(String(team.dataset.admin4v4Club || ''));
+      moveToTeam(String(team.getAttribute('data-admin-4v4-club') || ''));
     }
   });
 
