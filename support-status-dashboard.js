@@ -91,8 +91,8 @@
     const pending = !verified || String(support?.periodStatus || '').toLowerCase() === 'pending';
     const amount = Number(support?.amountPhp || 0);
     const tier = String(support?.tierName || support?.tierCode || 'Real Play Supporter').trim();
-    const title = pending ? 'PAYMENT UNDER REVIEW' : active ? 'YOUR SUPPORT IS ACTIVE' : 'YOUR SUPPORT';
-    const kicker = pending ? 'SUPPORT SUBMITTED' : active ? 'ACTIVE MONTHLY SUPPORT' : 'MONTHLY SUPPORT';
+    const title = pending ? 'PAYMENT UNDER REVIEW' : 'THANK YOU FOR SUPPORTING REAL PLAY';
+    const kicker = pending ? 'SUPPORT SUBMITTED' : '';
     const status = pending ? 'PENDING VERIFICATION' : active ? 'ACTIVE' : String(support?.periodStatus || 'ACTIVE').toUpperCase();
     const mainDateLabel = pending ? 'SUBMITTED' : 'CURRENT PERIOD STARTED';
     const mainDateValue = pending ? support?.createdAt : (support?.startedAt || support?.verifiedAt);
@@ -102,7 +102,7 @@
     return `
       <div class="rp-team-sheet-grab" aria-hidden="true"></div>
       <div class="rp-team-sheet-head">
-        <div><small>${escapeHtml(kicker)}</small><h3 id="rp-team-support-title">${escapeHtml(title)}</h3></div>
+        <div>${kicker ? `<small>${escapeHtml(kicker)}</small>` : ''}<h3 id="rp-team-support-title">${escapeHtml(title)}</h3></div>
         <button class="rp-team-sheet-close" type="button" aria-label="Close support status" data-rp-support-status-close>×</button>
       </div>
       <div class="rp-support-status-card">
