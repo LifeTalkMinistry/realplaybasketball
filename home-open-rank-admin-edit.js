@@ -362,6 +362,12 @@
     if (!/^\d{2}:\d{2}$/.test(endsAt)) return editorStatus('Choose a valid end time.', true);
     if (!Number.isFinite(capacity) || capacity < 1 || capacity > 4) return editorStatus('Team cap must be between 1 and 4.', true);
 
+    const schedulingApi = window.__realPlayHomeTeamScheduling;
+    if (!schedulingApi?.snapshot) return editorStatus('Team scheduling is still loading. Close this editor, reopen it, and try again.', true);
+    const scheduleSnapshot = schedulingApi.snapshot();
+    if (!scheduleSnapshot?.validation?.ok) return editorStatus(scheduleSnapshot?.validation?.message || 'Fix the team schedule before saving.', true);
+    const teamSchedule = scheduleSnapshot.teamSchedule;
+
     setEditorBusy(true);
     editorStatus('Saving Home schedule…');
     const oldOverrideId = Number(currentOverride?.id);
@@ -375,9 +381,20 @@
         eventAt,
         locationName,
         pinned: true,
+        metadata: { teamSchedule },
       });
 
       let updates = Array.isArray(published?.updates) ? published.updates : [];
+      const savedSchedule = updates.find((item) => {
+        if (!isManualHomeOverride(item)) return false;
+        const itemEvent = Date.parse(item?.event_at || item?.eventAt || '');
+        const requestedEvent = Date.parse(eventAt || '');
+        return String(item?.title || '').trim() === title && Number.isFinite(itemEvent) && Number.isFinite(requestedEvent) && Math.abs(itemEvent - requestedEvent) < 60_000;
+      });
+      const echoedTeamSchedule = savedSchedule?.metadata?.teamSchedule || savedSchedule?.metadata?.team_schedule;
+      if (!echoedTeamSchedule || String(echoedTeamSchedule.mode || '').toLowerCase() !== String(teamSchedule.mode || '').toLowerCase()) {
+        throw new Error('The Home schedule saved without its team assignments. Please save again.');
+      }
       if (Number.isSafeInteger(oldOverrideId) && oldOverrideId > 0) {
         try {
           const deleted = await updatesAction({ action: 'delete', id: oldOverrideId });

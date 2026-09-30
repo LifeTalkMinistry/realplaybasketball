@@ -16,7 +16,7 @@
 
   const loadScheduler = () => {
     const script = document.createElement('script');
-    script.src = 'home-open-rank-team-scheduling-v3.js?v=20260930-team-picker-v4';
+    script.src = 'home-open-rank-team-scheduling-v3.js?v=20260930-explicit-team-metadata-v5';
     script.async = false;
     script.addEventListener('load', loadPremiumCards, { once: true });
     script.addEventListener('error', () => {
