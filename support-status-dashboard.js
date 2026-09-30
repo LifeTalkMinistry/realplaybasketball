@@ -103,7 +103,6 @@
       <div class="rp-team-sheet-grab" aria-hidden="true"></div>
       <div class="rp-team-sheet-head">
         <div>${kicker ? `<small>${escapeHtml(kicker)}</small>` : ''}<h3 id="rp-team-support-title">${escapeHtml(title)}</h3></div>
-        <button class="rp-team-sheet-close" type="button" aria-label="Close support status" data-rp-support-status-close>×</button>
       </div>
       <div class="rp-support-status-card">
         <div class="rp-support-status-hero">
@@ -123,7 +122,7 @@
       </div>
       <div class="rp-support-status-actions">
         <button class="rp-team-sheet-submit" type="button" data-rp-support-status-manage>${pending ? 'CHOOSE A DIFFERENT SUPPORT LEVEL' : 'RENEW / CHANGE SUPPORT LEVEL'}</button>
-        <button class="rp-support-status-secondary" type="button" data-rp-support-status-close>DONE</button>
+        <button class="rp-support-status-secondary" type="button" data-rp-support-status-back>BACK TO SETTINGS</button>
       </div>
     `;
   }
@@ -139,6 +138,38 @@
     window.setTimeout(() => overlay.remove(), 180);
   }
 
+  function reopenAccountSettings() {
+    const settingsOverlay = document.querySelector('[data-rp-settings-overlay]');
+    if (!settingsOverlay) return;
+
+    const accountPanel = settingsOverlay.querySelector('[data-rp-settings-account]');
+    if (!accountPanel) return;
+
+    settingsOverlay.querySelectorAll('.rp-settings-panel').forEach((section) => {
+      const selected = section === accountPanel;
+      section.hidden = !selected;
+      section.style.display = selected ? '' : 'none';
+      section.setAttribute('aria-hidden', selected ? 'false' : 'true');
+    });
+
+    settingsOverlay.classList.add('open');
+    settingsOverlay.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('rp-settings-open');
+
+    try {
+      window.dispatchEvent(new CustomEvent('realplay:settings-open'));
+    } catch (_error) {}
+
+    window.requestAnimationFrame(() => {
+      accountPanel.querySelector('[data-rp-account-back]')?.focus({ preventScroll: true });
+    });
+  }
+
+  function backToSettings(overlay) {
+    closeOverlay(overlay);
+    window.setTimeout(reopenAccountSettings, 210);
+  }
+
   function renderStatus(overlay, support) {
     const panel = overlay?.querySelector?.('[data-rp-team-support-panel]');
     if (!panel || !support) return;
@@ -146,8 +177,8 @@
     overlay.dataset.rpSupportStatusView = 'true';
     panel.innerHTML = supportStateMarkup(support);
 
-    panel.querySelectorAll('[data-rp-support-status-close]').forEach((button) => {
-      button.addEventListener('click', () => closeOverlay(overlay));
+    panel.querySelector('[data-rp-support-status-back]')?.addEventListener('click', () => {
+      backToSettings(overlay);
     });
 
     panel.querySelector('[data-rp-support-status-manage]')?.addEventListener('click', () => {
