@@ -184,8 +184,10 @@
   }, 0);
 
   // Load presentation-only review focus before/alongside the read-only recap.
-  // Neither enhancement owns scoring, draft submission, or finalization logic.
-  const recapVersion = String(document.documentElement?.dataset?.rpDeploy || '20260930-game-recap-v1').trim();
+  // Keep an explicit feature suffix so a presentation update cannot reuse an
+  // older cached module just because the page-level deploy marker is unchanged.
+  const deployVersion = String(document.documentElement?.dataset?.rpDeploy || '20260930-game-recap-v2').trim();
+  const recapVersion = `${deployVersion}-pure-stat-v2`;
   import(`./admin-review-focus.js?v=${encodeURIComponent(recapVersion)}`).catch((error) => {
     console.warn('[Real Play] Review focus enhancement did not load.', error);
   });
