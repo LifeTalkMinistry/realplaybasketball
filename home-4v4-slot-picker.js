@@ -12,23 +12,27 @@
 
   let slotOverlay = null;
   let observer = null;
+  let selectedSlotMemory = null;
 
   function getSelectedSlot() {
+    if (selectedSlotMemory) return selectedSlotMemory;
     try {
       const raw = sessionStorage.getItem(SLOT_KEY);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
-      return SLOTS.find((slot) => slot.id === parsed?.id) || null;
+      selectedSlotMemory = SLOTS.find((slot) => slot.id === parsed?.id) || null;
+      return selectedSlotMemory;
     } catch (_error) {
-      return null;
+      return selectedSlotMemory;
     }
   }
 
   function setSelectedSlot(slot) {
+    selectedSlotMemory = slot || null;
     try {
       sessionStorage.setItem(SLOT_KEY, JSON.stringify(slot));
     } catch (_error) {
-      // The flow still works for the current screen even if storage is unavailable.
+      // Keep the current selection in memory when sessionStorage is unavailable.
     }
   }
 
@@ -208,24 +212,72 @@
     return true;
   }
 
+  function fireCurrentFourVFourOpen() {
+    if (document.body.classList.contains('rp-4v4-static-open')) {
+      ensureTeamSlotBanner();
+      return true;
+    }
+
+    // The current 4v4 screen is owned by home-future-4v4-card-cleanup.js.
+    // Its document-level click handler only needs an .rp-home-4v4-explore target,
+    // so create a temporary handoff button instead of depending on the old card
+    // still being present in the Home DOM.
+    if (window.__realPlayFuture4v4CardCleanupInstalled === true) {
+      const handoff = document.createElement('button');
+      handoff.type = 'button';
+      handoff.className = 'rp-home-4v4-explore';
+      handoff.dataset.rpSlotHandoff = 'true';
+      handoff.hidden = true;
+      document.body.appendChild(handoff);
+      handoff.click();
+      handoff.remove();
+      return true;
+    }
+
+    // Fallback for older cached runtime where the visible 4v4 action still exists.
+    const trigger = document.querySelector('.rp-home-4v4-explore');
+    if (trigger) {
+      trigger.dataset.rpSlotHandoff = 'true';
+      trigger.click();
+      delete trigger.dataset.rpSlotHandoff;
+      return true;
+    }
+
+    return false;
+  }
+
   function openTeamSelection() {
     let attempts = 0;
+
     const tryOpen = () => {
-      const trigger = document.querySelector('.rp-home-4v4-explore');
-      if (trigger) {
-        trigger.click();
-        window.setTimeout(ensureTeamSlotBanner, 0);
-        window.setTimeout(ensureTeamSlotBanner, 120);
+      if (document.body.classList.contains('rp-4v4-static-open') || document.querySelector('[data-rp-4v4-static-view].open')) {
+        ensureTeamSlotBanner();
+        return;
+      }
+
+      const handedOff = fireCurrentFourVFourOpen();
+      if (handedOff) {
+        window.setTimeout(() => {
+          if (document.body.classList.contains('rp-4v4-static-open') || document.querySelector('[data-rp-4v4-static-view].open')) {
+            ensureTeamSlotBanner();
+            window.setTimeout(ensureTeamSlotBanner, 120);
+            return;
+          }
+
+          attempts += 1;
+          if (attempts < 100) window.setTimeout(tryOpen, 100);
+          else openSlotPicker();
+        }, 50);
         return;
       }
 
       attempts += 1;
-      if (attempts < 25) {
-        window.setTimeout(tryOpen, 80);
+      if (attempts < 100) {
+        window.setTimeout(tryOpen, 100);
         return;
       }
 
-      // If the current 4v4 view is not ready yet, keep the player in the picker.
+      // If the 4v4 runtime genuinely never loads, return the player to the picker.
       openSlotPicker();
     };
 
@@ -257,6 +309,8 @@
     }
 
     const directTeamAction = event.target?.closest?.('.rp-home-4v4-explore');
+    if (directTeamAction?.dataset?.rpSlotHandoff === 'true') return;
+
     const selected = getSelectedSlot();
     if (directTeamAction && selected?.id !== CURRENT_4V4_SLOT_ID) {
       event.preventDefault();
