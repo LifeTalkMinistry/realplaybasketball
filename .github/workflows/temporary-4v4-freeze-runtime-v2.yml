@@ -32,5 +32,5 @@ jobs:
 
       - name: Verify deployed 4v4 freeze contract
         run: |
-          sed -i 's/20260929-4v4-main-thread-freeze-v135/20260929-4v4-main-thread-freeze-v136/' tests/temporary-4v4-freeze-runtime.mjs
+          sed -i 's/20260929-4v4-main-thread-freeze-v135/20260929-4v4-main-thread-freeze-v137/' tests/temporary-4v4-freeze-runtime.mjs
           node tests/temporary-4v4-freeze-runtime.mjs
