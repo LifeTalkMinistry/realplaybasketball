@@ -68,8 +68,40 @@
     window.RealPlayUpdates?.open?.();
   }
 
+  // The 4v4 Team Code module originally created its admin button with
+  // data-rp4v4-team-code-admin, while the same module searched/listened for
+  // data-rp-4v4-team-code-admin. That mismatch caused every render to create
+  // another lock button. Normalize the attribute, dedupe it, and keep the
+  // single control hidden unless the app has explicitly verified an admin.
+  function sanitizeTeamAdminButtons() {
+    document.querySelectorAll('.rp-4v4-preference-actions').forEach((actions) => {
+      const buttons = [...actions.querySelectorAll('.rp-4v4-team-code-admin')];
+      if (!buttons.length) return;
+
+      const keeper = buttons.find((button) => button.hasAttribute('data-rp-4v4-team-code-admin')) || buttons[0];
+      keeper.setAttribute('data-rp-4v4-team-code-admin', '');
+      keeper.removeAttribute('data-rp4v4-team-code-admin');
+      keeper.hidden = window.__realPlayAdminVerified !== true;
+
+      buttons.forEach((button) => {
+        if (button !== keeper) button.remove();
+      });
+    });
+  }
+
+  let teamAdminSanitizeQueued = false;
+  function queueTeamAdminSanitize() {
+    if (teamAdminSanitizeQueued) return;
+    teamAdminSanitizeQueued = true;
+    window.requestAnimationFrame(() => {
+      teamAdminSanitizeQueued = false;
+      sanitizeTeamAdminButtons();
+    });
+  }
+
   removeLegacyBottomNav();
   installProfileNavStyle();
+  sanitizeTeamAdminButtons();
   document.documentElement.classList.add('rp-legacy-bottom-nav-removed');
 
   // Home booking authority: SAVE MY SLOT is now an entry point into the
@@ -88,6 +120,22 @@
     if (!event.target.closest('[data-rp-simple-nav-item]')) return;
     closePublicProfileForBottomNav();
   }, true);
+
+  window.addEventListener('realplay:4v4-open', queueTeamAdminSanitize);
+  window.addEventListener('realplay:admin-render', queueTeamAdminSanitize);
+
+  const teamAdminObserver = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (!(node instanceof Element)) continue;
+        if (node.matches('.rp-4v4-team-code-admin') || node.querySelector?.('.rp-4v4-team-code-admin')) {
+          queueTeamAdminSanitize();
+          return;
+        }
+      }
+    }
+  });
+  teamAdminObserver.observe(document.documentElement, { childList: true, subtree: true });
 
   const app = document.querySelector('[data-rp-app]');
   if (!app) return;
