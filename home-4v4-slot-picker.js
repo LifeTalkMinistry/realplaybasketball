@@ -43,21 +43,22 @@
       .rp-4v4-slot-overlay[hidden]{display:none!important}
       .rp-4v4-slot-overlay{
         position:fixed;inset:0;z-index:940;
-        display:grid;align-items:end;
+        display:grid;place-items:center;
+        padding:20px 16px;
         background:rgba(0,5,12,.78);
         backdrop-filter:blur(8px);
         -webkit-backdrop-filter:blur(8px);
       }
       .rp-4v4-slot-sheet{
         width:min(100%,520px);max-height:min(88vh,720px);overflow:auto;
-        margin:0 auto;padding:18px 18px calc(24px + env(safe-area-inset-bottom));
-        border:1px solid rgba(47,216,255,.28);border-bottom:0;
-        border-radius:24px 24px 0 0;
+        margin:0;padding:18px;
+        border:1px solid rgba(47,216,255,.28);
+        border-radius:24px;
         background:
           radial-gradient(circle at 15% 0%,rgba(0,174,255,.14),transparent 32%),
           radial-gradient(circle at 88% 8%,rgba(238,38,67,.12),transparent 30%),
           linear-gradient(180deg,#07131f 0%,#02070d 100%);
-        box-shadow:0 -24px 80px rgba(0,0,0,.55);
+        box-shadow:0 24px 80px rgba(0,0,0,.55);
         color:#f4f8fb;
       }
       .rp-4v4-slot-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:24px}
@@ -82,7 +83,6 @@
       .rp-4v4-slot-option small{display:block;margin-bottom:4px;color:#70879b;font-size:.59rem;font-weight:900;letter-spacing:.15em;text-transform:uppercase}
       .rp-4v4-slot-option strong{display:block;font-size:1.03rem;letter-spacing:.035em}
       .rp-4v4-slot-arrow{color:#28ccff;font-size:1.25rem;font-weight:900}
-      .rp-4v4-slot-foot{margin:16px 2px 0;text-align:center;color:#617487;font-size:.61rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 
       .rp-4v4-team-slot{
         display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;
@@ -96,8 +96,7 @@
       .rp-4v4-team-slot-change{color:#7890a4;font-size:.57rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
 
       @media (min-width:640px){
-        .rp-4v4-slot-overlay{align-items:center;padding:24px}
-        .rp-4v4-slot-sheet{border-bottom:1px solid rgba(47,216,255,.28);border-radius:24px}
+        .rp-4v4-slot-overlay{padding:24px}
       }
     `;
     document.head.appendChild(style);
@@ -137,7 +136,6 @@
           <button class="rp-4v4-slot-close" type="button" aria-label="Close time slot picker" data-rp-4v4-slot-close>×</button>
         </header>
         <div class="rp-4v4-slot-list" data-rp-4v4-slot-list></div>
-        <p class="rp-4v4-slot-foot">Your team is chosen after your time slot.</p>
       </section>`;
 
     document.body.appendChild(slotOverlay);
