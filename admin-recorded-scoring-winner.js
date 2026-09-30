@@ -182,4 +182,9 @@
     syncWinner();
     loadRules(true);
   }, 0);
+
+  // Load the separate read-only recap enhancement without changing scoring ownership.
+  import('./admin-game-recap.js').catch((error) => {
+    console.warn('[Real Play] Game recap enhancement did not load.', error);
+  });
 })();
