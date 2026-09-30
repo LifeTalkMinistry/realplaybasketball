@@ -24,6 +24,8 @@ try {
   console.log('STAGE navigate-live');
   await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => window.__realPlayFourVFourSlotPickerInstalled === true, null, { timeout: 20000 });
+  console.log('STAGE wait-app-boot');
+  await page.waitForFunction(() => !document.documentElement.classList.contains('rp-shell-booting'), null, { timeout: 20000 });
 
   const loadedSlotScript = await page.evaluate(() =>
     [...document.scripts]
@@ -61,7 +63,6 @@ try {
     );
   }, null, { timeout: 15000 });
 
-  // Give the browser time to paint and to expose any mutation-loop regression.
   await page.waitForTimeout(1200);
 
   const firstOpen = await page.evaluate(() => {
@@ -134,8 +135,6 @@ try {
     await page.waitForFunction(() => !document.body.classList.contains('rp-4v4-static-open'));
   }
 
-  // Team Code is an optional enhancement loaded by the existing app enhancement chain.
-  // If it has loaded, verify it still owns the existing preference panel rather than altering it here.
   const regressionState = await page.evaluate(() => ({
     storage: sessionStorage.getItem('real_play_4v4_time_slot'),
     viewCount: document.querySelectorAll('.rp-4v4-static-view').length,
