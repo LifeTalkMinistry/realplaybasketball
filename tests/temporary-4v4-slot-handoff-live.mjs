@@ -23,7 +23,10 @@ await page.waitForSelector('[data-rp-home-save-slot]', { state: 'visible', timeo
 const deploy = await page.evaluate(() => document.documentElement?.dataset?.rpDeploy || '');
 const homeButtonText = String(await page.locator('[data-rp-home-save-slot]').textContent()).trim();
 
-await page.locator('[data-rp-home-save-slot]').click();
+// CI may have the public announcement takeover open. Invoke the actual DOM click
+// directly so this diagnostic exercises the slot-picker handler rather than
+// failing on an unrelated pointer-interception layer.
+await page.locator('[data-rp-home-save-slot]').evaluate((el) => el.click());
 await page.waitForSelector('.rp-4v4-slot-overlay:not([hidden])', { state: 'visible', timeout: 10000 });
 await page.waitForTimeout(600);
 
@@ -34,7 +37,7 @@ const beforeClick = await page.evaluate(() => ({
   activeSlotDisabled: Boolean(document.querySelector('[data-rp-4v4-slot="2000-2200"]')?.disabled),
 }));
 
-await page.locator('[data-rp-4v4-slot="2000-2200"]').click();
+await page.locator('[data-rp-4v4-slot="2000-2200"]').evaluate((el) => el.click());
 await page.waitForTimeout(2200);
 
 const afterClick = await page.evaluate(() => {
