@@ -134,6 +134,10 @@
       : 'FG —';
   }
 
+  function tieAwareMetric(players, singleMetric, sharedMetric) {
+    return players.length > 1 ? sharedMetric : singleMetric;
+  }
+
   function makeAward(type, title, icon, players, metric) {
     if (!players?.length) return null;
     return { type, title, icon, players, metric };
@@ -195,7 +199,11 @@
         'LETHAL SHOOTER',
         '🎯',
         lethal,
-        `${first.shooting.made}/${first.shooting.attempts} FG · ${fgText(first)}`
+        tieAwareMetric(
+          lethal,
+          `${first.shooting.made}/${first.shooting.attempts} FG · ${fgText(first)}`,
+          `${Math.round(first.shooting.fgPct * 100)}% FG EACH`
+        )
       ));
     }
 
@@ -207,7 +215,11 @@
         'BUCKET GETTER',
         '🔥',
         buckets,
-        `${first.stats.pts} PTS · ${first.shooting.made}/${first.shooting.attempts} FG`
+        tieAwareMetric(
+          buckets,
+          `${first.stats.pts} PTS · ${first.shooting.made}/${first.shooting.attempts} FG`,
+          `${first.stats.pts} PTS EACH`
+        )
       ));
     }
 
@@ -219,26 +231,48 @@
         'FLOOR GENERAL',
         '🧠',
         floor,
-        `${first.stats.ast} AST · ${first.stats.tov} TO`
+        tieAwareMetric(
+          floor,
+          `${first.stats.ast} AST · ${first.stats.tov} TO`,
+          `${first.stats.ast} AST EACH`
+        )
       ));
     }
 
     const glass = leaders(players, (player) => player.stats.reb);
     if (glass.length) {
       const first = glass[0];
-      awards.push(makeAward('glass_cleaner', 'GLASS CLEANER', '🧹', glass, `${first.stats.reb} REB`));
+      awards.push(makeAward(
+        'glass_cleaner',
+        'GLASS CLEANER',
+        '🧹',
+        glass,
+        tieAwareMetric(glass, `${first.stats.reb} REB`, `${first.stats.reb} REB EACH`)
+      ));
     }
 
     const steals = leaders(players, (player) => player.stats.stl);
     if (steals.length) {
       const first = steals[0];
-      awards.push(makeAward('pickpocket', 'PICKPOCKET', '🥷', steals, `${first.stats.stl} STL`));
+      awards.push(makeAward(
+        'pickpocket',
+        'PICKPOCKET',
+        '🥷',
+        steals,
+        tieAwareMetric(steals, `${first.stats.stl} STL`, `${first.stats.stl} STL EACH`)
+      ));
     }
 
     const blocks = leaders(players, (player) => player.stats.blk);
     if (blocks.length) {
       const first = blocks[0];
-      awards.push(makeAward('rim_protector', 'RIM PROTECTOR', '🛡️', blocks, `${first.stats.blk} BLK`));
+      awards.push(makeAward(
+        'rim_protector',
+        'RIM PROTECTOR',
+        '🛡️',
+        blocks,
+        tieAwareMetric(blocks, `${first.stats.blk} BLK`, `${first.stats.blk} BLK EACH`)
+      ));
     }
 
     return awards.filter(Boolean).slice(0, 5);
