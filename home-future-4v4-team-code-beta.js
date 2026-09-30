@@ -93,10 +93,10 @@
   }
 
   function syncLegacyPreferenceList() {
-    if (!state || !boundPanel) return;
+    if (!boundPanel) return;
     const view = boundPanel.closest('[data-rp-4v4-static-view]');
     if (typeof view?.__rpApply4v4PreferenceState === 'function') {
-      view.__rpApply4v4PreferenceState(state);
+      view.__rpApply4v4PreferenceState(state || { preferredClub: null, joinedClub: null, preferencePlayers: [] });
     }
   }
 
@@ -282,7 +282,13 @@
   }
 
   async function loadState({ silent = false } = {}) {
-    if (loading || !boundPanel || !token()) {
+    if (loading || !boundPanel) {
+      renderPanel();
+      return;
+    }
+    if (!token()) {
+      state = null;
+      syncLegacyPreferenceList();
       renderPanel();
       return;
     }
