@@ -61,10 +61,8 @@
         box-shadow:0 24px 80px rgba(0,0,0,.55);
         color:#f4f8fb;
       }
-      .rp-4v4-slot-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:24px}
-      .rp-4v4-slot-kicker{display:block;margin-bottom:7px;color:#28ccff;font-size:.66rem;font-weight:900;letter-spacing:.18em;text-transform:uppercase}
+      .rp-4v4-slot-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px}
       .rp-4v4-slot-head h2{margin:0;font-size:1.55rem;line-height:1.04;font-style:italic;letter-spacing:.01em;text-transform:uppercase}
-      .rp-4v4-slot-sub{margin:8px 0 0;color:#8193a6;font-size:.74rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
       .rp-4v4-slot-close{
         flex:0 0 42px;width:42px;height:42px;border-radius:14px;
         border:1px solid rgba(47,216,255,.25);background:#06111c;color:#dce9f3;
@@ -128,11 +126,7 @@
     slotOverlay.innerHTML = `
       <section class="rp-4v4-slot-sheet" role="dialog" aria-modal="true" aria-labelledby="rp-4v4-slot-title">
         <header class="rp-4v4-slot-head">
-          <div>
-            <span class="rp-4v4-slot-kicker">TUNE UP GAME 4V4 SEASON</span>
-            <h2 id="rp-4v4-slot-title">Choose Your Time Slot</h2>
-            <p class="rp-4v4-slot-sub">Pick when you want to play before choosing your team.</p>
-          </div>
+          <h2 id="rp-4v4-slot-title">Choose Your Time Slot</h2>
           <button class="rp-4v4-slot-close" type="button" aria-label="Close time slot picker" data-rp-4v4-slot-close>×</button>
         </header>
         <div class="rp-4v4-slot-list" data-rp-4v4-slot-list></div>
