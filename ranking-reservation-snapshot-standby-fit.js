@@ -213,16 +213,3 @@
 
   schedule();
 })();
-
-// This bootstrap file is already loaded directly by index.html. Keep the new
-// Home team-time-block feature progressive so it never becomes a boot blocker.
-(() => {
-  if (window.__realPlayHomeTeamSchedulingLoaderInstalled) return;
-  window.__realPlayHomeTeamSchedulingLoaderInstalled = true;
-  const script = document.createElement('script');
-  const version = String(document.documentElement?.dataset?.rpDeploy || Date.now());
-  script.src = `home-open-rank-team-scheduling.js?v=${encodeURIComponent(version)}`;
-  script.async = false;
-  script.addEventListener('error', () => console.warn('[Real Play] Home team scheduling enhancement did not load.'), { once: true });
-  document.head.appendChild(script);
-})();
