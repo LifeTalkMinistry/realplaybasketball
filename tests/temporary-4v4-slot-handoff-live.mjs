@@ -17,6 +17,52 @@ try {
     const NativeMutationObserver = window.MutationObserver;
     let nextId = 0;
     window.__rpMutationObserverStats = [];
+    window.__rpDomWriteStats = new Map();
+
+    const recordWrite = (kind) => {
+      const stack = String(new Error().stack || '')
+        .split('\n')
+        .slice(2, 6)
+        .join('\n');
+      const key = `${kind}\n${stack}`;
+      window.__rpDomWriteStats.set(key, (window.__rpDomWriteStats.get(key) || 0) + 1);
+    };
+
+    const wrapMethod = (proto, name, kind = name) => {
+      const native = proto?.[name];
+      if (typeof native !== 'function') return;
+      proto[name] = function (...args) {
+        recordWrite(kind);
+        return native.apply(this, args);
+      };
+    };
+
+    wrapMethod(Node.prototype, 'appendChild');
+    wrapMethod(Node.prototype, 'insertBefore');
+    wrapMethod(Node.prototype, 'removeChild');
+    wrapMethod(Node.prototype, 'replaceChild');
+    wrapMethod(Element.prototype, 'replaceChildren');
+    wrapMethod(Element.prototype, 'insertAdjacentHTML');
+    wrapMethod(Element.prototype, 'insertAdjacentElement');
+    wrapMethod(Element.prototype, 'remove');
+
+    const wrapSetter = (proto, name) => {
+      const descriptor = Object.getOwnPropertyDescriptor(proto, name);
+      if (!descriptor?.set || !descriptor?.get) return;
+      Object.defineProperty(proto, name, {
+        configurable: descriptor.configurable,
+        enumerable: descriptor.enumerable,
+        get: descriptor.get,
+        set(value) {
+          recordWrite(`${name}=`);
+          return descriptor.set.call(this, value);
+        },
+      });
+    };
+
+    wrapSetter(Node.prototype, 'textContent');
+    wrapSetter(Element.prototype, 'innerHTML');
+    wrapSetter(Element.prototype, 'outerHTML');
 
     window.MutationObserver = class RealPlayDiagnosticMutationObserver extends NativeMutationObserver {
       constructor(callback) {
@@ -33,30 +79,15 @@ try {
         super((records, observer) => {
           stat.callbacks += 1;
           stat.records += records.length;
-          if (stat.callbacks === 100 || stat.callbacks === 200) {
-            console.error(`RP_OBSERVER_HOT #${id} callbacks=${stat.callbacks} records=${stat.records}\n${stat.stack}`);
-          }
           if (stat.callbacks > 250) {
             stat.disconnectedByDiagnostic = true;
             observer.disconnect();
-            console.error(`RP_OBSERVER_DISCONNECTED #${id}\n${stat.stack}`);
             return;
           }
           callback(records, observer);
         });
       }
     };
-  });
-
-  const errors = [];
-  const consoleErrors = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  page.on('console', (message) => {
-    const text = message.text();
-    if (message.type() === 'error') {
-      consoleErrors.push(text);
-      if (text.includes('RP_OBSERVER_')) console.log(text);
-    }
   });
 
   console.log('STAGE navigate');
@@ -84,16 +115,21 @@ try {
       overlay.hidden = false;
       document.body.classList.add('rp-4v4-slot-picker-open');
     }
+    window.__rpDomWriteStats.clear();
   });
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(250);
 
   console.log('STAGE choose-active-slot');
   await page.locator('[data-rp-4v4-slot="2000-2200"]').evaluate((el) => el.click());
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(1000);
 
   const report = await page.evaluate(() => {
     const view = document.querySelector('.rp-4v4-static-view');
     const style = view ? getComputedStyle(view) : null;
+    const topWrites = [...window.__rpDomWriteStats.entries()]
+      .map(([stack, count]) => ({ count, stack }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 25);
     return {
       storage: sessionStorage.getItem('real_play_4v4_time_slot'),
       cleanupInstalled: window.__realPlayFuture4v4CardCleanupInstalled === true,
@@ -104,14 +140,15 @@ try {
       heading: view?.querySelector('.rp-3v3-select-head h1')?.textContent?.trim() || null,
       display: style?.display || null,
       position: style?.position || null,
-      observerStats: window.__rpMutationObserverStats,
+      topWrites,
+      observerStats: window.__rpMutationObserverStats
+        .filter((item) => item.callbacks >= 20)
+        .sort((a, b) => b.callbacks - a.callbacks)
+        .slice(0, 25),
     };
   });
 
   console.log('LIVE_REPORT ' + JSON.stringify(report));
-  console.log('PAGE_ERRORS ' + JSON.stringify(errors));
-  console.log('CONSOLE_ERRORS ' + JSON.stringify(consoleErrors.filter((item) => !item.includes('RP_OBSERVER_'))));
-
   await browser.close();
   clearTimeout(hardStop);
   process.exit(0);
