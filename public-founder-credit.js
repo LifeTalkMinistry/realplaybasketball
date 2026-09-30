@@ -30,7 +30,7 @@
   if (!document.querySelector('script[data-rp-4v4-slot-picker-loader]')) {
     const script = document.createElement('script');
     const deploy = document.documentElement.dataset.rpDeploy || '4v4-slot-picker-v1';
-    script.dataset.rp4v4SlotPickerLoader = 'true';
+    script.setAttribute('data-rp-4v4-slot-picker-loader', 'true');
     script.src = `home-4v4-slot-picker.js?v=${encodeURIComponent(deploy)}`;
     document.head.appendChild(script);
   }
