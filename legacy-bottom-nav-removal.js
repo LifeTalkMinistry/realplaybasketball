@@ -99,10 +99,9 @@
     });
   }
 
-  // Close the Team Code modal without depending on the modal's own bubble
-  // listener. Some app-level click handlers can intercept the normal click
-  // before it reaches the CANCEL/CLOSE button, so handle the pointer at the
-  // document capture phase and remove the modal contents immediately.
+  // Close the Team Code modal before document-level capture handlers can
+  // consume the pointer/click. The app already has capture handlers that use
+  // stopImmediatePropagation(), so this guard must run at window capture.
   function closeTeamCodeDialog() {
     const dialog = document.querySelector('[data-rp-4v4-team-code-dialog]');
     if (!dialog) return false;
@@ -137,10 +136,10 @@
     openTeamSecuring();
   }, true);
 
-  // Pointer capture makes CANCEL/CLOSE reliable on both mouse and touch even
-  // when another app-level click handler would otherwise swallow the click.
-  document.addEventListener('pointerdown', handleTeamCodeClose, true);
-  document.addEventListener('click', handleTeamCodeClose, true);
+  // Window capture runs before document capture, so CANCEL/CLOSE cannot be
+  // swallowed by another document-level stopImmediatePropagation() handler.
+  window.addEventListener('pointerdown', handleTeamCodeClose, true);
+  window.addEventListener('click', handleTeamCodeClose, true);
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     closeTeamCodeDialog();
