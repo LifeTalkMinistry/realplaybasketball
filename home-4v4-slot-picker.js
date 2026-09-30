@@ -4,7 +4,7 @@
 
   const loadSlotPicker = () => {
     const script = document.createElement('script');
-    script.src = 'home-4v4-slot-picker-dynamic-v2.js?v=20260930-admin-time-blocks-v3';
+    script.src = 'home-4v4-slot-picker-dynamic-v2.js?v=20260930-admin-time-blocks-v4';
     script.async = false;
     script.addEventListener('load', () => {
       const headerScript = document.createElement('script');
@@ -18,8 +18,13 @@
     document.head.appendChild(script);
   };
 
+  if (window.__realPlayFourVFourLegacyScheduleFallbackInstalled === true) {
+    loadSlotPicker();
+    return;
+  }
+
   const fallback = document.createElement('script');
-  fallback.src = 'home-4v4-slot-picker-legacy-schedule-fallback.js?v=20260930-legacy-home-slot-v1';
+  fallback.src = 'home-4v4-slot-picker-legacy-schedule-fallback.js?v=20260930-admin-slot-hydration-v2';
   fallback.async = false;
   fallback.addEventListener('load', loadSlotPicker, { once: true });
   fallback.addEventListener('error', () => {
