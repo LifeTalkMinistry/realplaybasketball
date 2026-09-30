@@ -70,7 +70,7 @@
 
     loading = true;
     const script = document.createElement('script');
-    const version = String(document.documentElement?.dataset?.rpDeploy || '20260930-4v4-team-code-x-close-v140').trim();
+    const version = String(document.documentElement?.dataset?.rpDeploy || '20260930-4v4-control-wiring-v141').trim();
     script.src = `home-future-4v4-team-code-beta.js?v=${encodeURIComponent(version)}`;
     script.async = false;
     script.onload = () => { loading = false; };
