@@ -1,0 +1,112 @@
+name: Temporary 4v4 Control Attribute Wiring
+
+on:
+  push:
+    branches:
+      - fix/4v4-control-attribute-wiring
+    paths:
+      - .github/workflows/temporary-4v4-control-attribute-wiring.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/4v4-control-attribute-wiring
+          fetch-depth: 0
+
+      - name: Fix 4v4 control attribute wiring
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          deploy_old = '20260930-4v4-team-code-x-close-v140'
+          deploy_new = '20260930-4v4-control-wiring-v141'
+
+          js_path = Path('home-future-4v4-team-code-beta.js')
+          js = js_path.read_text()
+
+          replacements = [
+              ("button.dataset.rp4v4TeamCodeAdmin = '';", "button.setAttribute('data-rp-4v4-team-code-admin', '');"),
+              ("dialog.dataset.rp4v4TeamCodeDialog = '';", "dialog.setAttribute('data-rp-4v4-team-code-dialog', '');"),
+          ]
+          for old, new in replacements:
+              if old not in js:
+                  raise SystemExit(f'Expected source wiring not found: {old}')
+              js = js.replace(old, new, 1)
+
+          # Repair the literal backslash-n sequences introduced with the X-button CSS.
+          js = js.replace('}\\n      .rp-4v4-team-code-close{', '}\n      .rp-4v4-team-code-close{', 1)
+          js = js.replace('}\\n      .rp-4v4-team-code-close:hover{', '}\n      .rp-4v4-team-code-close:hover{', 1)
+          js = js.replace('}\\n      .rp-4v4-team-code-close:active{', '}\n      .rp-4v4-team-code-close:active{', 1)
+          js_path.write_text(js)
+
+          legacy_path = Path('legacy-bottom-nav-removal.js')
+          legacy = legacy_path.read_text()
+          pointer_line = "  window.addEventListener('pointerdown', handleTeamCodeClose, true);\n"
+          if pointer_line not in legacy:
+              raise SystemExit('Expected Team Code pointerdown close guard not found')
+          legacy = legacy.replace(pointer_line, '', 1)
+          legacy = legacy.replace(
+              '// Close the Team Code modal before document-level capture handlers can\n  // consume the pointer/click.',
+              '// Close the Team Code modal before document-level capture handlers can\n  // consume the click.',
+              1,
+          )
+          legacy_path.write_text(legacy)
+
+          index_path = Path('index.html')
+          index = index_path.read_text()
+          if deploy_old not in index:
+              raise SystemExit('Expected deploy id not found in index.html')
+          index_path.write_text(index.replace(deploy_old, deploy_new, 1))
+
+          loader_path = Path('login-landing-fix.js')
+          loader = loader_path.read_text()
+          if deploy_old not in loader:
+              raise SystemExit('Expected deploy fallback not found in login-landing-fix.js')
+          loader_path.write_text(loader.replace(deploy_old, deploy_new, 1))
+          PY
+
+      - name: Verify exact wiring fix
+        shell: bash
+        run: |
+          git diff --check
+          node --check home-future-4v4-team-code-beta.js
+          node --check legacy-bottom-nav-removal.js
+          grep -Fq "button.setAttribute('data-rp-4v4-team-code-admin', '');" home-future-4v4-team-code-beta.js
+          grep -Fq "dialog.setAttribute('data-rp-4v4-team-code-dialog', '');" home-future-4v4-team-code-beta.js
+          grep -Fq "document.querySelector('[data-rp-4v4-team-code-dialog]')" home-future-4v4-team-code-beta.js
+          grep -Fq "event.target.closest?.('[data-rp-4v4-team-code-admin]')" home-future-4v4-team-code-beta.js
+          grep -Fq '20260930-4v4-control-wiring-v141' index.html
+          grep -Fq '20260930-4v4-control-wiring-v141' login-landing-fix.js
+          if grep -Fq "dataset.rp4v4TeamCodeAdmin" home-future-4v4-team-code-beta.js; then
+            echo 'Old admin attribute creation remains' >&2
+            exit 1
+          fi
+          if grep -Fq "dataset.rp4v4TeamCodeDialog" home-future-4v4-team-code-beta.js; then
+            echo 'Old dialog attribute creation remains' >&2
+            exit 1
+          fi
+          if grep -Fq "window.addEventListener('pointerdown', handleTeamCodeClose, true);" legacy-bottom-nav-removal.js; then
+            echo 'Pointerdown close guard remains' >&2
+            exit 1
+          fi
+          if grep -Fq '\\n      .rp-4v4-team-code-close' home-future-4v4-team-code-beta.js; then
+            echo 'Literal backslash-n remains in X CSS' >&2
+            exit 1
+          fi
+          git diff -- home-future-4v4-team-code-beta.js legacy-bottom-nav-removal.js index.html login-landing-fix.js
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name 'LifeTalk Ministry'
+          git config user.email '96472293+LifeTalkMinistry@users.noreply.github.com'
+          git add home-future-4v4-team-code-beta.js legacy-bottom-nav-removal.js index.html login-landing-fix.js
+          git commit -m 'Fix 4v4 modal and admin control wiring'
+          git push origin HEAD:fix/4v4-control-attribute-wiring
