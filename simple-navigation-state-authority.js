@@ -5,8 +5,7 @@
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
   const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
-  const CURRENT_RANKING_ACCESS_URL = `${API_BASE_URL}/api/real-play/career/access`;
-  const PUBLIC_RANKING_ACCESS_URL = `${API_BASE_URL}/api/real-play/public/career/access`;
+  const PUBLIC_4V4_AVAILABILITY_URL = `${API_BASE_URL}/api/real-play/4v4/public`;
   const HOME_REFRESH_MIN_MS = 15_000;
   const HOME_RATE_LIMIT_BACKOFF_MS = 60_000;
   let enforcing = false;
@@ -15,7 +14,7 @@
   let homeLoading = false;
   let lastHomeRefreshAt = 0;
   let homeRefreshBlockedUntil = 0;
-  let configuredHomeCapacity = 16;
+  let configuredHomeCapacity = 4;
   let availabilityRequestId = 0;
   let hasOpenRankAvailability = false;
   const observedAuthorityTargets = new WeakSet();
@@ -130,8 +129,7 @@
   function isHomeScheduleOverride(update) {
     if (!update || update.category !== 'schedule') return false;
     if (update.source_key || update.sourceKey) return false;
-    if (scheduleType(update) !== 'open-rank') return false;
-    return /\bPLAYER\s+CAP\b/i.test(String(update.body || ''));
+    return /^\s*ENDS\s+.+?\s*·\s*\d{1,3}\s+(?:TEAM|PLAYER)\s+CAP\s*$/i.test(String(update.body || ''));
   }
 
   function homeRoot() {
@@ -189,7 +187,7 @@
         <div class="rp-home-session-copy">
           <strong data-rp-home-open-rank-title>SUNDAY OPEN RANKING</strong>
           <p data-rp-home-open-rank-meta>EVERY SUNDAY · 8:00 PM – 11:00 PM</p>
-          <span class="rp-home-spots-left" data-rp-home-open-rank-capacity>16 PLAYER CAP</span>
+          <span class="rp-home-spots-left" data-rp-home-open-rank-capacity>4 TEAM CAP</span>
         </div>
         <button class="rp-home-save-slot" type="button" data-rp-home-save-slot>SAVE MY SLOT</button>
       </section>
@@ -250,17 +248,23 @@
   }
 
   function parseOpenRankCapacity(update) {
+    const body = String(update?.body || '');
+    const teamCap = Number(body.match(/\b(\d{1,2})\s+TEAM\s+CAP\b/i)?.[1]);
+    if (Number.isFinite(teamCap) && teamCap > 0) return Math.min(4, Math.round(teamCap));
+
+    const legacyPlayerCap = Number(body.match(/\b(\d{1,3})\s+PLAYER\s+CAP\b/i)?.[1]);
+    if (Number.isFinite(legacyPlayerCap) && legacyPlayerCap > 0) return Math.min(4, Math.ceil(legacyPlayerCap / 4));
+
     const metadata = update?.metadata || {};
     const directCap = Number(metadata.capacity ?? update?.capacity);
-    if (Number.isFinite(directCap) && directCap > 0) return Math.round(directCap);
-    const bodyCap = Number(String(update?.body || '').match(/\b(\d{1,3})\s+PLAYER\s+CAP\b/i)?.[1]);
-    return Number.isFinite(bodyCap) && bodyCap > 0 ? Math.round(bodyCap) : 16;
+    if (Number.isFinite(directCap) && directCap > 0) return Math.min(4, Math.round(directCap));
+    return 4;
   }
 
   function renderConfiguredOpenRankCapacity({ force = false } = {}) {
     const node = homeRoot()?.querySelector('[data-rp-home-open-rank-capacity]');
     if (!node || (!force && hasOpenRankAvailability)) return;
-    const nextText = `${configuredHomeCapacity} PLAYER CAP`;
+    const nextText = `${configuredHomeCapacity} TEAM CAP`;
     if (node.textContent !== nextText) node.textContent = nextText;
   }
 
@@ -273,20 +277,18 @@
     const node = homeRoot()?.querySelector('[data-rp-home-open-rank-capacity]');
     if (!node || !state || typeof state !== 'object') return false;
 
-    const session = state?.session;
-    const counts = state?.counts || {};
-    if (!session || typeof session !== 'object') return false;
+    const teamStates = Array.isArray(state.teamStates) ? state.teamStates : [];
+    if (!teamStates.length) return false;
 
-    const capacityRaw = Number(session.capacity);
-    const capacity = Number.isFinite(capacityRaw) && capacityRaw > 0 ? Math.trunc(capacityRaw) : 0;
-    if (!capacity) return false;
-
-    const secured = count(counts.secured);
-    const standby = count(counts.standby);
-    const mainStandby = Math.min(standby, Math.max(capacity - secured, 0));
-    const filled = Math.min(capacity, secured + mainStandby);
-    const spotsLeft = Math.max(0, capacity - filled);
-    const nextText = `${spotsLeft} ${spotsLeft === 1 ? 'SPOT' : 'SPOTS'} LEFT`;
+    const teamCap = Math.max(1, Math.min(4, Math.trunc(Number(configuredHomeCapacity) || 4)));
+    const occupiedTeams = Math.min(
+      teamCap,
+      teamStates.filter((team) => String(team?.status || '').toLowerCase() === 'secured').length,
+    );
+    const teamsLeft = Math.max(0, teamCap - occupiedTeams);
+    const nextText = teamsLeft === 0
+      ? 'FULL'
+      : `${teamsLeft} ${teamsLeft === 1 ? 'TEAM' : 'TEAMS'} LEFT`;
 
     hasOpenRankAvailability = true;
     if (node.textContent !== nextText) node.textContent = nextText;
@@ -295,21 +297,16 @@
 
   async function refreshOpenRankAvailability() {
     const requestId = ++availabilityRequestId;
-    const auth = localStorage.getItem(TOKEN_KEY) || '';
     const node = homeRoot()?.querySelector('[data-rp-home-open-rank-capacity]');
     if (!node) return;
 
-    const endpoint = auth ? CURRENT_RANKING_ACCESS_URL : PUBLIC_RANKING_ACCESS_URL;
-    const headers = { Accept: 'application/json' };
-    if (auth) headers.Authorization = `Bearer ${auth}`;
-
     try {
-      const response = await fetch(endpoint, {
-        headers,
+      const response = await fetch(PUBLIC_4V4_AVAILABILITY_URL, {
+        headers: { Accept: 'application/json' },
         cache: 'no-store',
       });
       if (requestId !== availabilityRequestId) return;
-      if (!response.ok) throw new Error(`Could not load current Ranking access (${response.status}).`);
+      if (!response.ok) throw new Error(`Could not load current 4v4 team availability (${response.status}).`);
 
       const data = await response.json().catch(() => ({}));
       if (requestId !== availabilityRequestId) return;
@@ -332,7 +329,7 @@
     const meta = root.querySelector('[data-rp-home-open-rank-meta]');
 
     if (!update) {
-      configuredHomeCapacity = 16;
+      configuredHomeCapacity = 4;
       if (title) title.textContent = 'SUNDAY OPEN RANKING';
       if (meta) meta.textContent = 'EVERY SUNDAY · 8:00 PM – 11:00 PM';
       renderConfiguredOpenRankCapacity();

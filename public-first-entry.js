@@ -2,7 +2,7 @@
   const TOKEN_KEY = 'real_play_access_token';
   const VISITOR_KEY = 'real_play_visitor_mode';
   const HOME_PUBLIC_UPDATES_PATH = '/api/real-play/public/updates';
-  const HOME_RANKING_ACCESS_PATH = '/api/real-play/career/access';
+  const HOME_RANKING_ACCESS_PATH = '/api/real-play/4v4/public';
 
   // Keep the same Real Play loading screen in place after the core shell mounts
   // until the initial Home authority has actually settled the data visible on
@@ -158,7 +158,7 @@
   if (!window.__realPlayHomeScheduleLoaderInstalled) {
     window.__realPlayHomeScheduleLoaderInstalled = true;
     const script = document.createElement('script');
-    script.src = 'home-open-rank-admin-edit.js?v=20260930-home-card-editable-title-v142';
+    script.src = 'home-open-rank-admin-edit.js?v=20260930-team-cap-home-availability-v143';
     script.async = false;
     script.onerror = () => console.warn('[Real Play] Home schedule editor failed to load.');
     document.head.appendChild(script);

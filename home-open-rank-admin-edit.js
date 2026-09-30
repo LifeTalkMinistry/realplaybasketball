@@ -61,16 +61,23 @@
     const id = Number(update.id);
     if (!Number.isSafeInteger(id) || id <= 0) return false;
     if (update.source_key || update.sourceKey) return false;
-    return /^\s*ENDS\s+.+?\s*·\s*\d{1,3}\s+PLAYER\s+CAP\s*$/i.test(String(update.body || ''));
+    return /^\s*ENDS\s+.+?\s*·\s*\d{1,3}\s+(?:TEAM|PLAYER)\s+CAP\s*$/i.test(String(update.body || ''));
   }
 
   function parseCapacity(update) {
+    const body = String(update?.body || '');
+    const teamCap = Number(body.match(/\b(\d{1,2})\s+TEAM\s+CAP\b/i)?.[1]);
+    if (Number.isFinite(teamCap) && teamCap > 0) return Math.min(4, Math.round(teamCap));
+
+    // Legacy Home schedules stored individual player capacity. For current 4v4,
+    // translate 16 PLAYER CAP into 4 TEAM CAP.
+    const playerCap = Number(body.match(/\b(\d{1,3})\s+PLAYER\s+CAP\b/i)?.[1]);
+    if (Number.isFinite(playerCap) && playerCap > 0) return Math.min(4, Math.ceil(playerCap / 4));
+
     const metadata = update?.metadata || {};
     const direct = Number(metadata.capacity ?? update?.capacity);
-    if (Number.isFinite(direct) && direct > 0) return Math.round(direct);
-    const match = String(update?.body || '').match(/\b(\d{1,3})\s+PLAYER\s+CAP\b/i);
-    const parsed = Number(match?.[1]);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 16;
+    if (Number.isFinite(direct) && direct > 0) return Math.min(4, Math.round(direct));
+    return 4;
   }
 
   function parseEndLabel(update) {
@@ -256,7 +263,7 @@
           <label>Date & start time<input name="startsAt" type="datetime-local" required></label>
           <div class="rp-home-open-rank-edit-grid">
             <label>End time<input name="endsAt" type="time" required></label>
-            <label>Player cap<input name="capacity" type="number" min="1" max="500" inputmode="numeric" required></label>
+            <label>Team cap<input name="capacity" type="number" min="1" max="4" inputmode="numeric" required></label>
           </div>
           <label>Court / location<input name="locationName" type="text" maxlength="180" placeholder="Optional"></label>
           <p class="rp-home-open-rank-edit-status" data-rp-home-open-rank-edit-status></p>
@@ -353,7 +360,7 @@
     if (!eventAt || Number.isNaN(eventDate.getTime())) return editorStatus('Choose a valid date and start time.', true);
     if (eventDate.getTime() < Date.now() - 60_000) return editorStatus('Choose a current or future session time.', true);
     if (!/^\d{2}:\d{2}$/.test(endsAt)) return editorStatus('Choose a valid end time.', true);
-    if (!Number.isFinite(capacity) || capacity < 1 || capacity > 500) return editorStatus('Player cap must be between 1 and 500.', true);
+    if (!Number.isFinite(capacity) || capacity < 1 || capacity > 4) return editorStatus('Team cap must be between 1 and 4.', true);
 
     setEditorBusy(true);
     editorStatus('Saving Home schedule…');
@@ -364,7 +371,7 @@
         action: 'publish',
         category: 'schedule',
         title,
-        body: `ENDS ${formatEndTimeFrom24(endsAt)} · ${Math.round(capacity)} PLAYER CAP`,
+        body: `ENDS ${formatEndTimeFrom24(endsAt)} · ${Math.round(capacity)} TEAM CAP`,
         eventAt,
         locationName,
         pinned: true,
