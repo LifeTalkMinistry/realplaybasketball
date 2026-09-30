@@ -2,12 +2,15 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const APP_URL = 'https://joinrealplay.com/';
-let browser;
+const hardStop = setTimeout(() => {
+  console.error('DIAGNOSTIC_HARD_TIMEOUT');
+  process.exit(124);
+}, 60000);
 let report;
 
 try {
   console.log('STAGE launch');
-  browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
@@ -46,6 +49,7 @@ try {
     cleanupScripts: [...document.querySelectorAll('script[src*="home-future-4v4-card-cleanup.js"]')].map((script) => script.src),
     activeSlotExists: Boolean(document.querySelector('[data-rp-4v4-slot="2000-2200"]')),
     activeSlotDisabled: Boolean(document.querySelector('[data-rp-4v4-slot="2000-2200"]')?.disabled),
+    baseViewStyleLoaded: [...document.styleSheets].some((sheet) => String(sheet.href || '').includes('three-v-three-beta.css')),
   }));
 
   console.log('STAGE choose-active-slot');
@@ -62,6 +66,7 @@ try {
       cleanupInstalled: window.__realPlayFuture4v4CardCleanupInstalled === true,
       previewInstalled: window.__realPlayFuture4v4PreviewInstalled === true,
       cleanupScripts: [...document.querySelectorAll('script[src*="home-future-4v4-card-cleanup.js"]')].map((script) => script.src),
+      baseViewStyleLoaded: [...document.styleSheets].some((sheet) => String(sheet.href || '').includes('three-v-three-beta.css')),
       viewExists: Boolean(view),
       viewOpen: Boolean(view?.classList.contains('open')),
       ariaHidden: view?.getAttribute('aria-hidden') ?? null,
@@ -77,20 +82,28 @@ try {
 
   report = { deploy, hadRealHomeButton, cleanupRequests, beforeClick, afterClick, pageErrors: errors, consoleErrors };
   console.log('LIVE_REPORT ' + JSON.stringify(report));
-} catch (error) {
-  console.error('DIAGNOSTIC_FAILURE', error?.stack || error);
-  throw error;
-} finally {
-  if (browser) await browser.close().catch(() => {});
-}
 
-const { afterClick, pageErrors } = report;
-assert.match(afterClick.storage || '', /2000-2200/, 'Selected slot was not stored.');
-assert.equal(afterClick.overlayHidden, true, 'Slot picker did not close.');
-assert.equal(afterClick.cleanupInstalled, true, '4v4 cleanup runtime did not install.');
-assert.equal(afterClick.viewExists, true, '4v4 static view does not exist after slot selection.');
-assert.equal(afterClick.viewOpen, true, '4v4 static view exists but is not open.');
-assert.equal(afterClick.ariaHidden, 'false', '4v4 static view aria-hidden is not false.');
-assert.equal(afterClick.bodyOpen, true, 'body.rp-4v4-static-open is missing.');
-assert.equal(afterClick.selectedTeamHeading, 'SELECT YOUR TEAM.', 'SELECT YOUR TEAM heading is not present.');
-assert.equal(pageErrors.length, 0, `Page errors: ${pageErrors.join(' | ')}`);
+  assert.match(afterClick.storage || '', /2000-2200/, 'Selected slot was not stored.');
+  assert.equal(afterClick.overlayHidden, true, 'Slot picker did not close.');
+  assert.equal(afterClick.cleanupInstalled, true, '4v4 cleanup runtime did not install.');
+  assert.equal(afterClick.baseViewStyleLoaded, true, 'Base team-screen stylesheet is not loaded.');
+  assert.equal(afterClick.viewExists, true, '4v4 static view does not exist after slot selection.');
+  assert.equal(afterClick.viewOpen, true, '4v4 static view exists but is not open.');
+  assert.equal(afterClick.ariaHidden, 'false', '4v4 static view aria-hidden is not false.');
+  assert.equal(afterClick.bodyOpen, true, 'body.rp-4v4-static-open is missing.');
+  assert.equal(afterClick.selectedTeamHeading, 'SELECT YOUR TEAM.', 'SELECT YOUR TEAM heading is not present.');
+  assert.equal(afterClick.viewDisplay, 'block', '4v4 view is not rendered as display:block.');
+  assert.equal(afterClick.viewPosition, 'fixed', '4v4 view is not fixed over Home.');
+  assert.equal(afterClick.viewVisibility, 'visible', '4v4 view is not visible.');
+  assert.equal(afterClick.viewOpacity, '1', '4v4 view is not fully opaque.');
+  assert.equal(errors.length, 0, `Page errors: ${errors.join(' | ')}`);
+
+  clearTimeout(hardStop);
+  console.log('LIVE_RESULT PASS');
+  process.exit(0);
+} catch (error) {
+  clearTimeout(hardStop);
+  console.error('DIAGNOSTIC_FAILURE', error?.stack || error);
+  if (report) console.error('LIVE_REPORT_FAILURE ' + JSON.stringify(report));
+  process.exit(1);
+}
