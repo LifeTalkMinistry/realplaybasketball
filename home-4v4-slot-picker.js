@@ -217,7 +217,7 @@
       banner = document.createElement('button');
       banner.type = 'button';
       banner.className = 'rp-4v4-team-slot';
-      banner.dataset.rp4v4TeamSlot = 'true';
+      banner.setAttribute('data-rp-4v4-team-slot', 'true');
       banner.addEventListener('click', openSlotPicker);
       banner.innerHTML = `
         <span class="rp-4v4-team-slot-copy"><small>YOUR TIME SLOT</small><strong>${selected.label}</strong></span>
