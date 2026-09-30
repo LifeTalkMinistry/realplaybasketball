@@ -99,6 +99,27 @@
     });
   }
 
+  // Close the Team Code modal without depending on the modal's own bubble
+  // listener. Some app-level click handlers can intercept the normal click
+  // before it reaches the CANCEL/CLOSE button, so handle the pointer at the
+  // document capture phase and remove the modal contents immediately.
+  function closeTeamCodeDialog() {
+    const dialog = document.querySelector('[data-rp-4v4-team-code-dialog]');
+    if (!dialog) return false;
+    dialog.hidden = true;
+    dialog.innerHTML = '';
+    return true;
+  }
+
+  function handleTeamCodeClose(event) {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target?.closest('[data-rp-4v4-code-close]')) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    closeTeamCodeDialog();
+  }
+
   removeLegacyBottomNav();
   installProfileNavStyle();
   sanitizeTeamAdminButtons();
@@ -114,6 +135,15 @@
     event.stopPropagation();
     event.stopImmediatePropagation();
     openTeamSecuring();
+  }, true);
+
+  // Pointer capture makes CANCEL/CLOSE reliable on both mouse and touch even
+  // when another app-level click handler would otherwise swallow the click.
+  document.addEventListener('pointerdown', handleTeamCodeClose, true);
+  document.addEventListener('click', handleTeamCodeClose, true);
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    closeTeamCodeDialog();
   }, true);
 
   document.addEventListener('click', (event) => {
