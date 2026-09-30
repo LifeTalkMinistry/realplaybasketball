@@ -13,6 +13,7 @@
   let slotOverlay = null;
   let observer = null;
   let selectedSlotMemory = null;
+  let currentFourVFourRuntimeRequested = false;
 
   function getSelectedSlot() {
     if (selectedSlotMemory) return selectedSlotMemory;
@@ -34,6 +35,23 @@
     } catch (_error) {
       // Keep the current selection in memory when sessionStorage is unavailable.
     }
+  }
+
+  function requestCurrentFourVFourRuntime() {
+    if (window.__realPlayFuture4v4CardCleanupInstalled === true || currentFourVFourRuntimeRequested) return;
+
+    currentFourVFourRuntimeRequested = true;
+    const script = document.createElement('script');
+    const deployId = String(document.documentElement?.dataset?.rpDeploy || '').trim();
+    script.src = `home-future-4v4-card-cleanup.js${deployId ? `?v=${encodeURIComponent(deployId)}` : ''}`;
+    script.async = false;
+    script.addEventListener('load', () => {
+      if (window.__realPlayFuture4v4CardCleanupInstalled !== true) currentFourVFourRuntimeRequested = false;
+    }, { once: true });
+    script.addEventListener('error', () => {
+      currentFourVFourRuntimeRequested = false;
+    }, { once: true });
+    document.head.appendChild(script);
   }
 
   function ensureStyles() {
@@ -172,6 +190,7 @@
   }
 
   function openSlotPicker() {
+    requestCurrentFourVFourRuntime();
     ensureStyles();
     renderSlotOptions();
     const overlay = ensureOverlay();
@@ -218,6 +237,8 @@
       ensureTeamSlotBanner();
       return true;
     }
+
+    requestCurrentFourVFourRuntime();
 
     // The current 4v4 screen is owned by home-future-4v4-card-cleanup.js.
     // Its document-level click handler only needs an .rp-home-4v4-explore target,
