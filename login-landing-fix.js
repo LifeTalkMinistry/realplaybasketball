@@ -57,3 +57,17 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 })();
+
+(() => {
+  if (window.__realPlay4v4TeamCodeBetaLoaderInstalled) return;
+  window.__realPlay4v4TeamCodeBetaLoaderInstalled = true;
+
+  if ([...document.scripts].some((script) => String(script.src || '').includes('home-future-4v4-team-code-beta.js'))) return;
+
+  const script = document.createElement('script');
+  const version = String(document.documentElement?.dataset?.rpDeploy || Date.now());
+  script.src = `home-future-4v4-team-code-beta.js?v=${encodeURIComponent(version)}`;
+  script.async = false;
+  script.onerror = () => console.error('[Real Play] 4v4 team-code Beta UI failed to load.');
+  document.head.appendChild(script);
+})();
