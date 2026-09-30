@@ -164,7 +164,8 @@
 
     list.querySelectorAll('[data-rp-4v4-slot]').forEach((button) => {
       button.addEventListener('click', () => {
-        const slot = SLOTS.find((item) => item.id === button.dataset.rp4v4Slot);
+        const slotId = button.getAttribute('data-rp-4v4-slot');
+        const slot = SLOTS.find((item) => item.id === slotId);
         if (slot?.active) chooseSlot(slot);
       });
     });
