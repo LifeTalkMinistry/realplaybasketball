@@ -1,0 +1,1 @@
+Team rotation branch is ready for CI review. Main remains on the safe pre-rotation commit until validation completes.
