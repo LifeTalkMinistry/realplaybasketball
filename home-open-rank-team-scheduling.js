@@ -2,6 +2,15 @@
   if (window.__realPlayHomeTeamSchedulingV4LoaderInstalled) return;
   window.__realPlayHomeTeamSchedulingV4LoaderInstalled = true;
 
+  const repairRotationNoteHook = () => {
+    document.querySelectorAll('[data-rp-home-team-schedule-open-note]').forEach((node) => {
+      if (!node.hasAttribute('data-rp-team-schedule-open-note')) node.setAttribute('data-rp-team-schedule-open-note', '');
+    });
+  };
+  const repairObserver = new MutationObserver(repairRotationNoteHook);
+  repairObserver.observe(document.documentElement, { childList: true, subtree: true });
+  window.setTimeout(() => repairObserver.disconnect(), 15000);
+
   const loadPremiumCards = () => {
     if (document.querySelector('script[data-rp-home-team-premium-cards-loader]')) return;
     const polish = document.createElement('script');
@@ -28,9 +37,10 @@
 
   const loadScheduler = () => {
     const script = document.createElement('script');
-    script.src = 'home-open-rank-team-scheduling-v4.js?v=20261001-team-schedule-rotation-v1';
+    script.src = 'home-open-rank-team-scheduling-v4.js?v=20261001-team-schedule-rotation-v2';
     script.async = false;
     script.addEventListener('load', () => {
+      repairRotationNoteHook();
       loadAssignedSessionWindow();
       loadPremiumCards();
     }, { once: true });
