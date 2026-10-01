@@ -9,18 +9,20 @@
   document.head.appendChild(compactHomeCardStyles);
 
   const loadRotationPicker = () => {
+    if (document.querySelector('script[data-rp-team-rotation-picker-loader]')) return;
     const script = document.createElement('script');
-    script.src = 'home-4v4-team-schedule-rotation.js?v=20261001-team-schedule-rotation-v1';
+    script.dataset.rpTeamRotationPickerLoader = '1';
+    script.src = 'home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v3';
     script.async = false;
     script.addEventListener('load', () => {
+      if (document.querySelector('script[data-rp-4v4-slot-header-loader]')) return;
       const headerScript = document.createElement('script');
+      headerScript.dataset.rp4v4SlotHeaderLoader = '1';
       headerScript.src = 'home-4v4-slot-header.js?v=20260930-slot-header-v1';
       headerScript.async = false;
       document.head.appendChild(headerScript);
     }, { once: true });
-    script.addEventListener('error', () => {
-      console.warn('[Real Play] Team schedule rotation picker did not load.');
-    }, { once: true });
+    script.addEventListener('error', () => console.warn('[Real Play] Team schedule rotation picker did not load.'), { once: true });
     document.head.appendChild(script);
   };
 
