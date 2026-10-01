@@ -3,6 +3,7 @@
   window.__realPlay4v4RotationCleanUiInstalled = true;
 
   const HOME_META = 'SAT + SUN · 8:00 PM – 10:00 PM';
+  const TEAM_TITLE = 'SELECT YOUR TEAM';
   let queued = false;
 
   function installStyles() {
@@ -33,6 +34,9 @@
         margin:0!important;
         flex:0 0 auto!important;
       }
+      body .rp-4v4-static-view [data-rp-4v4-team-slot]{
+        display:grid!important;
+      }
       .rp-4v4-static-view .rp-4v4-team-slot ~ .rp-4v4-team-slot{
         display:none!important;
       }
@@ -55,9 +59,18 @@
     }
   }
 
-  function cleanTeamScheduleBanner() {
+  function cleanTeamScreen() {
     const view = document.querySelector('[data-rp-4v4-static-view]');
     if (!view) return;
+
+    const heading = view.querySelector('.rp-3v3-select-head h1');
+    if (heading) {
+      if (heading.textContent.trim() !== TEAM_TITLE) heading.textContent = TEAM_TITLE;
+      heading.removeAttribute('data-rp-4v4-slot-heading');
+      heading.removeAttribute('aria-label');
+      heading.removeAttribute('role');
+      heading.removeAttribute('tabindex');
+    }
 
     const banners = [...view.querySelectorAll('.rp-4v4-team-slot')];
     if (!banners.length) return;
@@ -76,7 +89,7 @@
   function enforce() {
     installStyles();
     cleanHomeCard();
-    cleanTeamScheduleBanner();
+    cleanTeamScreen();
   }
 
   function queueEnforce() {
@@ -91,15 +104,14 @@
   function start() {
     enforce();
     new MutationObserver(() => {
-      // Canonicalize/remove schedule banners immediately. The rotation runtime
-      // also reacts to DOM changes on the next animation frame, so waiting for
-      // our own frame here can allow it to create another banner first.
-      cleanTeamScheduleBanner();
+      // Keep the team title generic and canonicalize/remove schedule banners
+      // immediately before any legacy observer can reproduce stale UI.
+      cleanTeamScreen();
       queueEnforce();
     }).observe(document.documentElement, { childList: true, subtree: true });
     window.addEventListener('realplay:home-schedule-changed', queueEnforce);
     window.addEventListener('realplay:4v4-open', () => {
-      cleanTeamScheduleBanner();
+      cleanTeamScreen();
       queueEnforce();
     });
   }

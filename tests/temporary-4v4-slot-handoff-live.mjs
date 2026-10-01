@@ -59,9 +59,10 @@ try {
   await page.waitForFunction(() => !document.documentElement.classList.contains('rp-shell-booting'), null, { timeout: 20000 });
 
   const loadedScripts = await page.evaluate(() => [...document.scripts].map((script) => script.src));
-  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-slot-picker.js?v=20261001-rotation-clean-ui-v1')), 'Live page did not load the fresh rotation clean UI loader.');
+  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-slot-picker.js?v=20261001-rotation-clean-ui-v1')), 'Live page did not load the rotation UI loader.');
   assert.ok(loadedScripts.some((src) => src.includes('home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v4')), 'Live page did not load the ready rotation runtime.');
-  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v2')), 'Live page did not load the rotation clean UI guard.');
+  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v3')), 'Live page did not load the latest clean rotation UI guard.');
+  assert.equal(loadedScripts.some((src) => src.includes('home-4v4-slot-header.js')), false, 'Legacy slot-heading override is still loading.');
 
   console.log('STAGE verify-clean-home');
   await page.waitForFunction(() => document.querySelector('[data-rp-home-open-rank-meta]')?.textContent?.trim() === 'SAT + SUN · 8:00 PM – 10:00 PM');
@@ -94,6 +95,7 @@ try {
   await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').evaluate((element) => element.click());
   await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
   await page.waitForFunction(() => Array.isArray(window.__realPlay4v4AssignedTeamKeys) && window.__realPlay4v4AssignedTeamKeys.join(',') === 'lions,valiant');
+  await page.waitForFunction(() => document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim() === 'SELECT YOUR TEAM');
   await page.waitForTimeout(400);
 
   const saturday = await page.evaluate(() => ({
@@ -105,6 +107,10 @@ try {
     canonicalBannerCount: document.querySelectorAll('.rp-4v4-static-view [data-rp-4v4-team-slot]').length,
     malformedBannerCount: document.querySelectorAll('.rp-4v4-static-view [data-rp4v4-team-slot]').length,
     title: document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim(),
+    bannerDisplay: (() => {
+      const banner = document.querySelector('.rp-4v4-static-view [data-rp-4v4-team-slot]');
+      return banner ? getComputedStyle(banner).display : '';
+    })(),
   }));
   assert.deepEqual(saturday.keys, ['lions', 'valiant']);
   assert.equal(saturday.stored?.day, 'SATURDAY');
@@ -114,6 +120,7 @@ try {
   assert.equal(saturday.bannerCount, 1, 'Saturday team screen contains repeated schedule banners.');
   assert.equal(saturday.canonicalBannerCount, 1, 'Saturday schedule banner is missing its canonical data attribute.');
   assert.equal(saturday.malformedBannerCount, 0, 'Malformed legacy rotation banner attribute remains.');
+  assert.notEqual(saturday.bannerDisplay, 'none', 'Saturday schedule banner should be visible.');
 
   console.log('STAGE switch-to-sunday');
   await page.locator('.rp-4v4-static-view [data-rp-4v4-team-slot]').evaluate((element) => element.click());
@@ -124,6 +131,7 @@ try {
   await page.locator('[data-rp-rotation-id="sunday-2000-2200"]').evaluate((element) => element.click());
   await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
   await page.waitForFunction(() => Array.isArray(window.__realPlay4v4AssignedTeamKeys) && window.__realPlay4v4AssignedTeamKeys.join(',') === 'eagles,steadfast');
+  await page.waitForFunction(() => document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim() === 'SELECT YOUR TEAM');
   await page.waitForTimeout(400);
 
   const sunday = await page.evaluate(() => ({
@@ -133,10 +141,12 @@ try {
     bannerCount: document.querySelectorAll('.rp-4v4-static-view .rp-4v4-team-slot').length,
     canonicalBannerCount: document.querySelectorAll('.rp-4v4-static-view [data-rp-4v4-team-slot]').length,
     malformedBannerCount: document.querySelectorAll('.rp-4v4-static-view [data-rp4v4-team-slot]').length,
+    title: document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim(),
   }));
   assert.deepEqual(sunday.keys, ['eagles', 'steadfast']);
   assert.equal(sunday.stored?.day, 'SUNDAY');
   assert.equal(sunday.viewCount, 1);
+  assert.equal(sunday.title, 'SELECT YOUR TEAM');
   assert.equal(sunday.bannerCount, 1, 'Sunday team screen contains repeated schedule banners.');
   assert.equal(sunday.canonicalBannerCount, 1);
   assert.equal(sunday.malformedBannerCount, 0);
