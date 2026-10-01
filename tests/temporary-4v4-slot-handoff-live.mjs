@@ -54,13 +54,13 @@ try {
   console.log('STAGE navigate-live');
   await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction((id) => document.documentElement?.dataset?.rpDeploy === id, DEPLOY_ID, { timeout: 30000 });
-  await page.waitForFunction(() => window.__realPlayTeamRotationPickerV2Installed === true, null, { timeout: 20000 });
+  await page.waitForFunction(() => window.__realPlayTeamRotationPickerV2Ready === true, null, { timeout: 20000 });
   await page.waitForFunction(() => window.__realPlay4v4RotationCleanUiInstalled === true, null, { timeout: 20000 });
   await page.waitForFunction(() => !document.documentElement.classList.contains('rp-shell-booting'), null, { timeout: 20000 });
 
   const loadedScripts = await page.evaluate(() => [...document.scripts].map((script) => script.src));
   assert.ok(loadedScripts.some((src) => src.includes('home-4v4-slot-picker.js?v=20261001-rotation-clean-ui-v1')), 'Live page did not load the fresh rotation clean UI loader.');
-  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v3')), 'Live page did not load the safe rotation runtime.');
+  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v4')), 'Live page did not load the ready rotation runtime.');
   assert.ok(loadedScripts.some((src) => src.includes('home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v2')), 'Live page did not load the rotation clean UI guard.');
 
   console.log('STAGE verify-clean-home');
