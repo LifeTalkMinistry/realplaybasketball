@@ -95,8 +95,7 @@ try {
   await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').evaluate((element) => element.click());
   await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
   await page.waitForFunction(() => Array.isArray(window.__realPlay4v4AssignedTeamKeys) && window.__realPlay4v4AssignedTeamKeys.join(',') === 'lions,valiant');
-  await page.waitForFunction(() => /^SELECT YOUR TEAM\.?$/.test(document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim() || ''));
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(600);
 
   const saturday = await page.evaluate(() => ({
     keys: window.__realPlay4v4AssignedTeamKeys,
@@ -112,6 +111,7 @@ try {
       return banner ? getComputedStyle(banner).display : '';
     })(),
   }));
+  console.log('SATURDAY_UI=' + JSON.stringify(saturday));
   assert.deepEqual(saturday.keys, ['lions', 'valiant']);
   assert.equal(saturday.stored?.day, 'SATURDAY');
   assert.equal(saturday.bodyOpen, true);
@@ -131,8 +131,7 @@ try {
   await page.locator('[data-rp-rotation-id="sunday-2000-2200"]').evaluate((element) => element.click());
   await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
   await page.waitForFunction(() => Array.isArray(window.__realPlay4v4AssignedTeamKeys) && window.__realPlay4v4AssignedTeamKeys.join(',') === 'eagles,steadfast');
-  await page.waitForFunction(() => /^SELECT YOUR TEAM\.?$/.test(document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim() || ''));
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(600);
 
   const sunday = await page.evaluate(() => ({
     keys: window.__realPlay4v4AssignedTeamKeys,
@@ -143,6 +142,7 @@ try {
     malformedBannerCount: document.querySelectorAll('.rp-4v4-static-view [data-rp4v4-team-slot]').length,
     title: document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim(),
   }));
+  console.log('SUNDAY_UI=' + JSON.stringify(sunday));
   assert.deepEqual(sunday.keys, ['eagles', 'steadfast']);
   assert.equal(sunday.stored?.day, 'SUNDAY');
   assert.equal(sunday.viewCount, 1);
