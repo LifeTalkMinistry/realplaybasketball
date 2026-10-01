@@ -99,22 +99,26 @@
       .rp-scope-empty p{margin:8px 0 0;color:#71869d;font:700 .65rem/1.55 Arial,sans-serif}
       .rp-scope-empty small{display:block;margin-top:13px;color:#45596f;font:850 .5rem/1.5 Arial,sans-serif;letter-spacing:.04em}
 
-      /* Scoped competition rankings intentionally reuse the real Player Rankings body. */
-      .rp-world.rp-competition-scoped-ranking .rp-world-player-directory-head{display:none!important}
-      .rp-world.rp-competition-scoped-ranking [data-world-player-status]{display:none!important}
-      .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row{display:none!important}
-      .rp-world.rp-competition-scoped-ranking .rp-world-title span{display:none!important}
-      .rp-world.rp-competition-scoped-ranking .rp-world-online{visibility:hidden!important}
-      .rp-world.rp-competition-scoped-ranking [data-world-close]{display:none!important}
-      .rp-competition-world-scope-header{padding:5px 3px 4px}
-      .rp-competition-world-scope-header small{display:block;color:#5edfff;font:950 .48rem/1 Arial,sans-serif;letter-spacing:.15em}
-      .rp-competition-world-scope-header strong{display:block;margin-top:6px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.55rem;font-style:italic;font-weight:950;letter-spacing:.025em;color:#eef7ff}
-      .rp-competition-world-scope-header p{margin:7px 0 0;color:#8295aa;font:700 .62rem/1.5 Arial,sans-serif}
+      /* Scoped competition rankings: custom context header, exact Player Rankings body below. */
+      body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-view="players"] .rp-world-player-directory-head{display:none!important}
+      body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-status]{display:none!important}
+      body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row{display:none!important}
+      body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking .rp-world-topbar{display:none!important}
+      .rp-competition-world-scope-header{display:block;padding:2px 2px 4px;margin:0}
+      .rp-competition-scope-topbar{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:10px;margin:0 0 14px}
+      .rp-competition-scope-topbar strong{display:block;margin:0;text-align:center;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.04rem;font-style:italic;font-weight:950;letter-spacing:.07em;color:#eef7ff}
+      .rp-competition-scope-topbar-spacer{width:42px;height:42px}
+      .rp-competition-world-scope-back{width:42px;height:42px;display:grid;place-items:center;padding:0;border:1px solid rgba(124,204,240,.18);border-radius:13px;background:rgba(7,16,26,.9);color:#dff7ff;font:900 1rem/1 Arial,sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+      .rp-competition-world-scope-back:active{transform:scale(.97)}
+      .rp-competition-world-scope-back:focus-visible{outline:2px solid #5bdfff;outline-offset:2px}
+      .rp-competition-scope-context{padding:0 2px 8px}
+      .rp-competition-scope-context small{display:block;color:#5edfff;font:950 .48rem/1 Arial,sans-serif;letter-spacing:.15em}
+      .rp-competition-scope-context strong{display:block;margin-top:6px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.55rem;font-style:italic;font-weight:950;letter-spacing:.025em;color:#eef7ff}
+      .rp-competition-scope-context p{margin:7px 0 0;max-width:520px;color:#8295aa;font:700 .62rem/1.5 Arial,sans-serif}
       .rp-competition-scope-empty-row{display:grid;place-items:center;min-height:190px;padding:28px 14px;text-align:center}
       .rp-competition-scope-empty-row div{max-width:380px}
       .rp-competition-scope-empty-row strong{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.18rem;font-style:italic;font-weight:950;letter-spacing:.03em;color:#eef7ff}
       .rp-competition-scope-empty-row p{margin:8px 0 0;color:#71859b;font:700 .63rem/1.55 Arial,sans-serif}
-      .rp-competition-world-scope-back{position:relative;z-index:2}
             @media(min-width:640px){.rp-competition-card-grid{grid-template-columns:1fr 1fr}.rp-competition-card:first-child{grid-column:1/-1}.rp-scope-filter{flex-basis:105px}}
       @media(max-width:390px){.rp-competition-shell{padding-inline:12px}.rp-competition-card{min-height:126px;padding:17px}.rp-competition-card-copy strong{font-size:1.28rem}.rp-scope-filter{min-width:68px;font-size:.39rem}}
     `;
@@ -336,12 +340,6 @@
     playerDecorationTimer = window.setTimeout(() => decoratePlayerRankings(0), 45);
   }
 
-  function scopedHeaderMarkup(config) {
-    return '<small>' + esc(config.kicker) + '</small>'
-      + '<strong>' + esc(config.title) + '</strong>'
-      + '<p>' + esc(config.copy) + '</p>';
-  }
-
   function applyScopedRanking(attempt = 0) {
     const config = scopedRanking;
     if (!config || playerPresentation !== 'scoped') return;
@@ -351,9 +349,8 @@
     const directory = playersView?.querySelector('.rp-world-player-directory');
     const list = playersView?.querySelector('[data-world-player-list]');
     const controls = playersView?.querySelector('[data-world-player-sort]');
-    const topbar = world?.querySelector('.rp-world-topbar');
 
-    if (!world || !playersView || playersView.hidden || !directory || !list || !controls || !topbar) {
+    if (!world || !playersView || playersView.hidden || !directory || !list || !controls) {
       if (attempt < 22) playerDecorationTimer = window.setTimeout(() => applyScopedRanking(attempt + 1), 70);
       return;
     }
@@ -362,30 +359,32 @@
     world.dataset.rpCompetitionScope = config.id;
     world.dataset.rpCompetitionPresentation = 'scoped';
 
-    const topTitle = world.querySelector('.rp-world-title strong');
-    if (topTitle) topTitle.textContent = 'RANKINGS';
-
-    let back = topbar.querySelector('[data-rp-competition-world-scope-back]');
-    if (!back) {
-      back = document.createElement('button');
-      back.type = 'button';
-      back.className = 'rp-world-back rp-competition-world-scope-back';
-      back.dataset.rpCompetitionWorldScopeBack = 'true';
-      back.setAttribute('aria-label', 'Back to Stats');
-      back.textContent = '←';
-      const title = topbar.querySelector('.rp-world-title');
-      topbar.insertBefore(back, title || null);
-      back.addEventListener('click', returnFromScopedRanking);
-    }
-
     let header = directory.querySelector('[data-rp-competition-world-scope-header]');
     if (!header) {
       header = document.createElement('header');
       header.className = 'rp-competition-world-scope-header';
       header.dataset.rpCompetitionWorldScopeHeader = 'true';
+      header.innerHTML = `
+        <div class="rp-competition-scope-topbar">
+          <button class="rp-competition-world-scope-back" type="button" data-rp-competition-world-scope-back aria-label="Back">←</button>
+          <strong>RANKINGS</strong>
+          <span class="rp-competition-scope-topbar-spacer" aria-hidden="true"></span>
+        </div>
+        <div class="rp-competition-scope-context">
+          <small data-rp-competition-scope-kicker></small>
+          <strong data-rp-competition-scope-title></strong>
+          <p data-rp-competition-scope-copy></p>
+        </div>`;
       directory.insertBefore(header, controls);
+      header.querySelector('[data-rp-competition-world-scope-back]')?.addEventListener('click', returnFromScopedRanking);
     }
-    header.innerHTML = scopedHeaderMarkup(config);
+
+    const kicker = header.querySelector('[data-rp-competition-scope-kicker]');
+    const title = header.querySelector('[data-rp-competition-scope-title]');
+    const copy = header.querySelector('[data-rp-competition-scope-copy]');
+    if (kicker) kicker.textContent = config.kicker;
+    if (title) title.textContent = config.title;
+    if (copy) copy.textContent = config.copy;
 
     let empty = list.querySelector('[data-rp-competition-scope-empty]');
     if (!empty) {
