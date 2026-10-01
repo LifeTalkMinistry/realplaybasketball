@@ -79,8 +79,8 @@
   function close() { if(modal) modal.hidden=true; }
 
   function requestTeamView() {
-    if (window.__realPlayFuture4v4CardCleanupInstalled !== true) {
-      const script=document.createElement('script'); script.src='home-future-4v4-card-cleanup.js?v=20261001-team-schedule-rotation-v1'; script.async=false; document.head.appendChild(script);
+    if (window.__realPlayFuture4v4CardCleanupInstalled !== true && !document.querySelector('script[data-rp-rotation-team-view-loader]')) {
+      const script=document.createElement('script'); script.dataset.rpRotationTeamViewLoader='1'; script.src='home-future-4v4-card-cleanup.js?v=20261001-team-schedule-rotation-v2'; script.async=false; document.head.appendChild(script);
     }
     let tries=0; const go=()=>{
       if (document.body.classList.contains('rp-4v4-static-open') || document.querySelector('[data-rp-4v4-static-view].open')) { banner(); return; }
@@ -93,10 +93,24 @@
   function choose(item) { if(!item)return; setSelected(item); close(); const view=document.querySelector('[data-rp-4v4-static-view]'); if(view)view.remove(); document.body.classList.remove('rp-4v4-static-open'); setTimeout(requestTeamView,20); }
   function banner() {
     const view=document.querySelector('.rp-4v4-static-view'); const item=selected(); if(!view||!item)return;
-    let b=view.querySelector('[data-rp-4v4-team-slot]'); if(!b){ b=document.createElement('button'); b.type='button'; b.className='rp-4v4-team-slot'; b.dataset.rp4v4TeamSlot='1'; b.onclick=open; const top=view.querySelector('.rp-3v3-topbar'); top?top.insertAdjacentElement('afterend',b):view.prepend(b); }
-    b.innerHTML=`<span><small>TEAM SCHEDULE ROTATION</small><strong>${esc(item.label)}</strong></span><span>CHECK</span>`;
+    let b=view.querySelector('[data-rp-4v4-team-slot]');
+    if(!b){
+      b=document.createElement('button'); b.type='button'; b.className='rp-4v4-team-slot'; b.dataset.rp4v4TeamSlot='1'; b.onclick=open;
+      const top=view.querySelector('.rp-3v3-topbar'); top?top.insertAdjacentElement('afterend',b):view.prepend(b);
+    }
+    if (b.dataset.rpRotationLabel !== item.label) {
+      b.dataset.rpRotationLabel = item.label;
+      b.innerHTML=`<span><small>TEAM SCHEDULE ROTATION</small><strong>${esc(item.label)}</strong></span><span>CHECK</span>`;
+    }
   }
-  function enforce() { const b=document.querySelector('[data-rp-home-save-slot]'); if(b){b.textContent='CHECK TEAM SCHEDULE';b.setAttribute('aria-label','Check team schedule rotation');} if(document.body.classList.contains('rp-4v4-static-open'))banner(); }
+  function enforce() {
+    const b=document.querySelector('[data-rp-home-save-slot]');
+    if(b){
+      if(b.textContent.trim()!=='CHECK TEAM SCHEDULE') b.textContent='CHECK TEAM SCHEDULE';
+      if(b.getAttribute('aria-label')!=='Check team schedule rotation') b.setAttribute('aria-label','Check team schedule rotation');
+    }
+    if(document.body.classList.contains('rp-4v4-static-open'))banner();
+  }
 
   async function start(){ styles(); enforce(); await refresh(); setSelected(selected()); document.addEventListener('click',(e)=>{const b=e.target.closest?.('[data-rp-home-save-slot]'); if(b){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();open();return;} const t=e.target.closest?.('.rp-home-4v4-explore'); if(t?.dataset?.rpSlotHandoff==='true')return; if(t&&!selected()){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();open();}},true); new MutationObserver(enforce).observe(document.documentElement,{childList:true,subtree:true}); window.addEventListener('realplay:home-schedule-changed',refresh); }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
