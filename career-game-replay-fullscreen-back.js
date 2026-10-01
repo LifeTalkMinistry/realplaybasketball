@@ -15,13 +15,15 @@
 
   let markerSyncTimer = null;
   let pseudoFullscreenStage = null;
+  let pseudoHome = null;
   let hudFadeTimer = null;
+  let pseudoLayoutTimer = null;
 
   const style = document.createElement('style');
   style.textContent = `
     .rp-career-replay-fullscreen-back{
       position:absolute;
-      z-index:12;
+      z-index:14;
       top:max(14px,env(safe-area-inset-top));
       left:max(14px,env(safe-area-inset-left));
       display:none;
@@ -157,9 +159,6 @@
       display:block;
     }
 
-    /* Android/desktop fullscreen HUD follows the same short-lived interaction
-       model as Play/Pause, Volume and the session cover. iPhone is deliberately
-       left on its existing fullscreen presentation path. */
     .rp-career-replay-stage[${HUD_MANAGED_ATTR}="1"] .rp-career-replay-fullscreen-marker-rail{
       opacity:0;
       transform:translate(-50%,8px);
@@ -173,20 +172,32 @@
 
     html.${PSEUDO_OPEN_CLASS},
     body.${PSEUDO_OPEN_CLASS}{
+      width:100%!important;
+      height:100%!important;
       overflow:hidden!important;
       overscroll-behavior:none!important;
       touch-action:none!important;
+      background:#000!important;
     }
+
+    /* Pseudo fullscreen is attached directly to body at runtime. This avoids
+       transformed/contained app ancestors trapping position:fixed on Android. */
     .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS}{
       position:fixed!important;
-      inset:0!important;
+      left:0!important;
+      top:0!important;
+      right:auto!important;
+      bottom:auto!important;
       z-index:2147483646!important;
       width:100vw!important;
       max-width:none!important;
+      min-width:100vw!important;
       height:100vh!important;
       height:100dvh!important;
       max-height:none!important;
+      min-height:100vh!important;
       margin:0!important;
+      padding:0!important;
       border:0!important;
       border-radius:0!important;
       aspect-ratio:auto!important;
@@ -194,19 +205,38 @@
       background:#000!important;
       box-shadow:none!important;
       overflow:hidden!important;
+      contain:none!important;
     }
     .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} [data-rp-career-replay-media],
+    .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} .rp-career-replay-yt-host,
     .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} [data-rp-career-replay-media] > div,
     .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} iframe,
     .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} video{
+      position:absolute!important;
+      inset:0!important;
+      display:block!important;
       width:100%!important;
-      height:100%!important;
       max-width:none!important;
+      min-width:100%!important;
+      height:100%!important;
       max-height:none!important;
+      min-height:100%!important;
+      margin:0!important;
+      padding:0!important;
+      border:0!important;
+      transform:none!important;
+      box-sizing:border-box!important;
+      background:#000!important;
     }
     .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS} video{
       object-fit:contain!important;
-      background:#000!important;
+    }
+
+    /* Keep scoring/assist callouts above the temporary timestamp HUD instead
+       of letting the two overlays collide at the bottom of fullscreen. */
+    .rp-career-replay-stage[${HUD_MANAGED_ATTR}="1"].${HUD_VISIBLE_CLASS} .rp-career-replay-stat-pop,
+    .rp-career-replay-stage[${HUD_MANAGED_ATTR}="1"].${HUD_VISIBLE_CLASS} [data-rp-career-score-pop]{
+      bottom:max(112px,calc(env(safe-area-inset-bottom) + 100px))!important;
     }
 
     .rp-career-replay-gamehead{gap:4px!important}
@@ -225,7 +255,7 @@
         font-size:.62rem;
       }
       .rp-career-replay-fullscreen-marker-rail{
-        width:min(74vw,560px);
+        width:min(78vw,560px);
         height:84px;
         bottom:max(8px,env(safe-area-inset-bottom));
       }
@@ -314,6 +344,7 @@
   }
 
   function replayRoot(stage) {
+    if (stage === pseudoFullscreenStage && pseudoHome?.root?.isConnected) return pseudoHome.root;
     return stage?.closest?.('.rp-career-replay') || null;
   }
 
@@ -436,15 +467,15 @@
     clones.forEach((clone) => {
       const replayStart = String(clone.dataset.rpCareerReplayMarker || '0');
       const stamp = String(clone.dataset.rpCareerMarkerStamp || '0');
+      const kind = String(clone.dataset.rpCareerAuditKind || 'score');
       const source = sources.find((candidate) =>
         String(candidate.dataset.rpCareerReplayMarker || '0') === replayStart
         && String(candidate.dataset.rpCareerMarkerStamp || '0') === stamp
+        && String(candidate.dataset.rpCareerAuditKind || 'score') === kind
       );
       if (!source) return;
       if (source.style.left) clone.style.left = source.style.left;
       clone.textContent = source.textContent || clone.textContent || '•';
-      const kind = String(source.dataset.rpCareerAuditKind || 'score');
-      clone.dataset.rpCareerAuditKind = kind;
       clone.classList.toggle('active', source.classList.contains('active'));
     });
   }
@@ -460,7 +491,6 @@
   function startMarkerSync(stage) {
     stopMarkerSync();
     if (!stage) return;
-    ensureMarkerRail(stage);
     syncMarkerRail(stage);
     markerSyncTimer = setInterval(() => {
       if (!stageIsFullscreen(stage)) {
@@ -471,32 +501,161 @@
     }, 120);
   }
 
+  function viewportSize() {
+    const vv = window.visualViewport;
+    const width = Math.max(1, Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 1));
+    const height = Math.max(1, Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 1));
+    return { width, height };
+  }
+
+  function mountPseudoStageAtBody(stage) {
+    if (!stage || pseudoHome) return;
+    const parent = stage.parentNode;
+    if (!parent) return;
+    const placeholder = document.createComment('real-play-pseudo-fullscreen-stage');
+    const root = stage.closest('.rp-career-replay');
+    parent.insertBefore(placeholder, stage);
+    pseudoHome = { parent, placeholder, root };
+    document.body.appendChild(stage);
+  }
+
+  function restorePseudoStage(stage) {
+    const home = pseudoHome;
+    if (!stage || !home) return;
+    if (home.placeholder?.parentNode) {
+      home.placeholder.parentNode.insertBefore(stage, home.placeholder);
+      home.placeholder.remove();
+    } else if (home.parent?.isConnected) {
+      home.parent.appendChild(stage);
+    }
+    pseudoHome = null;
+  }
+
+  function clearForcedPseudoLayout(stage) {
+    if (!stage) return;
+    [
+      'position','left','top','right','bottom','width','height','min-width','min-height',
+      'max-width','max-height','margin','padding','transform'
+    ].forEach((property) => stage.style.removeProperty(property));
+
+    const media = stage.querySelector('[data-rp-career-replay-media]');
+    const nodes = new Set([
+      media,
+      media?.firstElementChild,
+      stage.querySelector('.rp-career-replay-yt-host'),
+      ...stage.querySelectorAll('iframe,video'),
+    ].filter(Boolean));
+    nodes.forEach((node) => {
+      [
+        'position','inset','left','top','right','bottom','width','height','min-width','min-height',
+        'max-width','max-height','margin','padding','border','transform','box-sizing','background'
+      ].forEach((property) => node.style.removeProperty(property));
+    });
+  }
+
+  function forcePseudoFullscreenLayout(stage) {
+    if (!stage?.isConnected || !stage.classList.contains(PSEUDO_FULLSCREEN_CLASS)) return;
+    const { width, height } = viewportSize();
+
+    stage.style.setProperty('position', 'fixed', 'important');
+    stage.style.setProperty('left', '0px', 'important');
+    stage.style.setProperty('top', '0px', 'important');
+    stage.style.setProperty('right', 'auto', 'important');
+    stage.style.setProperty('bottom', 'auto', 'important');
+    stage.style.setProperty('width', `${width}px`, 'important');
+    stage.style.setProperty('height', `${height}px`, 'important');
+    stage.style.setProperty('min-width', `${width}px`, 'important');
+    stage.style.setProperty('min-height', `${height}px`, 'important');
+    stage.style.setProperty('max-width', 'none', 'important');
+    stage.style.setProperty('max-height', 'none', 'important');
+    stage.style.setProperty('margin', '0', 'important');
+    stage.style.setProperty('padding', '0', 'important');
+    stage.style.setProperty('transform', 'none', 'important');
+
+    const media = stage.querySelector('[data-rp-career-replay-media]');
+    const nodes = new Set([
+      media,
+      media?.firstElementChild,
+      stage.querySelector('.rp-career-replay-yt-host'),
+      ...stage.querySelectorAll('iframe,video'),
+    ].filter(Boolean));
+
+    nodes.forEach((node) => {
+      node.style.setProperty('position', 'absolute', 'important');
+      node.style.setProperty('inset', '0', 'important');
+      node.style.setProperty('left', '0', 'important');
+      node.style.setProperty('top', '0', 'important');
+      node.style.setProperty('right', '0', 'important');
+      node.style.setProperty('bottom', '0', 'important');
+      node.style.setProperty('width', '100%', 'important');
+      node.style.setProperty('height', '100%', 'important');
+      node.style.setProperty('min-width', '100%', 'important');
+      node.style.setProperty('min-height', '100%', 'important');
+      node.style.setProperty('max-width', 'none', 'important');
+      node.style.setProperty('max-height', 'none', 'important');
+      node.style.setProperty('margin', '0', 'important');
+      node.style.setProperty('padding', '0', 'important');
+      node.style.setProperty('border', '0', 'important');
+      node.style.setProperty('transform', 'none', 'important');
+      node.style.setProperty('box-sizing', 'border-box', 'important');
+      node.style.setProperty('background', '#000', 'important');
+    });
+
+    stage.querySelectorAll('iframe').forEach((iframe) => {
+      iframe.setAttribute('width', String(width));
+      iframe.setAttribute('height', String(height));
+    });
+  }
+
+  function schedulePseudoLayout(stage) {
+    if (pseudoLayoutTimer) clearTimeout(pseudoLayoutTimer);
+    window.requestAnimationFrame(() => {
+      forcePseudoFullscreenLayout(stage);
+      window.requestAnimationFrame(() => forcePseudoFullscreenLayout(stage));
+    });
+    pseudoLayoutTimer = setTimeout(() => {
+      pseudoLayoutTimer = null;
+      forcePseudoFullscreenLayout(stage);
+    }, 180);
+  }
+
   function enterPseudoFullscreen(stage) {
     if (!stage) return;
     if (pseudoFullscreenStage && pseudoFullscreenStage !== stage) exitPseudoFullscreen();
+
     pseudoFullscreenStage = stage;
     ensureBackButton(stage);
-    ensureMarkerRail(stage);
+    mountPseudoStageAtBody(stage);
     stage.classList.add(PSEUDO_FULLSCREEN_CLASS);
     stage.setAttribute('data-rp-career-replay-pseudo-fullscreen', '1');
     if (!isIPhoneBrowser()) stage.setAttribute(HUD_MANAGED_ATTR, '1');
     document.documentElement.classList.add(PSEUDO_OPEN_CLASS);
     document.body.classList.add(PSEUDO_OPEN_CLASS);
+
+    forcePseudoFullscreenLayout(stage);
+    ensureMarkerRail(stage);
     startMarkerSync(stage);
     showFullscreenHud(stage);
+    schedulePseudoLayout(stage);
   }
 
   function exitPseudoFullscreen() {
     const stage = pseudoFullscreenStage || document.querySelector(`.${PSEUDO_FULLSCREEN_CLASS}`);
-    if (stage) {
-      stage.classList.remove(PSEUDO_FULLSCREEN_CLASS, HUD_VISIBLE_CLASS);
-      stage.removeAttribute('data-rp-career-replay-pseudo-fullscreen');
-      stage.removeAttribute(HUD_MANAGED_ATTR);
+    if (!stage) return;
+
+    if (pseudoLayoutTimer) {
+      clearTimeout(pseudoLayoutTimer);
+      pseudoLayoutTimer = null;
     }
-    pseudoFullscreenStage = null;
+    stopMarkerSync();
+    stage.classList.remove(PSEUDO_FULLSCREEN_CLASS, HUD_VISIBLE_CLASS);
+    stage.removeAttribute('data-rp-career-replay-pseudo-fullscreen');
+    stage.removeAttribute(HUD_MANAGED_ATTR);
+    clearForcedPseudoLayout(stage);
     document.documentElement.classList.remove(PSEUDO_OPEN_CLASS);
     document.body.classList.remove(PSEUDO_OPEN_CLASS);
-    stopMarkerSync();
+    restorePseudoStage(stage);
+    pseudoFullscreenStage = null;
   }
 
   function shouldUsePseudoFullscreen(stage) {
@@ -516,7 +675,11 @@
   }
 
   function enhance() {
-    if (pseudoFullscreenStage && !pseudoFullscreenStage.isConnected) exitPseudoFullscreen();
+    if (pseudoFullscreenStage && !pseudoFullscreenStage.isConnected) {
+      pseudoFullscreenStage = null;
+      pseudoHome = null;
+      stopMarkerSync();
+    }
     document.querySelectorAll('[data-rp-career-replay-stage]').forEach(ensureBackButton);
     placeReplayClock();
   }
@@ -633,6 +796,15 @@
       enhance();
     }
   };
+
+  function refreshPseudoLayout() {
+    if (!pseudoFullscreenStage?.classList?.contains(PSEUDO_FULLSCREEN_CLASS)) return;
+    schedulePseudoLayout(pseudoFullscreenStage);
+  }
+
+  window.addEventListener('resize', refreshPseudoLayout, { passive: true });
+  window.addEventListener('orientationchange', () => setTimeout(refreshPseudoLayout, 120), { passive: true });
+  window.visualViewport?.addEventListener?.('resize', refreshPseudoLayout, { passive: true });
 
   document.addEventListener('fullscreenchange', onFullscreenChange);
   document.addEventListener('webkitfullscreenchange', onFullscreenChange);
