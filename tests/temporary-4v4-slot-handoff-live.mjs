@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
-const APP_URL = `https://joinrealplay.com/?rp-slot-live=${Date.now()}`;
+const APP_URL = `https://joinrealplay.com/?rp-rotation-live=${Date.now()}`;
+const DEPLOY_ID = '20261001-team-schedule-rotation-v153';
 const hardStop = setTimeout(() => {
-  console.error('LIVE_4V4_HARD_TIMEOUT');
+  console.error('LIVE_4V4_ROTATION_HARD_TIMEOUT');
   process.exit(124);
 }, 70000);
 
@@ -11,6 +12,35 @@ let browser;
 try {
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+
+  await context.route('https://api.clarapmc.com/api/real-play/public/updates', async (route) => {
+    const now = new Date().toISOString();
+    await route.fulfill({
+      status: 200,
+      headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' },
+      body: JSON.stringify({
+        updates: [{
+          id: 'rotation-live-test',
+          category: 'schedule',
+          title: 'OPEN RANK SESSION',
+          event_at: '2026-10-03T12:00:00.000Z',
+          published_at: now,
+          metadata: {
+            teamSchedule: {
+              version: 2,
+              mode: 'assigned',
+              rotationType: 'weekly',
+              blocks: [
+                { day: 'SATURDAY', start: '20:00', end: '22:00', teamKeys: ['lions', 'valiant'], teamNames: ['LIONS', 'VALIANT'] },
+                { day: 'SUNDAY', start: '20:00', end: '22:00', teamKeys: ['eagles', 'steadfast'], teamNames: ['EAGLES', 'STEADFAST'] },
+              ],
+            },
+          },
+        }],
+      }),
+    });
+  });
+
   const page = await context.newPage();
   page.setDefaultTimeout(20000);
 
@@ -23,162 +53,79 @@ try {
 
   console.log('STAGE navigate-live');
   await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await page.waitForFunction(() => window.__realPlayFourVFourSlotPickerInstalled === true, null, { timeout: 20000 });
-  console.log('STAGE wait-app-boot');
+  await page.waitForFunction((id) => document.documentElement?.dataset?.rpDeploy === id, DEPLOY_ID, { timeout: 30000 });
+  await page.waitForFunction(() => window.__realPlayTeamRotationPickerV2Installed === true, null, { timeout: 20000 });
   await page.waitForFunction(() => !document.documentElement.classList.contains('rp-shell-booting'), null, { timeout: 20000 });
 
-  const loadedSlotScript = await page.evaluate(() =>
-    [...document.scripts]
-      .map((script) => script.src)
-      .find((src) => src.includes('home-4v4-slot-picker.js')) || ''
-  );
-  assert.match(loadedSlotScript, /20260930-slot-header-v10/, `Live page did not load v10 slot picker: ${loadedSlotScript}`);
+  const loadedScripts = await page.evaluate(() => [...document.scripts].map((script) => script.src));
+  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-slot-picker.js?v=20261001-team-schedule-rotation-v3')), 'Live page did not load the fresh rotation picker loader.');
+  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v3')), 'Live page did not load the safe rotation runtime.');
 
-  await page.waitForFunction(() => window.__realPlayFourVFourSlotHeaderInstalled === true, null, { timeout: 20000 });
-
-  console.log('STAGE wait-real-home-button');
-  await page.waitForSelector('[data-rp-home-save-slot]', { state: 'attached', timeout: 20000 });
-
-  console.log('STAGE open-slot-picker');
-  await page.locator('[data-rp-home-save-slot]').first().evaluate((element) => element.click());
+  console.log('STAGE open-rotation');
+  const homeButton = page.locator('[data-rp-home-save-slot]').first();
+  await homeButton.waitFor({ state: 'attached' });
+  assert.equal((await homeButton.textContent())?.trim(), 'CHECK TEAM SCHEDULE');
+  await homeButton.evaluate((element) => element.click());
   await page.waitForFunction(() => {
-    const overlay = document.querySelector('.rp-4v4-slot-overlay');
-    return Boolean(overlay && !overlay.hidden);
+    const modal = document.querySelector('.rp-team-rotation-modal');
+    return Boolean(modal && !modal.hidden);
   });
 
-  console.log('STAGE choose-8pm-slot');
-  await page.locator('[data-rp-4v4-slot="2000-2200"]').evaluate((element) => element.click());
-  await page.waitForFunction(() => {
-    const view = document.querySelector('.rp-4v4-static-view');
-    return Boolean(
-      view
-      && view.classList.contains('open')
-      && view.getAttribute('aria-hidden') === 'false'
-      && document.body.classList.contains('rp-4v4-static-open')
-    );
-  }, null, { timeout: 15000 });
+  const options = await page.locator('[data-rp-rotation-id]').allTextContents();
+  assert.equal(options.length, 2, 'Expected Saturday and Sunday rotation choices.');
+  assert.match(options[0], /SATURDAY.*8:00 PM.*10:00 PM/i);
+  assert.match(options[1], /SUNDAY.*8:00 PM.*10:00 PM/i);
 
+  console.log('STAGE choose-saturday');
+  await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').click();
+  await page.waitForSelector('[data-rp-4v4-static-view].open', { timeout: 15000 });
   await page.waitForFunction(() => {
     const heading = document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1');
-    return heading?.textContent?.trim() === '8:00 PM – 10:00 PM';
+    return heading?.textContent?.trim() === 'SATURDAY · 8:00 PM – 10:00 PM';
   }, null, { timeout: 5000 });
-  await page.waitForTimeout(300);
 
-  const firstOpen = await page.evaluate(() => {
-    const view = document.querySelector('.rp-4v4-static-view');
-    const viewStyle = view ? getComputedStyle(view) : null;
-    const banner = view?.querySelector('[data-rp-4v4-team-slot]');
-    const bannerStyle = banner ? getComputedStyle(banner) : null;
-    const overlay = document.querySelector('.rp-4v4-slot-overlay');
-    return {
-      storage: sessionStorage.getItem('real_play_4v4_time_slot'),
-      overlayHidden: overlay?.hidden === true,
-      viewCount: document.querySelectorAll('.rp-4v4-static-view').length,
-      viewOpen: view?.classList.contains('open') === true,
-      ariaHidden: view?.getAttribute('aria-hidden') || null,
-      bodyOpen: document.body.classList.contains('rp-4v4-static-open'),
-      heading: view?.querySelector('.rp-3v3-select-head h1')?.textContent?.trim() || null,
-      headingIsSlotControl: view?.querySelector('.rp-3v3-select-head h1')?.getAttribute('data-rp-4v4-slot-heading') === 'true',
-      display: viewStyle?.display || null,
-      position: viewStyle?.position || null,
-      visibility: viewStyle?.visibility || null,
-      slotBannerCount: view?.querySelectorAll('[data-rp-4v4-team-slot]').length || 0,
-      slotBannerDisplay: bannerStyle?.display || null,
-      preferenceActionExists: Boolean(view?.querySelector('[data-rp-4v4-preference-action]')),
-      backExists: Boolean(view?.querySelector('[data-rp-4v4-static-back]')),
-      cleanupInstalled: window.__realPlayFuture4v4CardCleanupInstalled === true,
-      slotHeaderInstalled: window.__realPlayFourVFourSlotHeaderInstalled === true,
-    };
-  });
-
-  assert.match(firstOpen.storage || '', /2000-2200/);
-  assert.equal(firstOpen.overlayHidden, true);
-  assert.equal(firstOpen.viewCount, 1);
-  assert.equal(firstOpen.viewOpen, true);
-  assert.equal(firstOpen.ariaHidden, 'false');
-  assert.equal(firstOpen.bodyOpen, true);
-  assert.equal(firstOpen.heading, '8:00 PM – 10:00 PM');
-  assert.equal(firstOpen.headingIsSlotControl, true);
-  assert.equal(firstOpen.display, 'block');
-  assert.equal(firstOpen.position, 'fixed');
-  assert.equal(firstOpen.visibility, 'visible');
-  assert.equal(firstOpen.slotBannerCount, 1, 'Internal selected-slot control duplicated.');
-  assert.equal(firstOpen.slotBannerDisplay, 'none', 'Old selected-slot banner is still visible.');
-  assert.equal(firstOpen.preferenceActionExists, true, 'Team preference control disappeared.');
-  assert.equal(firstOpen.backExists, true, 'Back button disappeared.');
-  assert.equal(firstOpen.cleanupInstalled, true, 'Current 4v4 cleanup runtime is not installed.');
-  assert.equal(firstOpen.slotHeaderInstalled, true, 'Compact slot header runtime is not installed.');
-
-  console.log('STAGE back-button');
-  await page.locator('[data-rp-4v4-static-back]').click();
-  await page.waitForFunction(() => {
-    const view = document.querySelector('.rp-4v4-static-view');
-    return Boolean(view && !view.classList.contains('open') && view.getAttribute('aria-hidden') === 'true' && !document.body.classList.contains('rp-4v4-static-open'));
-  });
-
-  console.log('STAGE direct-explore-regression');
-  for (let cycle = 0; cycle < 4; cycle += 1) {
-    await page.evaluate(() => {
-      const trigger = document.createElement('button');
-      trigger.type = 'button';
-      trigger.className = 'rp-home-4v4-explore';
-      trigger.hidden = true;
-      document.body.appendChild(trigger);
-      trigger.click();
-      trigger.remove();
-    });
-    await page.waitForFunction(() => document.body.classList.contains('rp-4v4-static-open'));
-    await page.waitForTimeout(150);
-
-    const counts = await page.evaluate(() => ({
-      views: document.querySelectorAll('.rp-4v4-static-view').length,
-      banners: document.querySelectorAll('.rp-4v4-static-view [data-rp-4v4-team-slot]').length,
-      heading: document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim() || null,
-    }));
-    assert.equal(counts.views, 1, `Cycle ${cycle + 1}: duplicate 4v4 views created.`);
-    assert.equal(counts.banners, 1, `Cycle ${cycle + 1}: duplicate internal slot controls created.`);
-    assert.equal(counts.heading, '8:00 PM – 10:00 PM', `Cycle ${cycle + 1}: slot heading was lost.`);
-
-    await page.locator('[data-rp-4v4-static-back]').click();
-    await page.waitForFunction(() => !document.body.classList.contains('rp-4v4-static-open'));
-  }
-
-  const regressionState = await page.evaluate(() => ({
-    storage: sessionStorage.getItem('real_play_4v4_time_slot'),
-    viewCount: document.querySelectorAll('.rp-4v4-static-view').length,
-    bannerCount: document.querySelectorAll('.rp-4v4-static-view [data-rp-4v4-team-slot]').length,
-    heading: document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim() || null,
-    preferencePanelExists: Boolean(document.querySelector('.rp-4v4-preference-panel')),
-    preferenceActionExists: Boolean(document.querySelector('[data-rp-4v4-preference-action]')),
-    teamCodeInstalled: window.__realPlay4v4TeamCodeBetaInstalled === true,
-    teamCodeAdminControlExists: Boolean(document.querySelector('[data-rp-4v4-team-code-admin]')),
+  const saturday = await page.evaluate(() => ({
+    keys: window.__realPlay4v4AssignedTeamKeys,
+    stored: JSON.parse(sessionStorage.getItem('real_play_4v4_time_slot') || 'null'),
     bodyOpen: document.body.classList.contains('rp-4v4-static-open'),
+    viewCount: document.querySelectorAll('[data-rp-4v4-static-view]').length,
   }));
+  assert.deepEqual(saturday.keys, ['lions', 'valiant']);
+  assert.equal(saturday.stored?.day, 'SATURDAY');
+  assert.equal(saturday.bodyOpen, true);
+  assert.equal(saturday.viewCount, 1);
 
-  assert.match(regressionState.storage || '', /2000-2200/);
-  assert.equal(regressionState.viewCount, 1);
-  assert.equal(regressionState.bannerCount, 1);
-  assert.equal(regressionState.heading, '8:00 PM – 10:00 PM');
-  assert.equal(regressionState.preferencePanelExists, true);
-  assert.equal(regressionState.preferenceActionExists, true);
-  assert.equal(regressionState.bodyOpen, false);
-  assert.equal(pageErrors.length, 0, `JavaScript exceptions: ${pageErrors.join(' | ')}`);
+  console.log('STAGE switch-to-sunday');
+  await page.locator('.rp-4v4-static-view .rp-3v3-select-head h1').click();
+  await page.waitForFunction(() => {
+    const modal = document.querySelector('.rp-team-rotation-modal');
+    return Boolean(modal && !modal.hidden);
+  });
+  await page.locator('[data-rp-rotation-id="sunday-2000-2200"]').click();
+  await page.waitForSelector('[data-rp-4v4-static-view].open', { timeout: 15000 });
+  await page.waitForFunction(() => {
+    const heading = document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1');
+    return heading?.textContent?.trim() === 'SUNDAY · 8:00 PM – 10:00 PM';
+  }, null, { timeout: 5000 });
 
-  console.log('LIVE_RESULT ' + JSON.stringify({
-    loadedSlotScript,
-    firstOpen,
-    regressionState,
-    pageErrors,
-    consoleErrors,
+  const sunday = await page.evaluate(() => ({
+    keys: window.__realPlay4v4AssignedTeamKeys,
+    stored: JSON.parse(sessionStorage.getItem('real_play_4v4_time_slot') || 'null'),
+    viewCount: document.querySelectorAll('[data-rp-4v4-static-view]').length,
   }));
-  console.log('LIVE_RESULT PASS');
+  assert.deepEqual(sunday.keys, ['eagles', 'steadfast']);
+  assert.equal(sunday.stored?.day, 'SUNDAY');
+  assert.equal(sunday.viewCount, 1);
 
-  clearTimeout(hardStop);
-  await browser.close();
-  process.exit(0);
+  await page.waitForTimeout(500);
+  assert.deepEqual(pageErrors, [], `Page errors: ${pageErrors.join(' | ')}`);
+  assert.equal(consoleErrors.some((text) => /Maximum call stack|out of memory|MutationObserver|unresponsive/i.test(text)), false, `Freeze-related console error: ${consoleErrors.join(' | ')}`);
+
+  console.log('LIVE_ROTATION_RESULT PASS');
 } catch (error) {
+  console.error('LIVE_ROTATION_RESULT FAIL', error);
+  process.exitCode = 1;
+} finally {
   clearTimeout(hardStop);
   if (browser) await browser.close().catch(() => {});
-  console.error('LIVE_RESULT FAIL', error?.stack || error);
-  process.exit(1);
 }
