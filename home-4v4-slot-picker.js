@@ -8,7 +8,7 @@
   compactHomeCardStyles.dataset.rpFourVFourCompactHomeCard = '1';
   document.head.appendChild(compactHomeCardStyles);
 
-  // Keep the selected team schedule in the top bar instead of rendering a
+  // Keep the selected team schedule in the top bar instead of showing a
   // second schedule banner below Team OVR. Other 4v4 layers may rewrite the
   // top-bar title while they render, so this guard restores the schedule after
   // any relevant DOM update.
@@ -54,8 +54,6 @@
       queued = false;
       const view = document.querySelector('[data-rp-4v4-static-view], .rp-4v4-static-view');
       if (!view) return;
-
-      view.querySelectorAll('[data-rp-4v4-team-slot], .rp-4v4-team-slot').forEach((banner) => banner.remove());
 
       const slot = selectedSlot();
       if (!slot?.label) return;
