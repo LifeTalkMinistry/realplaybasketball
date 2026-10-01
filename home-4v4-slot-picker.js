@@ -34,7 +34,7 @@
     loadLateBindBridge();
     const script = document.createElement('script');
     script.dataset.rpTeamRotationPickerLoader = '1';
-    script.src = 'home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v3';
+    script.src = 'home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v4';
     script.async = false;
     script.addEventListener('load', () => {
       if (document.querySelector('script[data-rp-4v4-slot-header-loader]')) return;
