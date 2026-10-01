@@ -8,8 +8,19 @@
   compactHomeCardStyles.dataset.rpFourVFourCompactHomeCard = '1';
   document.head.appendChild(compactHomeCardStyles);
 
+  const loadLateBindBridge = () => {
+    if (document.querySelector('script[data-rp-team-code-late-bind-loader]')) return;
+    const bridge = document.createElement('script');
+    bridge.dataset.rpTeamCodeLateBindLoader = '1';
+    bridge.src = 'home-4v4-team-code-late-bind.js?v=20261001-team-code-late-bind-v1';
+    bridge.async = false;
+    bridge.addEventListener('error', () => console.warn('[Real Play] 4v4 team-code late-bind bridge did not load.'), { once: true });
+    document.head.appendChild(bridge);
+  };
+
   const loadRotationPicker = () => {
     if (document.querySelector('script[data-rp-team-rotation-picker-loader]')) return;
+    loadLateBindBridge();
     const script = document.createElement('script');
     script.dataset.rpTeamRotationPickerLoader = '1';
     script.src = 'home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v3';
