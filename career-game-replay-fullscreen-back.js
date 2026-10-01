@@ -10,7 +10,7 @@
   const PSEUDO_OPEN_CLASS = 'rp-career-replay-pseudo-fullscreen-open';
   const HUD_VISIBLE_CLASS = 'rp-career-replay-fullscreen-hud-visible';
   const HUD_MANAGED_ATTR = 'data-rp-career-replay-fullscreen-hud-managed';
-  const HUD_FADE_MS = 900;
+  const HUD_FADE_MS = 4000;
   const FULLSCREEN_TRIGGER_SELECTOR = '[data-rp-career-replay-fullscreen],[data-rp-career-replay-expand-fixed]';
 
   let markerSyncTimer = null;
