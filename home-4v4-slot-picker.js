@@ -138,7 +138,7 @@
     if (document.querySelector('script[data-rp-4v4-cancellation-control-loader]')) return;
     const cancellation = document.createElement('script');
     cancellation.dataset.rpFourVFourCancellationControlLoader = '1';
-    cancellation.src = 'home-4v4-cancellation-control.js?v=20261001-cancel-control-v1';
+    cancellation.src = 'home-4v4-cancellation-control.js?v=20261001-cancel-control-v2';
     cancellation.async = false;
     cancellation.addEventListener('error', () => console.warn('[Real Play] 4v4 cancellation control did not load.'), { once: true });
     document.head.appendChild(cancellation);
