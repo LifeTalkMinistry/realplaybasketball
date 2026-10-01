@@ -140,6 +140,13 @@
     return rankingEligible(player) ? 'ranked' : 'unranked';
   }
 
+  function hasAuditedGame(player) {
+    const value = player?.lastPlayedAt ?? player?.ranking?.lastPlayedAt ?? null;
+    if (!value) return false;
+    const timestamp = Date.parse(value);
+    return Number.isFinite(timestamp);
+  }
+
   function updateIdentity(player) {
     const activeSheet = sheet();
     if (!activeSheet || !player) return;
@@ -169,15 +176,39 @@
     updateIdentity(player);
 
     const manuallyUnranked = Boolean(player.manualUnranked);
-    const inactive = playerRankingStatus(player) === 'inactive';
+    const competitiveStatus = playerRankingStatus(player);
+    const inactive = competitiveStatus === 'inactive';
+    const eligible = rankingEligible(player);
+
+    // Preserve the existing Ranked-player/manual-unrank behavior exactly.
+    // The only added path is an ACTIVE + naturally UNRANKED player who already
+    // has audited competitive history: Head Admin may move that player directly
+    // into the existing manual INACTIVE state.
     if (inactive && !manuallyUnranked) return;
-    if (!manuallyUnranked && !rankingEligible(player)) return;
+
+    let action = '';
+    let label = '';
+    let tone = 'warn';
+
+    if (manuallyUnranked) {
+      action = 'restore_rank';
+      label = 'RESTORE RANK ELIGIBILITY';
+      tone = 'attach';
+    } else if (eligible) {
+      action = 'unrank_player';
+      label = 'MAKE PLAYER UNRANKED';
+    } else if (competitiveStatus === 'unranked' && hasAuditedGame(player)) {
+      action = 'make_inactive_from_unranked';
+      label = 'MAKE PLAYER INACTIVE';
+    } else {
+      return;
+    }
 
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `rp-player-admin-action ${manuallyUnranked ? 'attach' : 'warn'}`;
-    button.dataset.rpManualRankAction = manuallyUnranked ? 'restore_rank' : 'unrank_player';
-    button.innerHTML = `${manuallyUnranked ? 'RESTORE RANK ELIGIBILITY' : 'MAKE PLAYER UNRANKED'} <span>›</span>`;
+    button.className = `rp-player-admin-action ${tone}`;
+    button.dataset.rpManualRankAction = action;
+    button.innerHTML = `${label} <span>›</span>`;
 
     const resetButton = actions.querySelector('[data-admin-menu-action="reset_competitive"]');
     actions.insertBefore(button, resetButton || null);
@@ -236,6 +267,8 @@
     event.stopPropagation();
 
     const action = button.dataset.rpManualRankAction;
+    const makingInactive = action === 'make_inactive_from_unranked';
+    const backendAction = makingInactive ? 'unrank_player' : action;
     const restoring = action === 'restore_rank';
     const playerName = selectedState?.playerName || 'this player';
     const ovrText = selectedState?.ovr === null || selectedState?.ovr === undefined
@@ -245,23 +278,40 @@
     const approved = window.confirm(
       restoring
         ? `Remove the manual unrank override for ${playerName}? Their existing OVR and game history stay unchanged. Their current status will still follow the normal activity rules.`
-        : `Make ${playerName} UNRANKED manually? ${ovrText} This is separate from the automatic INACTIVE status.`
+        : makingInactive
+          ? `Make ${playerName} INACTIVE manually? ${ovrText} They will leave the active player categories and appear only in INACTIVE until restored.`
+          : `Make ${playerName} UNRANKED manually? ${ovrText} This is separate from the automatic INACTIVE status.`
     );
     if (!approved) return;
 
     button.disabled = true;
     const oldText = button.textContent;
-    button.textContent = restoring ? 'RESTORING…' : 'MOVING TO UNRANKED…';
-    sheetStatus(restoring ? 'Removing manual unrank override…' : 'Moving player to Unranked…');
+    button.textContent = restoring
+      ? 'RESTORING…'
+      : makingInactive
+        ? 'MOVING TO INACTIVE…'
+        : 'MOVING TO UNRANKED…';
+    sheetStatus(
+      restoring
+        ? 'Removing manual unrank override…'
+        : makingInactive
+          ? 'Moving player to Inactive…'
+          : 'Moving player to Unranked…'
+    );
 
     try {
-      const data = await adminCall(action, {
+      const data = await adminCall(backendAction, {
         playerId: selectedPlayerId,
         confirmation: restoring ? 'RESTORE' : 'UNRANK',
       });
       selectedState = {
         ...(selectedState || {}),
         ...(data?.player || {}),
+        ...(makingInactive ? {
+          rankingStatus: 'inactive',
+          competitiveStatus: 'inactive',
+          inactive: true,
+        } : {}),
         userId: selectedPlayerId,
         playerId: selectedPlayerId,
       };
@@ -272,7 +322,12 @@
       ));
       cachedPlayersAt = Date.now();
       renderRankAction(selectedState);
-      sheetStatus(data?.message || (restoring ? 'Manual unrank override removed.' : 'Player is now Unranked.'), 'success');
+      sheetStatus(
+        makingInactive
+          ? `${playerName} is now Inactive. OVR and competitive history were preserved.`
+          : data?.message || (restoring ? 'Manual unrank override removed.' : 'Player is now Unranked.'),
+        'success'
+      );
 
       try { window.RealPlayPlayerAdmin?.refresh?.(); } catch (_error) {}
       try { window.RealPlayPlayers?.refresh?.(); } catch (_error) {}
@@ -280,7 +335,12 @@
     } catch (error) {
       button.disabled = false;
       button.textContent = oldText;
-      sheetStatus(error?.message || 'Could not update the player rank status.', 'error');
+      sheetStatus(
+        error?.message || (makingInactive
+          ? 'Could not move the player to Inactive.'
+          : 'Could not update the player rank status.'),
+        'error'
+      );
     }
   }, true);
 
