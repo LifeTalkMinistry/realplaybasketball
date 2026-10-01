@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const APP_URL = `https://joinrealplay.com/?rp-rotation-live=${Date.now()}`;
-const DEPLOY_ID = '20261001-team-schedule-rotation-v153';
+const DEPLOY_ID = '20261001-rotation-clean-ui-v154';
 const hardStop = setTimeout(() => {
   console.error('LIVE_4V4_ROTATION_HARD_TIMEOUT');
   process.exit(124);
@@ -59,7 +59,7 @@ try {
   await page.waitForFunction(() => !document.documentElement.classList.contains('rp-shell-booting'), null, { timeout: 20000 });
 
   const loadedScripts = await page.evaluate(() => [...document.scripts].map((script) => script.src));
-  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-slot-picker.js?v=20261001-team-schedule-rotation-v3')), 'Live page did not load the rotation picker loader.');
+  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-slot-picker.js?v=20261001-rotation-clean-ui-v1')), 'Live page did not load the fresh rotation clean UI loader.');
   assert.ok(loadedScripts.some((src) => src.includes('home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v3')), 'Live page did not load the safe rotation runtime.');
   assert.ok(loadedScripts.some((src) => src.includes('home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v1')), 'Live page did not load the rotation clean UI guard.');
 
