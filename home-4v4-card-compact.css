@@ -1,4 +1,4 @@
-/* 4v4 rotation Home card: keep only the useful season + rotation summary + CTA.
+/* 4v4 rotation Home card: keep only the useful season + CTA.
  * The old single-bracket capacity badge is intentionally hidden because team
  * availability is now assigned per Saturday/Sunday rotation, not one global slot.
  */
@@ -18,7 +18,7 @@ body.rp-simple-navigation-active [data-rp-home-open-rank] .rp-home-session-copy{
 }
 
 body.rp-simple-navigation-active [data-rp-home-open-rank-meta]{
-  margin-top:7px!important;
+  display:none!important;
 }
 
 body.rp-simple-navigation-active [data-rp-home-open-rank-capacity]{
