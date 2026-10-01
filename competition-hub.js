@@ -1,0 +1,353 @@
+(() => {
+  if (window.__realPlayCompetitionHubInstalled) return;
+  window.__realPlayCompetitionHubInstalled = true;
+
+  const FILTER_LABELS = [
+    'RANK OVR',
+    'UNRANK OVR',
+    'WIN RATE',
+    'MOST OVERALL MVP',
+    'MOST TEAM MVP',
+    'BEST SHOOTING %',
+    'BEST REBOUNDER',
+    'SCORING',
+    'ASSISTS',
+    'STEALS',
+    'BLOCKS',
+    'GAMES PLAYED',
+    'NAME',
+    'JERSEY #',
+  ];
+
+  let panel = null;
+  let navObserver = null;
+  let playerDecorationTimer = null;
+
+  const esc = (value) => String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+
+  function installStyles() {
+    if (document.querySelector('[data-rp-competition-hub-styles]')) return;
+    const style = document.createElement('style');
+    style.dataset.rpCompetitionHubStyles = '1';
+    style.textContent = `
+      body.rp-competition-hub-open{overflow:hidden!important}
+      .rp-competition-hub{
+        position:fixed;inset:0;z-index:620;display:none;background:
+        radial-gradient(circle at 15% 12%,rgba(27,182,232,.15),transparent 30%),
+        radial-gradient(circle at 88% 86%,rgba(220,35,73,.12),transparent 34%),
+        #02060b;color:#eef7ff;overflow:auto;-webkit-overflow-scrolling:touch;
+      }
+      .rp-competition-hub.open{display:block}
+      .rp-competition-shell{width:min(100%,760px);min-height:100dvh;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));box-sizing:border-box}
+      .rp-competition-topbar{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:10px;position:sticky;top:0;z-index:4;margin:-4px -4px 18px;padding:8px 4px 12px;background:linear-gradient(180deg,rgba(2,6,11,.98) 70%,rgba(2,6,11,0));backdrop-filter:blur(10px)}
+      .rp-competition-back,.rp-competition-close{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(124,204,240,.16);border-radius:13px;background:#07101a;color:#dff7ff;font:900 1rem/1 Arial,sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+      .rp-competition-back[hidden]{visibility:hidden;display:grid!important}
+      .rp-competition-heading{text-align:center;min-width:0}
+      .rp-competition-heading small{display:block;color:#49d8ff;font:950 .48rem/1.2 Arial,sans-serif;letter-spacing:.18em}
+      .rp-competition-heading strong{display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.15rem;font-style:italic;font-weight:950;letter-spacing:.035em}
+      .rp-competition-view[hidden]{display:none!important}
+      .rp-competition-intro{padding:8px 4px 22px}
+      .rp-competition-intro small{display:block;color:#5d7187;font:900 .54rem/1.2 Arial,sans-serif;letter-spacing:.16em}
+      .rp-competition-intro h1{margin:7px 0 8px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:clamp(2rem,9vw,3.25rem);font-style:italic;font-weight:950;line-height:.95;letter-spacing:.02em}
+      .rp-competition-intro p{max-width:560px;margin:0;color:#8ea1b6;font:700 .72rem/1.55 Arial,sans-serif}
+      .rp-competition-card-grid{display:grid;gap:11px}
+      .rp-competition-card{
+        position:relative;width:100%;min-height:136px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:16px;padding:20px;
+        overflow:hidden;border:1px solid rgba(123,205,241,.14);border-radius:22px;background:linear-gradient(145deg,#08131f 0%,#04090f 68%);color:#eff8ff;text-align:left;
+        box-shadow:0 18px 42px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.045);transition:transform .16s ease,border-color .16s ease,background .16s ease;
+      }
+      .rp-competition-card::before{content:'';position:absolute;width:190px;height:190px;border-radius:50%;right:-82px;top:-98px;background:radial-gradient(circle,rgba(68,217,255,.2),rgba(68,217,255,0) 66%);pointer-events:none}
+      .rp-competition-card.tuneup::before{background:radial-gradient(circle,rgba(255,99,121,.17),rgba(255,99,121,0) 66%)}
+      .rp-competition-card.league::before{background:radial-gradient(circle,rgba(164,122,255,.2),rgba(164,122,255,0) 66%)}
+      .rp-competition-card:hover{border-color:rgba(78,218,255,.35);background:linear-gradient(145deg,#0b1826 0%,#050b12 68%)}
+      .rp-competition-card:active{transform:scale(.987)}
+      .rp-competition-card:focus-visible,.rp-season-card:focus-visible,.rp-scope-filter:focus-visible,.rp-competition-back:focus-visible,.rp-competition-close:focus-visible{outline:2px solid #5bdfff;outline-offset:2px}
+      .rp-competition-card-copy{position:relative;z-index:1}
+      .rp-competition-card-copy small{display:block;margin-bottom:7px;color:#55dfff;font:950 .48rem/1 Arial,sans-serif;letter-spacing:.14em}
+      .rp-competition-card.tuneup small{color:#ff7a92}.rp-competition-card.league small{color:#b69cff}
+      .rp-competition-card-copy strong{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.42rem;font-style:italic;font-weight:950;letter-spacing:.025em}
+      .rp-competition-card-copy p{margin:7px 0 0;color:#8195ab;font:700 .64rem/1.45 Arial,sans-serif}
+      .rp-competition-card-arrow{position:relative;z-index:1;display:grid;place-items:center;width:42px;height:42px;border:1px solid rgba(84,220,255,.22);border-radius:50%;color:#62dfff;background:rgba(9,30,43,.6);font:950 1rem/1 Arial,sans-serif}
+      .rp-competition-footnote{margin:16px 3px 0;color:#52677d;font:800 .52rem/1.5 Arial,sans-serif;letter-spacing:.035em}
+      .rp-season-list{display:grid;gap:10px;padding-top:4px}
+      .rp-season-card{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:18px;border:1px solid rgba(166,131,255,.17);border-radius:18px;background:linear-gradient(145deg,#0b101a,#05080e);color:#f1f4ff;text-align:left}
+      .rp-season-card small{display:block;color:#9c85e9;font:950 .46rem/1 Arial,sans-serif;letter-spacing:.15em}
+      .rp-season-card strong{display:block;margin-top:5px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.2rem;font-style:italic;letter-spacing:.03em}
+      .rp-season-card span{color:#748399;font:900 .48rem/1 Arial,sans-serif;letter-spacing:.08em}
+      .rp-season-card b{display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(181,152,255,.2);border-radius:50%;color:#b9a3ff;background:rgba(44,31,80,.28)}
+      .rp-scope-wrap{display:grid;gap:12px}
+      .rp-scope-context{padding:5px 3px 2px}
+      .rp-scope-context small{display:block;color:#5edfff;font:950 .48rem/1 Arial,sans-serif;letter-spacing:.15em}
+      .rp-scope-context strong{display:block;margin-top:5px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.45rem;font-style:italic;letter-spacing:.025em}
+      .rp-scope-context p{margin:7px 0 0;color:#778ba1;font:700 .62rem/1.5 Arial,sans-serif}
+      .rp-scope-filters{display:flex;gap:6px;padding:7px;overflow-x:auto;border:1px solid rgba(72,216,255,.16);border-radius:16px;background:rgba(2,7,13,.92);scrollbar-width:none;-webkit-overflow-scrolling:touch}
+      .rp-scope-filters::-webkit-scrollbar{display:none}
+      .rp-scope-filter{flex:0 0 calc((100% - 24px)/5);min-width:74px;min-height:44px;padding:4px;border:1px solid rgba(160,194,224,.18);border-radius:12px;background:#0a1420;color:#91a7bd;font:950 .43rem/1.05 Arial,sans-serif;letter-spacing:.02em;text-align:center}
+      .rp-scope-filter.active{border-color:#55ddff;background:linear-gradient(180deg,#57ddff,#1fb8ea);color:#00131c}
+      .rp-scope-empty{display:grid;place-items:center;min-height:260px;padding:28px;border:1px dashed rgba(117,194,230,.15);border-radius:20px;background:rgba(4,9,15,.56);text-align:center}
+      .rp-scope-empty div{max-width:390px}
+      .rp-scope-empty b{display:grid;place-items:center;width:54px;height:54px;margin:0 auto 14px;border:1px solid rgba(72,216,255,.18);border-radius:50%;color:#55dfff;background:rgba(20,103,132,.12);font:950 1.15rem/1 Arial,sans-serif}
+      .rp-scope-empty strong{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.2rem;font-style:italic;letter-spacing:.035em}
+      .rp-scope-empty p{margin:8px 0 0;color:#71869d;font:700 .65rem/1.55 Arial,sans-serif}
+      .rp-scope-empty small{display:block;margin-top:13px;color:#45596f;font:850 .5rem/1.5 Arial,sans-serif;letter-spacing:.04em}
+      @media(min-width:640px){.rp-competition-card-grid{grid-template-columns:1fr 1fr}.rp-competition-card:first-child{grid-column:1/-1}.rp-scope-filter{flex-basis:105px}}
+      @media(max-width:390px){.rp-competition-shell{padding-inline:12px}.rp-competition-card{min-height:126px;padding:17px}.rp-competition-card-copy strong{font-size:1.28rem}.rp-scope-filter{min-width:68px;font-size:.39rem}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function createPanel() {
+    if (panel) return panel;
+    panel = document.createElement('section');
+    panel.className = 'rp-competition-hub';
+    panel.dataset.rpCompetitionHub = 'true';
+    panel.setAttribute('aria-hidden', 'true');
+    panel.innerHTML = `
+      <div class="rp-competition-shell">
+        <header class="rp-competition-topbar">
+          <button class="rp-competition-back" type="button" data-rp-competition-back aria-label="Back" hidden>←</button>
+          <div class="rp-competition-heading"><small>REAL PLAY BASKETBALL</small><strong data-rp-competition-title>COMPETE</strong></div>
+          <button class="rp-competition-close" type="button" data-rp-competition-close aria-label="Close">×</button>
+        </header>
+
+        <section class="rp-competition-view" data-rp-competition-view="hub">
+          <div class="rp-competition-intro">
+            <small>CHOOSE YOUR COMPETITION VIEW</small>
+            <h1>COMPETE.</h1>
+            <p>Follow your overall Real Play standing, enter Tune-Up competition, or open an official League season.</p>
+          </div>
+          <div class="rp-competition-card-grid">
+            <button class="rp-competition-card rankings" type="button" data-rp-competition-action="player-rankings">
+              <span class="rp-competition-card-copy"><small>OVERALL · CAREER</small><strong>PLAYER RANKINGS</strong><p>Your overall Real Play rank, OVR and verified career performance.</p></span><span class="rp-competition-card-arrow">→</span>
+            </button>
+            <button class="rp-competition-card tuneup" type="button" data-rp-competition-action="tune-up">
+              <span class="rp-competition-card-copy"><small>PROGRAM RANKING</small><strong>TUNE-UP</strong><p>Ranking and player stats scoped only to the Tune-Up competition.</p></span><span class="rp-competition-card-arrow">→</span>
+            </button>
+            <button class="rp-competition-card league" type="button" data-rp-competition-action="league">
+              <span class="rp-competition-card-copy"><small>SEASON COMPETITION</small><strong>LEAGUE</strong><p>Choose a League season, then view its own rankings, teams, games and stats.</p></span><span class="rp-competition-card-arrow">→</span>
+            </button>
+          </div>
+          <p class="rp-competition-footnote">Player Rankings is the overall player layer. Tune-Up and League rankings belong only to the competition or season you opened.</p>
+        </section>
+
+        <section class="rp-competition-view" data-rp-competition-view="league" hidden>
+          <div class="rp-competition-intro">
+            <small>OFFICIAL REAL PLAY COMPETITION</small>
+            <h1>LEAGUE SEASONS.</h1>
+            <p>Each season keeps its own rankings and statistics while verified competition can still become part of a player's wider Real Play career.</p>
+          </div>
+          <div class="rp-season-list">
+            <button class="rp-season-card" type="button" data-rp-league-season="1"><span><small>LEAGUE SEASON</small><strong>SEASON 1</strong><span>UPCOMING</span></span><b>→</b></button>
+            <button class="rp-season-card" type="button" data-rp-league-season="2"><span><small>LEAGUE SEASON</small><strong>SEASON 2</strong><span>FUTURE</span></span><b>→</b></button>
+          </div>
+        </section>
+
+        <section class="rp-competition-view" data-rp-competition-view="scope" hidden>
+          <div class="rp-scope-wrap">
+            <div class="rp-scope-context"><small data-rp-scope-kicker>COMPETITION RANKING</small><strong data-rp-scope-title>TUNE-UP</strong><p data-rp-scope-copy>Rankings and player statistics in this competition only.</p></div>
+            <div class="rp-scope-filters" aria-label="Competition ranking filters" data-rp-scope-filters></div>
+            <div class="rp-scope-empty"><div><b>◎</b><strong data-rp-scope-empty-title>NO VERIFIED RESULTS YET.</strong><p data-rp-scope-empty-copy>Rankings and stats will appear here after verified competition games begin.</p><small>OVERALL PLAYER RANKINGS ARE KEPT SEPARATE UNTIL THIS COMPETITION HAS ITS OWN VERIFIED DATA.</small></div></div>
+          </div>
+        </section>
+      </div>`;
+    document.body.appendChild(panel);
+
+    panel.querySelector('[data-rp-competition-close]')?.addEventListener('click', close);
+    panel.querySelector('[data-rp-competition-back]')?.addEventListener('click', goBack);
+    panel.querySelector('[data-rp-competition-action="player-rankings"]')?.addEventListener('click', openPlayerRankings);
+    panel.querySelector('[data-rp-competition-action="tune-up"]')?.addEventListener('click', openTuneUp);
+    panel.querySelector('[data-rp-competition-action="league"]')?.addEventListener('click', openLeague);
+    panel.querySelectorAll('[data-rp-league-season]').forEach((button) => {
+      button.addEventListener('click', () => openLeagueSeason(button.dataset.rpLeagueSeason));
+    });
+
+    const filters = panel.querySelector('[data-rp-scope-filters]');
+    if (filters) {
+      filters.innerHTML = FILTER_LABELS.map((label, index) => `<button class="rp-scope-filter${index === 0 ? ' active' : ''}" type="button" aria-pressed="${index === 0 ? 'true' : 'false'}">${esc(label)}</button>`).join('');
+      filters.addEventListener('click', (event) => {
+        const button = event.target.closest('.rp-scope-filter');
+        if (!button) return;
+        filters.querySelectorAll('.rp-scope-filter').forEach((item) => {
+          const active = item === button;
+          item.classList.toggle('active', active);
+          item.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+      });
+    }
+    return panel;
+  }
+
+  function setView(name) {
+    createPanel();
+    panel.querySelectorAll('[data-rp-competition-view]').forEach((view) => {
+      view.hidden = view.dataset.rpCompetitionView !== name;
+    });
+    const title = panel.querySelector('[data-rp-competition-title]');
+    const back = panel.querySelector('[data-rp-competition-back]');
+    if (title) title.textContent = name === 'hub' ? 'COMPETE' : name === 'league' ? 'LEAGUE' : 'RANKINGS';
+    if (back) back.hidden = name === 'hub';
+    panel.dataset.rpCompetitionCurrentView = name;
+  }
+
+  function markCompeteNav(active = true) {
+    const button = document.querySelector('[data-rp-simple-nav-item="players"]');
+    const nav = document.querySelector('[data-rp-simple-nav]');
+    if (!button || !nav) return;
+    nav.querySelectorAll('[data-rp-simple-nav-item]').forEach((item) => {
+      const selected = active && item === button;
+      item.classList.toggle('active', selected);
+      item.setAttribute('aria-current', selected ? 'page' : 'false');
+    });
+  }
+
+  function open() {
+    createPanel();
+    setView('hub');
+    panel.classList.add('open');
+    panel.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('rp-competition-hub-open');
+    markCompeteNav(true);
+    window.requestAnimationFrame(() => panel.querySelector('[data-rp-competition-action="player-rankings"]')?.focus({ preventScroll: true }));
+  }
+
+  function close() {
+    if (!panel) return;
+    const focused = document.activeElement;
+    if (focused && panel.contains(focused)) {
+      try { focused.blur(); } catch (_error) {}
+    }
+    panel.classList.remove('open');
+    panel.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('rp-competition-hub-open');
+  }
+
+  function goBack() {
+    const current = panel?.dataset?.rpCompetitionCurrentView || 'hub';
+    if (current === 'scope' && panel?.dataset?.rpScopeParent === 'league') {
+      setView('league');
+      return;
+    }
+    setView('hub');
+  }
+
+  function decoratePlayerRankings(attempt = 0) {
+    const world = document.querySelector('[data-rp-world]');
+    const playersView = world?.querySelector('[data-world-view="players"]');
+    if (!world || !playersView || playersView.hidden) {
+      if (attempt < 18) playerDecorationTimer = window.setTimeout(() => decoratePlayerRankings(attempt + 1), 70);
+      return;
+    }
+    const topTitle = world.querySelector('.rp-world-title strong');
+    const topBadge = world.querySelector('.rp-world-online');
+    const kicker = playersView.querySelector('.rp-world-player-directory-head small');
+    const heading = playersView.querySelector('.rp-world-player-directory-head strong');
+    if (topTitle) topTitle.textContent = 'PLAYER RANKINGS';
+    if (topBadge) topBadge.textContent = 'OVERALL';
+    if (kicker) kicker.textContent = 'OVERALL REAL PLAY';
+    if (heading) heading.textContent = 'PLAYER RANKINGS';
+  }
+
+  function openPlayerRankings() {
+    close();
+    if (playerDecorationTimer) window.clearTimeout(playerDecorationTimer);
+    if (window.RealPlaySimpleNavigation?.players) {
+      window.RealPlaySimpleNavigation.players();
+    } else {
+      const button = document.querySelector('[data-rp-simple-nav-item="players"]');
+      if (button) {
+        button.dataset.rpCompetitionBypass = '1';
+        button.click();
+        delete button.dataset.rpCompetitionBypass;
+      }
+    }
+    playerDecorationTimer = window.setTimeout(() => decoratePlayerRankings(0), 45);
+  }
+
+  function configureScope({ title, kicker, copy, emptyTitle, emptyCopy, parent }) {
+    createPanel();
+    panel.dataset.rpScopeParent = parent || 'hub';
+    const titleNode = panel.querySelector('[data-rp-scope-title]');
+    const kickerNode = panel.querySelector('[data-rp-scope-kicker]');
+    const copyNode = panel.querySelector('[data-rp-scope-copy]');
+    const emptyTitleNode = panel.querySelector('[data-rp-scope-empty-title]');
+    const emptyCopyNode = panel.querySelector('[data-rp-scope-empty-copy]');
+    if (titleNode) titleNode.textContent = title;
+    if (kickerNode) kickerNode.textContent = kicker;
+    if (copyNode) copyNode.textContent = copy;
+    if (emptyTitleNode) emptyTitleNode.textContent = emptyTitle;
+    if (emptyCopyNode) emptyCopyNode.textContent = emptyCopy;
+    setView('scope');
+  }
+
+  function openTuneUp() {
+    configureScope({
+      title: 'TUNE-UP',
+      kicker: 'TUNE-UP · PLAYER RANKING',
+      copy: 'Every ranking and statistic on this page belongs only to the Tune-Up competition.',
+      emptyTitle: 'NO TUNE-UP RESULTS YET.',
+      emptyCopy: 'Tune-Up rankings and stats will appear here when verified Tune-Up games begin.',
+      parent: 'hub',
+    });
+  }
+
+  function openLeague() {
+    createPanel();
+    setView('league');
+  }
+
+  function openLeagueSeason(season) {
+    const cleanSeason = String(season || '').replace(/[^0-9A-Za-z -]/g, '') || '1';
+    configureScope({
+      title: `SEASON ${cleanSeason}`,
+      kicker: `LEAGUE · SEASON ${cleanSeason} · PLAYER RANKING`,
+      copy: `Every ranking and statistic on this page belongs only to League Season ${cleanSeason}.`,
+      emptyTitle: `NO SEASON ${cleanSeason} RESULTS YET.`,
+      emptyCopy: `Season ${cleanSeason} rankings and stats will appear here after verified League games begin.`,
+      parent: 'league',
+    });
+  }
+
+  function renamePlayersNav() {
+    const button = document.querySelector('[data-rp-simple-nav-item="players"]');
+    if (!button) return false;
+    const label = button.querySelector('small');
+    if (label && label.textContent !== 'COMPETE') label.textContent = 'COMPETE';
+    button.setAttribute('aria-label', 'Open Real Play competition hub');
+    return true;
+  }
+
+  function handlePlayersNavCapture(event) {
+    const button = event.target.closest?.('[data-rp-simple-nav-item="players"]');
+    if (!button || button.dataset.rpCompetitionBypass === '1') return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    open();
+  }
+
+  function install() {
+    installStyles();
+    createPanel();
+    renamePlayersNav();
+    document.addEventListener('click', handlePlayersNavCapture, true);
+
+    navObserver = new MutationObserver(() => renamePlayersNav());
+    navObserver.observe(document.documentElement, { childList: true, subtree: true });
+    return true;
+  }
+
+  install();
+
+  window.RealPlayCompetitionHub = {
+    open,
+    close,
+    openPlayerRankings,
+    openTuneUp,
+    openLeague,
+    openLeagueSeason,
+  };
+})();
