@@ -284,6 +284,10 @@
     return target?.closest?.('[data-rp-career-replay]') || document.querySelector('[data-rp-career-replay].open');
   }
 
+  function replayRootContaining(target) {
+    return target?.closest?.('[data-rp-career-replay]') || null;
+  }
+
   function cancelReplayOverlayRelease(root) {
     const timer = root ? replayOverlayTimers.get(root) : null;
     if (!timer) return;
@@ -314,37 +318,58 @@
     scheduleReplayOverlayRelease(root);
   }
 
-  document.addEventListener('realplay:replay-first-play', (event) => {
-    activateFastReplayOverlayRelease(replayRootFrom(event.target));
-  }, true);
+  function replayInteractionStartsPlayback(target) {
+    return Boolean(target?.closest?.(
+      '[data-rp-career-replay-play],'
+      + '[data-rp-career-replay-brand-play],'
+      + '[data-rp-career-replay-marker],'
+      + '[data-rp-career-replay-fullscreen-marker],'
+      + '[data-rp-career-replay-game-skip-ball]'
+    ));
+  }
 
-  document.addEventListener('pointerdown', (event) => {
-    const stage = event.target?.closest?.('[data-rp-career-replay-stage]');
-    if (!stage) return;
-    const root = replayRootFrom(stage);
-    if (root?.getAttribute('data-rp-fast-overlay-live') === '1') scheduleReplayOverlayRelease(root);
-  }, true);
-
-  document.addEventListener('touchstart', (event) => {
-    const stage = event.target?.closest?.('[data-rp-career-replay-stage]');
-    if (!stage) return;
-    const root = replayRootFrom(stage);
-    if (root?.getAttribute('data-rp-fast-overlay-live') === '1') scheduleReplayOverlayRelease(root);
-  }, { capture: true, passive: true });
-
-  document.addEventListener('click', (event) => {
-    const root = replayRootFrom(event.target);
+  function handleReplayInteraction(target) {
+    const root = replayRootContaining(target);
     if (!root) return;
 
-    if (event.target?.closest?.('[data-rp-career-replay-play], [data-rp-career-replay-brand-play]')) {
+    if (replayInteractionStartsPlayback(target)) {
       activateFastReplayOverlayRelease(root);
       return;
     }
 
-    if (event.target?.closest?.('[data-rp-career-replay-mute], [data-rp-career-replay-stage]')
-      && root.getAttribute('data-rp-fast-overlay-live') === '1') {
+    if (root.getAttribute('data-rp-fast-overlay-live') === '1') {
       scheduleReplayOverlayRelease(root);
     }
+  }
+
+  document.addEventListener('realplay:replay-first-play', (event) => {
+    activateFastReplayOverlayRelease(replayRootFrom(event.target));
+  }, true);
+
+  // Every replay interaction shares one release authority. This includes the
+  // video surface, play/pause, mute, seek controls, audit stamp balls, game-skip
+  // balls, fullscreen markers/buttons, and any future control added inside the
+  // replay viewer. No trigger is allowed to fall back to the old long retention.
+  document.addEventListener('pointerdown', (event) => {
+    handleReplayInteraction(event.target);
+  }, true);
+
+  document.addEventListener('touchstart', (event) => {
+    handleReplayInteraction(event.target);
+  }, { capture: true, passive: true });
+
+  document.addEventListener('click', (event) => {
+    handleReplayInteraction(event.target);
+  }, true);
+
+  document.addEventListener('input', (event) => {
+    if (!event.target?.closest?.('[data-rp-career-replay]')) return;
+    handleReplayInteraction(event.target);
+  }, true);
+
+  document.addEventListener('change', (event) => {
+    if (!event.target?.closest?.('[data-rp-career-replay]')) return;
+    handleReplayInteraction(event.target);
   }, true);
 
   document.addEventListener('click', (event) => {
