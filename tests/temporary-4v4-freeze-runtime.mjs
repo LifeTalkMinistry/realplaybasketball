@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const APP_URL = `https://joinrealplay.com/?rp-freeze-rotation=${Date.now()}`;
-const DEPLOY_ID = '20261001-team-schedule-rotation-v153';
+const DEPLOY_ID = '20261001-rotation-clean-ui-v154';
 const requests = [];
 
 const browser = await chromium.launch({ headless: true });
