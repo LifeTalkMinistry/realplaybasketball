@@ -22,6 +22,9 @@
   let panel = null;
   let navObserver = null;
   let playerDecorationTimer = null;
+  let presentationTimer = null;
+  let playerPresentation = '';
+  let scopedRanking = null;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -95,7 +98,24 @@
       .rp-scope-empty strong{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.2rem;font-style:italic;letter-spacing:.035em}
       .rp-scope-empty p{margin:8px 0 0;color:#71869d;font:700 .65rem/1.55 Arial,sans-serif}
       .rp-scope-empty small{display:block;margin-top:13px;color:#45596f;font:850 .5rem/1.5 Arial,sans-serif;letter-spacing:.04em}
-      @media(min-width:640px){.rp-competition-card-grid{grid-template-columns:1fr 1fr}.rp-competition-card:first-child{grid-column:1/-1}.rp-scope-filter{flex-basis:105px}}
+
+      /* Scoped competition rankings intentionally reuse the real Player Rankings body. */
+      .rp-world.rp-competition-scoped-ranking .rp-world-player-directory-head{display:none!important}
+      .rp-world.rp-competition-scoped-ranking [data-world-player-status]{display:none!important}
+      .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row{display:none!important}
+      .rp-world.rp-competition-scoped-ranking .rp-world-title span{display:none!important}
+      .rp-world.rp-competition-scoped-ranking .rp-world-online{visibility:hidden!important}
+      .rp-world.rp-competition-scoped-ranking [data-world-close]{display:none!important}
+      .rp-competition-world-scope-header{padding:5px 3px 4px}
+      .rp-competition-world-scope-header small{display:block;color:#5edfff;font:950 .48rem/1 Arial,sans-serif;letter-spacing:.15em}
+      .rp-competition-world-scope-header strong{display:block;margin-top:6px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.55rem;font-style:italic;font-weight:950;letter-spacing:.025em;color:#eef7ff}
+      .rp-competition-world-scope-header p{margin:7px 0 0;color:#8295aa;font:700 .62rem/1.5 Arial,sans-serif}
+      .rp-competition-scope-empty-row{display:grid;place-items:center;min-height:190px;padding:28px 14px;text-align:center}
+      .rp-competition-scope-empty-row div{max-width:380px}
+      .rp-competition-scope-empty-row strong{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.18rem;font-style:italic;font-weight:950;letter-spacing:.03em;color:#eef7ff}
+      .rp-competition-scope-empty-row p{margin:8px 0 0;color:#71859b;font:700 .63rem/1.55 Arial,sans-serif}
+      .rp-competition-world-scope-back{position:relative;z-index:2}
+            @media(min-width:640px){.rp-competition-card-grid{grid-template-columns:1fr 1fr}.rp-competition-card:first-child{grid-column:1/-1}.rp-scope-filter{flex-basis:105px}}
       @media(max-width:390px){.rp-competition-shell{padding-inline:12px}.rp-competition-card{min-height:126px;padding:17px}.rp-competition-card-copy strong{font-size:1.28rem}.rp-scope-filter{min-width:68px;font-size:.39rem}}
     `;
     document.head.appendChild(style);
@@ -205,13 +225,22 @@
     });
   }
 
-  function open() {
+  function showPanelView(name = 'hub') {
     createPanel();
-    setView('hub');
+    setView(name);
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-competition-hub-open');
     markCompeteNav(true);
+  }
+
+  function open() {
+    const wasScoped = playerPresentation === 'scoped';
+    if (wasScoped) {
+      clearPlayerPresentation();
+      try { window.RealPlayWorld?.close?.(); } catch (_error) {}
+    }
+    showPanelView('hub');
     window.requestAnimationFrame(() => panel.querySelector('[data-rp-competition-action="player-rankings"]')?.focus({ preventScroll: true }));
   }
 
@@ -235,57 +264,160 @@
     setView('hub');
   }
 
+  function removeScopedArtifacts() {
+    const world = document.querySelector('[data-rp-world]');
+    if (!world) return;
+    world.classList.remove('rp-competition-scoped-ranking');
+    delete world.dataset.rpCompetitionScope;
+    world.querySelector('[data-rp-competition-world-scope-header]')?.remove();
+    world.querySelector('[data-rp-competition-world-scope-back]')?.remove();
+    world.querySelector('[data-rp-competition-scope-empty]')?.remove();
+  }
+
+  function clearPlayerPresentation() {
+    if (playerDecorationTimer) {
+      window.clearTimeout(playerDecorationTimer);
+      playerDecorationTimer = null;
+    }
+    if (presentationTimer) {
+      window.clearTimeout(presentationTimer);
+      presentationTimer = null;
+    }
+    removeScopedArtifacts();
+    playerPresentation = '';
+    scopedRanking = null;
+  }
+
+  function openPlayersRoute() {
+    if (window.RealPlaySimpleNavigation?.players) {
+      window.RealPlaySimpleNavigation.players();
+      return;
+    }
+    const button = document.querySelector('[data-rp-simple-nav-item="players"]');
+    if (!button) return;
+    button.dataset.rpCompetitionBypass = '1';
+    button.click();
+    delete button.dataset.rpCompetitionBypass;
+  }
+
   function decoratePlayerRankings(attempt = 0) {
+    if (playerPresentation !== 'overall') return;
     const world = document.querySelector('[data-rp-world]');
     const playersView = world?.querySelector('[data-world-view="players"]');
     if (!world || !playersView || playersView.hidden) {
       if (attempt < 18) playerDecorationTimer = window.setTimeout(() => decoratePlayerRankings(attempt + 1), 70);
       return;
     }
+
+    removeScopedArtifacts();
+    world.dataset.rpCompetitionPresentation = 'overall';
+
     const topTitle = world.querySelector('.rp-world-title strong');
+    const topSubtitle = world.querySelector('.rp-world-title span');
     const topBadge = world.querySelector('.rp-world-online');
     const kicker = playersView.querySelector('.rp-world-player-directory-head small');
     const heading = playersView.querySelector('.rp-world-player-directory-head strong');
+
     if (topTitle) topTitle.textContent = 'PLAYER RANKINGS';
-    if (topBadge) topBadge.textContent = 'OVERALL';
+    if (topSubtitle) topSubtitle.textContent = 'REAL PLAY BASKETBALL';
+    if (topBadge) {
+      topBadge.style.removeProperty('visibility');
+      topBadge.textContent = 'OVERALL';
+    }
     if (kicker) kicker.textContent = 'OVERALL REAL PLAY';
     if (heading) heading.textContent = 'PLAYER RANKINGS';
   }
 
   function openPlayerRankings() {
     close();
-    if (playerDecorationTimer) window.clearTimeout(playerDecorationTimer);
-    if (window.RealPlaySimpleNavigation?.players) {
-      window.RealPlaySimpleNavigation.players();
-    } else {
-      const button = document.querySelector('[data-rp-simple-nav-item="players"]');
-      if (button) {
-        button.dataset.rpCompetitionBypass = '1';
-        button.click();
-        delete button.dataset.rpCompetitionBypass;
-      }
-    }
+    clearPlayerPresentation();
+    playerPresentation = 'overall';
+    openPlayersRoute();
     playerDecorationTimer = window.setTimeout(() => decoratePlayerRankings(0), 45);
   }
 
-  function configureScope({ title, kicker, copy, emptyTitle, emptyCopy, parent }) {
-    createPanel();
-    panel.dataset.rpScopeParent = parent || 'hub';
-    const titleNode = panel.querySelector('[data-rp-scope-title]');
-    const kickerNode = panel.querySelector('[data-rp-scope-kicker]');
-    const copyNode = panel.querySelector('[data-rp-scope-copy]');
-    const emptyTitleNode = panel.querySelector('[data-rp-scope-empty-title]');
-    const emptyCopyNode = panel.querySelector('[data-rp-scope-empty-copy]');
-    if (titleNode) titleNode.textContent = title;
-    if (kickerNode) kickerNode.textContent = kicker;
-    if (copyNode) copyNode.textContent = copy;
-    if (emptyTitleNode) emptyTitleNode.textContent = emptyTitle;
-    if (emptyCopyNode) emptyCopyNode.textContent = emptyCopy;
-    setView('scope');
+  function scopedHeaderMarkup(config) {
+    return '<small>' + esc(config.kicker) + '</small>'
+      + '<strong>' + esc(config.title) + '</strong>'
+      + '<p>' + esc(config.copy) + '</p>';
+  }
+
+  function applyScopedRanking(attempt = 0) {
+    const config = scopedRanking;
+    if (!config || playerPresentation !== 'scoped') return;
+
+    const world = document.querySelector('[data-rp-world]');
+    const playersView = world?.querySelector('[data-world-view="players"]');
+    const directory = playersView?.querySelector('.rp-world-player-directory');
+    const list = playersView?.querySelector('[data-world-player-list]');
+    const controls = playersView?.querySelector('[data-world-player-sort]');
+    const topbar = world?.querySelector('.rp-world-topbar');
+
+    if (!world || !playersView || playersView.hidden || !directory || !list || !controls || !topbar) {
+      if (attempt < 22) playerDecorationTimer = window.setTimeout(() => applyScopedRanking(attempt + 1), 70);
+      return;
+    }
+
+    world.classList.add('rp-competition-scoped-ranking');
+    world.dataset.rpCompetitionScope = config.id;
+    world.dataset.rpCompetitionPresentation = 'scoped';
+
+    const topTitle = world.querySelector('.rp-world-title strong');
+    if (topTitle) topTitle.textContent = 'RANKINGS';
+
+    let back = topbar.querySelector('[data-rp-competition-world-scope-back]');
+    if (!back) {
+      back = document.createElement('button');
+      back.type = 'button';
+      back.className = 'rp-world-back rp-competition-world-scope-back';
+      back.dataset.rpCompetitionWorldScopeBack = 'true';
+      back.setAttribute('aria-label', 'Back to Stats');
+      back.textContent = '←';
+      const title = topbar.querySelector('.rp-world-title');
+      topbar.insertBefore(back, title || null);
+      back.addEventListener('click', returnFromScopedRanking);
+    }
+
+    let header = directory.querySelector('[data-rp-competition-world-scope-header]');
+    if (!header) {
+      header = document.createElement('header');
+      header.className = 'rp-competition-world-scope-header';
+      header.dataset.rpCompetitionWorldScopeHeader = 'true';
+      directory.insertBefore(header, controls);
+    }
+    header.innerHTML = scopedHeaderMarkup(config);
+
+    let empty = list.querySelector('[data-rp-competition-scope-empty]');
+    if (!empty) {
+      empty = document.createElement('div');
+      empty.className = 'rp-competition-scope-empty-row';
+      empty.dataset.rpCompetitionScopeEmpty = 'true';
+      list.prepend(empty);
+    }
+    empty.innerHTML = '<div><strong>' + esc(config.emptyTitle) + '</strong><p>' + esc(config.emptyCopy) + '</p></div>';
+
+    world.scrollTop = 0;
+  }
+
+  function openScopedRanking(config) {
+    close();
+    clearPlayerPresentation();
+    scopedRanking = config;
+    playerPresentation = 'scoped';
+    openPlayersRoute();
+    playerDecorationTimer = window.setTimeout(() => applyScopedRanking(0), 45);
+  }
+
+  function returnFromScopedRanking() {
+    const parent = scopedRanking?.parent === 'league' ? 'league' : 'hub';
+    clearPlayerPresentation();
+    try { window.RealPlayWorld?.close?.(); } catch (_error) {}
+    showPanelView(parent);
   }
 
   function openTuneUp() {
-    configureScope({
+    openScopedRanking({
+      id: 'tune-up',
       title: 'TUNE-UP',
       kicker: 'TUNE-UP · PLAYER RANKING',
       copy: 'Every ranking and statistic on this page belongs only to the Tune-Up competition.',
@@ -302,14 +434,32 @@
 
   function openLeagueSeason(season) {
     const cleanSeason = String(season || '').replace(/[^0-9A-Za-z -]/g, '') || '1';
-    configureScope({
-      title: `SEASON ${cleanSeason}`,
-      kicker: `LEAGUE · SEASON ${cleanSeason} · PLAYER RANKING`,
-      copy: `Every ranking and statistic on this page belongs only to League Season ${cleanSeason}.`,
-      emptyTitle: `NO SEASON ${cleanSeason} RESULTS YET.`,
-      emptyCopy: `Season ${cleanSeason} rankings and stats will appear here after verified League games begin.`,
+    openScopedRanking({
+      id: 'league-season-' + cleanSeason.toLowerCase().replace(/\s+/g, '-'),
+      title: 'SEASON ' + cleanSeason,
+      kicker: 'LEAGUE · SEASON ' + cleanSeason + ' · PLAYER RANKING',
+      copy: 'Every ranking and statistic on this page belongs only to League Season ' + cleanSeason + '.',
+      emptyTitle: 'NO SEASON ' + cleanSeason + ' RESULTS YET.',
+      emptyCopy: 'Season ' + cleanSeason + ' rankings and stats will appear here after verified League games begin.',
       parent: 'league',
     });
+  }
+
+  function maintainPlayerPresentation() {
+    if (!playerPresentation) return;
+    if (presentationTimer) window.clearTimeout(presentationTimer);
+    presentationTimer = window.setTimeout(() => {
+      if (playerPresentation === 'scoped') applyScopedRanking(0);
+      else if (playerPresentation === 'overall') decoratePlayerRankings(0);
+    }, 0);
+  }
+
+  function handleScopedPrimaryNavigation(event) {
+    if (playerPresentation !== 'scoped') return;
+    const item = event.target.closest?.('[data-rp-simple-nav-item]');
+    if (!item) return;
+    if (item.dataset.rpSimpleNavItem === 'players') return;
+    clearPlayerPresentation();
   }
 
   function renamePlayersNav() {
@@ -333,7 +483,10 @@
     installStyles();
     createPanel();
     renamePlayersNav();
+    document.addEventListener('click', handleScopedPrimaryNavigation, true);
     document.addEventListener('click', handlePlayersNavCapture, true);
+    document.addEventListener('click', maintainPlayerPresentation);
+    window.addEventListener('focus', maintainPlayerPresentation);
 
     navObserver = new MutationObserver(() => renamePlayersNav());
     navObserver.observe(document.documentElement, { childList: true, subtree: true });
