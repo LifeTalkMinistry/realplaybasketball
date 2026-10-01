@@ -1,6 +1,6 @@
 name: Temporary Assigned Blocks Define Session Window
 
-on:
+"on":
   push:
     branches:
       - fix/assigned-blocks-define-session-window
