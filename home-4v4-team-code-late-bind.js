@@ -2,6 +2,53 @@
   if (window.__realPlay4v4TeamCodeLateBindInstalled) return;
   window.__realPlay4v4TeamCodeLateBindInstalled = true;
 
+  // The Team Code runtime can legitimately receive its boot discovery and the
+  // real 4v4-open signal only a few milliseconds apart. Both paths ask for the
+  // exact same read-only state. Coalesce only that GET so both callers receive
+  // equivalent Response objects while the backend sees one request.
+  if (!window.__realPlay4v4StateFetchCoalescerInstalled && typeof window.fetch === 'function') {
+    window.__realPlay4v4StateFetchCoalescerInstalled = true;
+    const downstreamFetch = window.fetch.bind(window);
+    const dedupeWindowMs = 250;
+    let activeStateFetch = null;
+
+    window.fetch = async function realPlay4v4StateFetch(input, init) {
+      const method = String(
+        init?.method || ((typeof Request !== 'undefined' && input instanceof Request) ? input.method : 'GET')
+      ).toUpperCase();
+      let pathname = '';
+      try {
+        const rawUrl = (typeof input === 'string' || input instanceof URL) ? String(input) : String(input?.url || '');
+        pathname = new URL(rawUrl, window.location.href).pathname;
+      } catch (_error) {}
+
+      if (method !== 'GET' || pathname !== '/api/real-play/4v4/me') {
+        return downstreamFetch(input, init);
+      }
+
+      const now = performance.now();
+      if (activeStateFetch && now - activeStateFetch.startedAt <= dedupeWindowMs) {
+        const bundle = await activeStateFetch.promise;
+        return bundle.template.clone();
+      }
+
+      const promise = downstreamFetch(input, init).then((response) => ({
+        primary: response,
+        template: response.clone(),
+      }));
+      activeStateFetch = { startedAt: now, promise };
+
+      try {
+        const bundle = await promise;
+        return bundle.primary;
+      } finally {
+        window.setTimeout(() => {
+          if (activeStateFetch?.promise === promise) activeStateFetch = null;
+        }, dedupeWindowMs);
+      }
+    };
+  }
+
   let boundPanel = null;
   let queued = false;
   let retries = 0;
@@ -22,7 +69,7 @@
     // If no 4v4-open event was actually missed, the Team Code runtime either
     // already handled the real event or discovered this panel during its boot.
     // Mark the panel as known without replaying the event and causing a second
-    // /4v4/me request.
+    // state refresh.
     if (!replayPending) {
       boundPanel = current;
       return true;

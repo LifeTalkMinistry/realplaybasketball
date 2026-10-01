@@ -22,7 +22,7 @@
     if (document.querySelector('script[data-rp-team-code-late-bind-loader]')) return;
     const bridge = document.createElement('script');
     bridge.dataset.rpTeamCodeLateBindLoader = '1';
-    bridge.src = 'home-4v4-team-code-late-bind.js?v=20261001-team-code-late-bind-v2';
+    bridge.src = 'home-4v4-team-code-late-bind.js?v=20261001-team-code-late-bind-v3';
     bridge.async = false;
     bridge.addEventListener('error', () => console.warn('[Real Play] 4v4 team-code late-bind bridge did not load.'), { once: true });
     document.head.appendChild(bridge);
