@@ -8,6 +8,87 @@
   compactHomeCardStyles.dataset.rpFourVFourCompactHomeCard = '1';
   document.head.appendChild(compactHomeCardStyles);
 
+  // Keep the selected team schedule in the top bar instead of rendering a
+  // second schedule banner below Team OVR. Other 4v4 layers may rewrite the
+  // top-bar title while they render, so this guard restores the schedule after
+  // any relevant DOM update.
+  const installScheduleHeader = () => {
+    if (window.__realPlayFourVFourScheduleHeaderInstalled) return;
+    window.__realPlayFourVFourScheduleHeaderInstalled = true;
+
+    const STYLE_ID = 'rp-4v4-selected-schedule-header-style';
+    if (!document.getElementById(STYLE_ID)) {
+      const style = document.createElement('style');
+      style.id = STYLE_ID;
+      style.textContent = `
+        .rp-4v4-static-view [data-rp-4v4-team-slot],
+        .rp-4v4-static-view .rp-4v4-team-slot{display:none!important}
+        .rp-4v4-static-view .rp-3v3-brand[data-rp-team-schedule-header="1"]{
+          flex:1 1 auto!important;min-width:0!important;max-width:calc(100% - 112px)!important;
+          padding:0 6px!important;display:flex!important;align-items:center!important;justify-content:center!important;
+          text-align:center!important;
+        }
+        .rp-4v4-static-view .rp-3v3-brand[data-rp-team-schedule-header="1"] strong{
+          display:block!important;max-width:100%!important;margin:0!important;overflow:hidden!important;
+          color:#f5f9ff!important;font-family:var(--rp-display,Arial,sans-serif)!important;
+          font-size:clamp(.62rem,2.7vw,.82rem)!important;font-weight:1000!important;letter-spacing:.035em!important;
+          line-height:1!important;text-overflow:ellipsis!important;text-transform:uppercase!important;white-space:nowrap!important;
+        }
+        .rp-4v4-static-view .rp-3v3-brand[data-rp-team-schedule-header="1"] span{display:none!important}
+      `;
+      document.head.appendChild(style);
+    }
+
+    let queued = false;
+    const selectedSlot = () => {
+      if (window.__realPlay4v4SelectedSlot?.label) return window.__realPlay4v4SelectedSlot;
+      try {
+        const saved = JSON.parse(sessionStorage.getItem('real_play_4v4_time_slot') || 'null');
+        return saved?.label ? saved : null;
+      } catch (_error) {
+        return null;
+      }
+    };
+
+    const sync = () => {
+      queued = false;
+      const view = document.querySelector('[data-rp-4v4-static-view], .rp-4v4-static-view');
+      if (!view) return;
+
+      view.querySelectorAll('[data-rp-4v4-team-slot], .rp-4v4-team-slot').forEach((banner) => banner.remove());
+
+      const slot = selectedSlot();
+      if (!slot?.label) return;
+
+      const brand = view.querySelector('.rp-3v3-topbar .rp-3v3-brand');
+      const title = brand?.querySelector('strong');
+      const subtitle = brand?.querySelector('span');
+      if (!brand || !title) return;
+
+      if (brand.dataset.rpTeamScheduleHeader !== '1') brand.dataset.rpTeamScheduleHeader = '1';
+      if (title.textContent.trim() !== slot.label) title.textContent = slot.label;
+      if (subtitle && subtitle.textContent !== '') subtitle.textContent = '';
+    };
+
+    const queueSync = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(sync);
+    };
+
+    window.addEventListener('realplay:4v4-slot-context', queueSync);
+    window.addEventListener('realplay:home-schedule-changed', queueSync);
+    new MutationObserver(queueSync).observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-rp-active-club', 'class'],
+    });
+    queueSync();
+  };
+
+  installScheduleHeader();
+
   const loadCleanRotationUi = () => {
     if (document.querySelector('script[data-rp-rotation-clean-ui-loader]')) return;
     const cleanUi = document.createElement('script');
