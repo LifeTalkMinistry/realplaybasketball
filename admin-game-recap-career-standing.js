@@ -94,15 +94,42 @@
       }));
   }
 
-  async function loadCareerForRosterPlayer(rosterPlayer) {
+  function authorityPlayerFor(rosterPlayer, authorityPlayers) {
+    const signedId = safeInt(rosterPlayer?.signedId);
+    if (!signedId || !Array.isArray(authorityPlayers)) return null;
+
+    if (signedId > 0) {
+      // Registered control rows are ACCOUNT user IDs. The canonical World
+      // directory keeps that ID separately as accountUserId, so match only on
+      // that field. Never compare it to canonical playerId: those are different
+      // namespaces and can legally contain the same integer.
+      return authorityPlayers.find((player) => safeInt(player?.accountUserId) === signedId) || null;
+    }
+
+    // Manual control rows are negative canonical player IDs. Match the exact
+    // canonical identity, not player name, OVR, row order or any UI fallback.
+    const canonicalPlayerId = Math.abs(signedId);
+    return authorityPlayers.find((player) => {
+      const playerId = safeInt(player?.playerId ?? (player?.unclaimed ? player?.userId : null));
+      return playerId === canonicalPlayerId;
+    }) || null;
+  }
+
+  async function loadCareerForRosterPlayer(rosterPlayer, authorityPlayers = []) {
     const signedId = safeInt(rosterPlayer?.signedId);
     if (!signedId || signedId === 0) return null;
 
+    // First use the canonical directory snapshot. It already carries the same
+    // finalized Career, OVR and authoritative Rank state used by World/Profile,
+    // and exact ID matching avoids the old name-based cross-player leakage.
+    const exactAuthority = authorityPlayerFor(rosterPlayer, authorityPlayers);
+    if (exactAuthority) return exactAuthority;
+
     try {
       if (signedId > 0) {
-        // Registered game-control players are keyed by ACCOUNT user ID.
-        // Read that exact account's canonical Career record directly; do not
-        // translate it through the World/canonical-player identity directory.
+        // Registered game-control players are keyed by ACCOUNT user ID. This
+        // admin-only fallback reads that exact account directly when the account
+        // has not yet been represented in the canonical World identity table.
         const result = await community('admin_account_career', { accountUserId: signedId });
         return result?.player || null;
       }
@@ -261,9 +288,20 @@
 
     loadPromise = (async () => {
       const roster = rosterFromControl(control);
+      let authorityPlayers = [];
+
+      try {
+        const authority = await community('players');
+        authorityPlayers = Array.isArray(authority?.players) ? authority.players : [];
+      } catch (error) {
+        // Individual exact-ID fallbacks below still keep the recap usable if the
+        // directory snapshot is temporarily unavailable.
+        console.warn('[Real Play] Canonical player directory unavailable for recap standing.', error);
+      }
+
       const items = await Promise.all(roster.map(async (rosterPlayer) => ({
         rosterPlayer,
-        career: careerFrom(await loadCareerForRosterPlayer(rosterPlayer)),
+        career: careerFrom(await loadCareerForRosterPlayer(rosterPlayer, authorityPlayers)),
       })));
       cache = items;
       cacheAt = Date.now();
