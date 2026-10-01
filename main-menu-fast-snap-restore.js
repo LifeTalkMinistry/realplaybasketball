@@ -18,7 +18,19 @@
     document.head.appendChild(script);
   }
 
+  function loadCompetitionHub() {
+    if (window.__realPlayCompetitionHubInstalled) return;
+    if (document.querySelector('script[data-rp-competition-hub-loader]')) return;
+
+    const script = document.createElement('script');
+    script.src = 'competition-hub.js?v=20261001-competition-hub-v1';
+    script.async = true;
+    script.dataset.rpCompetitionHubLoader = '1';
+    document.head.appendChild(script);
+  }
+
   loadHomePaymentAdmin();
+  loadCompetitionHub();
 
   function routeLegacy(action) {
     const button = document.querySelector(`[data-rp-main-action="${action}"]`);
