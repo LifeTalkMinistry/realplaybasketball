@@ -67,11 +67,9 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-rp-home-open-rank-meta]')?.textContent?.trim() === 'SAT + SUN · 8:00 PM – 10:00 PM');
   const homeUi = await page.evaluate(() => {
     const capacity = document.querySelector('[data-rp-home-open-rank-capacity]');
-    const card = document.querySelector('[data-rp-home-open-rank]');
     return {
       meta: document.querySelector('[data-rp-home-open-rank-meta]')?.textContent?.trim(),
       capacityHidden: !capacity || capacity.hidden || getComputedStyle(capacity).display === 'none',
-      minHeight: card ? getComputedStyle(card).minHeight : '',
     };
   });
   assert.equal(homeUi.meta, 'SAT + SUN · 8:00 PM – 10:00 PM');
@@ -95,11 +93,8 @@ try {
   console.log('STAGE choose-saturday');
   await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').evaluate((element) => element.click());
   await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
-  await page.waitForFunction(() => {
-    const heading = document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1');
-    return heading?.textContent?.trim() === 'SATURDAY · 8:00 PM – 10:00 PM';
-  }, null, { timeout: 5000 });
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => Array.isArray(window.__realPlay4v4AssignedTeamKeys) && window.__realPlay4v4AssignedTeamKeys.join(',') === 'lions,valiant');
+  await page.waitForTimeout(400);
 
   const saturday = await page.evaluate(() => ({
     keys: window.__realPlay4v4AssignedTeamKeys,
@@ -109,28 +104,27 @@ try {
     bannerCount: document.querySelectorAll('.rp-4v4-static-view .rp-4v4-team-slot').length,
     canonicalBannerCount: document.querySelectorAll('.rp-4v4-static-view [data-rp-4v4-team-slot]').length,
     malformedBannerCount: document.querySelectorAll('.rp-4v4-static-view [data-rp4v4-team-slot]').length,
+    title: document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim(),
   }));
   assert.deepEqual(saturday.keys, ['lions', 'valiant']);
   assert.equal(saturday.stored?.day, 'SATURDAY');
   assert.equal(saturday.bodyOpen, true);
   assert.equal(saturday.viewCount, 1);
+  assert.equal(saturday.title, 'SELECT YOUR TEAM', 'Team screen title should stay clean and generic.');
   assert.equal(saturday.bannerCount, 1, 'Saturday team screen contains repeated schedule banners.');
   assert.equal(saturday.canonicalBannerCount, 1, 'Saturday schedule banner is missing its canonical data attribute.');
   assert.equal(saturday.malformedBannerCount, 0, 'Malformed legacy rotation banner attribute remains.');
 
   console.log('STAGE switch-to-sunday');
-  await page.locator('.rp-4v4-static-view .rp-3v3-select-head h1').evaluate((element) => element.click());
+  await page.locator('.rp-4v4-static-view [data-rp-4v4-team-slot]').evaluate((element) => element.click());
   await page.waitForFunction(() => {
     const modal = document.querySelector('.rp-team-rotation-modal');
     return Boolean(modal && !modal.hidden);
   });
   await page.locator('[data-rp-rotation-id="sunday-2000-2200"]').evaluate((element) => element.click());
   await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
-  await page.waitForFunction(() => {
-    const heading = document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1');
-    return heading?.textContent?.trim() === 'SUNDAY · 8:00 PM – 10:00 PM';
-  }, null, { timeout: 5000 });
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => Array.isArray(window.__realPlay4v4AssignedTeamKeys) && window.__realPlay4v4AssignedTeamKeys.join(',') === 'eagles,steadfast');
+  await page.waitForTimeout(400);
 
   const sunday = await page.evaluate(() => ({
     keys: window.__realPlay4v4AssignedTeamKeys,
@@ -138,12 +132,14 @@ try {
     viewCount: document.querySelectorAll('[data-rp-4v4-static-view]').length,
     bannerCount: document.querySelectorAll('.rp-4v4-static-view .rp-4v4-team-slot').length,
     canonicalBannerCount: document.querySelectorAll('.rp-4v4-static-view [data-rp-4v4-team-slot]').length,
+    malformedBannerCount: document.querySelectorAll('.rp-4v4-static-view [data-rp4v4-team-slot]').length,
   }));
   assert.deepEqual(sunday.keys, ['eagles', 'steadfast']);
   assert.equal(sunday.stored?.day, 'SUNDAY');
   assert.equal(sunday.viewCount, 1);
   assert.equal(sunday.bannerCount, 1, 'Sunday team screen contains repeated schedule banners.');
   assert.equal(sunday.canonicalBannerCount, 1);
+  assert.equal(sunday.malformedBannerCount, 0);
 
   await page.waitForTimeout(500);
   assert.deepEqual(pageErrors, [], `Page errors: ${pageErrors.join(' | ')}`);
