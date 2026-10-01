@@ -4,9 +4,19 @@
 
   const compactHomeCardStyles = document.createElement('link');
   compactHomeCardStyles.rel = 'stylesheet';
-  compactHomeCardStyles.href = 'home-4v4-card-compact.css?v=20261001-home-card-gap-v1';
+  compactHomeCardStyles.href = 'home-4v4-card-compact.css?v=20261001-rotation-clean-ui-v1';
   compactHomeCardStyles.dataset.rpFourVFourCompactHomeCard = '1';
   document.head.appendChild(compactHomeCardStyles);
+
+  const loadCleanRotationUi = () => {
+    if (document.querySelector('script[data-rp-rotation-clean-ui-loader]')) return;
+    const cleanUi = document.createElement('script');
+    cleanUi.dataset.rpRotationCleanUiLoader = '1';
+    cleanUi.src = 'home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v1';
+    cleanUi.async = false;
+    cleanUi.addEventListener('error', () => console.warn('[Real Play] 4v4 rotation clean UI guard did not load.'), { once: true });
+    document.head.appendChild(cleanUi);
+  };
 
   const loadLateBindBridge = () => {
     if (document.querySelector('script[data-rp-team-code-late-bind-loader]')) return;
@@ -20,6 +30,7 @@
 
   const loadRotationPicker = () => {
     if (document.querySelector('script[data-rp-team-rotation-picker-loader]')) return;
+    loadCleanRotationUi();
     loadLateBindBridge();
     const script = document.createElement('script');
     script.dataset.rpTeamRotationPickerLoader = '1';
