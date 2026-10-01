@@ -20,7 +20,7 @@
 
   const compactHomeCardStyles = document.createElement('link');
   compactHomeCardStyles.rel = 'stylesheet';
-  compactHomeCardStyles.href = 'home-4v4-card-compact.css?v=20261001-hide-home-meta-v2';
+  compactHomeCardStyles.href = 'home-4v4-card-compact.css?v=20261001-tight-home-card-v3';
   compactHomeCardStyles.dataset.rpFourVFourCompactHomeCard = '1';
   document.head.appendChild(compactHomeCardStyles);
 
