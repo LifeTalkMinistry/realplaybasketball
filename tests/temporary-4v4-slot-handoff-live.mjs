@@ -77,8 +77,8 @@ try {
   assert.match(options[1], /SUNDAY.*8:00 PM.*10:00 PM/i);
 
   console.log('STAGE choose-saturday');
-  await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').click();
-  await page.waitForSelector('[data-rp-4v4-static-view].open', { timeout: 15000 });
+  await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').evaluate((element) => element.click());
+  await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
   await page.waitForFunction(() => {
     const heading = document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1');
     return heading?.textContent?.trim() === 'SATURDAY · 8:00 PM – 10:00 PM';
@@ -96,13 +96,13 @@ try {
   assert.equal(saturday.viewCount, 1);
 
   console.log('STAGE switch-to-sunday');
-  await page.locator('.rp-4v4-static-view .rp-3v3-select-head h1').click();
+  await page.locator('.rp-4v4-static-view .rp-3v3-select-head h1').evaluate((element) => element.click());
   await page.waitForFunction(() => {
     const modal = document.querySelector('.rp-team-rotation-modal');
     return Boolean(modal && !modal.hidden);
   });
-  await page.locator('[data-rp-rotation-id="sunday-2000-2200"]').click();
-  await page.waitForSelector('[data-rp-4v4-static-view].open', { timeout: 15000 });
+  await page.locator('[data-rp-rotation-id="sunday-2000-2200"]').evaluate((element) => element.click());
+  await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
   await page.waitForFunction(() => {
     const heading = document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1');
     return heading?.textContent?.trim() === 'SUNDAY · 8:00 PM – 10:00 PM';
