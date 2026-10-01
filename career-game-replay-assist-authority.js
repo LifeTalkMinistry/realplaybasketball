@@ -6,6 +6,7 @@
   const TOKEN_KEY = 'real_play_access_token';
   const ASSIST_VISIBLE_MS = 1500;
   const ASSIST_DELAY_MS = 2000;
+  const REPLAY_OVERLAY_RELEASE_MS = 900;
 
   let replayData = null;
   let replaySessionId = 0;
@@ -14,6 +15,7 @@
   let assistTimer = null;
   let assistDelayTimer = null;
   let activeScorePop = null;
+  const replayOverlayTimers = new WeakMap();
 
   const normalize = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
   const num = (value) => {
@@ -277,6 +279,73 @@
       if (replaySessionId === id) replayData = null;
     }
   }
+
+  function replayRootFrom(target) {
+    return target?.closest?.('[data-rp-career-replay]') || document.querySelector('[data-rp-career-replay].open');
+  }
+
+  function cancelReplayOverlayRelease(root) {
+    const timer = root ? replayOverlayTimers.get(root) : null;
+    if (!timer) return;
+    clearTimeout(timer);
+    replayOverlayTimers.delete(root);
+  }
+
+  function releaseReplayOverlay(root) {
+    if (!root?.isConnected || root.getAttribute('data-rp-fast-overlay-live') !== '1') return;
+    root.querySelector('[data-rp-career-replay-video-controls]')?.classList.remove('show');
+    const cover = root.querySelector('[data-rp-career-replay-brand-cover]');
+    if (cover && !cover.classList.contains('preplay')) cover.classList.remove('show');
+  }
+
+  function scheduleReplayOverlayRelease(root, delay = REPLAY_OVERLAY_RELEASE_MS) {
+    if (!root?.isConnected || root.getAttribute('data-rp-fast-overlay-live') !== '1') return;
+    cancelReplayOverlayRelease(root);
+    const timer = setTimeout(() => {
+      replayOverlayTimers.delete(root);
+      releaseReplayOverlay(root);
+    }, delay);
+    replayOverlayTimers.set(root, timer);
+  }
+
+  function activateFastReplayOverlayRelease(root) {
+    if (!root?.isConnected) return;
+    root.setAttribute('data-rp-fast-overlay-live', '1');
+    scheduleReplayOverlayRelease(root);
+  }
+
+  document.addEventListener('realplay:replay-first-play', (event) => {
+    activateFastReplayOverlayRelease(replayRootFrom(event.target));
+  }, true);
+
+  document.addEventListener('pointerdown', (event) => {
+    const stage = event.target?.closest?.('[data-rp-career-replay-stage]');
+    if (!stage) return;
+    const root = replayRootFrom(stage);
+    if (root?.getAttribute('data-rp-fast-overlay-live') === '1') scheduleReplayOverlayRelease(root);
+  }, true);
+
+  document.addEventListener('touchstart', (event) => {
+    const stage = event.target?.closest?.('[data-rp-career-replay-stage]');
+    if (!stage) return;
+    const root = replayRootFrom(stage);
+    if (root?.getAttribute('data-rp-fast-overlay-live') === '1') scheduleReplayOverlayRelease(root);
+  }, { capture: true, passive: true });
+
+  document.addEventListener('click', (event) => {
+    const root = replayRootFrom(event.target);
+    if (!root) return;
+
+    if (event.target?.closest?.('[data-rp-career-replay-play], [data-rp-career-replay-brand-play]')) {
+      activateFastReplayOverlayRelease(root);
+      return;
+    }
+
+    if (event.target?.closest?.('[data-rp-career-replay-mute], [data-rp-career-replay-stage]')
+      && root.getAttribute('data-rp-fast-overlay-live') === '1') {
+      scheduleReplayOverlayRelease(root);
+    }
+  }, true);
 
   document.addEventListener('click', (event) => {
     const button = event.target.closest('[data-rp-career-replay-session]');
