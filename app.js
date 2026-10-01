@@ -1,16 +1,11 @@
 (() => {
   const version = (() => {
-    // Cache authority: index.html supplies a fresh deployment id on every deploy.
-    // The fallback is only for direct/local app.js execution.
     const fromDocument = String(document.documentElement?.dataset?.rpDeploy || '').trim();
-    return fromDocument || '20260925-cache-authority-v123';
+    return fromDocument || '20261001-shell-loader-focus-v153';
   })();
   const html = document.documentElement;
   html.classList.add('js', 'rp-shell-booting');
 
-  // Startup has only three visible states:
-  // loading -> usable core shell, loading -> explicit critical failure, then
-  // progressive enhancement continues without owning the boot gate.
   const bootStyle = document.createElement('style');
   bootStyle.id = 'rp-shell-boot-style';
   bootStyle.textContent = `
@@ -66,13 +61,8 @@
       animation:none;
       opacity:1;
     }
-    @keyframes rpShellBootPulse{
-      from{opacity:.38}
-      to{opacity:1}
-    }
-    @media(prefers-reduced-motion:reduce){
-      html.rp-shell-booting body::after{animation:none;opacity:.78}
-    }
+    @keyframes rpShellBootPulse{from{opacity:.38}to{opacity:1}}
+    @media(prefers-reduced-motion:reduce){html.rp-shell-booting body::after{animation:none;opacity:.78}}
   `;
   document.head.appendChild(bootStyle);
 
@@ -86,9 +76,8 @@
   function announceCoreAppReady() {
     if (coreAppReady) return;
     coreAppReady = true;
-    try {
-      window.dispatchEvent(new CustomEvent('realplay:app-ready'));
-    } catch (_error) {}
+    try { window.dispatchEvent(new CustomEvent('realplay:app-ready')); }
+    catch (_error) {}
   }
 
   window.addEventListener('realplay:initial-home-ready', () => {
@@ -97,14 +86,11 @@
   }, { once: true });
 
   function clearStaticBootFallback() {
-    if (window.__rpStaticBootFallback) {
-      window.clearTimeout(window.__rpStaticBootFallback);
-      window.__rpStaticBootFallback = null;
-    }
+    if (!window.__rpStaticBootFallback) return;
+    window.clearTimeout(window.__rpStaticBootFallback);
+    window.__rpStaticBootFallback = null;
   }
 
-  // Neutralize the older inline HTML fallback as soon as app.js starts. The
-  // loader must never uncover a partially initialized interface after 8s.
   clearStaticBootFallback();
 
   function hasNewShell() {
@@ -117,14 +103,12 @@
   function revealNewShell() {
     if (shellReady) return true;
     if (!bootResourcesReady || !initialHomeReady || !initialInteractionReady || !hasNewShell()) return false;
-
     shellReady = true;
     clearStaticBootFallback();
     html.classList.remove('rp-shell-booting', 'rp-shell-failed');
     html.classList.add('rp-shell-ready');
     shellReadyObserver?.disconnect();
     shellReadyObserver = null;
-
     return true;
   }
 
@@ -132,13 +116,10 @@
   shellReadyObserver.observe(document.documentElement, { childList: true, subtree: true });
 
   function showBootFailure(message, error) {
-    // Once the usable shell is visible, an optional enhancement is never
-    // allowed to throw the player back onto the black loading/failure screen.
     if (shellReady) {
       console.error(`[Real Play] ${message || 'Optional startup layer failed.'}`, error || '');
       return;
     }
-
     clearStaticBootFallback();
     shellReadyObserver?.disconnect();
     shellReadyObserver = null;
@@ -147,46 +128,82 @@
     console.error(`[Real Play] ${message || 'New shell failed to initialize.'}`, error || '');
   }
 
+  function stylesheetReady(link) {
+    if (!link || link.disabled) return false;
+    try { return Boolean(link.sheet); }
+    catch (_error) { return false; }
+  }
+
   function addStylesheet(href, timeoutMs = 6500) {
     return new Promise((resolve) => {
-      const css = document.createElement('link');
+      const target = new URL(`${href}?v=${encodeURIComponent(version)}`, document.baseURI).href;
+      const css = [...document.querySelectorAll('link[rel="stylesheet"]')]
+        .find((link) => link.href === target)
+        || document.createElement('link');
+      const alreadyAttached = css.isConnected;
       let settled = false;
       let timer = 0;
+      let poll = 0;
+
+      const cleanup = () => {
+        if (timer) window.clearTimeout(timer);
+        if (poll) window.clearInterval(poll);
+        css.removeEventListener('load', onLoad);
+        css.removeEventListener('error', onError);
+      };
 
       const finish = (loaded) => {
         if (settled) return;
         settled = true;
-        if (timer) window.clearTimeout(timer);
+        cleanup();
         resolve(Boolean(loaded));
       };
 
-      css.rel = 'stylesheet';
-      css.href = `${href}?v=${version}`;
-      css.addEventListener('load', () => finish(true), { once: true });
-      css.addEventListener('error', () => finish(false), { once: true });
-      timer = window.setTimeout(() => {
-        console.warn(`[Real Play] Stylesheet load timed out: ${href}`);
+      const onLoad = () => finish(true);
+      const onError = () => {
+        console.warn(`[Real Play] Stylesheet failed to load: ${href}`);
         finish(false);
-      }, Math.max(1500, Number(timeoutMs) || 6500));
-      document.head.appendChild(css);
+      };
+
+      css.addEventListener('load', onLoad);
+      css.addEventListener('error', onError);
+
+      if (!alreadyAttached) {
+        css.rel = 'stylesheet';
+        css.href = target;
+        document.head.appendChild(css);
+      }
+
+      if (stylesheetReady(css)) {
+        finish(true);
+        return;
+      }
+
+      // Browsers can apply a cached stylesheet before its load event reaches a
+      // dynamically-created listener. Poll link.sheet so an already-applied
+      // sheet counts as ready instead of producing a false timeout warning.
+      poll = window.setInterval(() => {
+        if (stylesheetReady(css)) finish(true);
+      }, 50);
+
+      // A slow stylesheet remains attached and is allowed to finish loading.
+      // Reaching this bound is not a load failure, so do not flood DevTools with
+      // false warnings. A real network/404 failure still arrives through error.
+      timer = window.setTimeout(() => finish(true), Math.max(1500, Number(timeoutMs) || 6500));
     });
   }
 
-  // Every script request must settle so one optional network request cannot
-  // permanently trap startup or the later enhancement chain.
   function loadScript(href, timeoutMs = 6000) {
     return new Promise((resolve) => {
       const script = document.createElement('script');
       let settled = false;
       let timer = 0;
-
       const finish = (loaded) => {
         if (settled) return;
         settled = true;
         if (timer) window.clearTimeout(timer);
         resolve(Boolean(loaded));
       };
-
       script.src = `${href}?v=${version}`;
       script.async = false;
       script.addEventListener('load', () => finish(true), { once: true });
@@ -210,7 +227,6 @@
     const fontReady = document.fonts?.ready
       ? Promise.resolve(document.fonts.ready).catch(() => undefined)
       : Promise.resolve();
-
     await Promise.race([
       fontReady,
       new Promise((resolve) => window.setTimeout(resolve, 1500)),
@@ -228,13 +244,11 @@
           image.addEventListener('error', resolve, { once: true });
         });
       }));
-
       await Promise.race([
         imageReady,
         new Promise((resolve) => window.setTimeout(resolve, 3000)),
       ]);
     }
-
     await nextPaint();
   }
 
@@ -302,9 +316,6 @@
     'world-results.css',
   ];
 
-  // First-frame presentation contract. These styles define everything that can
-  // be visible on Home at boot; they must settle before the boot gate opens.
-  // Feature-specific screens remain progressive enhancements.
   const criticalStylesheetHrefs = new Set([
     'mobile-lobby.css',
     'lobby-topbar-cleanup.css',
@@ -341,7 +352,6 @@
 
     const lobbyLoaded = await loadScript('mobile-lobby.js', 6500);
     const lobbyMounted = Boolean(document.querySelector('[data-rp-app]'));
-
     if (!lobbyLoaded || !lobbyMounted) {
       showBootFailure('Mobile lobby failed to mount.');
       return;
@@ -352,7 +362,6 @@
 
     const mainMenuLoaded = await loadScript('main-menu.js', 6500);
     const simpleNavLoaded = await loadScript('simple-navigation.js', 6500);
-
     if (!mainMenuLoaded || !simpleNavLoaded) {
       showBootFailure('Critical Real Play navigation failed to initialize.');
       return;
@@ -366,36 +375,22 @@
       }
     }
 
-    // First usable frame: wait only for the handful of CSS files that define
-    // entry visibility plus Home/navigation structure. Optional product layers
-    // must never keep the player on LOADING.
+    const criticalStyles = [...criticalStylesheetHrefs];
     const criticalStyleResults = await Promise.all(
-      [...criticalStylesheetHrefs].map((href) => addStylesheet(href, 3500))
+      criticalStyles.map((href) => addStylesheet(href, 3500))
     );
     criticalStyleResults.forEach((loaded, index) => {
-      if (!loaded) console.warn(`[Real Play] Critical shell stylesheet did not settle at index ${index}.`);
+      if (!loaded) console.warn(`[Real Play] Critical shell stylesheet failed: ${criticalStyles[index]}`);
     });
 
-    // Home schedule/navigation authority can mutate the first visible Home
-    // frame, so settle it before exposing the shell. Failure remains non-fatal.
     const navAuthorityLoaded = await loadScript('simple-navigation-state-authority.js', 6500);
     if (!navAuthorityLoaded) {
       console.warn('[Real Play] Navigation authority layer did not load; base navigation remains available.');
     }
 
-    // Do not expose Home until its first-frame presentation is stable. This is
-    // resource readiness, not an artificial delay: fonts/images get bounded
-    // waits and the final two paints prevent a half-styled frame from leaking.
     await waitForVisualStability();
-
     bootResourcesReady = true;
-
-    // Core readiness starts Home authority work, but does not visually reveal
-    // the shell. Home owns the final initial-frame readiness boundary.
     announceCoreAppReady();
-
-    // The Home gate may have released before this listener path reached the
-    // reveal attempt. Read its durable state as well as the event.
     initialHomeReady = initialHomeReady || Boolean(window.__realPlayInitialHomeReady);
     revealNewShell();
 
@@ -488,9 +483,6 @@
       'admin-live-refresh-fix.js',
     ];
 
-    // Do not reveal a shell whose visible navigation is present but whose
-    // click handlers still live later in the enhancement chain. These are the
-    // interaction authorities reachable from the first frame.
     const initialInteractionScripts = new Set([
       'public-landing.js',
       'visitor-mode.js',
@@ -503,11 +495,9 @@
       'ranking-games.js',
       'ranking-session-teams.js',
       'settings-panel.js',
+      'overlay-focus-release.js',
     ]);
 
-    // Load the first-frame interaction authorities before opening the boot
-    // gate. The rest can continue progressively after the UI is actually
-    // clickable.
     for (const href of enhancements.filter((item) => initialInteractionScripts.has(item))) {
       const loaded = await loadScript(href, 6500);
       if (!loaded) console.warn(`[Real Play] Initial interaction layer failed to load: ${href}`);
@@ -522,17 +512,14 @@
     }
 
     const remainingStyles = stylesheetHrefs.filter((href) => !criticalStylesheetHrefs.has(href));
-    const stylesheetLoads = remainingStyles.map((href) => addStylesheet(href));
-    const stylesheetResults = await Promise.all(stylesheetLoads);
+    const stylesheetResults = await Promise.all(remainingStyles.map((href) => addStylesheet(href)));
     stylesheetResults.forEach((loaded, index) => {
-      if (!loaded) console.warn(`[Real Play] Optional stylesheet failed to settle at index ${index}.`);
+      if (!loaded) console.warn(`[Real Play] Optional stylesheet failed: ${remainingStyles[index]}`);
     });
 
     await waitForVisualStability();
-
-    try {
-      window.dispatchEvent(new CustomEvent('realplay:enhancements-ready'));
-    } catch (_error) {}
+    try { window.dispatchEvent(new CustomEvent('realplay:enhancements-ready')); }
+    catch (_error) {}
   })().catch((error) => {
     if (shellReady) {
       console.error('[Real Play] Progressive enhancement startup stopped after the core shell was ready.', error);
