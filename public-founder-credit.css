@@ -49,7 +49,7 @@ body.rp-simple-navigation-active .rp-home-project-credit{
   margin:56px auto 0;
   padding-top:16px;
   gap:6px;
-  opacity:.82;
+  opacity:1;
 }
 
 body.rp-simple-navigation-active .rp-home-project-credit::before{
@@ -64,10 +64,14 @@ body.rp-simple-navigation-active .rp-home-project-credit span{
 }
 
 body.rp-simple-navigation-active .rp-home-project-credit strong{
-  color:#9ba8b6;
+  color:#f5fbff;
   font-size:.82rem;
+  font-weight:950;
   letter-spacing:.13em;
-  text-shadow:0 3px 16px rgba(0,0,0,.58);
+  text-shadow:
+    0 0 8px rgba(88,222,255,.34),
+    0 0 18px rgba(88,222,255,.16),
+    0 3px 16px rgba(0,0,0,.64);
 }
 
 @media(max-width:520px){
