@@ -29,8 +29,20 @@
     document.head.appendChild(script);
   }
 
+  function loadCompetitionHubStatsLabels() {
+    if (window.__realPlayCompetitionHubStatsLabelsInstalled) return;
+    if (document.querySelector('script[data-rp-competition-hub-stats-labels-loader]')) return;
+
+    const script = document.createElement('script');
+    script.src = 'competition-hub-stats-labels.js?v=20261001-stats-label-v1';
+    script.async = true;
+    script.dataset.rpCompetitionHubStatsLabelsLoader = '1';
+    document.head.appendChild(script);
+  }
+
   loadHomePaymentAdmin();
   loadCompetitionHub();
+  loadCompetitionHubStatsLabels();
 
   function routeLegacy(action) {
     const button = document.querySelector(`[data-rp-main-action="${action}"]`);
