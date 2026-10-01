@@ -139,16 +139,9 @@
     .rp-career-audit-filterbar{
       display:flex;
       align-items:center;
-      justify-content:flex-end;
-      gap:7px;
+      justify-content:center;
       margin:0 0 7px;
       min-height:30px;
-    }
-    .rp-career-audit-filterbar>span{
-      color:#7092a1;
-      font:900 .48rem/1 system-ui,sans-serif;
-      letter-spacing:.1em;
-      white-space:nowrap;
     }
     .rp-career-audit-filter-select{
       min-width:126px;
@@ -177,11 +170,9 @@
     [data-rp-career-audit-filter-hidden]{display:none!important}
     @media(max-width:620px){
       .rp-career-audit-filterbar{
-        gap:6px;
         margin-bottom:6px;
         min-height:28px;
       }
-      .rp-career-audit-filterbar>span{font-size:.44rem}
       .rp-career-audit-filter-select{
         min-width:118px;
         height:28px;
@@ -266,7 +257,7 @@
       bar = document.createElement('div');
       bar.className = 'rp-career-audit-filterbar';
       bar.dataset.rpCareerAuditFilterbar = '1';
-      bar.innerHTML = `<span>SHOW STAMPS</span><select class="rp-career-audit-filter-select" data-rp-career-audit-filter aria-label="Choose which audit stamps are visible">${AUDIT_FILTERS.map(([key, label]) => `<option value="${key}" data-rp-audit-base="${label}">${label}</option>`).join('')}</select>`;
+      bar.innerHTML = `<select class="rp-career-audit-filter-select" data-rp-career-audit-filter aria-label="Choose which audit stamps are visible">${AUDIT_FILTERS.map(([key, label]) => `<option value="${key}" data-rp-audit-base="${label}">${label}</option>`).join('')}</select>`;
       wrap.insertBefore(bar, timeline);
 
       const select = bar.querySelector('[data-rp-career-audit-filter]');
