@@ -22,7 +22,8 @@ jobs:
         run: |
           node --check home-future-4v4-team-code-beta.js
           node --check home-future-4v4-card-cleanup.js
-          node --check login-landing-fix.js
+          node --check home-4v4-team-schedule-rotation-v2.js
+          node --check home-4v4-slot-picker.js
           node --check tests/temporary-4v4-freeze-runtime.mjs
 
       - name: Install Playwright
@@ -30,7 +31,5 @@ jobs:
           npm install --no-save playwright@1.55.0
           npx playwright install --with-deps chromium
 
-      - name: Verify deployed 4v4 freeze contract
-        run: |
-          sed -i 's/20260929-4v4-main-thread-freeze-v135/20260929-4v4-main-thread-freeze-v137/' tests/temporary-4v4-freeze-runtime.mjs
-          node tests/temporary-4v4-freeze-runtime.mjs
+      - name: Verify deployed 4v4 rotation freeze contract
+        run: node tests/temporary-4v4-freeze-runtime.mjs
