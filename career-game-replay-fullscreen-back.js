@@ -180,8 +180,8 @@
       background:#000!important;
     }
 
-    /* Pseudo fullscreen is attached directly to body at runtime. This avoids
-       transformed/contained app ancestors trapping position:fixed on Android. */
+    /* Pseudo fullscreen is fallback-only. It is attached directly to body so
+       transformed/contained app ancestors cannot trap position:fixed. */
     .rp-career-replay-stage.${PSEUDO_FULLSCREEN_CLASS}{
       position:fixed!important;
       left:0!important;
@@ -232,8 +232,6 @@
       object-fit:contain!important;
     }
 
-    /* Keep scoring/assist callouts above the temporary timestamp HUD instead
-       of letting the two overlays collide at the bottom of fullscreen. */
     .rp-career-replay-stage[${HUD_MANAGED_ATTR}="1"].${HUD_VISIBLE_CLASS} .rp-career-replay-stat-pop,
     .rp-career-replay-stage[${HUD_MANAGED_ATTR}="1"].${HUD_VISIBLE_CLASS} [data-rp-career-score-pop]{
       bottom:max(112px,calc(env(safe-area-inset-bottom) + 100px))!important;
@@ -298,12 +296,46 @@
     return /Android/i.test(ua);
   }
 
+  function hasNativeFullscreen(stage) {
+    return Boolean(stage?.requestFullscreen || stage?.webkitRequestFullscreen);
+  }
+
+  function unlockOrientation() {
+    if (!isAndroidBrowser()) return;
+    try { screen.orientation?.unlock?.(); } catch (_) {}
+  }
+
+  async function lockLandscape() {
+    if (!isAndroidBrowser()) return;
+    try {
+      const result = screen.orientation?.lock?.('landscape');
+      if (result?.catch) await result.catch(() => {});
+    } catch (_) {}
+  }
+
   function exitFullscreen() {
     if (document.exitFullscreen) return document.exitFullscreen().catch?.(() => {});
     if (document.webkitExitFullscreen) {
       try { document.webkitExitFullscreen(); } catch (_) {}
     }
     return undefined;
+  }
+
+  async function enterNativeFullscreen(stage) {
+    if (!stage || !hasNativeFullscreen(stage)) return false;
+    try {
+      ensureBackButton(stage);
+      ensureMarkerRail(stage);
+      if (stage.requestFullscreen) {
+        await stage.requestFullscreen();
+      } else {
+        stage.webkitRequestFullscreen();
+      }
+      await lockLandscape();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   function stageIsFullscreen(stage) {
@@ -660,8 +692,7 @@
 
   function shouldUsePseudoFullscreen(stage) {
     if (isIPhoneBrowser()) return false;
-    if (isAndroidBrowser()) return true;
-    return !(stage?.requestFullscreen || stage?.webkitRequestFullscreen);
+    return !hasNativeFullscreen(stage);
   }
 
   function placeReplayClock() {
@@ -684,15 +715,31 @@
     placeReplayClock();
   }
 
-  document.addEventListener('click', (event) => {
+  document.addEventListener('click', async (event) => {
     const trigger = event.target?.closest?.(FULLSCREEN_TRIGGER_SELECTOR);
     if (!trigger) return;
     const stage = trigger.closest('[data-rp-career-replay-stage]');
-    if (!stage || !shouldUsePseudoFullscreen(stage)) return;
+    if (!stage || isIPhoneBrowser()) return;
+
     event.preventDefault();
     event.stopImmediatePropagation();
-    if (stage.classList.contains(PSEUDO_FULLSCREEN_CLASS)) exitPseudoFullscreen();
-    else enterPseudoFullscreen(stage);
+
+    if (stage.classList.contains(PSEUDO_FULLSCREEN_CLASS)) {
+      exitPseudoFullscreen();
+      return;
+    }
+
+    if (getFullscreenElement() === stage) {
+      exitFullscreen();
+      return;
+    }
+
+    if (!shouldUsePseudoFullscreen(stage)) {
+      const entered = await enterNativeFullscreen(stage);
+      if (entered) return;
+    }
+
+    enterPseudoFullscreen(stage);
   }, true);
 
   document.addEventListener('pointerdown', (event) => {
@@ -787,7 +834,9 @@
       if (!isIPhoneBrowser()) full.setAttribute(HUD_MANAGED_ATTR, '1');
       startMarkerSync(full);
       showFullscreenHud(full);
+      lockLandscape();
     } else if (!pseudoFullscreenStage) {
+      unlockOrientation();
       stopMarkerSync();
       document.querySelectorAll(`[${HUD_MANAGED_ATTR}]`).forEach((stage) => {
         stage.removeAttribute(HUD_MANAGED_ATTR);
