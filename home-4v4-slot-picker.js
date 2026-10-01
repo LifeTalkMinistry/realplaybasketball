@@ -8,9 +8,9 @@
   compactHomeCardStyles.dataset.rpFourVFourCompactHomeCard = '1';
   document.head.appendChild(compactHomeCardStyles);
 
-  const loadSlotPicker = () => {
+  const loadRotationPicker = () => {
     const script = document.createElement('script');
-    script.src = 'home-4v4-slot-picker-dynamic-v2.js?v=20260930-assigned-team-filter-v6';
+    script.src = 'home-4v4-team-schedule-rotation.js?v=20261001-team-schedule-rotation-v1';
     script.async = false;
     script.addEventListener('load', () => {
       const headerScript = document.createElement('script');
@@ -19,23 +19,23 @@
       document.head.appendChild(headerScript);
     }, { once: true });
     script.addEventListener('error', () => {
-      console.warn('[Real Play] Admin-driven time slot picker did not load.');
+      console.warn('[Real Play] Team schedule rotation picker did not load.');
     }, { once: true });
     document.head.appendChild(script);
   };
 
   if (window.__realPlayFourVFourLegacyScheduleFallbackInstalled === true) {
-    loadSlotPicker();
+    loadRotationPicker();
     return;
   }
 
   const fallback = document.createElement('script');
   fallback.src = 'home-4v4-slot-picker-legacy-schedule-fallback.js?v=20260930-admin-slot-hydration-v2';
   fallback.async = false;
-  fallback.addEventListener('load', loadSlotPicker, { once: true });
+  fallback.addEventListener('load', loadRotationPicker, { once: true });
   fallback.addEventListener('error', () => {
     console.warn('[Real Play] Legacy Home schedule fallback did not load.');
-    loadSlotPicker();
+    loadRotationPicker();
   }, { once: true });
   document.head.appendChild(fallback);
 })();
