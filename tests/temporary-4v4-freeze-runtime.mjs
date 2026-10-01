@@ -110,7 +110,7 @@ await page.waitForFunction(() => {
   return Boolean(modal && !modal.hidden);
 });
 await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').evaluate((element) => element.click());
-await page.waitForSelector('[data-rp-4v4-static-view].open', { timeout: 15000 });
+await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
 await page.waitForFunction(() => window.__realPlay4v4TeamCodeBetaInstalled === true, null, { timeout: 15000 });
 await page.waitForTimeout(1000);
 assert.equal(await page.locator('script[src*="home-future-4v4-team-code-beta.js"]').count(), 1, 'Team Code runtime duplicated after Saturday open.');
@@ -127,7 +127,7 @@ await page.waitForFunction(() => {
   return Boolean(modal && !modal.hidden);
 });
 await page.locator('[data-rp-rotation-id="sunday-2000-2200"]').evaluate((element) => element.click());
-await page.waitForSelector('[data-rp-4v4-static-view].open', { timeout: 15000 });
+await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
 await page.waitForFunction(() => document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.includes('SUNDAY'), null, { timeout: 5000 });
 assert.equal(await page.locator('[data-rp-4v4-static-view]').count(), 1, 'Rotation switch duplicated the 4v4 view.');
 assert.equal(await page.locator('script[src*="home-future-4v4-team-code-beta.js"]').count(), 1, 'Rotation switch duplicated the Team Code runtime.');
