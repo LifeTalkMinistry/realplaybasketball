@@ -61,7 +61,7 @@ try {
   const loadedScripts = await page.evaluate(() => [...document.scripts].map((script) => script.src));
   assert.ok(loadedScripts.some((src) => src.includes('home-4v4-slot-picker.js?v=20261001-rotation-clean-ui-v1')), 'Live page did not load the fresh rotation clean UI loader.');
   assert.ok(loadedScripts.some((src) => src.includes('home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v3')), 'Live page did not load the safe rotation runtime.');
-  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v1')), 'Live page did not load the rotation clean UI guard.');
+  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v2')), 'Live page did not load the rotation clean UI guard.');
 
   console.log('STAGE verify-clean-home');
   await page.waitForFunction(() => document.querySelector('[data-rp-home-open-rank-meta]')?.textContent?.trim() === 'SAT + SUN · 8:00 PM – 10:00 PM');
