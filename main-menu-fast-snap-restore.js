@@ -45,7 +45,7 @@
     if (document.querySelector('script[data-rp-competition-hub-top-level-loader]')) return;
 
     const script = document.createElement('script');
-    script.src = 'competition-hub-top-level.js?v=20261001-stats-top-level-v1';
+    script.src = 'competition-hub-top-level.js?v=20261001-stats-top-level-v2';
     script.async = true;
     script.dataset.rpCompetitionHubTopLevelLoader = '1';
     document.head.appendChild(script);
