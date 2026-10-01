@@ -62,34 +62,24 @@
 })();
 
 (() => {
-  if (window.__realPlayReplayAdminHashHoldInstalled) return;
-  window.__realPlayReplayAdminHashHoldInstalled = true;
+  if (window.__realPlayReplayAdminHashDoubleTapInstalled) return;
+  window.__realPlayReplayAdminHashDoubleTapInstalled = true;
 
-  const HOLD_MS = 700;
-  const MOVE_CANCEL_PX = 14;
-  let timer = 0;
-  let pressedHash = null;
-  let pointerId = null;
-  let startX = 0;
-  let startY = 0;
-  let suppressNextHashClick = false;
+  const DOUBLE_TAP_MS = 430;
+  let lastTapAt = 0;
+  let lastHash = null;
 
   function hashButtonFrom(target) {
     if (!(target instanceof Element)) return null;
     const topbar = target.closest('.rp-career-replay-topbar');
     if (!topbar || !target.closest('[data-rp-career-replay].open')) return null;
     const direct = target.closest('button,[role="button"]');
-    if (direct && topbar.contains(direct) && String(direct.textContent || '').trim() === '#') return direct;
-    return [...topbar.querySelectorAll('button,[role="button"]')]
-      .find((button) => String(button.textContent || '').trim() === '#') || null;
-  }
-
-  function clearHold() {
-    if (timer) window.clearTimeout(timer);
-    timer = 0;
-    pressedHash?.classList.remove('rp-replay-admin-hold-arming');
-    pressedHash = null;
-    pointerId = null;
+    const hash = direct && topbar.contains(direct) && String(direct.textContent || '').trim() === '#'
+      ? direct
+      : [...topbar.querySelectorAll('button,[role="button"]')]
+        .find((button) => String(button.textContent || '').trim() === '#') || null;
+    if (hash) hash.classList.add('rp-replay-admin-hash');
+    return hash;
   }
 
   function adminEditButton(hash) {
@@ -97,56 +87,50 @@
     return hash?.closest('[data-rp-career-replay].open')?.querySelector('[data-rp-replay-admin-edit]') || null;
   }
 
-  document.addEventListener('pointerdown', (event) => {
-    const hash = hashButtonFrom(event.target);
-    if (!hash || window.__realPlayAdminVerified !== true) return;
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-
-    clearHold();
-    pressedHash = hash;
-    pointerId = event.pointerId;
-    startX = Number(event.clientX || 0);
-    startY = Number(event.clientY || 0);
-    hash.classList.add('rp-replay-admin-hold-arming');
-
-    timer = window.setTimeout(() => {
-      timer = 0;
-      if (pressedHash !== hash) return;
-      hash.classList.remove('rp-replay-admin-hold-arming');
-      pressedHash = null;
-      const edit = adminEditButton(hash);
-      if (!edit) return;
-      suppressNextHashClick = true;
-      edit.click();
-    }, HOLD_MS);
-  }, true);
-
-  document.addEventListener('pointermove', (event) => {
-    if (!pressedHash || event.pointerId !== pointerId) return;
-    const distance = Math.hypot(
-      Number(event.clientX || 0) - startX,
-      Number(event.clientY || 0) - startY
-    );
-    if (distance > MOVE_CANCEL_PX) clearHold();
-  }, true);
-
-  document.addEventListener('pointerup', (event) => {
-    if (pointerId === null || event.pointerId === pointerId) clearHold();
-  }, true);
-  document.addEventListener('pointercancel', clearHold, true);
+  function hideLegacyPencil() {
+    document.querySelectorAll('[data-rp-replay-admin-edit]').forEach((button) => {
+      button.style.setProperty('display', 'none', 'important');
+      button.style.setProperty('pointer-events', 'none', 'important');
+      button.setAttribute('aria-hidden', 'true');
+      button.tabIndex = -1;
+    });
+  }
 
   document.addEventListener('click', (event) => {
     const hash = hashButtonFrom(event.target);
-    if (!hash || !suppressNextHashClick) return;
-    suppressNextHashClick = false;
+    if (!hash || window.__realPlayAdminVerified !== true) return;
+
+    const now = performance.now();
+    const isDoubleTap = lastHash === hash && now - lastTapAt <= DOUBLE_TAP_MS;
+
+    if (!isDoubleTap) {
+      lastHash = hash;
+      lastTapAt = now;
+      return;
+    }
+
+    lastHash = null;
+    lastTapAt = 0;
     event.preventDefault();
+    event.stopPropagation();
     event.stopImmediatePropagation();
+
+    hash.classList.add('rp-replay-admin-doubletap-hit');
+    window.setTimeout(() => hash.classList.remove('rp-replay-admin-doubletap-hit'), 180);
+
+    const edit = adminEditButton(hash);
+    if (edit) edit.click();
   }, true);
+
+  const observer = new MutationObserver(hideLegacyPencil);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  hideLegacyPencil();
 
   const style = document.createElement('style');
   style.textContent = `
     .rp-replay-admin-edit{display:none!important;pointer-events:none!important;}
-    .rp-replay-admin-hold-arming{transform:scale(.96);filter:brightness(1.16);}
+    .rp-replay-admin-hash{touch-action:manipulation;}
+    .rp-replay-admin-doubletap-hit{transform:scale(.94);filter:brightness(1.22);}
   `;
   document.head.appendChild(style);
 })();
