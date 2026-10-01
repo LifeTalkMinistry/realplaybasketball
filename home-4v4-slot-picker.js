@@ -8,10 +8,9 @@
   compactHomeCardStyles.dataset.rpFourVFourCompactHomeCard = '1';
   document.head.appendChild(compactHomeCardStyles);
 
-  // Keep the selected team schedule in the top bar instead of showing a
-  // second schedule banner below Team OVR. Other 4v4 layers may rewrite the
-  // top-bar title while they render, so this guard restores the schedule after
-  // any relevant DOM update.
+  // Keep the selected schedule exactly where SELECT YOUR TEAM used to be,
+  // using the same visual weight and centered top-bar placement. The old
+  // schedule banner is removed whenever another runtime tries to add it.
   const installScheduleHeader = () => {
     if (window.__realPlayFourVFourScheduleHeaderInstalled) return;
     window.__realPlayFourVFourScheduleHeaderInstalled = true;
@@ -24,15 +23,15 @@
         .rp-4v4-static-view [data-rp-4v4-team-slot],
         .rp-4v4-static-view .rp-4v4-team-slot{display:none!important}
         .rp-4v4-static-view .rp-3v3-brand[data-rp-team-schedule-header="1"]{
-          flex:1 1 auto!important;min-width:0!important;max-width:calc(100% - 112px)!important;
-          padding:0 6px!important;display:flex!important;align-items:center!important;justify-content:center!important;
+          width:100%!important;min-width:0!important;max-width:none!important;justify-self:stretch!important;
+          padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;
           text-align:center!important;
         }
         .rp-4v4-static-view .rp-3v3-brand[data-rp-team-schedule-header="1"] strong{
-          display:block!important;max-width:100%!important;margin:0!important;overflow:hidden!important;
+          display:block!important;width:100%!important;margin:0!important;
           color:#f5f9ff!important;font-family:var(--rp-display,Arial,sans-serif)!important;
-          font-size:clamp(.62rem,2.7vw,.82rem)!important;font-weight:1000!important;letter-spacing:.035em!important;
-          line-height:1!important;text-overflow:ellipsis!important;text-transform:uppercase!important;white-space:nowrap!important;
+          font-size:1.05rem!important;font-weight:1000!important;letter-spacing:.09em!important;
+          line-height:1!important;text-align:center!important;text-transform:uppercase!important;white-space:nowrap!important;
         }
         .rp-4v4-static-view .rp-3v3-brand[data-rp-team-schedule-header="1"] span{display:none!important}
       `;
@@ -54,6 +53,9 @@
       queued = false;
       const view = document.querySelector('[data-rp-4v4-static-view], .rp-4v4-static-view');
       if (!view) return;
+
+      // Hard-remove the duplicate schedule banner instead of only hiding it.
+      view.querySelectorAll('[data-rp-4v4-team-slot], .rp-4v4-team-slot').forEach((banner) => banner.remove());
 
       const slot = selectedSlot();
       if (!slot?.label) return;
@@ -113,7 +115,7 @@
     loadLateBindBridge();
     const script = document.createElement('script');
     script.dataset.rpTeamRotationPickerLoader = '1';
-    script.src = 'home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v4';
+    script.src = 'home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v5';
     script.async = false;
     script.addEventListener('error', () => console.warn('[Real Play] Team schedule rotation picker did not load.'), { once: true });
     document.head.appendChild(script);
