@@ -12,7 +12,7 @@
     if (document.querySelector('script[data-rp-rotation-clean-ui-loader]')) return;
     const cleanUi = document.createElement('script');
     cleanUi.dataset.rpRotationCleanUiLoader = '1';
-    cleanUi.src = 'home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v3';
+    cleanUi.src = 'home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v4';
     cleanUi.async = false;
     cleanUi.addEventListener('error', () => console.warn('[Real Play] 4v4 rotation clean UI guard did not load.'), { once: true });
     document.head.appendChild(cleanUi);
