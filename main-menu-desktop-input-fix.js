@@ -82,41 +82,49 @@
     if (!carousel || carousel.dataset.rpDesktopCarouselBound === '1') return false;
     carousel.dataset.rpDesktopCarouselBound = '1';
 
-    const DRAG_THRESHOLD = 7;
-    let pointerId = null;
+    const DRAG_THRESHOLD = 6;
+    const CLICK_GUARD_MS = 120;
+    let mouseDown = false;
+    let dragging = false;
     let startX = 0;
     let startY = 0;
     let startScrollLeft = 0;
-    let dragging = false;
-    let suppressImmediateClick = false;
+    let suppressClickUntil = 0;
+    let previousSnapType = '';
+    let previousScrollBehavior = '';
 
     const canScroll = () => carousel.scrollWidth > carousel.clientWidth + 2;
 
-    const resetDrag = () => {
-      pointerId = null;
-      dragging = false;
-      carousel.classList.remove('rp-desktop-carousel-dragging');
-      carousel.style.cursor = canScroll() ? 'grab' : '';
+    const syncCursor = () => {
+      carousel.style.cursor = canScroll() ? (dragging ? 'grabbing' : 'grab') : '';
     };
 
-    carousel.style.cursor = canScroll() ? 'grab' : '';
+    const endDrag = () => {
+      mouseDown = false;
+      if (dragging) {
+        suppressClickUntil = Date.now() + CLICK_GUARD_MS;
+        carousel.style.scrollSnapType = previousSnapType;
+        carousel.style.scrollBehavior = previousScrollBehavior;
+      }
+      dragging = false;
+      carousel.classList.remove('rp-desktop-carousel-dragging');
+      document.documentElement.classList.remove('rp-player-carousel-mouse-dragging');
+      syncCursor();
+    };
 
-    // Start tracking the mouse without preventing or capturing the press.
-    // A plain press/release therefore remains a completely normal button click.
-    carousel.addEventListener('pointerdown', (event) => {
-      if (event.pointerType !== 'mouse' || event.button !== 0 || !canScroll()) return;
-      pointerId = event.pointerId;
+    // Desktop mouse dragging is deliberately implemented with mouse events,
+    // not pointer/touch events. This keeps the mobile/F12 touch carousel native.
+    carousel.addEventListener('mousedown', (event) => {
+      if (event.button !== 0 || !canScroll()) return;
+      mouseDown = true;
+      dragging = false;
       startX = event.clientX;
       startY = event.clientY;
       startScrollLeft = carousel.scrollLeft;
-      dragging = false;
     });
 
-    // Listen on window so the drag keeps moving even if the pointer crosses a
-    // button edge. We still do not use setPointerCapture, which previously
-    // retargeted Chromium clicks away from the real filter button.
-    window.addEventListener('pointermove', (event) => {
-      if (pointerId === null || event.pointerId !== pointerId) return;
+    window.addEventListener('mousemove', (event) => {
+      if (!mouseDown) return;
 
       const deltaX = event.clientX - startX;
       const deltaY = event.clientY - startY;
@@ -124,45 +132,48 @@
       if (!dragging) {
         if (Math.hypot(deltaX, deltaY) < DRAG_THRESHOLD) return;
         if (Math.abs(deltaX) <= Math.abs(deltaY)) {
-          resetDrag();
+          endDrag();
           return;
         }
+
         dragging = true;
+        previousSnapType = carousel.style.scrollSnapType;
+        previousScrollBehavior = carousel.style.scrollBehavior;
+        carousel.style.scrollSnapType = 'none';
+        carousel.style.scrollBehavior = 'auto';
         carousel.classList.add('rp-desktop-carousel-dragging');
-        carousel.style.cursor = 'grabbing';
+        document.documentElement.classList.add('rp-player-carousel-mouse-dragging');
+        syncCursor();
       }
 
-      // Only an established horizontal drag is cancelled. Simple clicks never
-      // reach this branch, so the Players filter module keeps full click ownership.
       event.preventDefault();
       carousel.scrollLeft = startScrollLeft - deltaX;
     }, { passive: false });
 
-    window.addEventListener('pointerup', (event) => {
-      if (pointerId === null || event.pointerId !== pointerId) return;
-      const wasDragging = dragging;
-      resetDrag();
+    window.addEventListener('mouseup', () => {
+      if (!mouseDown) return;
+      endDrag();
+    }, { capture: true });
 
-      // Browsers may synthesize a click immediately after a mouse drag. Suppress
-      // only that same-turn synthetic click, then automatically re-enable clicks.
-      if (wasDragging) {
-        suppressImmediateClick = true;
-        window.setTimeout(() => { suppressImmediateClick = false; }, 0);
-      }
-    }, { capture: true, passive: true });
+    window.addEventListener('blur', () => {
+      if (mouseDown) endDrag();
+    });
 
-    window.addEventListener('pointercancel', (event) => {
-      if (pointerId === null || event.pointerId !== pointerId) return;
-      resetDrag();
-    }, { capture: true, passive: true });
+    // Prevent Chromium's native text/image drag only after using this strip as
+    // a drag surface. This does not intercept ordinary filter button clicks.
+    carousel.addEventListener('dragstart', (event) => event.preventDefault());
+    carousel.querySelectorAll('[data-player-sort]').forEach((button) => {
+      button.draggable = false;
+      button.style.userSelect = 'none';
+      button.style.webkitUserSelect = 'none';
+    });
 
     carousel.addEventListener('click', (event) => {
-      if (!suppressImmediateClick) return;
+      if (Date.now() >= suppressClickUntil) return;
       event.preventDefault();
       event.stopImmediatePropagation();
     }, { capture: true });
 
-    // Wheel/trackpad navigation remains available as a second desktop input.
     carousel.addEventListener('wheel', (event) => {
       if (!canScroll()) return;
       const horizontalIntent = Math.abs(event.deltaX) > Math.abs(event.deltaY);
@@ -185,6 +196,14 @@
         button.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
       });
     });
+
+    // Touch remains a native horizontal scroller. These inline properties only
+    // reinforce the existing mobile behavior and do not attach touch handlers.
+    carousel.style.overflowX = 'auto';
+    carousel.style.overflowY = 'hidden';
+    carousel.style.webkitOverflowScrolling = 'touch';
+    carousel.style.touchAction = 'pan-x';
+    syncCursor();
 
     return true;
   }
