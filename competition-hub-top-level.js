@@ -150,10 +150,10 @@
 
   installStyles();
 
-  // Window capture runs before the older document-level competition handler.
-  // This makes the primary-view transition atomic: the outgoing layer closes
-  // before the incoming tab is allowed to open.
-  window.addEventListener('pointerdown', beforePrimaryNavigation, true);
+  // Only switch primary layers during the click event. Closing on pointerdown
+  // creates a visible gap before click, exposing Home for a few milliseconds.
+  // Window capture still runs before the document-level competition handler,
+  // so the outgoing and incoming views swap within one event cycle.
   window.addEventListener('click', beforePrimaryNavigation, true);
   installRuntimeGuards();
 
