@@ -2,6 +2,22 @@
   if (window.__realPlayFourVFourDynamicSlotLoaderInstalled) return;
   window.__realPlayFourVFourDynamicSlotLoaderInstalled = true;
 
+  // Force the latest Player Management identity metadata to load before the
+  // shell enhancement chain can reuse an older cached copy. The identity
+  // module protects itself with its own install guard, so the normal loader
+  // can safely encounter it again later without double-installing it.
+  if (!window.__realPlayWorldPlayerAdminIdentityInstalled
+      && !document.querySelector('script[data-rp-player-admin-identity-fresh-loader]')) {
+    const identity = document.createElement('script');
+    identity.dataset.rpPlayerAdminIdentityFreshLoader = '1';
+    identity.src = 'real-play-world-player-admin-identity.js?v=20261001-inactivity-meta-v2';
+    identity.async = false;
+    identity.addEventListener('error', () => {
+      console.warn('[Real Play] Fresh Player Management identity metadata did not load.');
+    }, { once: true });
+    document.head.appendChild(identity);
+  }
+
   const compactHomeCardStyles = document.createElement('link');
   compactHomeCardStyles.rel = 'stylesheet';
   compactHomeCardStyles.href = 'home-4v4-card-compact.css?v=20261001-rotation-clean-ui-v1';
