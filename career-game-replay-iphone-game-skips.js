@@ -8,7 +8,7 @@
   const BUTTON_ATTR = 'data-rp-career-replay-game-skips';
   const PANEL_ATTR = 'data-rp-career-replay-game-skips-panel';
   const BALL_ATTR = 'data-rp-career-replay-game-skip-ball';
-  const SOURCE_SELECTOR = '[data-rp-career-replay-timeline-markers] [data-rp-career-replay-marker]';
+  const SOURCE_SELECTOR = '[data-rp-career-replay-timeline-markers] [data-rp-career-replay-marker]:not([data-rp-career-audit-kind]), [data-rp-career-replay-timeline-markers] [data-rp-career-replay-marker][data-rp-career-audit-kind="score"]';
   const STYLE_ID = 'rp-career-replay-iphone-game-skips-style';
 
   let activeStage = null;
