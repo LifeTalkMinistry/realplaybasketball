@@ -23,14 +23,26 @@
     if (document.querySelector('script[data-rp-competition-hub-loader]')) return;
 
     const script = document.createElement('script');
-    script.src = 'competition-hub.js?v=20261001-competition-hub-v2';
+    script.src = 'competition-hub.js?v=20261001-competition-hub-v3';
     script.async = true;
     script.dataset.rpCompetitionHubLoader = '1';
     document.head.appendChild(script);
   }
 
+  function loadCompetitionHubCleanup() {
+    if (window.__realPlayCompetitionHubCleanupInstalled) return;
+    if (document.querySelector('script[data-rp-competition-hub-cleanup-loader]')) return;
+
+    const script = document.createElement('script');
+    script.src = 'competition-hub-cleanup.js?v=20261001-stats-cleanup-v1';
+    script.async = true;
+    script.dataset.rpCompetitionHubCleanupLoader = '1';
+    document.head.appendChild(script);
+  }
+
   loadHomePaymentAdmin();
   loadCompetitionHub();
+  loadCompetitionHubCleanup();
 
   function routeLegacy(action) {
     const button = document.querySelector(`[data-rp-main-action="${action}"]`);
