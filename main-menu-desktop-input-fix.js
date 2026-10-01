@@ -117,7 +117,9 @@
       startY = event.clientY;
       startScrollLeft = carousel.scrollLeft;
       dragging = false;
-      try { carousel.setPointerCapture(event.pointerId); } catch (_error) {}
+      // Do not capture the pointer yet. Capturing on a normal click retargets
+      // Chromium's click event to the carousel itself instead of the filter
+      // button, which prevents the delegated filter handler from firing.
     });
 
     carousel.addEventListener('pointermove', (event) => {
@@ -134,6 +136,7 @@
         dragging = true;
         carousel.classList.add('rp-desktop-carousel-dragging');
         carousel.style.cursor = 'grabbing';
+        try { carousel.setPointerCapture(event.pointerId); } catch (_error) {}
       }
 
       event.preventDefault();
@@ -143,7 +146,9 @@
     const finishPointer = (event) => {
       if (pointerId === null || event.pointerId !== pointerId) return;
       if (dragging) suppressClickUntil = Date.now() + CLICK_GUARD_MS;
-      try { carousel.releasePointerCapture(event.pointerId); } catch (_error) {}
+      if (dragging) {
+        try { carousel.releasePointerCapture(event.pointerId); } catch (_error) {}
+      }
       reset();
       carousel.style.cursor = 'grab';
     };
