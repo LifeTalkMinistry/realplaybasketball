@@ -2,6 +2,12 @@
   if (window.__realPlayFourVFourDynamicSlotLoaderInstalled) return;
   window.__realPlayFourVFourDynamicSlotLoaderInstalled = true;
 
+  const compactHomeCardStyles = document.createElement('link');
+  compactHomeCardStyles.rel = 'stylesheet';
+  compactHomeCardStyles.href = 'home-4v4-card-compact.css?v=20261001-home-card-gap-v1';
+  compactHomeCardStyles.dataset.rpFourVFourCompactHomeCard = '1';
+  document.head.appendChild(compactHomeCardStyles);
+
   const loadSlotPicker = () => {
     const script = document.createElement('script');
     script.src = 'home-4v4-slot-picker-dynamic-v2.js?v=20260930-assigned-team-filter-v6';
