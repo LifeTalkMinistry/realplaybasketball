@@ -1,0 +1,20 @@
+/* 4v4 Home card: the slot picker intentionally hides session meta/capacity.
+ * Remove the old reserved height so the session title and CHOOSE MY SLOT
+ * action remain a compact visual group instead of being pushed apart.
+ */
+body.rp-simple-navigation-active [data-rp-home-open-rank]{
+  min-height:0!important;
+  justify-content:flex-start!important;
+  gap:12px!important;
+}
+
+body.rp-simple-navigation-active [data-rp-home-open-rank] .rp-home-session-copy{
+  min-height:0!important;
+}
+
+@media(max-width:420px){
+  body.rp-simple-navigation-active [data-rp-home-open-rank]{
+    min-height:0!important;
+    gap:11px!important;
+  }
+}
