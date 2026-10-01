@@ -20,9 +20,20 @@
 
   const compactHomeCardStyles = document.createElement('link');
   compactHomeCardStyles.rel = 'stylesheet';
-  compactHomeCardStyles.href = 'home-4v4-card-compact.css?v=20261001-tight-home-card-v3';
+  compactHomeCardStyles.href = 'home-4v4-card-compact.css?v=20261001-tight-home-card-v4';
   compactHomeCardStyles.dataset.rpFourVFourCompactHomeCard = '1';
   document.head.appendChild(compactHomeCardStyles);
+
+  // app.js adds the main Home artwork styles after this bootstrap file runs.
+  // Move the compact 4v4 override back to the end of <head> once the core
+  // styles (and again once all enhancements) are ready so the content-driven
+  // card height wins the cascade instead of the older 164/174px minimum.
+  const reassertCompactHomeCardStyles = () => {
+    if (!compactHomeCardStyles.isConnected) return;
+    document.head.appendChild(compactHomeCardStyles);
+  };
+  window.addEventListener('realplay:app-ready', reassertCompactHomeCardStyles, { once: true });
+  window.addEventListener('realplay:enhancements-ready', reassertCompactHomeCardStyles, { once: true });
 
   // Put the selected schedule exactly where SELECT YOUR TEAM used to be,
   // with the same strong centered treatment. The old schedule banner may
