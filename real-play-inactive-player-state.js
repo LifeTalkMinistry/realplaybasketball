@@ -32,6 +32,13 @@
       .rp-world-inactive-mode .rp-world-player-row[data-ranking-status="inactive"]{
         border-color:rgba(135,158,183,.16)
       }
+      /* Global category invariant: inactive players may only appear in INACTIVE OVR. */
+      .rp-world:not(.rp-world-inactive-mode) .rp-world-player-row[data-ranking-status="inactive"]{
+        display:none!important
+      }
+      .rp-world.rp-world-inactive-mode .rp-world-player-row:not([data-ranking-status="inactive"]){
+        display:none!important
+      }
       @media(max-width:420px){.rp-inactive-rank-badge{min-width:34px;font-size:1.08rem}}
       @media(max-width:360px){.rp-inactive-rank-badge{min-width:31px;font-size:1rem}}
     `;
@@ -359,9 +366,22 @@
   });
 
   const observer = new MutationObserver((mutations) => {
-    if (mutations.some((mutation) => mutation.type === 'childList')) scheduleApply();
+    const needsApply = mutations.some((mutation) => (
+      mutation.type === 'childList'
+      || (
+        mutation.type === 'attributes'
+        && mutation.attributeName === 'hidden'
+        && mutation.target?.classList?.contains('rp-world-player-row')
+      )
+    ));
+    if (needsApply) scheduleApply();
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['hidden'],
+  });
 
   window.addEventListener('realplay:profile-loaded', scheduleApply);
   window.addEventListener('realplay:public-profile-loaded', scheduleApply);
