@@ -134,6 +134,189 @@
     @media(prefers-reduced-motion:reduce){
       .rp-replay-admin-edit.rp-replay-admin-edit-loading svg{animation:none}
     }
+
+    /* Full-game replay audit stamp filter. SCORE is intentionally the default. */
+    .rp-career-audit-filterbar{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:7px;
+      margin:0 0 7px;
+      min-height:30px;
+    }
+    .rp-career-audit-filterbar>span{
+      color:#7092a1;
+      font:900 .48rem/1 system-ui,sans-serif;
+      letter-spacing:.1em;
+      white-space:nowrap;
+    }
+    .rp-career-audit-filter-select{
+      min-width:126px;
+      height:30px;
+      box-sizing:border-box;
+      padding:0 28px 0 10px;
+      border:1px solid rgba(55,199,232,.3);
+      border-radius:9px;
+      background:#061722;
+      color:#dff9ff;
+      font:950 .52rem/1 system-ui,sans-serif;
+      letter-spacing:.07em;
+      text-transform:uppercase;
+      cursor:pointer;
+      outline:none;
+    }
+    .rp-career-audit-filter-select:hover,
+    .rp-career-audit-filter-select:focus-visible{
+      border-color:rgba(59,220,249,.68);
+      box-shadow:0 0 0 2px rgba(38,190,222,.09);
+    }
+    .rp-career-audit-filter-select option{
+      background:#071824;
+      color:#eefcff;
+    }
+    [data-rp-career-audit-filter-hidden]{display:none!important}
+    @media(max-width:620px){
+      .rp-career-audit-filterbar{
+        gap:6px;
+        margin-bottom:6px;
+        min-height:28px;
+      }
+      .rp-career-audit-filterbar>span{font-size:.44rem}
+      .rp-career-audit-filter-select{
+        min-width:118px;
+        height:28px;
+        padding-left:9px;
+        font-size:.48rem;
+        border-radius:8px;
+      }
+    }
   `;
   document.head.appendChild(style);
+
+  const AUDIT_FILTERS = [
+    ['score', '🏀 SCORE'],
+    ['to', 'TO · TURNOVER'],
+    ['miss', '× MISS'],
+    ['ast', 'A · ASSIST'],
+    ['reb', 'R · REBOUND'],
+    ['stl', 'S · STEAL'],
+    ['blk', 'B · BLOCK'],
+    ['foul', 'F · FOUL'],
+    ['all', 'ALL STAMPS'],
+  ];
+
+  let replayAuditFilter = 'score';
+  let replayAuditEnhanceTimer = 0;
+
+  function replayAuditRoot() {
+    return document.querySelector('[data-rp-career-replay].open');
+  }
+
+  function auditKind(marker) {
+    const explicit = String(marker?.dataset?.rpCareerAuditKind || '').trim().toLowerCase();
+    // The base replay's original made-basket markers do not carry the audit
+    // kind attribute, so they are treated as SCORE until the persisted audit
+    // timeline enhancement replaces them.
+    return explicit || 'score';
+  }
+
+  function auditCounts(root) {
+    const counts = Object.fromEntries(AUDIT_FILTERS.map(([key]) => [key, 0]));
+    const markers = [...root.querySelectorAll('[data-rp-career-replay-timeline-markers] [data-rp-career-replay-marker]')];
+    markers.forEach((marker) => {
+      const kind = auditKind(marker);
+      if (Object.prototype.hasOwnProperty.call(counts, kind)) counts[kind] += 1;
+      counts.all += 1;
+    });
+    return counts;
+  }
+
+  function applyReplayAuditFilter(root = replayAuditRoot()) {
+    if (!root) return;
+    const markers = root.querySelectorAll('[data-rp-career-replay-timeline-markers] [data-rp-career-replay-marker]');
+    markers.forEach((marker) => {
+      const visible = replayAuditFilter === 'all' || auditKind(marker) === replayAuditFilter;
+      if (visible) marker.removeAttribute('data-rp-career-audit-filter-hidden');
+      else marker.setAttribute('data-rp-career-audit-filter-hidden', '1');
+    });
+
+    const select = root.querySelector('[data-rp-career-audit-filter]');
+    if (!select) return;
+    if (select.value !== replayAuditFilter) select.value = replayAuditFilter;
+
+    const counts = auditCounts(root);
+    [...select.options].forEach((option) => {
+      const base = option.dataset.rpAuditBase || option.textContent.replace(/\s*\(\d+\)\s*$/, '');
+      option.dataset.rpAuditBase = base;
+      const count = Number(counts[option.value] || 0);
+      const next = `${base} (${count})`;
+      if (option.textContent !== next) option.textContent = next;
+    });
+  }
+
+  function ensureReplayAuditFilter() {
+    const root = replayAuditRoot();
+    if (!root) return;
+    const timeline = root.querySelector('.rp-career-replay-timeline');
+    const wrap = root.querySelector('.rp-career-replay-timeline-wrap');
+    if (!timeline || !wrap) return;
+
+    let bar = wrap.querySelector('[data-rp-career-audit-filterbar]');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'rp-career-audit-filterbar';
+      bar.dataset.rpCareerAuditFilterbar = '1';
+      bar.innerHTML = `<span>SHOW STAMPS</span><select class="rp-career-audit-filter-select" data-rp-career-audit-filter aria-label="Choose which audit stamps are visible">${AUDIT_FILTERS.map(([key, label]) => `<option value="${key}" data-rp-audit-base="${label}">${label}</option>`).join('')}</select>`;
+      wrap.insertBefore(bar, timeline);
+
+      const select = bar.querySelector('[data-rp-career-audit-filter]');
+      select.value = replayAuditFilter;
+      select.addEventListener('change', () => {
+        const requested = String(select.value || 'score').toLowerCase();
+        replayAuditFilter = AUDIT_FILTERS.some(([key]) => key === requested) ? requested : 'score';
+        applyReplayAuditFilter(root);
+      });
+    }
+
+    applyReplayAuditFilter(root);
+  }
+
+  function scheduleReplayAuditFilter(delay = 20) {
+    if (replayAuditEnhanceTimer) clearTimeout(replayAuditEnhanceTimer);
+    replayAuditEnhanceTimer = setTimeout(() => {
+      replayAuditEnhanceTimer = 0;
+      ensureReplayAuditFilter();
+    }, delay);
+  }
+
+  // Every newly opened replay starts cleanly on SCORE, while the user's choice
+  // remains active for the rest of that open replay.
+  document.addEventListener('click', (event) => {
+    if (event.target?.closest?.('[data-rp-career-replay-session]')) {
+      replayAuditFilter = 'score';
+      scheduleReplayAuditFilter(80);
+      setTimeout(() => scheduleReplayAuditFilter(20), 260);
+    }
+    if (event.target?.closest?.('[data-rp-career-replay-close]')) {
+      replayAuditFilter = 'score';
+    }
+  }, true);
+
+  const replayAuditObserver = new MutationObserver((mutations) => {
+    const relevant = mutations.some((mutation) => {
+      const nodes = [...mutation.addedNodes, ...mutation.removedNodes];
+      return nodes.some((node) => node.nodeType === 1 && (
+        node.matches?.('[data-rp-career-replay], [data-rp-career-replay-timeline-markers], [data-rp-career-replay-marker]')
+        || node.querySelector?.('[data-rp-career-replay], [data-rp-career-replay-timeline-markers], [data-rp-career-replay-marker]')
+      ));
+    });
+    if (relevant) scheduleReplayAuditFilter(10);
+  });
+  replayAuditObserver.observe(document.documentElement, { childList: true, subtree: true });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => scheduleReplayAuditFilter(0), { once: true });
+  } else {
+    scheduleReplayAuditFilter(0);
+  }
 })();
