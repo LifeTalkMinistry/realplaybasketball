@@ -23,7 +23,7 @@
     if (document.querySelector('script[data-rp-competition-hub-loader]')) return;
 
     const script = document.createElement('script');
-    script.src = 'competition-hub.js?v=20261001-competition-hub-v3';
+    script.src = 'competition-hub.js?v=20261001-competition-hub-v4';
     script.async = true;
     script.dataset.rpCompetitionHubLoader = '1';
     document.head.appendChild(script);
@@ -40,9 +40,21 @@
     document.head.appendChild(script);
   }
 
+  function loadCompetitionHubTopLevel() {
+    if (window.__realPlayCompetitionHubTopLevelInstalled) return;
+    if (document.querySelector('script[data-rp-competition-hub-top-level-loader]')) return;
+
+    const script = document.createElement('script');
+    script.src = 'competition-hub-top-level.js?v=20261001-stats-top-level-v1';
+    script.async = true;
+    script.dataset.rpCompetitionHubTopLevelLoader = '1';
+    document.head.appendChild(script);
+  }
+
   loadHomePaymentAdmin();
   loadCompetitionHub();
   loadCompetitionHubCleanup();
+  loadCompetitionHubTopLevel();
 
   function routeLegacy(action) {
     const button = document.querySelector(`[data-rp-main-action="${action}"]`);
