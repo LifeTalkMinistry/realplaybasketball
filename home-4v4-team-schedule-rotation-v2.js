@@ -259,7 +259,7 @@
       banner = document.createElement('button');
       banner.type = 'button';
       banner.className = 'rp-4v4-team-slot';
-      banner.dataset.rp4v4TeamSlot = '1';
+      banner.setAttribute('data-rp-4v4-team-slot', '1');
       banner.addEventListener('click', openModal);
       const topbar = view.querySelector('.rp-3v3-topbar');
       if (topbar) topbar.insertAdjacentElement('afterend', banner); else view.prepend(banner);
@@ -323,12 +323,19 @@
   async function start() {
     styles();
     enforce();
-    await refresh();
-    enforce();
+
+    // Make the UI interactive immediately. Previously these listeners were
+    // registered only after the first schedule fetch finished, which left a
+    // short window where CHECK TEAM SCHEDULE could still fall through to the
+    // legacy handler.
     document.addEventListener('click', onCaptureClick, true);
     document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && modal && !modal.hidden) closeModal(); });
     window.addEventListener('realplay:home-schedule-changed', handleScheduleChanged);
     new MutationObserver(queueEnforce).observe(document.documentElement, { childList: true, subtree: true });
+    window.__realPlayTeamRotationPickerV2Ready = true;
+
+    await refresh();
+    enforce();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
