@@ -90,9 +90,18 @@
 
   function start() {
     enforce();
-    new MutationObserver(queueEnforce).observe(document.documentElement, { childList: true, subtree: true });
+    new MutationObserver(() => {
+      // Canonicalize/remove schedule banners immediately. The rotation runtime
+      // also reacts to DOM changes on the next animation frame, so waiting for
+      // our own frame here can allow it to create another banner first.
+      cleanTeamScheduleBanner();
+      queueEnforce();
+    }).observe(document.documentElement, { childList: true, subtree: true });
     window.addEventListener('realplay:home-schedule-changed', queueEnforce);
-    window.addEventListener('realplay:4v4-open', queueEnforce);
+    window.addEventListener('realplay:4v4-open', () => {
+      cleanTeamScheduleBanner();
+      queueEnforce();
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
