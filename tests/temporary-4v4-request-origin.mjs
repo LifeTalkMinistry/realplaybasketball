@@ -99,7 +99,7 @@ await page.waitForFunction(() => {
 });
 await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').evaluate((element) => element.click());
 await page.waitForFunction(() => window.__realPlay4v4TeamCodeBetaInstalled === true, null, { timeout: 15000 });
-await page.waitForSelector('[data-rp-4v4-static-view].open');
+await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
 await page.waitForTimeout(1500);
 
 const origins = await page.evaluate(() => window.__rp4v4FetchOrigins || []);
