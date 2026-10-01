@@ -49,9 +49,11 @@
   function playerIsJoined(panel) {
     const action = panel?.querySelector('[data-rp-4v4-preference-action]');
     if (!action) return false;
-    if (action.classList.contains('is-selected')) return true;
-    const text = String(action.textContent || '').trim().toUpperCase();
-    return text.startsWith('JOINED') || text.startsWith('MY TEAM');
+
+    // The shared action button may say "JOINED VALIANT" while the player is
+    // browsing WATCHMEN (or any other club). Only the active joined club gets
+    // the is-selected marker from the canonical 4v4 team-code renderer.
+    return action.classList.contains('is-selected');
   }
 
   function ensureCancelButton(panel) {
