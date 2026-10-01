@@ -3,7 +3,8 @@
   window.__realPlayOverlayFocusReleaseInstalled = true;
 
   function safeFallback() {
-    return document.querySelector('[data-rp-main-action].slot-active')
+    return document.querySelector('[data-rp-simple-nav-item].active, [data-rp-simple-nav-item][aria-current="page"]')
+      || document.querySelector('[data-rp-main-action].slot-active')
       || document.querySelector('[data-rp-main-menu-list]')
       || document.querySelector('[data-rp-app]');
   }
@@ -26,6 +27,8 @@
   }
 
   function surfaceFromCloseTarget(target) {
+    if (target.closest?.('[data-rp-takeover-cta]')) return document.querySelector('[data-rp-takeover]');
+    if (target.closest?.('[data-rp-takeover-admin-back]')) return document.querySelector('[data-rp-takeover-admin]');
     if (target.closest?.('[data-rp-main-notice-close]')) return document.querySelector('[data-rp-main-notice]');
     if (target.closest?.('[data-rp-career-replay-close]')) return document.querySelector('[data-rp-career-replay]');
     if (target.closest?.('[data-updates-close]')) return document.querySelector('[data-rp-updates]');
@@ -39,6 +42,12 @@
   }
 
   document.addEventListener('click', (event) => {
+    const takeover = document.querySelector('[data-rp-takeover]');
+    if (event.target === takeover && takeover?.classList.contains('open')) {
+      releaseFocus(takeover);
+      return;
+    }
+
     const notice = document.querySelector('[data-rp-main-notice]');
     if (event.target === notice && notice?.classList.contains('open')) {
       releaseFocus(notice);
@@ -64,6 +73,8 @@
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     const surfaces = [
+      document.querySelector('[data-rp-takeover].open'),
+      document.querySelector('[data-rp-takeover-admin].open'),
       document.querySelector('[data-rp-main-notice].open'),
       document.querySelector('[data-rp-career-replay].open'),
       document.querySelector('[data-rp-updates].open'),
@@ -266,9 +277,7 @@
     body.rp-ranking-open [data-rp-public-profile].open{
       z-index:2300!important;
     }
-    [data-rp-ranking-secured] .rp-ranking-secured-player:not(.is-clickable).is-you{
-      cursor:pointer;
-    }
+    [data-rp-ranking-secured] .rp-ranking-secured-player:not(.is-clickable).is-you{cursor:pointer}
   `;
   document.head.appendChild(style);
 
@@ -302,10 +311,6 @@
     if (!card) return;
 
     const isYou = card.classList.contains('is-you') || Boolean(card.querySelector('.rp-ranking-secured-you'));
-
-    // The secured-player script already handles normal clickable buttons. The
-    // bridge only supplies the missing path for cards that were rendered without
-    // a profile id, most importantly the logged-in player's own card.
     if (card.classList.contains('is-clickable')) return;
 
     if (isYou && window.RealPlayProfile?.open) {
