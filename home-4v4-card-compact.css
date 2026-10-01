@@ -1,26 +1,39 @@
-/* 4v4 rotation Home card: keep only the useful season + CTA.
- * The old single-bracket capacity badge is intentionally hidden because team
- * availability is now assigned per Saturday/Sunday rotation, not one global slot.
+/* 4v4 rotation Home card: keep only the useful season title + CTA.
+ * The date/time/location meta and old capacity badge stay hidden because the
+ * detailed rotation lives behind CHECK TEAM SCHEDULE.
  */
 body.rp-simple-navigation-active [data-rp-home-open-rank]{
   min-height:0!important;
   height:auto!important;
   justify-content:flex-start!important;
-  gap:12px!important;
-  padding-top:17px!important;
-  padding-bottom:17px!important;
+  gap:8px!important;
+  padding-top:16px!important;
+  padding-bottom:16px!important;
 }
 
 body.rp-simple-navigation-active [data-rp-home-open-rank] .rp-home-session-copy{
   min-height:0!important;
   height:auto!important;
   flex:0 0 auto!important;
+  margin:0!important;
+  padding:0!important;
+  gap:0!important;
 }
 
-body.rp-simple-navigation-active [data-rp-home-open-rank-meta]{
+/* The Home card should show only the season title in the copy block. This also
+ * prevents empty/hidden schedule children from reserving vertical space. */
+body.rp-simple-navigation-active [data-rp-home-open-rank] .rp-home-session-copy > :not([data-rp-home-open-rank-title]){
   display:none!important;
+  visibility:hidden!important;
+  height:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  overflow:hidden!important;
 }
 
+body.rp-simple-navigation-active [data-rp-home-open-rank-meta],
 body.rp-simple-navigation-active [data-rp-home-open-rank-capacity]{
   display:none!important;
 }
@@ -34,8 +47,8 @@ body.rp-simple-navigation-active [data-rp-home-open-rank] .rp-home-save-slot{
   body.rp-simple-navigation-active [data-rp-home-open-rank]{
     min-height:0!important;
     height:auto!important;
-    gap:11px!important;
-    padding-top:16px!important;
-    padding-bottom:16px!important;
+    gap:8px!important;
+    padding-top:15px!important;
+    padding-bottom:15px!important;
   }
 }
