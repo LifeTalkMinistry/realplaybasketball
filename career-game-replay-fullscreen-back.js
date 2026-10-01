@@ -202,6 +202,11 @@
     return /iPhone|iPod/i.test(ua);
   }
 
+  function isAndroidBrowser() {
+    const ua = String(navigator.userAgent || '');
+    return /Android/i.test(ua);
+  }
+
   function exitFullscreen() {
     if (document.exitFullscreen) return document.exitFullscreen().catch?.(() => {});
     if (document.webkitExitFullscreen) {
@@ -348,9 +353,11 @@
   }
 
   function shouldUsePseudoFullscreen(stage) {
-    // iPhone now uses the media element / YouTube native fullscreen path owned
-    // by career-game-replay.js, so do not intercept its Expand click here.
+    // Preserve the current iPhone/iOS path exactly as-is. Android deliberately
+    // uses our viewport fullscreen so Chrome never shows its long native
+    // fullscreen instruction banner. Desktop keeps the previous fallback rule.
     if (isIPhoneBrowser()) return false;
+    if (isAndroidBrowser()) return true;
     return !(stage?.requestFullscreen || stage?.webkitRequestFullscreen);
   }
 
