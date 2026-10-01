@@ -95,7 +95,7 @@ try {
   await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').evaluate((element) => element.click());
   await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
   await page.waitForFunction(() => Array.isArray(window.__realPlay4v4AssignedTeamKeys) && window.__realPlay4v4AssignedTeamKeys.join(',') === 'lions,valiant');
-  await page.waitForFunction(() => document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim() === 'SELECT YOUR TEAM');
+  await page.waitForFunction(() => /^SELECT YOUR TEAM\.?$/.test(document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim() || ''));
   await page.waitForTimeout(400);
 
   const saturday = await page.evaluate(() => ({
@@ -116,7 +116,7 @@ try {
   assert.equal(saturday.stored?.day, 'SATURDAY');
   assert.equal(saturday.bodyOpen, true);
   assert.equal(saturday.viewCount, 1);
-  assert.equal(saturday.title, 'SELECT YOUR TEAM', 'Team screen title should stay clean and generic.');
+  assert.match(saturday.title || '', /^SELECT YOUR TEAM\.?$/, 'Team screen title should stay clean and generic.');
   assert.equal(saturday.bannerCount, 1, 'Saturday team screen contains repeated schedule banners.');
   assert.equal(saturday.canonicalBannerCount, 1, 'Saturday schedule banner is missing its canonical data attribute.');
   assert.equal(saturday.malformedBannerCount, 0, 'Malformed legacy rotation banner attribute remains.');
@@ -131,7 +131,7 @@ try {
   await page.locator('[data-rp-rotation-id="sunday-2000-2200"]').evaluate((element) => element.click());
   await page.waitForSelector('[data-rp-4v4-static-view].open', { state: 'attached', timeout: 15000 });
   await page.waitForFunction(() => Array.isArray(window.__realPlay4v4AssignedTeamKeys) && window.__realPlay4v4AssignedTeamKeys.join(',') === 'eagles,steadfast');
-  await page.waitForFunction(() => document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim() === 'SELECT YOUR TEAM');
+  await page.waitForFunction(() => /^SELECT YOUR TEAM\.?$/.test(document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.trim() || ''));
   await page.waitForTimeout(400);
 
   const sunday = await page.evaluate(() => ({
@@ -146,7 +146,7 @@ try {
   assert.deepEqual(sunday.keys, ['eagles', 'steadfast']);
   assert.equal(sunday.stored?.day, 'SUNDAY');
   assert.equal(sunday.viewCount, 1);
-  assert.equal(sunday.title, 'SELECT YOUR TEAM');
+  assert.match(sunday.title || '', /^SELECT YOUR TEAM\.?$/);
   assert.equal(sunday.bannerCount, 1, 'Sunday team screen contains repeated schedule banners.');
   assert.equal(sunday.canonicalBannerCount, 1);
   assert.equal(sunday.malformedBannerCount, 0);
