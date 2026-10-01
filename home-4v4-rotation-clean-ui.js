@@ -63,14 +63,26 @@
     const view = document.querySelector('[data-rp-4v4-static-view]');
     if (!view) return;
 
-    const heading = view.querySelector('.rp-3v3-select-head h1');
-    if (heading) {
-      if (heading.textContent.trim() !== TEAM_TITLE) heading.textContent = TEAM_TITLE;
-      heading.removeAttribute('data-rp-4v4-slot-heading');
-      heading.removeAttribute('aria-label');
-      heading.removeAttribute('role');
-      heading.removeAttribute('tabindex');
+    let head = view.querySelector('.rp-3v3-select-head');
+    if (!head) {
+      head = document.createElement('section');
+      head.className = 'rp-3v3-select-head';
+      head.innerHTML = `<h1>${TEAM_TITLE}</h1>`;
+      const topbar = view.querySelector('.rp-3v3-topbar');
+      if (topbar) topbar.insertAdjacentElement('afterend', head);
+      else view.prepend(head);
     }
+
+    let heading = head.querySelector('h1');
+    if (!heading) {
+      heading = document.createElement('h1');
+      head.prepend(heading);
+    }
+    if (heading.textContent.trim() !== TEAM_TITLE) heading.textContent = TEAM_TITLE;
+    heading.removeAttribute('data-rp-4v4-slot-heading');
+    heading.removeAttribute('aria-label');
+    heading.removeAttribute('role');
+    heading.removeAttribute('tabindex');
 
     const banners = [...view.querySelectorAll('.rp-4v4-team-slot')];
     if (!banners.length) return;
@@ -104,8 +116,8 @@
   function start() {
     enforce();
     new MutationObserver(() => {
-      // Keep the team title generic and canonicalize/remove schedule banners
-      // immediately before any legacy observer can reproduce stale UI.
+      // Keep one stable page heading and one canonical schedule banner.
+      // Changes are conditional so the observer cannot feed itself forever.
       cleanTeamScreen();
       queueEnforce();
     }).observe(document.documentElement, { childList: true, subtree: true });

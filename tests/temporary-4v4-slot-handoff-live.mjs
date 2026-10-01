@@ -61,7 +61,7 @@ try {
   const loadedScripts = await page.evaluate(() => [...document.scripts].map((script) => script.src));
   assert.ok(loadedScripts.some((src) => src.includes('home-4v4-slot-picker.js?v=20261001-rotation-clean-ui-v1')), 'Live page did not load the rotation UI loader.');
   assert.ok(loadedScripts.some((src) => src.includes('home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v4')), 'Live page did not load the ready rotation runtime.');
-  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v3')), 'Live page did not load the latest clean rotation UI guard.');
+  assert.ok(loadedScripts.some((src) => src.includes('home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v4')), 'Live page did not load the latest clean rotation UI guard.');
   assert.equal(loadedScripts.some((src) => src.includes('home-4v4-slot-header.js')), false, 'Legacy slot-heading override is still loading.');
 
   console.log('STAGE verify-clean-home');
@@ -116,7 +116,7 @@ try {
   assert.equal(saturday.stored?.day, 'SATURDAY');
   assert.equal(saturday.bodyOpen, true);
   assert.equal(saturday.viewCount, 1);
-  assert.match(saturday.title || '', /^SELECT YOUR TEAM\.?$/, 'Team screen title should stay clean and generic.');
+  assert.equal(saturday.title, 'SELECT YOUR TEAM', 'Team screen title should stay clean and generic.');
   assert.equal(saturday.bannerCount, 1, 'Saturday team screen contains repeated schedule banners.');
   assert.equal(saturday.canonicalBannerCount, 1, 'Saturday schedule banner is missing its canonical data attribute.');
   assert.equal(saturday.malformedBannerCount, 0, 'Malformed legacy rotation banner attribute remains.');
@@ -146,7 +146,7 @@ try {
   assert.deepEqual(sunday.keys, ['eagles', 'steadfast']);
   assert.equal(sunday.stored?.day, 'SUNDAY');
   assert.equal(sunday.viewCount, 1);
-  assert.match(sunday.title || '', /^SELECT YOUR TEAM\.?$/);
+  assert.equal(sunday.title, 'SELECT YOUR TEAM');
   assert.equal(sunday.bannerCount, 1, 'Sunday team screen contains repeated schedule banners.');
   assert.equal(sunday.canonicalBannerCount, 1);
   assert.equal(sunday.malformedBannerCount, 0);
