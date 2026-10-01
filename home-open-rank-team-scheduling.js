@@ -14,11 +14,26 @@
     document.head.appendChild(polish);
   };
 
+  const loadAssignedSessionWindow = () => {
+    if (document.querySelector('script[data-rp-assigned-session-window-loader]')) return;
+    const layer = document.createElement('script');
+    layer.dataset.rpAssignedSessionWindowLoader = '1';
+    layer.src = 'home-open-rank-assigned-session-window.js?v=20261001-blocks-define-session-v1';
+    layer.async = false;
+    layer.addEventListener('error', () => {
+      console.warn('[Real Play] Assigned time blocks could not take control of the session window.');
+    }, { once: true });
+    document.head.appendChild(layer);
+  };
+
   const loadScheduler = () => {
     const script = document.createElement('script');
     script.src = 'home-open-rank-team-scheduling-v3.js?v=20260930-explicit-team-metadata-v5';
     script.async = false;
-    script.addEventListener('load', loadPremiumCards, { once: true });
+    script.addEventListener('load', () => {
+      loadAssignedSessionWindow();
+      loadPremiumCards();
+    }, { once: true });
     script.addEventListener('error', () => {
       console.warn('[Real Play] Compact team scheduling layer did not load.');
     }, { once: true });
