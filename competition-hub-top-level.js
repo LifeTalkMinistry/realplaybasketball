@@ -2,6 +2,10 @@
   if (window.__realPlayCompetitionHubTopLevelInstalled) return;
   window.__realPlayCompetitionHubTopLevelInstalled = true;
 
+  const STATS_NAV_ID = 'players';
+  let navObserver = null;
+  let apiPatchTimer = null;
+
   function installStyles() {
     if (document.querySelector('[data-rp-competition-top-level-styles]')) return;
     const style = document.createElement('style');
@@ -29,18 +33,130 @@
         pointer-events:auto!important;
         z-index:590!important;
       }
+      body.rp-simple-navigation-active:not(:has([data-rp-simple-nav-item="players"].active)) .rp-competition-hub.open{
+        display:none!important;
+        pointer-events:none!important;
+      }
     `;
     document.head.appendChild(style);
   }
 
-  function closeStatsForOtherTabs(event) {
+  function statsHub() {
+    return document.querySelector('[data-rp-competition-hub]');
+  }
+
+  function closeStats() {
+    const hub = statsHub();
+    if (!hub) return;
+    try { window.RealPlayCompetitionHub?.close?.(); } catch (_error) {}
+    hub.classList.remove('open');
+    hub.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('rp-competition-hub-open');
+  }
+
+  function closeOtherPrimaryLayersForStats() {
+    try { window.RealPlayWorld?.close?.(); } catch (_error) {}
+    try { window.RealPlayProfile?.close?.(); } catch (_error) {}
+    try { window.RealPlayUpdates?.close?.(); } catch (_error) {}
+
+    const world = document.querySelector('[data-rp-world]');
+    if (world && world.getAttribute('aria-hidden') === 'false') {
+      world.setAttribute('aria-hidden', 'true');
+      world.classList.remove('open');
+    }
+
+    const profile = document.querySelector('[data-rp-profile]');
+    if (profile && profile.getAttribute('aria-hidden') === 'false') {
+      profile.setAttribute('aria-hidden', 'true');
+      profile.classList.remove('open');
+    }
+
+    const updates = document.querySelector('[data-rp-updates]');
+    if (updates && updates.getAttribute('aria-hidden') === 'false') {
+      updates.setAttribute('aria-hidden', 'true');
+      updates.classList.remove('open');
+    }
+  }
+
+  function activeNavId() {
+    return document.querySelector('[data-rp-simple-nav-item].active')?.dataset?.rpSimpleNavItem || '';
+  }
+
+  function enforceSinglePrimaryView() {
+    const hub = statsHub();
+    if (!hub?.classList.contains('open')) return;
+    if (activeNavId() !== STATS_NAV_ID) closeStats();
+  }
+
+  function beforePrimaryNavigation(event) {
     const navItem = event.target.closest?.('[data-rp-simple-nav-item]');
     if (!navItem) return;
-    if (navItem.dataset.rpSimpleNavItem === 'players') return;
-    if (!document.querySelector('[data-rp-competition-hub].open')) return;
-    window.RealPlayCompetitionHub?.close?.();
+
+    const target = navItem.dataset.rpSimpleNavItem;
+    if (target === STATS_NAV_ID) {
+      closeOtherPrimaryLayersForStats();
+      return;
+    }
+
+    closeStats();
+  }
+
+  function patchSimpleNavigationApi() {
+    const api = window.RealPlaySimpleNavigation;
+    if (!api || api.__statsAuthorityPatched) return Boolean(api);
+
+    ['home', 'world', 'chats', 'me'].forEach((key) => {
+      const original = api[key];
+      if (typeof original !== 'function') return;
+      api[key] = (...args) => {
+        closeStats();
+        return original(...args);
+      };
+    });
+
+    api.__statsAuthorityPatched = true;
+    return true;
+  }
+
+  function observeNavigationState() {
+    const nav = document.querySelector('[data-rp-simple-nav]');
+    if (!nav || navObserver) return Boolean(nav);
+
+    navObserver = new MutationObserver(() => {
+      window.queueMicrotask(enforceSinglePrimaryView);
+    });
+    navObserver.observe(nav, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'aria-current'],
+    });
+    return true;
+  }
+
+  function installRuntimeGuards() {
+    patchSimpleNavigationApi();
+    observeNavigationState();
+
+    if (apiPatchTimer) window.clearInterval(apiPatchTimer);
+    apiPatchTimer = window.setInterval(() => {
+      const apiReady = patchSimpleNavigationApi();
+      const navReady = observeNavigationState();
+      if (apiReady && navReady) {
+        window.clearInterval(apiPatchTimer);
+        apiPatchTimer = null;
+      }
+    }, 100);
   }
 
   installStyles();
-  document.addEventListener('click', closeStatsForOtherTabs, true);
+
+  // Window capture runs before the older document-level competition handler.
+  // This makes the primary-view transition atomic: the outgoing layer closes
+  // before the incoming tab is allowed to open.
+  window.addEventListener('pointerdown', beforePrimaryNavigation, true);
+  window.addEventListener('click', beforePrimaryNavigation, true);
+  installRuntimeGuards();
+
+  window.addEventListener('realplay:app-ready', installRuntimeGuards);
+  window.addEventListener('realplay:enhancements-ready', installRuntimeGuards);
 })();
