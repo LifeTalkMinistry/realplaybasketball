@@ -111,14 +111,14 @@
       <div class="rp-competition-shell">
         <header class="rp-competition-topbar">
           <button class="rp-competition-back" type="button" data-rp-competition-back aria-label="Back" hidden>←</button>
-          <div class="rp-competition-heading"><small>REAL PLAY BASKETBALL</small><strong data-rp-competition-title>COMPETE</strong></div>
+          <div class="rp-competition-heading"><small>REAL PLAY BASKETBALL</small><strong data-rp-competition-title>STATS</strong></div>
           <button class="rp-competition-close" type="button" data-rp-competition-close aria-label="Close">×</button>
         </header>
 
         <section class="rp-competition-view" data-rp-competition-view="hub">
           <div class="rp-competition-intro">
-            <small>CHOOSE YOUR COMPETITION VIEW</small>
-            <h1>COMPETE.</h1>
+            <small>CHOOSE YOUR STATS VIEW</small>
+            <h1>STATS.</h1>
             <p>Follow your overall Real Play standing, enter Tune-Up competition, or open an official League season.</p>
           </div>
           <div class="rp-competition-card-grid">
@@ -189,7 +189,7 @@
     });
     const title = panel.querySelector('[data-rp-competition-title]');
     const back = panel.querySelector('[data-rp-competition-back]');
-    if (title) title.textContent = name === 'hub' ? 'COMPETE' : name === 'league' ? 'LEAGUE' : 'RANKINGS';
+    if (title) title.textContent = name === 'hub' ? 'STATS' : name === 'league' ? 'LEAGUE' : 'RANKINGS';
     if (back) back.hidden = name === 'hub';
     panel.dataset.rpCompetitionCurrentView = name;
   }
@@ -316,8 +316,8 @@
     const button = document.querySelector('[data-rp-simple-nav-item="players"]');
     if (!button) return false;
     const label = button.querySelector('small');
-    if (label && label.textContent !== 'COMPETE') label.textContent = 'COMPETE';
-    button.setAttribute('aria-label', 'Open Real Play competition hub');
+    if (label && label.textContent !== 'STATS') label.textContent = 'STATS';
+    button.setAttribute('aria-label', 'Open Real Play stats');
     return true;
   }
 
