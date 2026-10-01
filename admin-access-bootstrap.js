@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20260928-race-target-correction-v37';
+  const ADMIN_ASSET_VERSION = '20261001-recap-career-standing-v38';
   const REPLAY_ADMIN_ROOT_VERSION = '20260915-replay-editor-root-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
@@ -50,6 +50,8 @@
     'admin-recorded-scoring-youtube-keyboard.js',
     'admin-recorded-scoring-desktop.js',
     'admin-recorded-scoring-lock.js',
+    'admin-game-recap.js',
+    'admin-game-recap-career-standing.js',
     'admin-game-entry-mode.js',
     'admin-session-picker.js',
     'admin-score-dom-sync.js',
