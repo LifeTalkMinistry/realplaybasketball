@@ -91,12 +91,13 @@ await page.waitForFunction(() => window.__realPlayTeamRotationPickerV2Installed 
 await page.waitForSelector('[data-rp-home-save-slot]', { state: 'attached', timeout: 30000 });
 await page.evaluate(() => localStorage.setItem('real_play_access_token', 'runtime-test-token'));
 
-await page.locator('[data-rp-home-save-slot]').click();
+// DOM clicks intentionally bypass any unrelated public takeover announcement that may be open on the live site.
+await page.locator('[data-rp-home-save-slot]').evaluate((element) => element.click());
 await page.waitForFunction(() => {
   const modal = document.querySelector('.rp-team-rotation-modal');
   return Boolean(modal && !modal.hidden);
 });
-await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').click();
+await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').evaluate((element) => element.click());
 await page.waitForFunction(() => window.__realPlay4v4TeamCodeBetaInstalled === true, null, { timeout: 15000 });
 await page.waitForSelector('[data-rp-4v4-static-view].open');
 await page.waitForTimeout(1500);
