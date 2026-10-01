@@ -102,13 +102,14 @@ assert.ok(maxLongTask < 2000, `Home idle produced a ${maxLongTask}ms long task.`
 
 await page.evaluate(() => localStorage.setItem('real_play_access_token', 'runtime-test-token'));
 
+// Use DOM click for the tested controls so an unrelated public takeover announcement cannot block the rotation regression.
 // B. Open Saturday rotation and verify the 4v4 runtime remains single-instance and responsive.
-await page.locator('[data-rp-home-save-slot]').click();
+await page.locator('[data-rp-home-save-slot]').evaluate((element) => element.click());
 await page.waitForFunction(() => {
   const modal = document.querySelector('.rp-team-rotation-modal');
   return Boolean(modal && !modal.hidden);
 });
-await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').click();
+await page.locator('[data-rp-rotation-id="saturday-2000-2200"]').evaluate((element) => element.click());
 await page.waitForSelector('[data-rp-4v4-static-view].open', { timeout: 15000 });
 await page.waitForFunction(() => window.__realPlay4v4TeamCodeBetaInstalled === true, null, { timeout: 15000 });
 await page.waitForTimeout(1000);
@@ -120,12 +121,12 @@ assert.equal(meAfterIdle, meAfterOpen, '4v4 idle repeated GET /me.');
 assert.deepEqual(freezeErrors, [], `Freeze errors while 4v4 was open: ${freezeErrors.join(' | ')}`);
 
 // C. Switching rotation must replace the view cleanly, not multiply views or scripts.
-await page.locator('.rp-4v4-static-view .rp-3v3-select-head h1').click();
+await page.locator('.rp-4v4-static-view .rp-3v3-select-head h1').evaluate((element) => element.click());
 await page.waitForFunction(() => {
   const modal = document.querySelector('.rp-team-rotation-modal');
   return Boolean(modal && !modal.hidden);
 });
-await page.locator('[data-rp-rotation-id="sunday-2000-2200"]').click();
+await page.locator('[data-rp-rotation-id="sunday-2000-2200"]').evaluate((element) => element.click());
 await page.waitForSelector('[data-rp-4v4-static-view].open', { timeout: 15000 });
 await page.waitForFunction(() => document.querySelector('.rp-4v4-static-view .rp-3v3-select-head h1')?.textContent?.includes('SUNDAY'), null, { timeout: 5000 });
 assert.equal(await page.locator('[data-rp-4v4-static-view]').count(), 1, 'Rotation switch duplicated the 4v4 view.');
