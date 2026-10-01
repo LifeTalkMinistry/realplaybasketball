@@ -8,9 +8,10 @@
   compactHomeCardStyles.dataset.rpFourVFourCompactHomeCard = '1';
   document.head.appendChild(compactHomeCardStyles);
 
-  // Keep the selected schedule exactly where SELECT YOUR TEAM used to be,
-  // using the same visual weight and centered top-bar placement. The old
-  // schedule banner is removed whenever another runtime tries to add it.
+  // Put the selected schedule exactly where SELECT YOUR TEAM used to be,
+  // with the same strong centered treatment. The old schedule banner may
+  // still be maintained by the rotation runtime, so hide it globally rather
+  // than removing/recreating DOM nodes in a loop.
   const installScheduleHeader = () => {
     if (window.__realPlayFourVFourScheduleHeaderInstalled) return;
     window.__realPlayFourVFourScheduleHeaderInstalled = true;
@@ -20,8 +21,8 @@
       const style = document.createElement('style');
       style.id = STYLE_ID;
       style.textContent = `
-        .rp-4v4-static-view [data-rp-4v4-team-slot],
-        .rp-4v4-static-view .rp-4v4-team-slot{display:none!important}
+        [data-rp-4v4-team-slot],
+        .rp-4v4-team-slot{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important}
         .rp-4v4-static-view .rp-3v3-brand[data-rp-team-schedule-header="1"]{
           width:100%!important;min-width:0!important;max-width:none!important;justify-self:stretch!important;
           padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;
@@ -53,9 +54,6 @@
       queued = false;
       const view = document.querySelector('[data-rp-4v4-static-view], .rp-4v4-static-view');
       if (!view) return;
-
-      // Hard-remove the duplicate schedule banner instead of only hiding it.
-      view.querySelectorAll('[data-rp-4v4-team-slot], .rp-4v4-team-slot').forEach((banner) => banner.remove());
 
       const slot = selectedSlot();
       if (!slot?.label) return;
