@@ -4,6 +4,7 @@
 
   const TOKEN_KEY = 'real_play_access_token';
   const API_URL = 'https://api.clarapmc.com/api/real-play/admin/player';
+  const DAY_MS = 24 * 60 * 60 * 1000;
 
   let lastPlayerId = null;
   let playerDirectory = new Map();
@@ -71,6 +72,64 @@
     return positiveId(player?.accountUserId) ? 'CLAIMED' : '—';
   }
 
+  function parseTime(value) {
+    if (!value) return null;
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function elapsedDaysSince(value) {
+    const timestamp = parseTime(value);
+    if (!Number.isFinite(timestamp)) return null;
+    return Math.max(0, Math.floor((Date.now() - timestamp) / DAY_MS));
+  }
+
+  function lastAuditedGameMeta(player) {
+    const lastPlayedAt = player?.lastPlayedAt ?? player?.ranking?.lastPlayedAt ?? null;
+    const days = elapsedDaysSince(lastPlayedAt);
+    if (days === null) {
+      return { text: 'NO AUDITED GAME FOUND', tone: 'empty' };
+    }
+
+    const activityWindowDays = Math.max(1, Number(
+      player?.rankActivityWindowDays
+      ?? player?.ranking?.activityWindowDays
+      ?? 30
+    ) || 30);
+
+    if (days === 0) return { text: 'TODAY', tone: 'recent' };
+    return {
+      text: `${days} DAY${days === 1 ? '' : 'S'} AGO`,
+      tone: days >= activityWindowDays ? 'inactive' : 'recent',
+    };
+  }
+
+  function inactiveMeta(player) {
+    const rankingStatus = String(
+      player?.competitiveStatus
+      ?? player?.rankingStatus
+      ?? player?.ranking?.status
+      ?? ''
+    ).trim().toLowerCase();
+    const inactive = Boolean(player?.inactive ?? player?.ranking?.inactive) || rankingStatus === 'inactive';
+    if (!inactive) return null;
+
+    const inactiveSince = player?.inactiveSince ?? player?.ranking?.inactiveSince ?? null;
+    const days = elapsedDaysSince(inactiveSince);
+    if (days !== null) {
+      return {
+        label: 'INACTIVE FOR',
+        text: days === 0 ? 'LESS THAN 1 DAY' : `${days} DAY${days === 1 ? '' : 'S'}`,
+      };
+    }
+
+    const manuallyInactive = Boolean(player?.manualUnranked ?? player?.ranking?.manualUnranked);
+    return {
+      label: 'INACTIVE STATUS',
+      text: manuallyInactive ? 'MANUALLY SET' : 'INACTIVE',
+    };
+  }
+
   function renderIdentityDetails() {
     renderQueued = false;
     const sheet = document.querySelector('.rp-player-admin-sheet.open');
@@ -88,12 +147,16 @@
     const email = String(player?.registeredEmail || '').trim();
     const status = accountLabel(player);
     const statusClass = status === 'UNCLAIMED' ? ' unclaimed' : '';
+    const lastGame = lastAuditedGameMeta(player);
+    const inactivity = inactiveMeta(player);
 
     const markup = `
       <div class="rp-player-admin-identity-meta" data-rp-admin-identity-meta>
         <div><small>PLAYER ID</small><span>${esc(playerId)}</span></div>
         <div><small>REGISTERED EMAIL</small><span class="email">${esc(email || 'NO REGISTERED EMAIL')}</span></div>
         <div><small>ACCOUNT</small><span class="account${statusClass}">${esc(status)}</span></div>
+        <div><small>LAST AUDITED GAME</small><span class="activity ${lastGame.tone}">${esc(lastGame.text)}</span></div>
+        ${inactivity ? `<div><small>${esc(inactivity.label)}</small><span class="activity inactive">${esc(inactivity.text)}</span></div>` : ''}
       </div>`;
 
     if (existing) existing.outerHTML = markup;
@@ -117,6 +180,9 @@
       .rp-player-admin-identity-meta span{display:block!important;margin:0!important;min-width:0;color:#aebdcd!important;font-size:.5rem!important;font-weight:850!important;letter-spacing:.025em!important;line-height:1.4;overflow-wrap:anywhere;white-space:normal!important}
       .rp-player-admin-identity-meta span.account{color:#58ddff!important;font-weight:950!important}
       .rp-player-admin-identity-meta span.account.unclaimed{color:#ffd17a!important}
+      .rp-player-admin-identity-meta span.activity.recent{color:#58ddff!important;font-weight:950!important}
+      .rp-player-admin-identity-meta span.activity.inactive{color:#ffb65f!important;font-weight:950!important}
+      .rp-player-admin-identity-meta span.activity.empty{color:#718096!important;font-weight:900!important}
     `;
     document.head.appendChild(style);
   }
