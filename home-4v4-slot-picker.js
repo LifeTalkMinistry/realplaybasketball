@@ -12,7 +12,7 @@
     if (document.querySelector('script[data-rp-rotation-clean-ui-loader]')) return;
     const cleanUi = document.createElement('script');
     cleanUi.dataset.rpRotationCleanUiLoader = '1';
-    cleanUi.src = 'home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v2';
+    cleanUi.src = 'home-4v4-rotation-clean-ui.js?v=20261001-rotation-clean-ui-v3';
     cleanUi.async = false;
     cleanUi.addEventListener('error', () => console.warn('[Real Play] 4v4 rotation clean UI guard did not load.'), { once: true });
     document.head.appendChild(cleanUi);
@@ -36,14 +36,6 @@
     script.dataset.rpTeamRotationPickerLoader = '1';
     script.src = 'home-4v4-team-schedule-rotation-v2.js?v=20261001-team-schedule-rotation-v4';
     script.async = false;
-    script.addEventListener('load', () => {
-      if (document.querySelector('script[data-rp-4v4-slot-header-loader]')) return;
-      const headerScript = document.createElement('script');
-      headerScript.dataset.rp4v4SlotHeaderLoader = '1';
-      headerScript.src = 'home-4v4-slot-header.js?v=20260930-slot-header-v1';
-      headerScript.async = false;
-      document.head.appendChild(headerScript);
-    }, { once: true });
     script.addEventListener('error', () => console.warn('[Real Play] Team schedule rotation picker did not load.'), { once: true });
     document.head.appendChild(script);
   };
