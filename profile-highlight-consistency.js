@@ -217,7 +217,16 @@
       const rankNo = visibleOpenRankNumber(card);
       const label = visibleGameLabel(card);
       let game = rankNo ? games.find((row) => openRankNumber(row) === rankNo) : null;
-      if (!game && label) game = games.find((row) => gameLabelCandidates(row).has(label)) || null;
+
+      // A visible title is not a stable game identity by itself. Recorded/audited
+      // sessions can legitimately share the exact same title, so never bind a
+      // card to the first title match. Only accept a label when it identifies one
+      // unique game; otherwise preserve the rendered list position as the legacy
+      // fallback. New own-profile cards carry their canonical session id directly.
+      if (!game && label) {
+        const labelMatches = games.filter((row) => gameLabelCandidates(row).has(label));
+        if (labelMatches.length === 1) game = labelMatches[0];
+      }
       if (!game) game = games[index] || null;
 
       const id = sessionId(game);
