@@ -100,14 +100,22 @@
   function contextFromCard(card) {
     const publicProfile = card?.closest('[data-rp-public-profile], [data-rp-visitor-public-profile], .rp-public-player-profile');
     const ownHistoryOverlay = card?.closest('[data-rp-history-overlay]');
-    const ownProfile = card?.closest('[data-rp-profile]')
-      || (ownHistoryOverlay ? document.querySelector('[data-rp-profile]') : null);
+    const ownProfile = card?.closest('.rp-profile[data-rp-profile="true"]')
+      || (ownHistoryOverlay ? document.querySelector('.rp-profile[data-rp-profile="true"]') : null);
     const profile = publicProfile || ownProfile;
     const name = String(profile?.querySelector('.rp-profile-name h1')?.textContent || 'REAL PLAY PLAYER').trim();
     const numberText = String(profile?.querySelector('.rp-profile-number strong')?.textContent || '').trim();
+    const ownPlayerId = positiveId(
+      ownProfile?.dataset?.rpProfilePlayerId
+      ?? ownProfile?.__realPlayProfileState?.playerId
+      ?? ownProfile?.__realPlayProfileState?.userId
+      ?? ownProfile?.__realPlayProfileState?.profile?.playerId
+      ?? ownProfile?.__realPlayProfileState?.profile?.userId
+      ?? ownProfile?.__realPlayProfileState?.profile?.id
+    );
     return {
       isPublic: Boolean(publicProfile),
-      playerId: publicProfile ? publicPlayerIdFrom(publicProfile) : null,
+      playerId: publicProfile ? publicPlayerIdFrom(publicProfile) : ownPlayerId,
       playerName: name || 'REAL PLAY PLAYER',
       playerNumber: /^#\d+$/.test(numberText) ? numberText : '',
       gameLabel: String(card?.querySelector('.rp-profile-game-main strong')?.textContent || 'REAL PLAY GAME').trim(),
