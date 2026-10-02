@@ -105,12 +105,10 @@
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row{display:none!important}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking .rp-world-topbar{display:none!important}
       .rp-competition-world-scope-header{display:block;padding:2px 2px 4px;margin:0}
-      .rp-competition-scope-topbar{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:10px;margin:0 0 14px}
-      .rp-competition-scope-topbar strong{display:block;margin:0;text-align:center;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.04rem;font-style:italic;font-weight:950;letter-spacing:.07em;color:#eef7ff}
-      .rp-competition-scope-context{padding:0 2px 8px}
-      .rp-competition-scope-context small{display:block;color:#5edfff;font:950 .48rem/1 Arial,sans-serif;letter-spacing:.15em}
-      .rp-competition-scope-context strong{display:block;margin-top:6px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.55rem;font-style:italic;font-weight:950;letter-spacing:.025em;color:#eef7ff}
-      .rp-competition-scope-context p{margin:7px 0 0;max-width:520px;color:#8295aa;font:700 .62rem/1.5 Arial,sans-serif}
+      .rp-competition-scope-topbar{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:10px;margin:0 0 8px}
+      .rp-competition-scope-title-wrap{min-width:0;text-align:center}
+      .rp-competition-scope-title-wrap strong{display:block;margin:0;text-align:center;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.04rem;font-style:italic;font-weight:950;letter-spacing:.07em;color:#eef7ff}
+      .rp-competition-scope-title-wrap span{display:block;margin-top:3px;color:#5d7187;font:900 .45rem/1 Arial,sans-serif;letter-spacing:.10em;text-transform:uppercase}
       .rp-competition-scope-empty-row{display:grid;place-items:center;min-height:190px;padding:28px 14px;text-align:center}
       .rp-competition-scope-empty-row div{max-width:380px}
       .rp-competition-scope-empty-row strong{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.18rem;font-style:italic;font-weight:950;letter-spacing:.03em;color:#eef7ff}
@@ -423,13 +421,11 @@
       header.innerHTML = `
         <div class="rp-competition-scope-topbar">
           <button class="rp-competition-world-scope-info" type="button" data-rp-competition-world-scope-info aria-label="Open OVR simulator and calculation guide" title="How OVR works">i</button>
-          <strong data-rp-competition-scope-top-title></strong>
+          <div class="rp-competition-scope-title-wrap">
+            <strong data-rp-competition-scope-top-title></strong>
+            <span data-rp-competition-scope-player-count>0 PLAYERS</span>
+          </div>
           <button class="rp-competition-world-scope-back" type="button" data-rp-competition-world-scope-back aria-label="Back">←</button>
-        </div>
-        <div class="rp-competition-scope-context">
-          <small data-rp-competition-scope-kicker></small>
-          <strong data-rp-competition-scope-title></strong>
-          <p data-rp-competition-scope-copy></p>
         </div>`;
       directory.insertBefore(header, controls);
       header.querySelector('[data-rp-competition-world-scope-info]')?.addEventListener('click', (event) => {
@@ -441,13 +437,12 @@
     }
 
     const topTitle = header.querySelector('[data-rp-competition-scope-top-title]');
-    const kicker = header.querySelector('[data-rp-competition-scope-kicker]');
-    const title = header.querySelector('[data-rp-competition-scope-title]');
-    const copy = header.querySelector('[data-rp-competition-scope-copy]');
+    const playerCount = header.querySelector('[data-rp-competition-scope-player-count]');
     if (topTitle) topTitle.textContent = config.title;
-    if (kicker) kicker.textContent = config.kicker;
-    if (title) title.textContent = config.title;
-    if (copy) copy.textContent = config.copy;
+    if (playerCount) {
+      const count = Number.isFinite(Number(config.playerCount)) ? Math.max(0, Math.trunc(Number(config.playerCount))) : 0;
+      playerCount.textContent = count + ' PLAYER' + (count === 1 ? '' : 'S');
+    }
 
     let empty = list.querySelector('[data-rp-competition-scope-empty]');
     if (!empty) {
