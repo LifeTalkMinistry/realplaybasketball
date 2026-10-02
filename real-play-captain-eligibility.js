@@ -110,10 +110,24 @@
   function badgeSources(...sources) {
     const lists = [];
     sources.filter(Boolean).forEach((source) => {
-      [source, source?.player, source?.profile, source?.career, source?.careerStats].filter(Boolean).forEach((candidate) => {
-        if (Array.isArray(candidate?.badges)) lists.push(candidate.badges);
-        if (Array.isArray(candidate?.recognitions)) lists.push(candidate.recognitions);
-      });
+      // The Players API writes the current recognition snapshot at the top
+      // level. Even an empty array is authoritative. Do not merge an older
+      // nested career/profile copy back in after the current leader changed.
+      const hasTopLevelAuthority = Array.isArray(source?.badges)
+        || Array.isArray(source?.recognitions);
+
+      if (hasTopLevelAuthority) {
+        if (Array.isArray(source?.badges)) lists.push(source.badges);
+        if (Array.isArray(source?.recognitions)) lists.push(source.recognitions);
+        return;
+      }
+
+      [source?.player, source?.profile, source?.career, source?.careerStats]
+        .filter(Boolean)
+        .forEach((candidate) => {
+          if (Array.isArray(candidate?.badges)) lists.push(candidate.badges);
+          if (Array.isArray(candidate?.recognitions)) lists.push(candidate.recognitions);
+        });
     });
     return lists.flat();
   }
@@ -220,7 +234,9 @@
     return {
       playerName: profilePlayerName(profile),
       rank,
-      badges: normalizeBadges(badgeSources(source, worldPlayer), rank),
+      // When the canonical Players row exists, its top-level recognition
+      // snapshot is the authority for the profile too.
+      badges: normalizeBadges(badgeSources(worldPlayer || source), rank),
     };
   }
 
