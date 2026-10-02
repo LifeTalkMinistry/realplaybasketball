@@ -152,10 +152,41 @@
     });
   }
 
+  function currentTeamMvpLeaderId() {
+    const candidates = [...playersById.entries()]
+      .map(([id, player]) => ({
+        id: String(id || '').trim(),
+        name: String(player?.playerName || player?.player_name || player?.name || '').trim(),
+        count: Number(player?.leaderboardStats?.teamMvpCount ?? 0),
+      }))
+      .filter((candidate) => candidate.id && Number.isFinite(candidate.count) && candidate.count > 0);
+
+    candidates.sort((left, right) => {
+      if (left.count !== right.count) return right.count - left.count;
+      const nameDiff = left.name.localeCompare(right.name, undefined, { sensitivity: 'base', numeric: true });
+      if (nameDiff) return nameDiff;
+      return left.id.localeCompare(right.id, undefined, { numeric: true });
+    });
+
+    return candidates[0]?.id || '';
+  }
+
+  function enforceCurrentLeaderOwnership(badges, playerIdValue) {
+    const playerIdValueText = String(playerIdValue || '').trim();
+    const teamMvpLeaderId = currentTeamMvpLeaderId();
+
+    return (Array.isArray(badges) ? badges : []).filter((badge) => {
+      const type = String(badge?.type || '').trim().toLowerCase();
+      if (type !== 'most_team_mvp') return true;
+      return Boolean(teamMvpLeaderId) && playerIdValueText === teamMvpLeaderId;
+    });
+  }
+
   function badgesForRow(row) {
     const id = String(row?.dataset?.worldPlayerId || '').trim();
     const player = playersById.get(id) || null;
-    return normalizeBadges(badgeSources(player), currentRank(row, player));
+    const badges = normalizeBadges(badgeSources(player), currentRank(row, player));
+    return enforceCurrentLeaderOwnership(badges, id);
   }
 
   function profilePlayerName(profile) {
@@ -236,7 +267,10 @@
       rank,
       // When the canonical Players row exists, its top-level recognition
       // snapshot is the authority for the profile too.
-      badges: normalizeBadges(badgeSources(worldPlayer || source), rank),
+      badges: enforceCurrentLeaderOwnership(
+        normalizeBadges(badgeSources(worldPlayer || source), rank),
+        playerId(worldPlayer || source)
+      ),
     };
   }
 
