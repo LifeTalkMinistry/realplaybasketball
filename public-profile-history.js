@@ -374,6 +374,11 @@
       return;
     }
 
+    // Media controls inside a history card own their own actions. In particular,
+    // WATCH MY HIGHLIGHTS must be allowed to reach the profile highlight layer
+    // instead of being swallowed by this archive-level "open full replay" click.
+    if (event.target.closest('[data-rp-profile-highlight-action]')) return;
+
     const card = archive?.classList.contains('open')
       ? event.target.closest('[data-rp-public-history-list] .rp-profile-game')
       : null;
