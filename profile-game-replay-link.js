@@ -314,7 +314,7 @@
   function loadHighlightLayer() {
     if (window.__realPlayProfileHighlightsInstalled || document.querySelector('script[data-rp-profile-highlights-loader]')) return;
     const script = document.createElement('script');
-    script.src = `profile-game-highlights.js?v=20261002-own-history-highlight-v3`;
+    script.src = `profile-game-highlights.js?v=20261002-own-history-identity-v4`;
     script.async = false;
     script.dataset.rpProfileHighlightsLoader = '1';
     script.onerror = () => console.warn('[Real Play] Player highlight layer could not load.');
