@@ -99,7 +99,10 @@
 
   function contextFromCard(card) {
     const publicProfile = card?.closest('[data-rp-public-profile], [data-rp-visitor-public-profile], .rp-public-player-profile');
-    const profile = publicProfile || card?.closest('[data-rp-profile]');
+    const ownHistoryOverlay = card?.closest('[data-rp-history-overlay]');
+    const ownProfile = card?.closest('[data-rp-profile]')
+      || (ownHistoryOverlay ? document.querySelector('[data-rp-profile]') : null);
+    const profile = publicProfile || ownProfile;
     const name = String(profile?.querySelector('.rp-profile-name h1')?.textContent || 'REAL PLAY PLAYER').trim();
     const numberText = String(profile?.querySelector('.rp-profile-number strong')?.textContent || '').trim();
     return {
