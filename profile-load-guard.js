@@ -194,6 +194,12 @@
 
   document.addEventListener('click', (event) => {
     if (event.target.closest('[data-rp-history-more]')) { event.preventDefault(); event.stopImmediatePropagation(); openArchive(); return; }
+
+    // The full-history overlay uses a capture-phase card click to open the full
+    // replay. Do not let that generic handler swallow the dedicated highlight
+    // control; the highlight layer must receive that exact button click.
+    if (event.target.closest('[data-rp-profile-highlight-action]')) return;
+
     const card = archive?.classList.contains('open') ? event.target.closest('.rp-history-list .rp-profile-game') : null;
     if (!card) return;
     event.preventDefault();
