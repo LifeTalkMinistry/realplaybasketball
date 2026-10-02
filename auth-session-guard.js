@@ -15,10 +15,117 @@
   let outageOverlay = null;
   let outageProbe = null;
   let outageRetryTimer = 0;
+  let embeddedConfirmTimer = 0;
+  let consecutiveProbeFailures = 0;
   let adminRememberTimer = 0;
+
+  function isEmbeddedBrowser() {
+    const ua = String(window.navigator?.userAgent || '');
+    return /FBAN|FBAV|FB_IAB|MESSENGER|INSTAGRAM|;\s*WV\)|\bWV\b/i.test(ua);
+  }
 
   function requestUrl(input) {
     return typeof input === 'string' ? input : input?.url || '';
+  }
+
+  function xhrFallbackFetch(input, init = {}) {
+    return new Promise((resolve, reject) => {
+      const url = requestUrl(input);
+      if (!url || !url.startsWith(REAL_PLAY_API)) {
+        reject(new TypeError('XHR fallback is only available for Real Play API requests.'));
+        return;
+      }
+
+      const inputRequest = typeof input === 'string' ? null : input;
+      const method = String(init.method || inputRequest?.method || 'GET').toUpperCase();
+      const headers = new Headers(inputRequest?.headers || {});
+      new Headers(init.headers || {}).forEach((value, key) => headers.set(key, value));
+
+      const body = init.body !== undefined ? init.body : null;
+      if (body && typeof ReadableStream !== 'undefined' && body instanceof ReadableStream) {
+        reject(new TypeError('Streaming request bodies are not supported by the embedded-browser fallback.'));
+        return;
+      }
+
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, url, true);
+      xhr.responseType = 'arraybuffer';
+      xhr.timeout = 15000;
+      xhr.withCredentials = init.credentials === 'include';
+
+      headers.forEach((value, key) => {
+        try { xhr.setRequestHeader(key, value); } catch (_error) {}
+      });
+
+      const signal = init.signal || inputRequest?.signal || null;
+      let aborted = false;
+      const abortRequest = () => {
+        aborted = true;
+        try { xhr.abort(); } catch (_error) {}
+      };
+      if (signal?.aborted) {
+        abortRequest();
+        reject(new DOMException('The operation was aborted.', 'AbortError'));
+        return;
+      }
+      signal?.addEventListener?.('abort', abortRequest, { once: true });
+
+      const cleanup = () => signal?.removeEventListener?.('abort', abortRequest);
+      const fail = (message) => {
+        cleanup();
+        reject(new TypeError(message));
+      };
+
+      xhr.onerror = () => fail('Real Play API network request failed in the embedded browser.');
+      xhr.ontimeout = () => fail('Real Play API request timed out in the embedded browser.');
+      xhr.onabort = () => {
+        cleanup();
+        reject(new DOMException(
+          aborted ? 'The operation was aborted.' : 'Real Play API request was aborted.',
+          'AbortError'
+        ));
+      };
+      xhr.onload = () => {
+        cleanup();
+        const responseHeaders = new Headers();
+        String(xhr.getAllResponseHeaders() || '')
+          .trim()
+          .split(/[\r\n]+/)
+          .filter(Boolean)
+          .forEach((line) => {
+            const separator = line.indexOf(':');
+            if (separator <= 0) return;
+            const key = line.slice(0, separator).trim();
+            const value = line.slice(separator + 1).trim();
+            try { responseHeaders.append(key, value); } catch (_error) {}
+          });
+
+        resolve(new Response(xhr.response || new ArrayBuffer(0), {
+          status: xhr.status,
+          statusText: xhr.statusText || '',
+          headers: responseHeaders,
+        }));
+      };
+
+      try {
+        xhr.send(body);
+      } catch (error) {
+        cleanup();
+        reject(error);
+      }
+    });
+  }
+
+  async function transportFetch(input, init = {}) {
+    try {
+      return await nativeFetch(input, init);
+    } catch (error) {
+      // Facebook/Messenger/Instagram in-app browsers occasionally fail a normal
+      // cross-origin fetch even though the API is reachable. Retry through XHR
+      // before declaring the Real Play server unavailable.
+      if (!isEmbeddedBrowser() || !requestUrl(input).startsWith(REAL_PLAY_API)) throw error;
+      return xhrFallbackFetch(input, init);
+    }
   }
 
   function currentToken() {
@@ -152,7 +259,7 @@
     retryButton?.addEventListener('click', async () => {
       retryButton.disabled = true;
       retryButton.textContent = 'CHECKING…';
-      const available = await probeServerAvailability({ allowShow: true });
+      const available = await probeServerAvailability({ allowShow: true, forceShow: true });
       if (available) {
         hideServerUnavailable();
         retryButton.textContent = 'RETRY CONNECTION';
@@ -197,12 +304,25 @@
       window.clearTimeout(outageRetryTimer);
       outageRetryTimer = 0;
     }
+    if (embeddedConfirmTimer) {
+      window.clearTimeout(embeddedConfirmTimer);
+      embeddedConfirmTimer = 0;
+    }
+    consecutiveProbeFailures = 0;
     outageOverlay?.classList.remove('open');
     outageOverlay?.setAttribute('aria-hidden', 'true');
     document.body?.classList.remove('rp-server-unavailable');
   }
 
-  async function probeServerAvailability({ allowShow = true } = {}) {
+  function confirmEmbeddedOutageSoon() {
+    if (!isEmbeddedBrowser() || embeddedConfirmTimer) return;
+    embeddedConfirmTimer = window.setTimeout(() => {
+      embeddedConfirmTimer = 0;
+      probeServerAvailability({ allowShow: true }).catch(() => undefined);
+    }, 900);
+  }
+
+  async function probeServerAvailability({ allowShow = true, forceShow = false } = {}) {
     if (outageProbe) return outageProbe;
     outageProbe = (async () => {
       const headers = { Accept: 'application/json' };
@@ -210,7 +330,7 @@
       if (auth) headers.Authorization = `Bearer ${auth}`;
 
       try {
-        const response = await nativeFetch(`${REAL_PLAY_API}me?rp_connection_probe=${Date.now()}`, {
+        const response = await transportFetch(`${REAL_PLAY_API}me?rp_connection_probe=${Date.now()}`, {
           method: 'GET',
           headers,
           cache: 'no-store',
@@ -220,15 +340,19 @@
           hideServerUnavailable();
           return true;
         }
-        if (allowShow) showServerUnavailable();
-        return false;
       } catch (_error) {
-        if (allowShow) showServerUnavailable();
-        return false;
-      } finally {
-        outageProbe = null;
+        // Count the failed probe below. In an embedded browser we confirm it once
+        // more before replacing the entire app with a fatal-looking outage page.
       }
-    })();
+
+      consecutiveProbeFailures += 1;
+      const confirmed = forceShow || !isEmbeddedBrowser() || consecutiveProbeFailures >= 2;
+      if (allowShow && confirmed) showServerUnavailable();
+      else if (allowShow) confirmEmbeddedOutageSoon();
+      return false;
+    })().finally(() => {
+      outageProbe = null;
+    });
     return outageProbe;
   }
 
@@ -292,7 +416,7 @@
     headers.set('Accept', 'application/json');
     headers.set('Content-Type', 'application/json');
 
-    return nativeFetch(PUBLIC_COMMUNITY_URL, {
+    return transportFetch(PUBLIC_COMMUNITY_URL, {
       ...init,
       method: init.method || 'POST',
       headers,
@@ -308,7 +432,7 @@
     let response;
 
     try {
-      response = await nativeFetch(input, init);
+      response = await transportFetch(input, init);
     } catch (error) {
       if (realPlayRequest) signalPossibleOutage();
       throw error;
@@ -343,7 +467,7 @@
     // A single ambiguous 401 must never destroy the whole app session. Retry once
     // in case the request raced with page/app initialization.
     try {
-      response = await nativeFetch(input, init);
+      response = await transportFetch(input, init);
     } catch (_error) {
       if (realPlayRequest) signalPossibleOutage();
       return response;
