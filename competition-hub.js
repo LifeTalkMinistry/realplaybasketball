@@ -107,10 +107,6 @@
       .rp-competition-world-scope-header{display:block;padding:2px 2px 4px;margin:0}
       .rp-competition-scope-topbar{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:10px;margin:0 0 14px}
       .rp-competition-scope-topbar strong{display:block;margin:0;text-align:center;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.04rem;font-style:italic;font-weight:950;letter-spacing:.07em;color:#eef7ff}
-      .rp-competition-scope-topbar-spacer{width:42px;height:42px}
-      .rp-competition-world-scope-back{width:42px;height:42px;display:grid;place-items:center;padding:0;border:1px solid rgba(124,204,240,.18);border-radius:13px;background:rgba(7,16,26,.9);color:#dff7ff;font:900 1rem/1 Arial,sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
-      .rp-competition-world-scope-back:active{transform:scale(.97)}
-      .rp-competition-world-scope-back:focus-visible{outline:2px solid #5bdfff;outline-offset:2px}
       .rp-competition-scope-context{padding:0 2px 8px}
       .rp-competition-scope-context small{display:block;color:#5edfff;font:950 .48rem/1 Arial,sans-serif;letter-spacing:.15em}
       .rp-competition-scope-context strong{display:block;margin-top:6px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.55rem;font-style:italic;font-weight:950;letter-spacing:.025em;color:#eef7ff}
@@ -119,6 +115,46 @@
       .rp-competition-scope-empty-row div{max-width:380px}
       .rp-competition-scope-empty-row strong{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.18rem;font-style:italic;font-weight:950;letter-spacing:.03em;color:#eef7ff}
       .rp-competition-scope-empty-row p{margin:8px 0 0;color:#71859b;font:700 .63rem/1.55 Arial,sans-serif}
+
+      /* Ranking header authority: info on the left, back on the right, title centered. */
+      body.rp-simple-navigation-active .rp-world[data-rp-competition-presentation="overall"] .rp-world-player-directory-head{
+        position:relative!important;
+        min-height:54px!important;
+        padding-left:48px!important;
+        padding-right:48px!important;
+        box-sizing:border-box!important;
+      }
+      body.rp-simple-navigation-active .rp-world[data-rp-competition-presentation="overall"] .rp-world-player-ovr-info{
+        left:1px!important;
+        right:auto!important;
+        top:1px!important;
+      }
+      .rp-competition-overall-back{
+        position:absolute;top:1px;right:1px;width:36px;height:36px;display:grid;place-items:center;padding:0;
+        border:1px solid rgba(72,216,255,.24);border-radius:12px;background:rgba(5,12,19,.82);color:#dff7ff;
+        font:900 1rem/1 Arial,sans-serif;box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);z-index:3;
+      }
+      .rp-competition-overall-back:active{transform:scale(.96)}
+      .rp-competition-overall-back:focus-visible{outline:2px solid #71e4ff;outline-offset:2px}
+
+      .rp-competition-scope-topbar{
+        grid-template-columns:42px minmax(0,1fr) 42px!important;
+      }
+      .rp-competition-world-scope-info,
+      .rp-competition-world-scope-back{
+        width:42px;height:42px;display:grid;place-items:center;padding:0;border:1px solid rgba(124,204,240,.18);
+        background:rgba(7,16,26,.9);color:#dff7ff;box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+      }
+      .rp-competition-world-scope-info{
+        border-radius:50%;color:#48d8ff;font-family:Georgia,serif;font-size:1rem;font-style:italic;font-weight:900;line-height:1;
+      }
+      .rp-competition-world-scope-back{
+        border-radius:13px;font:900 1rem/1 Arial,sans-serif;
+      }
+      .rp-competition-world-scope-info:active,
+      .rp-competition-world-scope-back:active{transform:scale(.97)}
+      .rp-competition-world-scope-info:focus-visible,
+      .rp-competition-world-scope-back:focus-visible{outline:2px solid #5bdfff;outline-offset:2px}
             @media(min-width:640px){.rp-competition-card-grid{grid-template-columns:1fr 1fr}.rp-competition-card:first-child{grid-column:1/-1}.rp-scope-filter{flex-basis:105px}}
       @media(max-width:390px){.rp-competition-shell{padding-inline:12px}.rp-competition-card{min-height:126px;padding:17px}.rp-competition-card-copy strong{font-size:1.28rem}.rp-scope-filter{min-width:68px;font-size:.39rem}}
     `;
@@ -273,8 +309,10 @@
     if (!world) return;
     world.classList.remove('rp-competition-scoped-ranking');
     delete world.dataset.rpCompetitionScope;
+    delete world.dataset.rpCompetitionPresentation;
     world.querySelector('[data-rp-competition-world-scope-header]')?.remove();
     world.querySelector('[data-rp-competition-world-scope-back]')?.remove();
+    world.querySelector('[data-rp-competition-overall-back]')?.remove();
     world.querySelector('[data-rp-competition-scope-empty]')?.remove();
   }
 
@@ -330,6 +368,24 @@
     }
     if (kicker) kicker.textContent = 'OVERALL REAL PLAY';
     if (heading) heading.textContent = 'PLAYER RANKINGS';
+
+    const directoryHead = playersView.querySelector('.rp-world-player-directory-head');
+    if (directoryHead && !directoryHead.querySelector('[data-rp-competition-overall-back]')) {
+      const back = document.createElement('button');
+      back.type = 'button';
+      back.className = 'rp-competition-overall-back';
+      back.dataset.rpCompetitionOverallBack = 'true';
+      back.setAttribute('aria-label', 'Back to Stats');
+      back.textContent = '←';
+      back.addEventListener('click', returnFromOverallRanking);
+      directoryHead.appendChild(back);
+    }
+  }
+
+  function returnFromOverallRanking() {
+    clearPlayerPresentation();
+    try { window.RealPlayWorld?.close?.(); } catch (_error) {}
+    showPanelView('hub');
   }
 
   function openPlayerRankings() {
@@ -366,9 +422,9 @@
       header.dataset.rpCompetitionWorldScopeHeader = 'true';
       header.innerHTML = `
         <div class="rp-competition-scope-topbar">
-          <button class="rp-competition-world-scope-back" type="button" data-rp-competition-world-scope-back aria-label="Back">←</button>
+          <button class="rp-competition-world-scope-info" type="button" data-rp-competition-world-scope-info aria-label="Open OVR simulator and calculation guide" title="How OVR works">i</button>
           <strong>RANKINGS</strong>
-          <span class="rp-competition-scope-topbar-spacer" aria-hidden="true"></span>
+          <button class="rp-competition-world-scope-back" type="button" data-rp-competition-world-scope-back aria-label="Back">←</button>
         </div>
         <div class="rp-competition-scope-context">
           <small data-rp-competition-scope-kicker></small>
@@ -376,6 +432,11 @@
           <p data-rp-competition-scope-copy></p>
         </div>`;
       directory.insertBefore(header, controls);
+      header.querySelector('[data-rp-competition-world-scope-info]')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        window.location.href = 'ovr-simulator.html';
+      });
       header.querySelector('[data-rp-competition-world-scope-back]')?.addEventListener('click', returnFromScopedRanking);
     }
 
