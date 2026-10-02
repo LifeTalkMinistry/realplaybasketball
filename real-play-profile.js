@@ -335,9 +335,13 @@
     const date = formatDate(game?.finalizedAt || game?.startsAt);
     const location = game?.locationName ? String(game.locationName).toUpperCase() : '';
     const meta = [date, location].filter(Boolean).join(' · ');
+    const sessionId = Number(game?.sessionId ?? game?.session_id ?? game?.id);
+    const sessionAttr = Number.isSafeInteger(sessionId) && sessionId > 0
+      ? ` data-rp-profile-game-session="${sessionId}"`
+      : '';
 
     return `
-      <details class="rp-profile-game">
+      <details class="rp-profile-game"${sessionAttr}>
         <summary class="rp-profile-game-summary">
           <div class="rp-profile-game-main">
             <strong>${esc(gameLabel(game))}</strong>
