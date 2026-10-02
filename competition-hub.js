@@ -423,7 +423,7 @@
       header.innerHTML = `
         <div class="rp-competition-scope-topbar">
           <button class="rp-competition-world-scope-info" type="button" data-rp-competition-world-scope-info aria-label="Open OVR simulator and calculation guide" title="How OVR works">i</button>
-          <strong>RANKINGS</strong>
+          <strong data-rp-competition-scope-top-title></strong>
           <button class="rp-competition-world-scope-back" type="button" data-rp-competition-world-scope-back aria-label="Back">←</button>
         </div>
         <div class="rp-competition-scope-context">
@@ -440,9 +440,11 @@
       header.querySelector('[data-rp-competition-world-scope-back]')?.addEventListener('click', returnFromScopedRanking);
     }
 
+    const topTitle = header.querySelector('[data-rp-competition-scope-top-title]');
     const kicker = header.querySelector('[data-rp-competition-scope-kicker]');
     const title = header.querySelector('[data-rp-competition-scope-title]');
     const copy = header.querySelector('[data-rp-competition-scope-copy]');
+    if (topTitle) topTitle.textContent = config.title;
     if (kicker) kicker.textContent = config.kicker;
     if (title) title.textContent = config.title;
     if (copy) copy.textContent = config.copy;
