@@ -552,16 +552,25 @@
     return values.find((value) => value !== undefined && value !== null && value !== '');
   }
 
+  async function loadPlayerSummary(token) {
+    if (window.RealPlayPlayerSummary?.get) {
+      return window.RealPlayPlayerSummary.get();
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/real-play/me/summary`, {
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    if (!response.ok) return null;
+    return response.json().catch(() => ({}));
+  }
+
   async function refreshOvr() {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/real-play/me`, {
-        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-        cache: 'no-store',
-      });
-      if (!response.ok) return;
-      const state = await response.json().catch(() => ({}));
+      const state = await loadPlayerSummary(token);
+      if (!state) return;
       const rating = lobby.querySelector('[data-rp-ovr]');
       const ratingLabel = rating?.parentElement?.querySelector('span');
       const value = pick(

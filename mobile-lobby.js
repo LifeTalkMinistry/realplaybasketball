@@ -114,15 +114,24 @@
     if (rawNumber && rawNumber !== '--') playerNumber.textContent = `#${rawNumber}`;
   }
 
+  async function loadPlayerSummary(token) {
+    if (window.RealPlayPlayerSummary?.get) {
+      return window.RealPlayPlayerSummary.get();
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/real-play/me/summary`, {
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    if (!response.ok) return null;
+    return response.json().catch(() => ({}));
+  }
+
   async function refreshPlayerIdentity() {
     const token = window.localStorage.getItem(TOKEN_KEY);
     if (!token) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/real-play/me`, {
-        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return;
-      const state = await response.json();
+      const state = await loadPlayerSummary(token);
       const profile = state?.profile || {};
       const currentNumber = state?.currentNumber?.number ?? profile.player_number ?? profile.playerNumber ?? profile.number;
       applyIdentity(profile.player_name || profile.playerName || profile.name, currentNumber);
