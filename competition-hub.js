@@ -340,15 +340,15 @@
   }
 
   function openPlayersRoute() {
-    if (window.RealPlaySimpleNavigation?.players) {
-      window.RealPlaySimpleNavigation.players();
+    const button = document.querySelector('[data-rp-simple-nav-item="players"]');
+    if (!button) {
+      window.RealPlaySimpleNavigation?.players?.();
       return;
     }
-    const button = document.querySelector('[data-rp-simple-nav-item="players"]');
-    if (!button) return;
+    // Preserve the visitor directory and authenticated directory handlers.
     button.dataset.rpCompetitionBypass = '1';
-    button.click();
-    delete button.dataset.rpCompetitionBypass;
+    try { button.click(); }
+    finally { delete button.dataset.rpCompetitionBypass; }
   }
 
   function decoratePlayerRankings(attempt = 0) {
