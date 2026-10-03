@@ -19,6 +19,14 @@
   --rp-blue:#086cff;
   --rp-cyan:#18a9ff;
   --rp-red:#ff2028;
+  /* One backdrop shared by the player profile and Stats screen. */
+  --rp-player-background:
+    radial-gradient(72% 38% at -10% 14%,rgba(8,108,255,.18),transparent 72%),
+    radial-gradient(62% 38% at 112% 38%,rgba(255,32,40,.10),transparent 74%),
+    linear-gradient(180deg,#030407 0%,#020204 52%,#040507 100%);
+  --rp-player-backdrop:
+    linear-gradient(180deg,rgba(2,3,7,.94),rgba(2,3,7,.64) 22%,rgba(2,3,7,.20) 50%,rgba(2,3,7,.78) 100%),
+    url('assets/main-menu/main-menu-basketball-bg.png') center/cover no-repeat;
 }
 
 /* ---------- APP CANVAS ---------- */

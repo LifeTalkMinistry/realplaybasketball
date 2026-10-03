@@ -23,7 +23,7 @@
     if (document.querySelector('script[data-rp-competition-hub-loader]')) return;
 
     const script = document.createElement('script');
-    script.src = 'competition-hub.js?v=20261001-competition-hub-v9';
+    script.src = 'competition-hub.js?v=20261004-stats-profile-background-v10';
     script.async = true;
     script.dataset.rpCompetitionHubLoader = '1';
     document.head.appendChild(script);

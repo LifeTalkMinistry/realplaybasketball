@@ -36,10 +36,7 @@
    blue/red identity while preserving all existing profile data and behavior. */
 .rp-profile{
   isolation:isolate;
-  background:
-    radial-gradient(72% 38% at -10% 14%,rgba(8,108,255,.18),transparent 72%),
-    radial-gradient(62% 38% at 112% 38%,rgba(255,32,40,.10),transparent 74%),
-    linear-gradient(180deg,#030407 0%,#020204 52%,#040507 100%);
+  background:var(--rp-player-background);
 }
 .rp-profile::before{
   content:'';
@@ -51,9 +48,7 @@
   aspect-ratio:2/3;
   transform:translate(-50%,-50%);
   pointer-events:none;
-  background:
-    linear-gradient(180deg,rgba(2,3,7,.94),rgba(2,3,7,.64) 22%,rgba(2,3,7,.20) 50%,rgba(2,3,7,.78) 100%),
-    url('assets/main-menu/main-menu-basketball-bg.png') center/cover no-repeat;
+  background:var(--rp-player-backdrop);
   opacity:.38;
   filter:brightness(.72) contrast(1.18) saturate(1.18);
   -webkit-mask-image:radial-gradient(ellipse 80% 67% at 50% 55%,#000 0 58%,rgba(0,0,0,.88) 72%,transparent 96%);

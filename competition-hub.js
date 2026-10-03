@@ -40,14 +40,19 @@
     style.textContent = `
       body.rp-competition-hub-open{overflow:hidden!important}
       .rp-competition-hub{
-        position:fixed;inset:0;z-index:620;display:none;background:
-        radial-gradient(circle at 15% 12%,rgba(27,182,232,.15),transparent 30%),
-        radial-gradient(circle at 88% 86%,rgba(220,35,73,.12),transparent 34%),
-        #02060b;color:#eef7ff;overflow:auto;-webkit-overflow-scrolling:touch;
+        position:fixed;inset:0;z-index:620;display:none;isolation:isolate;
+        background:var(--rp-player-background);color:#eef7ff;overflow:auto;-webkit-overflow-scrolling:touch;
+      }
+      .rp-competition-hub::before{
+        content:'';position:fixed;z-index:0;left:50%;top:36%;width:min(142vw,760px);aspect-ratio:2/3;
+        transform:translate(-50%,-50%);pointer-events:none;background:var(--rp-player-backdrop);
+        opacity:.38;filter:brightness(.72) contrast(1.18) saturate(1.18);
+        -webkit-mask-image:radial-gradient(ellipse 80% 67% at 50% 55%,#000 0 58%,rgba(0,0,0,.88) 72%,transparent 96%);
+        mask-image:radial-gradient(ellipse 80% 67% at 50% 55%,#000 0 58%,rgba(0,0,0,.88) 72%,transparent 96%);
       }
       .rp-competition-hub.open{display:block}
-      .rp-competition-shell{width:min(100%,760px);min-height:100dvh;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));box-sizing:border-box}
-      .rp-competition-topbar{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:10px;position:sticky;top:0;z-index:4;margin:-4px -4px 18px;padding:8px 4px 12px;background:linear-gradient(180deg,rgba(2,6,11,.98) 70%,rgba(2,6,11,0));backdrop-filter:blur(10px)}
+      .rp-competition-shell{position:relative;z-index:1;width:min(100%,760px);min-height:100dvh;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));box-sizing:border-box}
+      .rp-competition-topbar{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:10px;position:sticky;top:0;z-index:4;margin:-4px -4px 18px;padding:8px 4px 12px;background:linear-gradient(180deg,rgba(2,3,7,.94) 70%,rgba(2,3,7,0));backdrop-filter:blur(10px)}
       .rp-competition-back,.rp-competition-close{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(124,204,240,.16);border-radius:13px;background:#07101a;color:#dff7ff;font:900 1rem/1 Arial,sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
       .rp-competition-back[hidden]{visibility:hidden;display:grid!important}
       .rp-competition-heading{text-align:center;min-width:0}
@@ -58,24 +63,28 @@
       .rp-competition-intro small{display:block;color:#5d7187;font:900 .54rem/1.2 Arial,sans-serif;letter-spacing:.16em}
       .rp-competition-intro h1{margin:7px 0 8px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:clamp(2rem,9vw,3.25rem);font-style:italic;font-weight:950;line-height:.95;letter-spacing:.02em}
       .rp-competition-intro p{max-width:560px;margin:0;color:#8ea1b6;font:700 .72rem/1.55 Arial,sans-serif}
-      .rp-competition-card-grid{display:grid;gap:11px}
+      .rp-competition-card-grid{display:grid;gap:14px}
       .rp-competition-card{
-        position:relative;width:100%;min-height:136px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:16px;padding:20px;
-        overflow:hidden;border:1px solid rgba(123,205,241,.14);border-radius:22px;background:linear-gradient(145deg,#08131f 0%,#04090f 68%);color:#eff8ff;text-align:left;
-        box-shadow:0 18px 42px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.045);transition:transform .16s ease,border-color .16s ease,background .16s ease;
+        --rp-competition-accent:85,223,255;
+        position:relative;width:100%;min-height:136px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:18px;padding:22px;
+        overflow:hidden;border:1px solid rgba(201,206,214,.11);border-radius:20px;background:linear-gradient(160deg,rgba(7,12,20,.90),rgba(3,6,11,.94));color:#eff8ff;text-align:left;
+        box-shadow:0 8px 24px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.025);transition:transform .16s ease,border-color .16s ease,background .16s ease;
       }
-      .rp-competition-card::before{content:'';position:absolute;width:190px;height:190px;border-radius:50%;right:-82px;top:-98px;background:radial-gradient(circle,rgba(68,217,255,.2),rgba(68,217,255,0) 66%);pointer-events:none}
-      .rp-competition-card.tuneup::before{background:radial-gradient(circle,rgba(255,99,121,.17),rgba(255,99,121,0) 66%)}
-      .rp-competition-card.league::before{background:radial-gradient(circle,rgba(164,122,255,.2),rgba(164,122,255,0) 66%)}
-      .rp-competition-card:hover{border-color:rgba(78,218,255,.35);background:linear-gradient(145deg,#0b1826 0%,#050b12 68%)}
+      .rp-competition-card.tuneup{--rp-competition-accent:255,122,146}
+      .rp-competition-card.league{--rp-competition-accent:182,156,255}
+      .rp-competition-card:hover{border-color:rgba(var(--rp-competition-accent),.3);background:linear-gradient(160deg,rgba(10,16,25,.94),rgba(4,8,14,.96))}
       .rp-competition-card:active{transform:scale(.987)}
       .rp-competition-card:focus-visible,.rp-season-card:focus-visible,.rp-scope-filter:focus-visible,.rp-competition-back:focus-visible,.rp-competition-close:focus-visible{outline:2px solid #5bdfff;outline-offset:2px}
       .rp-competition-card-copy{position:relative;z-index:1}
-      .rp-competition-card-copy small{display:block;margin-bottom:7px;color:#55dfff;font:950 .48rem/1 Arial,sans-serif;letter-spacing:.14em}
-      .rp-competition-card.tuneup small{color:#ff7a92}.rp-competition-card.league small{color:#b69cff}
+      .rp-competition-card-copy small{display:block;margin-bottom:7px;color:rgb(var(--rp-competition-accent));font:950 .48rem/1 Arial,sans-serif;letter-spacing:.14em}
       .rp-competition-card-copy strong{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.42rem;font-style:italic;font-weight:950;letter-spacing:.025em}
       .rp-competition-card-copy p{margin:7px 0 0;color:#8195ab;font:700 .64rem/1.45 Arial,sans-serif}
-      .rp-competition-card-arrow{position:relative;z-index:1;display:grid;place-items:center;width:42px;height:42px;border:1px solid rgba(84,220,255,.22);border-radius:50%;color:#62dfff;background:rgba(9,30,43,.6);font:950 1rem/1 Arial,sans-serif}
+      .rp-competition-card-arrow{position:relative;z-index:1;display:grid;place-items:center;width:42px;height:42px;border:1px solid rgba(var(--rp-competition-accent),.18);border-radius:50%;color:rgb(var(--rp-competition-accent));background:rgba(var(--rp-competition-accent),.035);font:950 1rem/1 Arial,sans-serif}
+      body.rp-simple-navigation-active.rp-competition-hub-open .rp-simple-nav{
+        background:rgba(2,3,7,.94);box-shadow:0 -8px 24px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.035);
+      }
+      body.rp-simple-navigation-active.rp-competition-hub-open .rp-simple-nav::before{opacity:.55;box-shadow:none}
+      body.rp-simple-navigation-active.rp-competition-hub-open .rp-simple-nav::after{content:none}
       .rp-competition-footnote{margin:16px 3px 0;color:#52677d;font:800 .52rem/1.5 Arial,sans-serif;letter-spacing:.035em}
       .rp-season-list{display:grid;gap:10px;padding-top:4px}
       .rp-season-card{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:18px;border:1px solid rgba(166,131,255,.17);border-radius:18px;background:linear-gradient(145deg,#0b101a,#05080e);color:#f1f4ff;text-align:left}
@@ -155,6 +164,8 @@
       .rp-competition-world-scope-back:focus-visible{outline:2px solid #5bdfff;outline-offset:2px}
             @media(min-width:640px){.rp-competition-card-grid{grid-template-columns:1fr 1fr}.rp-competition-card:first-child{grid-column:1/-1}.rp-scope-filter{flex-basis:105px}}
       @media(max-width:390px){.rp-competition-shell{padding-inline:12px}.rp-competition-card{min-height:126px;padding:17px}.rp-competition-card-copy strong{font-size:1.28rem}.rp-scope-filter{min-width:68px;font-size:.39rem}}
+      @media(prefers-reduced-transparency:reduce){.rp-competition-hub::before{opacity:.22}}
+      @media(prefers-reduced-motion:reduce){.rp-competition-card{transition:none}}
     `;
     document.head.appendChild(style);
   }
