@@ -22,6 +22,10 @@
   let loadingPlayers = false;
   let loadingProfile = false;
   let visitorArtRequest = 0;
+  const PLAYER_PAGE_SIZE = 25;
+  let visitorPlayers = [];
+  let visitorCursor = null;
+  let visitorHasMore = false;
 
   function world() {
     return document.querySelector('[data-rp-world]');
@@ -79,30 +83,66 @@
     node.classList.toggle('error', type === 'error');
   }
 
-  async function loadPlayers() {
+  function mergeVisitorPlayers(existing, incoming) {
+    const byId = new Map();
+    for (const player of [...existing, ...incoming]) {
+      const id = positiveId(player?.playerId ?? player?.userId);
+      if (id) byId.set(id, player);
+    }
+    return [...byId.values()];
+  }
+
+  function renderVisitorPlayers() {
+    const root = world()?.querySelector('[data-world-player-list]');
+    const count = world()?.querySelector('[data-world-player-count]');
+    const more = world()?.querySelector('[data-world-player-more]');
+    if (count) count.textContent = `${visitorPlayers.length}${visitorHasMore ? '+' : ''} PLAYER${visitorPlayers.length === 1 && !visitorHasMore ? '' : 'S'}`;
+    if (more) {
+      more.hidden = !visitorHasMore;
+      more.disabled = loadingPlayers;
+      more.textContent = loadingPlayers && visitorHasMore ? 'LOADING...' : 'LOAD MORE PLAYERS';
+    }
+    if (!root) return;
+
+    root.innerHTML = visitorPlayers.length ? visitorPlayers.map((player) => {
+      const jersey = player.playerNumber === null || player.playerNumber === undefined ? '#—' : `#${Number(player.playerNumber)}`;
+      const rating = player.ovr === null || player.ovr === undefined
+        ? '<span class="rp-world-player-ovr unranked">UNRANKED</span>'
+        : `<span class="rp-world-player-ovr">${esc(player.ovr)} <small>OVR</small></span>`;
+      return `<button type="button" class="rp-world-player-row" data-world-player-id="${esc(player.playerId || player.userId)}"><span class="rp-world-player-name"><strong>${esc(player.playerName || 'REAL PLAY PLAYER')}</strong><b>${esc(jersey)}</b></span>${rating}</button>`;
+    }).join('') : '<div class="rp-world-player-empty">NO REAL PLAY PLAYER PROFILES YET.</div>';
+  }
+
+  async function loadPlayers({ append = false } = {}) {
     if (loadingPlayers || !isVisitor()) return;
     loadingPlayers = true;
-    setStatus('LOADING PLAYERS...');
+    if (!append) {
+      visitorPlayers = [];
+      visitorCursor = null;
+      visitorHasMore = false;
+    }
+    setStatus(append ? 'LOADING MORE PLAYERS...' : 'LOADING PLAYERS...');
+    renderVisitorPlayers();
     try {
-      const data = await window.RealPlayWorld?.community?.('players');
-      const players = Array.isArray(data?.players) ? data.players : [];
-      const root = world()?.querySelector('[data-world-player-list]');
-      const count = world()?.querySelector('[data-world-player-count]');
-      if (count) count.textContent = `${players.length} PLAYER${players.length === 1 ? '' : 'S'}`;
-      if (root) {
-        root.innerHTML = players.length ? players.map((player) => {
-          const jersey = player.playerNumber === null || player.playerNumber === undefined ? '#—' : `#${Number(player.playerNumber)}`;
-          const rating = player.ovr === null || player.ovr === undefined
-            ? '<span class="rp-world-player-ovr unranked">UNRANKED</span>'
-            : `<span class="rp-world-player-ovr">${esc(player.ovr)} <small>OVR</small></span>`;
-          return `<button type="button" class="rp-world-player-row" data-world-player-id="${esc(player.playerId || player.userId)}"><span class="rp-world-player-name"><strong>${esc(player.playerName || 'REAL PLAY PLAYER')}</strong><b>${esc(jersey)}</b></span>${rating}</button>`;
-        }).join('') : '<div class="rp-world-player-empty">NO REAL PLAY PLAYER PROFILES YET.</div>';
-      }
+      const data = await window.RealPlayWorld?.community?.('players', {
+        paginated: true,
+        limit: PLAYER_PAGE_SIZE,
+        cursor: append ? visitorCursor : null,
+      });
+      const incoming = Array.isArray(data?.players) ? data.players : [];
+      visitorPlayers = append ? mergeVisitorPlayers(visitorPlayers, incoming) : incoming;
+
+      const page = data?.page || {};
+      visitorHasMore = Boolean(page?.hasMore && page?.nextCursor);
+      visitorCursor = visitorHasMore ? page.nextCursor : null;
+
+      renderVisitorPlayers();
       setStatus('');
     } catch (error) {
       setStatus(error.message || 'Could not load players.', 'error');
     } finally {
       loadingPlayers = false;
+      renderVisitorPlayers();
     }
   }
 
@@ -356,9 +396,18 @@
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      if (activatePlayersView()) loadPlayers();
+      if (activatePlayersView()) loadPlayers({ append: false });
       return;
     }
+    const more = event.target.closest('[data-world-player-more]');
+    if (more) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      loadPlayers({ append: true });
+      return;
+    }
+
     const row = event.target.closest('[data-world-player-id]');
     if (row) {
       event.preventDefault();
