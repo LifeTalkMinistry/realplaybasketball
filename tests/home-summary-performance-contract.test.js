@@ -26,3 +26,12 @@ test('official Updates and World results still retain the complete public update
   assert.match(updates, /\/api\/real-play\/public\/updates/);
   assert.match(results, /\/api\/real-play\/public\/updates/);
 });
+
+
+test('initial Home boot gate can observe authority requests that start before app-ready', () => {
+  const boot = read('public-first-entry.js');
+
+  assert.match(boot, /if \(!window\.__realPlaySimpleNavigationStateAuthorityInstalled\) return request;/);
+  assert.doesNotMatch(boot, /if \(!state\.appReady \|\| !window\.__realPlaySimpleNavigationStateAuthorityInstalled\) return request;/);
+  assert.match(boot, /if \(state\.released \|\| !state\.appReady \|\| !homeInstalled\(\)\) return;/);
+});
