@@ -43,3 +43,12 @@ test('full profile continues to use the complete me endpoint', () => {
   assert.match(profile, /api\('\/api\/real-play\/me'\)/);
   assert.match(history, /\/api\/real-play\/me`/);
 });
+
+
+test('summary store keeps a deployment-safe legacy fallback only for missing summary routes', () => {
+  const store = read('player-summary-store.js');
+
+  assert.match(store, /const LEGACY_ME_URL = 'https:\/\/api\.clarapmc\.com\/api\/real-play\/me'/);
+  assert.match(store, /response\.status === 404 \|\| response\.status === 405/);
+  assert.match(store, /fetch\(LEGACY_ME_URL, requestOptions\)/);
+});
