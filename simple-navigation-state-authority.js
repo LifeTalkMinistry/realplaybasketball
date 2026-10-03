@@ -4,7 +4,7 @@
 
   const TOKEN_KEY = 'real_play_access_token';
   const API_BASE_URL = 'https://api.clarapmc.com';
-  const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
+  const PUBLIC_HOME_URL = `${API_BASE_URL}/api/real-play/public/home-summary`;
   const PUBLIC_4V4_AVAILABILITY_URL = `${API_BASE_URL}/api/real-play/4v4/public`;
   const HOME_REFRESH_MIN_MS = 15_000;
   const HOME_RATE_LIMIT_BACKOFF_MS = 60_000;
@@ -361,7 +361,7 @@
     if (access) access.textContent = localStorage.getItem(TOKEN_KEY) ? 'PLAYER' : 'PUBLIC';
 
     try {
-      const response = await fetch(PUBLIC_UPDATES_URL, {
+      const response = await fetch(PUBLIC_HOME_URL, {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
       });
