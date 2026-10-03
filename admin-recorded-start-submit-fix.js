@@ -90,7 +90,9 @@
     if (!button) return;
     button.disabled = false;
     button.removeAttribute('aria-disabled');
-    button.title = 'Real Play will validate the competition, season, rules, exact roster, and video before the audit starts.';
+    button.title = body()?.querySelector('[data-rp-video-competition]')
+      ? 'Real Play will validate the competition, season, rules, exact roster, and video before the audit starts.'
+      : 'Real Play will validate the rules, exact roster, and video before the audit starts.';
   }
 
   function scheduleStartUnlock() {
@@ -148,13 +150,16 @@
 
   async function startRecordedScoring(button) {
     if (starting) return;
-    if (!window.confirm('Start recorded scoring? The competition, season, roster, and game rules will lock for this game.')) return;
+    const competitionVisible = Boolean(body()?.querySelector('[data-rp-video-competition]'));
+    if (!window.confirm(competitionVisible
+      ? 'Start recorded scoring? The competition, season, roster, and game rules will lock for this game.'
+      : 'Start recorded scoring? The roster and game rules will lock for this game.')) return;
 
     starting = true;
     const originalText = button.textContent;
     button.disabled = true;
     button.textContent = 'STARTING…';
-    setInlineStatus('Checking the competition, season, rules, roster, and video…');
+    setInlineStatus(competitionVisible ? 'Checking the competition, season, rules, roster, and video…' : 'Checking the rules, roster, and video…');
 
     try {
       let data = await api('/api/real-play/admin/career/control');
@@ -164,8 +169,10 @@
         throw new Error('This game is not set to REPLAY RECORDED. Change the game type to replay first.');
       }
 
-      control = await commitVisibleCompetition(control);
-      if (!control?.session?.competition) throw new Error('Save the competition and season before starting Audit scoring.');
+      if (Array.isArray(control.competitionSeasons)) {
+        control = await commitVisibleCompetition(control);
+        if (!control?.session?.competition) throw new Error('Save the competition and season before starting Audit scoring.');
+      }
       control = await commitVisibleRules(control);
       if (!control?.session?.rules) {
         data = await api('/api/real-play/admin/career/control');

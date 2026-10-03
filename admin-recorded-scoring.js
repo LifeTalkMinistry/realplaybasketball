@@ -27,7 +27,11 @@
   let lastDurationMs = 0;
   let competitionDraft = { sessionId: 0, context: '', seasonId: '', seasonNumber: '' };
   let competitionDirty = false;
-  let raceTargets = [8, 12, 16, 21];
+  let raceTargets = [8, 16, 21];
+
+  function hasCompetitionSupport() {
+    return Array.isArray(control.competitionSeasons);
+  }
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -146,6 +150,7 @@
   async function loadControl() {
     const data = await api('/api/real-play/admin/career/control');
     control = data?.control || { session: null, players: [] };
+    raceTargets = hasCompetitionSupport() ? [8, 12, 16, 21] : [8, 16, 21];
     return control;
   }
 
@@ -278,6 +283,7 @@
   }
 
   function competitionHtml() {
+    if (!hasCompetitionSupport()) return '';
     const session = control.session || {};
     const saved = session.competition || null;
     if (competitionDraft.sessionId !== Number(session.id) || !competitionDirty) {
@@ -343,7 +349,7 @@
   function rulesHtml() {
     const rules = control.session?.rules || null;
     const label = control.session?.rulesLabel || (rules ? 'GAME RULES SET' : 'RULES NOT SET');
-    const target = rules?.rulesetFamily === 'race_to' ? Number(rules.targetScore) : 12;
+    const target = rules?.rulesetFamily === 'race_to' ? Number(rules.targetScore) : (raceTargets.includes(12) ? 12 : 21);
     const format = rules?.playerFormat || '3v3';
     return `<div class="rp-video-rules">
       <div class="rp-video-rules-current"><span>CURRENT RULES</span><strong>${esc(label)}</strong></div>
@@ -363,7 +369,7 @@
     const east = rosterPlayers('east').length;
     const rosterReady = expected > 0 && west === expected && east === expected;
     const uploaded = Boolean(recordingState.recording);
-    const canStart = uploaded && rosterReady && Boolean(control.session?.competition) && !busy;
+    const canStart = uploaded && rosterReady && (!hasCompetitionSupport() || Boolean(control.session?.competition)) && !busy;
     return `<section class="rp-video-step ${rosterReady ? 'complete' : ''}" data-rp-video-roster-setup>
       ${stepHeader('2', 'CHOOSE PLAYERS', 'Search or create the exact people visible in this game.', rosterReady)}
       <div class="rp-video-search-wrap">
@@ -620,7 +626,7 @@
     const west = rosterPlayers('west').length;
     const east = rosterPlayers('east').length;
     const rosterReady = expected > 0 && west === expected && east === expected;
-    const canStart = Boolean(recordingState.recording) && rosterReady && Boolean(control.session?.competition) && !busy;
+    const canStart = Boolean(recordingState.recording) && rosterReady && (!hasCompetitionSupport() || Boolean(control.session?.competition)) && !busy;
 
     const rosters = section.querySelector('.rp-video-rosters');
     if (rosters) rosters.innerHTML = `${rosterCard('west')}${rosterCard('east')}`;
@@ -725,13 +731,15 @@
 
   async function startVideoScoring() {
     if (busy) return;
-    if (!control.session?.competition) {
+    if (hasCompetitionSupport() && !control.session?.competition) {
       notice = 'Choose the competition and season before starting Audit scoring.';
       noticeType = 'error';
       render();
       return;
     }
-    if (!window.confirm('Start recorded scoring? The competition, season, roster, and game rules will lock for this game.')) return;
+    if (!window.confirm(hasCompetitionSupport()
+      ? 'Start recorded scoring? The competition, season, roster, and game rules will lock for this game.'
+      : 'Start recorded scoring? The roster and game rules will lock for this game.')) return;
     busy = true;
     notice = '';
     render();

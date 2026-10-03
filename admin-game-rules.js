@@ -12,7 +12,12 @@
   let notice = '';
   let noticeType = '';
   let timeoutCompletionKey = '';
-  let draft = { family: 'standard', target: 12, format: '3v3' };
+  let draft = { family: 'standard', target: 21, format: '3v3' };
+  let defaultRaceTargetLoaded = false;
+
+  function raceTargets() {
+    return Array.isArray(controlCache?.competitionSeasons) ? [8, 12, 16, 21] : [8, 16, 21];
+  }
 
   function root() {
     return document.querySelector('.rp-admin-control');
@@ -73,6 +78,10 @@
     loading = request('GET')
       .then((data) => {
         controlCache = data?.control || null;
+        if (controlCache && !defaultRaceTargetLoaded) {
+          draft.target = raceTargets().includes(12) ? 12 : 21;
+          defaultRaceTargetLoaded = true;
+        }
         syncDraftFromRules(controlCache?.session?.rules);
         return controlCache;
       })
@@ -170,7 +179,7 @@
       </div>
       <div class="rp-game-rules-config">
         ${race ? `<div class="rp-game-rules-group"><label>RACE TARGET</label><div class="rp-game-rules-options">
-          ${[8,12,16,21].map((value) => optionButton(`RACE TO ${value}`, 'data-rp-race-target', value, Number(draft.target) === value, locked || busy)).join('')}
+          ${raceTargets().map((value) => optionButton(`RACE TO ${value}`, 'data-rp-race-target', value, Number(draft.target) === value, locked || busy)).join('')}
         </div></div>
         <div class="rp-game-rules-group"><label>PLAYER FORMAT</label><div class="rp-game-rules-options">
           ${['3v3','4v4','5v5'].map((value) => optionButton(value.toUpperCase(), 'data-rp-player-format', value, draft.format === value, locked || busy)).join('')}
