@@ -350,6 +350,11 @@
     if (!guardLoaded) console.warn('[Real Play] Auth session guard did not load during startup.');
     if (!entryLoaded) console.warn('[Real Play] Public-first entry did not load during startup.');
 
+    const playerSummaryStoreLoaded = await loadScript('player-summary-store.js', 3500);
+    if (!playerSummaryStoreLoaded) {
+      console.warn('[Real Play] Player summary cache did not load; startup consumers will use direct summary reads.');
+    }
+
     const lobbyLoaded = await loadScript('mobile-lobby.js', 6500);
     const lobbyMounted = Boolean(document.querySelector('[data-rp-app]'));
     if (!lobbyLoaded || !lobbyMounted) {
