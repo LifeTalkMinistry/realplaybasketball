@@ -3,7 +3,7 @@
   window.__realPlaySimpleNavigationInstalled = true;
 
   const TOKEN_KEY = 'real_play_access_token';
-  const PUBLIC_UPDATES_URL = 'https://api.clarapmc.com/api/real-play/public/updates';
+  const PUBLIC_HOME_URL = 'https://api.clarapmc.com/api/real-play/public/home-summary';
   const NAV_ITEMS = [
     { id: 'home', label: 'HOME', icon: '⌂' },
     { id: 'world', label: 'WORLD', icon: '◎' },
@@ -297,7 +297,7 @@
     if (access) access.textContent = hasAccount() ? 'PLAYER' : 'PUBLIC';
 
     try {
-      const response = await fetch(PUBLIC_UPDATES_URL, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      const response = await fetch(PUBLIC_HOME_URL, { headers: { Accept: 'application/json' }, cache: 'no-store' });
       if (!response.ok) throw new Error('Could not load public updates.');
       const data = await response.json().catch(() => ({}));
       const updates = Array.isArray(data?.updates) ? data.updates : [];
