@@ -13,6 +13,9 @@
   let loadingPlayers = false;
   let loadingProfile = false;
   let publicProfileRequestId = 0;
+  const PLAYER_PAGE_SIZE = 25;
+  let playerCursor = null;
+  let hasMorePlayers = false;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -88,6 +91,9 @@
       .rp-world-player-empty{padding:34px 16px;border:1px dashed rgba(255,255,255,.08);border-radius:16px;color:#627287;background:rgba(4,8,14,.55);font-size:.64rem;font-weight:800;text-align:center}
       .rp-world-player-status{min-height:16px;margin:2px 0 0;color:#617288;font-size:.52rem;font-weight:850;text-align:center;letter-spacing:.04em}
       .rp-world-player-status.error{color:#ff7f8e}
+      .rp-world-player-more{min-height:44px;border:1px solid rgba(72,215,255,.18);border-radius:14px;color:#8ee8ff;background:rgba(7,16,26,.9);font-family:var(--rp-display,Arial,sans-serif);font-size:.62rem;font-weight:950;letter-spacing:.08em}
+      .rp-world-player-more[hidden]{display:none!important}
+      .rp-world-player-more:disabled{opacity:.55}
       .rp-public-player-profile{z-index:556}
       @media(max-width:420px){
         .rp-world-primary-tabs{gap:12px}
@@ -104,7 +110,13 @@
     const root = worldPanel?.querySelector('[data-world-player-list]');
     const count = worldPanel?.querySelector('[data-world-player-count]');
     if (!root) return;
-    if (count) count.textContent = `${players.length} PLAYER${players.length === 1 ? '' : 'S'}`;
+    if (count) count.textContent = `${players.length}${hasMorePlayers ? '+' : ''} PLAYER${players.length === 1 && !hasMorePlayers ? '' : 'S'}`;
+    const more = worldPanel?.querySelector('[data-world-player-more]');
+    if (more) {
+      more.hidden = !hasMorePlayers;
+      more.disabled = loadingPlayers;
+      more.textContent = loadingPlayers && hasMorePlayers ? 'LOADING...' : 'LOAD MORE PLAYERS';
+    }
 
     if (!players.length) {
       root.innerHTML = '<div class="rp-world-player-empty">NO REAL PLAY PLAYER PROFILES YET.</div>';
@@ -152,14 +164,38 @@
     node.classList.toggle('error', type === 'error');
   }
 
-  async function refreshPlayers() {
+  function mergePlayers(existing, incoming) {
+    const byId = new Map();
+    for (const player of [...existing, ...incoming]) {
+      const id = Number(player?.playerId ?? player?.userId);
+      if (Number.isSafeInteger(id) && id > 0) byId.set(id, player);
+    }
+    return [...byId.values()];
+  }
+
+  async function refreshPlayers({ append = false } = {}) {
     if (loadingPlayers) return;
     loadingPlayers = true;
-    setPlayersStatus('LOADING PLAYERS...');
+    if (!append) {
+      playerCursor = null;
+      hasMorePlayers = false;
+    }
+    setPlayersStatus(append ? 'LOADING MORE PLAYERS...' : 'LOADING PLAYERS...');
+    renderPlayers();
     try {
-      const data = await community('players');
-      players = Array.isArray(data?.players) ? data.players : [];
+      const data = await community('players', {
+        paginated: true,
+        limit: PLAYER_PAGE_SIZE,
+        cursor: append ? playerCursor : null,
+      });
+      const incoming = Array.isArray(data?.players) ? data.players : [];
+      players = append ? mergePlayers(players, incoming) : incoming;
       meUserId = Number(data?.meUserId || 0) || null;
+
+      const page = data?.page || {};
+      hasMorePlayers = Boolean(page?.hasMore && page?.nextCursor);
+      playerCursor = hasMorePlayers ? page.nextCursor : null;
+
       renderPlayers();
       setPlayersStatus('');
     } catch (error) {
@@ -170,6 +206,7 @@
       }
     } finally {
       loadingPlayers = false;
+      renderPlayers();
     }
   }
 
@@ -181,7 +218,7 @@
     worldPanel.querySelectorAll('[data-world-view]').forEach((view) => {
       view.hidden = view.dataset.worldView !== 'players';
     });
-    refreshPlayers();
+    refreshPlayers({ append: false });
   }
 
   function installPlayersTab() {
@@ -234,9 +271,13 @@
           </header>
           <p class="rp-world-player-status" data-world-player-status aria-live="polite"></p>
           <div class="rp-world-player-list" data-world-player-list></div>
+          <button type="button" class="rp-world-player-more" data-world-player-more hidden>LOAD MORE PLAYERS</button>
         </div>`;
       body.insertBefore(view, chatsView);
       view.querySelector('[data-world-player-list]')?.addEventListener('click', handlePlayerClick);
+      view.querySelector('[data-world-player-more]')?.addEventListener('click', () => {
+        refreshPlayers({ append: true });
+      });
     }
 
     return true;
@@ -492,7 +533,7 @@
 
   window.addEventListener('focus', () => {
     if (worldPanel?.classList.contains('open') && !worldPanel.querySelector('[data-world-view="players"]')?.hidden) {
-      refreshPlayers();
+      refreshPlayers({ append: false });
     }
   });
 
