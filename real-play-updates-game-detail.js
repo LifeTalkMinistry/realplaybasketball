@@ -5,6 +5,12 @@
   const API_BASE_URL = 'https://api.clarapmc.com';
   const PUBLIC_UPDATES_URL = `${API_BASE_URL}/api/real-play/public/updates`;
   const hydrationRequests = new Map();
+  const OFFICIAL_MVP_FEED_TTL_MS = 30000;
+  const OFFICIAL_MVP_RETRY_BACKOFF_MS = 15000;
+  let officialMvpFeedCache = new Map();
+  let officialMvpFeedCachedAt = 0;
+  let officialMvpFeedRetryAt = 0;
+  let officialMvpFeedPromise = null;
   let mvpModal = null;
   let mvpModalReturnFocus = null;
 
@@ -310,26 +316,80 @@
     block.setAttribute('aria-label', `Overall MVP: ${name}`);
   }
 
-  // One finalized game has one authoritative Game MVP. The backend builds the
-  // official result metadata from the canonical Game MVP service, so result
-  // cards must read that value instead of independently recalculating a winner
-  // from replay stats in the browser.
-  async function fetchOverallMvp(sessionId) {
-    const response = await fetch(PUBLIC_UPDATES_URL, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-    });
-    if (!response.ok) return '';
+  function mvpNameFromUpdate(update) {
+    const mvp = update?.metadata?.gameMvp || update?.metadata?.game_mvp || null;
+    return String(
+      mvp?.playerName
+      || mvp?.player_name
+      || mvp?.displayName
+      || mvp?.display_name
+      || mvp?.name
+      || ''
+    ).trim();
+  }
 
-    const payload = await response.json().catch(() => ({}));
-    const updates = Array.isArray(payload?.updates) ? payload.updates : [];
+  function localOverallMvp(sessionId) {
+    const updates = window.RealPlayUpdates?.getUpdates?.();
+    if (!Array.isArray(updates) || !updates.length) return '';
     const result = updates.find((item) => (
       String(item?.category || '').toLowerCase() === 'result'
       && Number(item?.metadata?.sessionId || 0) === Number(sessionId)
     ));
-    const mvp = result?.metadata?.gameMvp || null;
-    return String(mvp?.playerName || mvp?.name || '').trim();
+    return mvpNameFromUpdate(result);
+  }
+
+  async function loadOfficialMvpFeed() {
+    const now = Date.now();
+    if (officialMvpFeedCache.size && now - officialMvpFeedCachedAt < OFFICIAL_MVP_FEED_TTL_MS) {
+      return officialMvpFeedCache;
+    }
+    if (now < officialMvpFeedRetryAt) return officialMvpFeedCache;
+    if (officialMvpFeedPromise) return officialMvpFeedPromise;
+
+    officialMvpFeedPromise = (async () => {
+      const response = await fetch(PUBLIC_UPDATES_URL, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        officialMvpFeedRetryAt = Date.now() + OFFICIAL_MVP_RETRY_BACKOFF_MS;
+        return officialMvpFeedCache;
+      }
+
+      const payload = await response.json().catch(() => ({}));
+      const next = new Map();
+      (Array.isArray(payload?.updates) ? payload.updates : [])
+        .filter((item) => String(item?.category || '').toLowerCase() === 'result')
+        .forEach((item) => {
+          const id = Number(item?.metadata?.sessionId || 0);
+          const name = mvpNameFromUpdate(item);
+          if (Number.isSafeInteger(id) && id > 0 && name) next.set(id, name);
+        });
+
+      officialMvpFeedCache = next;
+      officialMvpFeedCachedAt = Date.now();
+      officialMvpFeedRetryAt = 0;
+      return officialMvpFeedCache;
+    })().catch(() => {
+      officialMvpFeedRetryAt = Date.now() + OFFICIAL_MVP_RETRY_BACKOFF_MS;
+      return officialMvpFeedCache;
+    }).finally(() => {
+      officialMvpFeedPromise = null;
+    });
+
+    return officialMvpFeedPromise;
+  }
+
+  // One finalized game has one authoritative Game MVP. Prefer the result payload
+  // already loaded by RealPlayUpdates so 38 result cards do not make 38 copies
+  // of the same public-updates request. The network path is only a batched,
+  // cached fallback and backs off after rate-limit/error responses.
+  async function fetchOverallMvp(sessionId) {
+    const local = localOverallMvp(sessionId);
+    if (local) return local;
+    const mvps = await loadOfficialMvpFeed();
+    return String(mvps.get(Number(sessionId)) || '').trim();
   }
 
   function hydrateCard(card) {
