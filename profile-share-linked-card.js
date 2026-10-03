@@ -1,6 +1,6 @@
 (() => {
-  if (window.__realPlayProfileLinkedShareInstalledV113) return;
-  window.__realPlayProfileLinkedShareInstalledV113 = true;
+  if (window.__realPlayProfileLinkedShareInstalledV114) return;
+  window.__realPlayProfileLinkedShareInstalledV114 = true;
 
   const PUBLIC_APP_URL = 'https://joinrealplay.com/';
   const PROFILE_SHARE_URL = /^https:\/\/api\.clarapmc\.com\/api\/real-play\/profile-share\/[a-f0-9]{40}(?:[?#].*)?$/i;
@@ -8,11 +8,18 @@
   const SNAPSHOT_UPLOAD_URL = /^https:\/\/api\.clarapmc\.com\/api\/real-play\/profile-share-snapshots(?:\?|$)/i;
   const QR_SCRIPT_URL = 'profile-share-qr.js?v=20260920-profile-share-story-qr-v1';
   const PLAYER_MEMORY_MS = 15000;
+  const PUBLIC_UPDATES_READ = /^https:\/\/api\.clarapmc\.com\/api\/real-play\/public\/updates(?:\?|$)/i;
+  const PUBLIC_UPDATES_CACHE_MS = 4000;
+  const PUBLIC_UPDATES_BACKOFF_MS = 15000;
 
   let latestSharePlayerId = null;
   let latestSharePlayerAt = 0;
   let qrPromise = null;
   let activeChooser = null;
+  let publicUpdatesInFlight = null;
+  let publicUpdatesCachedResponse = null;
+  let publicUpdatesCacheUntil = 0;
+  let publicUpdatesBackoffUntil = 0;
 
   const positiveId = (value) => {
     const id = Number(value);
@@ -44,8 +51,59 @@
 
   if (typeof window.fetch === 'function') {
     const nativeFetch = window.fetch.bind(window);
+
+    function requestUrl(input) {
+      if (typeof input === 'string') return input;
+      if (input instanceof URL) return input.href;
+      return String(input?.url || '');
+    }
+
+    function requestMethod(input, init) {
+      return String(init?.method || input?.method || 'GET').toUpperCase();
+    }
+
+    function isPublicUpdatesRead(input, init) {
+      return requestMethod(input, init) === 'GET' && PUBLIC_UPDATES_READ.test(requestUrl(input));
+    }
+
+    async function sharedPublicUpdatesFetch(input, init) {
+      const now = Date.now();
+
+      if (publicUpdatesCachedResponse && now < publicUpdatesCacheUntil) {
+        return publicUpdatesCachedResponse.clone();
+      }
+      if (publicUpdatesCachedResponse && now < publicUpdatesBackoffUntil) {
+        return publicUpdatesCachedResponse.clone();
+      }
+      if (publicUpdatesInFlight) {
+        const response = await publicUpdatesInFlight;
+        return response.clone();
+      }
+
+      publicUpdatesInFlight = nativeFetch(input, init)
+        .then((response) => {
+          const snapshot = response.clone();
+          if (response.ok) {
+            publicUpdatesCachedResponse = snapshot;
+            publicUpdatesCacheUntil = Date.now() + PUBLIC_UPDATES_CACHE_MS;
+            publicUpdatesBackoffUntil = 0;
+          } else if (response.status === 429) {
+            publicUpdatesBackoffUntil = Date.now() + PUBLIC_UPDATES_BACKOFF_MS;
+            if (!publicUpdatesCachedResponse) publicUpdatesCachedResponse = snapshot;
+          }
+          return response;
+        })
+        .finally(() => {
+          publicUpdatesInFlight = null;
+        });
+
+      const response = await publicUpdatesInFlight;
+      return response.clone();
+    }
+
     window.fetch = function realPlayShareDomainFetch(input, init) {
       rememberSnapshotPlayer(input);
+      if (isPublicUpdatesRead(input, init)) return sharedPublicUpdatesFetch(input, init);
       return nativeFetch(input, init);
     };
   }
