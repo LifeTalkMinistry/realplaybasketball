@@ -1,6 +1,6 @@
 @import url('home-main-announcement-art.css?v=20260910-main-announcement-v1');
 
-/* World is the public history of Real Play games, not a social posting feed. */
+/* World now has two official views: a verified-data FEED and the complete RESULTS history. */
 body.rp-simple-navigation-active .rp-world-results{
   display:grid;
   gap:10px;
@@ -226,14 +226,14 @@ body.rp-simple-navigation-active [data-world-view="world"] [data-world-post-form
    result instead. The visual stays the same while style invalidation stays
    local and predictable.
    -------------------------------------------------------------------------- */
-.rp-updates.rp-world-results-entry [data-updates-feed]
+.rp-updates.rp-world-results-entry.rp-world-results-view [data-updates-feed]
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]) ~
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]){
   overflow:visible!important;
   margin-top:46px!important;
 }
 
-.rp-updates.rp-world-results-entry [data-updates-feed]
+.rp-updates.rp-world-results-entry.rp-world-results-view [data-updates-feed]
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]) ~
 .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden])::before{
   content:'NEXT GAME RESULT'!important;
@@ -283,13 +283,13 @@ body.rp-simple-navigation-active [data-world-view="world"] [data-world-post-form
   .rp-world-result-score strong{font-size:1.58rem}
   .rp-world-results-heading h1{font-size:1.08rem}
 
-  .rp-updates.rp-world-results-entry [data-updates-feed]
+  .rp-updates.rp-world-results-entry.rp-world-results-view [data-updates-feed]
   .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]) ~
   .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]){
     margin-top:42px!important;
   }
 
-  .rp-updates.rp-world-results-entry [data-updates-feed]
+  .rp-updates.rp-world-results-entry.rp-world-results-view [data-updates-feed]
   .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden]) ~
   .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]:not([hidden])::before{
     top:-33px!important;
