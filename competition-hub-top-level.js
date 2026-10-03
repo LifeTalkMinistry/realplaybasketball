@@ -94,7 +94,14 @@
 
     const target = navItem.dataset.rpSimpleNavItem;
     if (target === STATS_NAV_ID) {
+      // Ranking cards deliberately reuse the public/authenticated Players route.
+      if (navItem.dataset.rpCompetitionBypass === '1') return;
       closeOtherPrimaryLayersForStats();
+      if (typeof window.RealPlayCompetitionHub?.open === 'function') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        window.RealPlayCompetitionHub.open();
+      }
       return;
     }
 
