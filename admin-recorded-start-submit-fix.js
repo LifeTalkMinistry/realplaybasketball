@@ -75,7 +75,7 @@
     if (!form) return null;
     const target = Number(form.querySelector('select[name="target"]')?.value || 0);
     const format = String(form.querySelector('select[name="format"]')?.value || '').trim().toLowerCase();
-    if (![8, 16, 21].includes(target) || !['3v3', '4v4', '5v5'].includes(format)) return null;
+    if (![8, 12, 16, 21].includes(target) || !['3v3', '4v4', '5v5'].includes(format)) return null;
     return { rulesetFamily: 'race_to', targetScore: target, playerFormat: format };
   }
 
@@ -90,12 +90,40 @@
     if (!button) return;
     button.disabled = false;
     button.removeAttribute('aria-disabled');
-    button.title = 'Real Play will validate the selected rules, exact roster, and uploaded video before the audit starts.';
+    button.title = 'Real Play will validate the competition, season, rules, exact roster, and video before the audit starts.';
   }
 
   function scheduleStartUnlock() {
     if (unlockFrame) return;
     unlockFrame = window.requestAnimationFrame(unlockStartButton);
+  }
+
+  async function commitVisibleCompetition(control) {
+    const saved = control?.session?.competition || null;
+    const form = body()?.querySelector('[data-rp-video-competition-form]');
+    if (!form) {
+      if (saved) return control;
+      throw new Error('Choose the competition and season before starting Audit scoring.');
+    }
+    const context = String(form.querySelector('[name="competitionContext"]')?.value || '');
+    const season = String(form.querySelector('[name="seasonId"]')?.value || '');
+    const seasonNumber = Number(form.querySelector('[name="seasonNumber"]')?.value || 0);
+    const seasonId = Number(season);
+    const adding = season === 'new';
+    if (!['open_ranking', 'league'].includes(context)
+      || (adding ? !Number.isInteger(seasonNumber) || seasonNumber < 1 || seasonNumber > 9999 : !Number.isSafeInteger(seasonId) || seasonId < 1)) {
+      throw new Error('Choose the competition and season before starting Audit scoring.');
+    }
+    if (saved?.competitionContext === context
+      && (adding ? Number(saved.seasonNumber) === seasonNumber : Number(saved.id) === seasonId)) return control;
+    const data = await api('/api/real-play/admin/career/control', {
+      method: 'POST',
+      json: {
+        action: 'set-competition', sessionId: Number(control.session.id), competitionContext: context,
+        ...(adding ? { seasonNumber } : { seasonId }),
+      },
+    });
+    return data?.control || control;
   }
 
   async function commitVisibleRules(control) {
@@ -120,13 +148,13 @@
 
   async function startRecordedScoring(button) {
     if (starting) return;
-    if (!window.confirm('Start recorded scoring? The selected roster and game rules will lock for this game.')) return;
+    if (!window.confirm('Start recorded scoring? The competition, season, roster, and game rules will lock for this game.')) return;
 
     starting = true;
     const originalText = button.textContent;
     button.disabled = true;
     button.textContent = 'STARTING…';
-    setInlineStatus('Checking the saved rules, exact roster, and video…');
+    setInlineStatus('Checking the competition, season, rules, roster, and video…');
 
     try {
       let data = await api('/api/real-play/admin/career/control');
@@ -136,6 +164,8 @@
         throw new Error('This game is not set to REPLAY RECORDED. Change the game type to replay first.');
       }
 
+      control = await commitVisibleCompetition(control);
+      if (!control?.session?.competition) throw new Error('Save the competition and season before starting Audit scoring.');
       control = await commitVisibleRules(control);
       if (!control?.session?.rules) {
         data = await api('/api/real-play/admin/career/control');

@@ -52,7 +52,7 @@
 
     const target = Number(rules.targetScore || 0);
     const format = String(rules.playerFormat || '').trim().toLowerCase();
-    if (![8, 16, 21].includes(target) || !['3v3', '4v4', '5v5'].includes(format)) return null;
+    if (![8, 12, 16, 21].includes(target) || !['3v3', '4v4', '5v5'].includes(format)) return null;
 
     return {
       sessionId: Number(session.id),
@@ -258,7 +258,7 @@
 
     const target = Number(form.querySelector('select[name="target"]')?.value || 0);
     const format = String(form.querySelector('select[name="format"]')?.value || '').trim().toLowerCase();
-    if ([8, 16, 21].includes(target) && ['3v3', '4v4', '5v5'].includes(format)) {
+    if ([8, 12, 16, 21].includes(target) && ['3v3', '4v4', '5v5'].includes(format)) {
       const sessionId = Number(savedRaceRules?.sessionId || 0);
       savedRaceRules = {
         sessionId,

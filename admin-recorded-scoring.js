@@ -25,6 +25,9 @@
   let playheadMs = 0;
   let shouldResume = false;
   let lastDurationMs = 0;
+  let competitionDraft = { sessionId: 0, context: '', seasonId: '', seasonNumber: '' };
+  let competitionDirty = false;
+  let raceTargets = [8, 12, 16, 21];
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -192,7 +195,7 @@
     try {
       await loadControl();
       if (control.session) {
-        await Promise.all([loadRecordingState(), loadDirectory()]);
+        await Promise.all([loadRecordingState(), loadDirectory(), loadSetupOptions()]);
         if (recordingState.recording) await ensureStream();
       }
       render();
@@ -201,6 +204,15 @@
       noticeType = 'error';
       render();
     }
+  }
+
+  async function loadSetupOptions() {
+    try {
+      const data = await api('/api/real-play/game-setup-options');
+      if (Array.isArray(data.raceTargets) && data.raceTargets.length && data.raceTargets.every((value) => Number.isInteger(value) && value > 0)) {
+        raceTargets = data.raceTargets;
+      }
+    } catch (_) { /* Existing saved games can still be reviewed during an API update. */ }
   }
 
   async function controlAction(payload) {
@@ -265,15 +277,80 @@
     </div>`).join('');
   }
 
+  function competitionHtml() {
+    const session = control.session || {};
+    const saved = session.competition || null;
+    if (competitionDraft.sessionId !== Number(session.id) || !competitionDirty) {
+      competitionDraft = {
+        sessionId: Number(session.id),
+        context: saved?.competitionContext || '',
+        seasonId: saved ? String(saved.id) : '',
+        seasonNumber: '',
+      };
+      competitionDirty = false;
+    }
+    const locked = Boolean(session.rulesLocked);
+    const seasons = (control.competitionSeasons || []).filter((season) => season.competitionContext === competitionDraft.context);
+    const disabled = busy || locked;
+    return `<div class="rp-video-competition" data-rp-video-competition>
+      <div class="rp-video-rules-current"><span>COMPETITION & SEASON</span><strong>${esc(saved?.label || 'NOT SET')}</strong></div>
+      ${locked ? '<small class="rp-video-competition-help">Locked for this game.</small>' : `<form data-rp-video-competition-form>
+        <label>COMPETITION<select name="competitionContext" data-rp-video-competition-context required ${disabled ? 'disabled' : ''}>
+          <option value="">CHOOSE COMPETITION</option>
+          ${[['open_ranking', 'TUNE-UP'], ['league', 'LEAGUE']].map(([value, label]) => `<option value="${value}" ${competitionDraft.context === value ? 'selected' : ''}>${label}</option>`).join('')}
+        </select></label>
+        <label>SEASON<select name="seasonId" data-rp-video-competition-season required ${disabled || !competitionDraft.context ? 'disabled' : ''}>
+          <option value="">CHOOSE SEASON</option>
+          ${seasons.map((season) => `<option value="${Number(season.id)}" ${competitionDraft.seasonId === String(season.id) ? 'selected' : ''}>${esc(season.name)}</option>`).join('')}
+          <option value="new" ${competitionDraft.seasonId === 'new' ? 'selected' : ''}>+ ADD SEASON</option>
+        </select></label>
+        ${competitionDraft.seasonId === 'new' ? `<label class="rp-video-new-season">SEASON NUMBER<input type="number" name="seasonNumber" data-rp-video-season-number min="1" max="9999" step="1" required placeholder="e.g. 1" value="${esc(competitionDraft.seasonNumber)}" ${disabled ? 'disabled' : ''}></label>` : ''}
+        <button type="submit" ${disabled || !competitionDraft.context || !competitionDraft.seasonId ? 'disabled' : ''}>SET COMPETITION & SEASON</button>
+      </form><small class="rp-video-competition-help">Choose where this game's results belong.</small>`}
+    </div>`;
+  }
+
+  function competitionSummaryHtml() {
+    return control.session?.competition ? `<div class="rp-video-competition-summary">${esc(control.session.competition.label)}</div>` : '';
+  }
+
+  async function setCompetition(form) {
+    if (busy) return;
+    const data = new FormData(form);
+    const seasonId = String(data.get('seasonId') || '');
+    const payload = {
+      action: 'set-competition',
+      sessionId: Number(control.session?.id),
+      competitionContext: String(data.get('competitionContext') || ''),
+      ...(seasonId === 'new' ? { seasonNumber: Number(data.get('seasonNumber')) } : { seasonId: Number(seasonId) }),
+    };
+    busy = true;
+    notice = '';
+    try {
+      await controlAction(payload);
+      competitionDirty = false;
+      notice = `${control.session?.competitionLabel || 'Competition and season'} selected.`;
+      noticeType = 'success';
+    } catch (error) {
+      notice = error.message || 'Could not set competition and season.';
+      noticeType = 'error';
+    } finally {
+      busy = false;
+      render();
+    }
+  }
+
   function rulesHtml() {
     const rules = control.session?.rules || null;
     const label = control.session?.rulesLabel || (rules ? 'GAME RULES SET' : 'RULES NOT SET');
+    const target = rules?.rulesetFamily === 'race_to' ? Number(rules.targetScore) : 12;
+    const format = rules?.playerFormat || '3v3';
     return `<div class="rp-video-rules">
       <div class="rp-video-rules-current"><span>CURRENT RULES</span><strong>${esc(label)}</strong></div>
       <button type="button" data-rp-video-rule-standard ${busy ? 'disabled' : ''}>STANDARD 3V3</button>
       <form data-rp-video-race-form>
-        <select name="target"><option value="8">RACE TO 8</option><option value="16">RACE TO 16</option><option value="21">RACE TO 21</option></select>
-        <select name="format"><option value="3v3">3V3</option><option value="4v4">4V4</option><option value="5v5">5V5</option></select>
+        <select name="target" aria-label="Race target">${raceTargets.map((value) => `<option value="${value}" ${target === value ? 'selected' : ''}>RACE TO ${value}</option>`).join('')}</select>
+        <select name="format" aria-label="Player format">${['3v3','4v4','5v5'].map((value) => `<option value="${value}" ${format === value ? 'selected' : ''}>${value.toUpperCase()}</option>`).join('')}</select>
         <button type="submit" ${busy ? 'disabled' : ''}>SET RACE TO</button>
       </form>
     </div>`;
@@ -286,7 +363,7 @@
     const east = rosterPlayers('east').length;
     const rosterReady = expected > 0 && west === expected && east === expected;
     const uploaded = Boolean(recordingState.recording);
-    const canStart = uploaded && rosterReady && !busy;
+    const canStart = uploaded && rosterReady && Boolean(control.session?.competition) && !busy;
     return `<section class="rp-video-step ${rosterReady ? 'complete' : ''}" data-rp-video-roster-setup>
       ${stepHeader('2', 'CHOOSE PLAYERS', 'Search or create the exact people visible in this game.', rosterReady)}
       <div class="rp-video-search-wrap">
@@ -301,6 +378,7 @@
         <small>This uses Real Play's existing claimable player-identity system. No fake login account is created.</small>
       </form>` : ''}
       <div class="rp-video-rosters">${rosterCard('west')}${rosterCard('east')}</div>
+      ${competitionHtml()}
       ${rulesHtml()}
       <div class="rp-video-roster-check ${rosterReady ? 'ready' : ''}">${rules ? `${esc(control.session.rulesLabel || '')} needs exactly ${expected} West + ${expected} East. Current: ${west} + ${east}.` : 'Set the game rules to validate the roster size.'}</div>
       <button type="button" class="rp-video-start" data-rp-video-start ${canStart ? '' : 'disabled'}>START VIDEO SCORING</button>
@@ -358,6 +436,7 @@
     return `<div class="rp-video-screen rp-video-scoring-screen">
       <div class="rp-admin-title"><span class="rp-admin-kicker">RECORDED SCORING</span><h1>WATCH & SCORE</h1><p>Watch the full game continuously. Tap the event at the exact moment it happens.</p></div>
       ${noticeHtml()}
+      ${competitionSummaryHtml()}
       ${videoPlayerHtml()}
       <div class="rp-video-auto-note"><strong>5-SECOND LEAD-IN IS AUTOMATIC</strong><span>When a MAKE is stamped at 7:32, Real Play stores the replay start at 7:27.</span></div>
       <div class="rp-video-scoreboard"><div><small>WEST</small><strong data-rp-video-score-west>${Number(session?.westScore || 0)}</strong></div><span>—</span><div><small>EAST</small><strong data-rp-video-score-east>${Number(session?.eastScore || 0)}</strong></div></div>
@@ -371,7 +450,7 @@
   }
 
   function finalVideoHtml() {
-    return `<div class="rp-video-screen"><div class="rp-admin-title"><span class="rp-admin-kicker">RECORDED SCORING</span><h1>VIDEO LOCKED</h1><p>This game's official result has already been finalized.</p></div>${noticeHtml()}${videoPlayerHtml()}<div class="rp-video-auto-note"><strong>${(recordingState.events || []).filter((event) => event.eventType === 'shot' && event.shotResult === 'make').length} SCORING MARKERS</strong><span>The full continuous video and timestamp evidence remain attached to this game.</span></div></div>`;
+    return `<div class="rp-video-screen"><div class="rp-admin-title"><span class="rp-admin-kicker">RECORDED SCORING</span><h1>VIDEO LOCKED</h1><p>This game's official result has already been finalized.</p></div>${noticeHtml()}${competitionSummaryHtml()}${videoPlayerHtml()}<div class="rp-video-auto-note"><strong>${(recordingState.events || []).filter((event) => event.eventType === 'shot' && event.shotResult === 'make').length} SCORING MARKERS</strong><span>The full continuous video and timestamp evidence remain attached to this game.</span></div></div>`;
   }
 
   function renderSetup() {
@@ -541,7 +620,7 @@
     const west = rosterPlayers('west').length;
     const east = rosterPlayers('east').length;
     const rosterReady = expected > 0 && west === expected && east === expected;
-    const canStart = Boolean(recordingState.recording) && rosterReady && !busy;
+    const canStart = Boolean(recordingState.recording) && rosterReady && Boolean(control.session?.competition) && !busy;
 
     const rosters = section.querySelector('.rp-video-rosters');
     if (rosters) rosters.innerHTML = `${rosterCard('west')}${rosterCard('east')}`;
@@ -646,7 +725,13 @@
 
   async function startVideoScoring() {
     if (busy) return;
-    if (!window.confirm('Start recorded scoring? The selected roster and game rules will lock for this game.')) return;
+    if (!control.session?.competition) {
+      notice = 'Choose the competition and season before starting Audit scoring.';
+      noticeType = 'error';
+      render();
+      return;
+    }
+    if (!window.confirm('Start recorded scoring? The competition, season, roster, and game rules will lock for this game.')) return;
     busy = true;
     notice = '';
     render();
@@ -749,12 +834,34 @@
 
   document.addEventListener('change', (event) => {
     if (!videoMode) return;
+    const competitionContext = event.target.closest('[data-rp-video-competition-context]');
+    const season = event.target.closest('[data-rp-video-competition-season]');
+    if (competitionContext || season) {
+      competitionDirty = true;
+      if (competitionContext) {
+        competitionDraft.context = competitionContext.value;
+        competitionDraft.seasonId = '';
+        competitionDraft.seasonNumber = '';
+      } else {
+        competitionDraft.seasonId = season.value;
+        competitionDraft.seasonNumber = '';
+      }
+      const card = body()?.querySelector('[data-rp-video-competition]');
+      if (card) card.outerHTML = competitionHtml();
+      return;
+    }
     const input = event.target.closest('[data-rp-video-file]');
     if (input?.files?.[0]) uploadVideo(input.files[0]);
   });
 
   document.addEventListener('input', (event) => {
     if (!videoMode) return;
+    const seasonNumber = event.target.closest('[data-rp-video-season-number]');
+    if (seasonNumber) {
+      competitionDraft.seasonNumber = seasonNumber.value;
+      competitionDirty = true;
+      return;
+    }
     const input = event.target.closest('[data-rp-video-search]');
     if (!input) return;
     searchQuery = input.value || '';
@@ -765,6 +872,12 @@
 
   document.addEventListener('submit', (event) => {
     if (!videoMode) return;
+    const competitionForm = event.target.closest('[data-rp-video-competition-form]');
+    if (competitionForm) {
+      event.preventDefault();
+      setCompetition(competitionForm);
+      return;
+    }
     const createForm = event.target.closest('[data-rp-video-create-form]');
     if (createForm) {
       event.preventDefault();

@@ -58,6 +58,15 @@
 .rp-video-roster-actions button.remove{flex:0 0 31px;border-color:rgba(255,100,100,.25);color:#ff9d9d;background:rgba(50,13,17,.4);font-size:14px}
 .rp-video-roster-empty{padding:18px 8px;color:#527486;text-align:center;font:800 7px/1 system-ui,sans-serif;letter-spacing:.1em}
 .rp-video-rules{display:grid;gap:8px;padding:11px;border:1px solid rgba(92,151,178,.2);border-radius:12px;background:#06131e}
+.rp-video-competition{display:grid;gap:10px;padding:11px;border:1px solid rgba(92,151,178,.2);border-radius:12px;background:#06131e}
+.rp-video-competition form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.rp-video-competition label{display:grid;min-width:0;gap:6px;color:#87a9ba;font:850 8px/1.2 system-ui,sans-serif;letter-spacing:.08em}
+.rp-video-competition select,.rp-video-competition input{box-sizing:border-box;width:100%;min-width:0;min-height:42px;border:1px solid rgba(91,151,178,.23);border-radius:9px;background:#050e17;color:#e7f8ff;padding:0 8px;font:800 10px/1.2 system-ui,sans-serif}
+.rp-video-competition form button{grid-column:1/-1;min-height:42px;border:1px solid rgba(37,216,248,.3);border-radius:9px;background:#082533;color:#b6f3fc;font:900 8px/1.2 system-ui,sans-serif;letter-spacing:.08em}
+.rp-video-competition button:disabled,.rp-video-competition select:disabled{opacity:.45}
+.rp-video-new-season{grid-column:1/-1}
+.rp-video-competition-help{color:#7897a6;font:700 9px/1.4 system-ui,sans-serif}
+.rp-video-competition-summary{padding:10px 12px;border:1px solid rgba(92,151,178,.2);border-radius:10px;background:#06131e;color:#b6f3fc;font:900 10px/1.4 system-ui,sans-serif;letter-spacing:.06em}
 .rp-video-rules-current{display:grid;gap:3px}
 .rp-video-rules-current span{color:#668ea1;font:850 8px/1 system-ui,sans-serif;letter-spacing:.11em}
 .rp-video-rules-current strong{color:#f1fbff;font:900 11px/1.2 system-ui,sans-serif;letter-spacing:.05em}

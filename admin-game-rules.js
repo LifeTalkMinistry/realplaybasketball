@@ -12,7 +12,7 @@
   let notice = '';
   let noticeType = '';
   let timeoutCompletionKey = '';
-  let draft = { family: 'standard', target: 8, format: '3v3' };
+  let draft = { family: 'standard', target: 12, format: '3v3' };
 
   function root() {
     return document.querySelector('.rp-admin-control');
@@ -62,7 +62,7 @@
     if (rules.rulesetFamily === 'race_to') {
       draft = {
         family: 'race_to',
-        target: Number(rules.targetScore || 8),
+        target: Number(rules.targetScore || 12),
         format: String(rules.playerFormat || '3v3').toLowerCase(),
       };
     }
@@ -104,7 +104,7 @@
     return {
       rulesetFamily: 'race_to', playerFormat: draft.format,
       playersPerSide: Number(String(draft.format).charAt(0)) || 3,
-      targetScore: Number(draft.target || 8), regulationSeconds: null, shotClockSeconds: null,
+      targetScore: Number(draft.target || 12), regulationSeconds: null, shotClockSeconds: null,
       timeoutsPerTeam: 0, timeoutSeconds: null, overtimeTargetPoints: null,
     };
   }
@@ -170,7 +170,7 @@
       </div>
       <div class="rp-game-rules-config">
         ${race ? `<div class="rp-game-rules-group"><label>RACE TARGET</label><div class="rp-game-rules-options">
-          ${[8,16,21].map((value) => optionButton(`RACE TO ${value}`, 'data-rp-race-target', value, Number(draft.target) === value, locked || busy)).join('')}
+          ${[8,12,16,21].map((value) => optionButton(`RACE TO ${value}`, 'data-rp-race-target', value, Number(draft.target) === value, locked || busy)).join('')}
         </div></div>
         <div class="rp-game-rules-group"><label>PLAYER FORMAT</label><div class="rp-game-rules-options">
           ${['3v3','4v4','5v5'].map((value) => optionButton(value.toUpperCase(), 'data-rp-player-format', value, draft.format === value, locked || busy)).join('')}
