@@ -1,7 +1,7 @@
 (() => {
   const TOKEN_KEY = 'real_play_access_token';
   const VISITOR_KEY = 'real_play_visitor_mode';
-  const HOME_PUBLIC_UPDATES_PATH = '/api/real-play/public/updates';
+  const HOME_PUBLIC_SUMMARY_PATH = '/api/real-play/public/home-summary';
   const HOME_RANKING_ACCESS_PATH = '/api/real-play/4v4/public';
 
   // Keep the same Real Play loading screen in place after the core shell mounts
@@ -95,7 +95,7 @@
       if (!state.appReady || !window.__realPlaySimpleNavigationStateAuthorityInstalled) return request;
 
       const url = normalizeUrl(args[0]);
-      if (!state.publicSeen && url.includes(HOME_PUBLIC_UPDATES_PATH)) {
+      if (!state.publicSeen && url.includes(HOME_PUBLIC_SUMMARY_PATH)) {
         state.publicSeen = true;
         trackResponse('public', request);
       } else if (!state.availabilitySeen && url.includes(HOME_RANKING_ACCESS_PATH)) {
