@@ -205,11 +205,6 @@
         </section>
 
         <section class="rp-competition-view" data-rp-competition-view="league" hidden>
-          <div class="rp-competition-intro">
-            <small>OFFICIAL REAL PLAY COMPETITION</small>
-            <h1>LEAGUE SEASONS.</h1>
-            <p>Each season keeps its own rankings and statistics while verified competition can still become part of a player's wider Real Play career.</p>
-          </div>
           <div class="rp-season-list">
             <button class="rp-season-card" type="button" data-rp-league-season="1"><span><small>LEAGUE SEASON</small><strong>SEASON 1</strong><span>UPCOMING</span></span><b>→</b></button>
             <button class="rp-season-card" type="button" data-rp-league-season="2"><span><small>LEAGUE SEASON</small><strong>SEASON 2</strong><span>FUTURE</span></span><b>→</b></button>
@@ -258,7 +253,7 @@
     });
     const title = panel.querySelector('[data-rp-competition-title]');
     const back = panel.querySelector('[data-rp-competition-back]');
-    if (title) title.textContent = name === 'hub' ? 'STATS' : name === 'league' ? 'LEAGUE' : 'RANKINGS';
+    if (title) title.textContent = name === 'hub' ? 'STATS' : name === 'league' ? 'LEAGUE SEASONS' : 'RANKINGS';
     if (back) back.hidden = name === 'hub';
     panel.dataset.rpCompetitionCurrentView = name;
   }
