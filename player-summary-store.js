@@ -4,6 +4,7 @@
 
   const TOKEN_KEY = 'real_play_access_token';
   const SUMMARY_URL = 'https://api.clarapmc.com/api/real-play/me/summary';
+  const LEGACY_ME_URL = 'https://api.clarapmc.com/api/real-play/me';
   const CACHE_MS = 15_000;
 
   let cachedToken = '';
@@ -80,13 +81,22 @@
     if (inFlight) return inFlight;
 
     const requestToken = token;
-    inFlight = fetch(SUMMARY_URL, {
+    const requestOptions = {
       headers: {
         Accept: 'application/json',
         Authorization: `Bearer ${requestToken}`,
       },
       cache: 'no-store',
-    }).then(async (response) => {
+    };
+
+    inFlight = fetch(SUMMARY_URL, requestOptions).then(async (response) => {
+      // Deployment compatibility: if the frontend reaches a backend node that
+      // has not received /me/summary yet, preserve player identity/OVR using
+      // the old endpoint. This fallback disappears naturally once summary is live.
+      if (response.status === 404 || response.status === 405) {
+        response = await fetch(LEGACY_ME_URL, requestOptions);
+      }
+
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         const error = new Error(data?.message || data?.error || 'Could not load player summary.');
