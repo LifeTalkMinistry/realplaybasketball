@@ -92,7 +92,10 @@
 
     function trackedFetch(...args) {
       const request = originalFetch(...args);
-      if (!state.appReady || !window.__realPlaySimpleNavigationStateAuthorityInstalled) return request;
+      // Capture the authoritative Home requests even when they start a few
+      // milliseconds before app.js announces core readiness. maybeRelease()
+      // still waits for appReady, so this only removes an event-order race.
+      if (!window.__realPlaySimpleNavigationStateAuthorityInstalled) return request;
 
       const url = normalizeUrl(args[0]);
       if (!state.publicSeen && url.includes(HOME_PUBLIC_SUMMARY_PATH)) {
