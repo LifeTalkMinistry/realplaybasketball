@@ -15,6 +15,120 @@
   let active = 'home';
   let homeRefreshTimer = null;
   let installed = false;
+  const featureScriptPromises = new Map();
+
+  function deployVersion() {
+    return String(document.documentElement?.dataset?.rpDeploy || 'primary-nav');
+  }
+
+  function scriptReady(src, ready) {
+    try {
+      return typeof ready === 'function' ? Boolean(ready()) : false;
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function existingScript(src) {
+    return [...document.scripts].find((script) => {
+      const url = String(script.src || '');
+      return url.includes('/' + src) || url.endsWith(src) || url.includes(src + '?');
+    }) || null;
+  }
+
+  function waitForReady(ready, timeoutMs = 1200) {
+    return new Promise((resolve) => {
+      if (scriptReady('', ready)) {
+        resolve(true);
+        return;
+      }
+      const started = Date.now();
+      const timer = window.setInterval(() => {
+        if (scriptReady('', ready)) {
+          window.clearInterval(timer);
+          resolve(true);
+        } else if (Date.now() - started >= timeoutMs) {
+          window.clearInterval(timer);
+          resolve(false);
+        }
+      }, 40);
+    });
+  }
+
+  function loadFeatureScript(src, ready) {
+    if (scriptReady(src, ready)) return Promise.resolve(true);
+    if (featureScriptPromises.has(src)) return featureScriptPromises.get(src);
+
+    const promise = (async () => {
+      // Another startup loader may already be fetching this exact feature.
+      // Give it a short chance to finish before issuing a retry.
+      if (existingScript(src) && await waitForReady(ready, 900)) return true;
+
+      return new Promise((resolve) => {
+        const script = document.createElement('script');
+        let settled = false;
+        const finish = (ok) => {
+          if (settled) return;
+          settled = true;
+          resolve(Boolean(ok && scriptReady(src, ready)));
+        };
+
+        script.src = `${src}?v=${encodeURIComponent(deployVersion())}&rpNavRetry=1`;
+        script.async = false;
+        script.dataset.rpPrimaryNavRetry = src;
+        script.addEventListener('load', () => finish(true), { once: true });
+        script.addEventListener('error', () => finish(false), { once: true });
+        document.head.appendChild(script);
+
+        window.setTimeout(() => finish(scriptReady(src, ready)), 6500);
+      });
+    })().finally(() => {
+      featureScriptPromises.delete(src);
+    });
+
+    featureScriptPromises.set(src, promise);
+    return promise;
+  }
+
+  function setNavBusy(target, busy) {
+    const button = nav()?.querySelector(`[data-rp-simple-nav-item="${target}"]`);
+    if (!button) return;
+    button.classList.toggle('rp-nav-loading', Boolean(busy));
+    if (busy) button.setAttribute('aria-busy', 'true');
+    else button.removeAttribute('aria-busy');
+  }
+
+  async function ensureWorldFeature(tab) {
+    if (!(await loadFeatureScript('real-play-world.js', () => Boolean(window.RealPlayWorld?.open)))) {
+      return false;
+    }
+    if (tab !== 'players') return true;
+
+    const playerReady = await loadFeatureScript(
+      'real-play-world-players.js',
+      () => Boolean(window.RealPlayPlayers?.refresh)
+    );
+    if (!playerReady) return false;
+
+    if (!hasAccount()) {
+      await loadFeatureScript(
+        'visitor-world-players.js',
+        () => Boolean(window.__realPlayVisitorWorldPlayersInstalled)
+      );
+    }
+    return true;
+  }
+
+  async function ensureProfileFeature() {
+    await loadFeatureScript(
+      'profile-load-guard.js',
+      () => Boolean(window.__rpProfileLoadGuard)
+    );
+    return loadFeatureScript(
+      'real-play-profile.js',
+      () => Boolean(window.RealPlayProfile?.open)
+    );
+  }
 
   const hasAccount = () => Boolean(localStorage.getItem(TOKEN_KEY));
   const esc = (value) => String(value ?? '')
@@ -142,12 +256,24 @@
     if (attempt < 14) window.setTimeout(() => activateWorldTab(tab, attempt + 1), 60);
   }
 
-  function openWorldTab(tab) {
-    closePrimaryLayers('world');
-    if (window.RealPlayWorld?.open) window.RealPlayWorld.open();
-    else document.querySelector('[data-rp-main-action="world"]')?.click();
-    setActive(tab === 'players' ? 'players' : tab === 'chats' ? 'chats' : 'world');
-    window.setTimeout(() => activateWorldTab(tab), 30);
+  async function openWorldTab(tab) {
+    const target = tab === 'players' ? 'players' : tab === 'chats' ? 'chats' : 'world';
+    setNavBusy(target, true);
+    try {
+      const ready = await ensureWorldFeature(tab);
+      if (!ready || !window.RealPlayWorld?.open) {
+        setActive('home');
+        console.error('[Real Play] World navigation could not initialize.');
+        return;
+      }
+
+      closePrimaryLayers('world');
+      window.RealPlayWorld.open();
+      setActive(target);
+      window.setTimeout(() => activateWorldTab(tab), 30);
+    } finally {
+      setNavBusy(target, false);
+    }
   }
 
   function openHome() {
@@ -178,15 +304,27 @@
     if (title) title.textContent = 'ME';
   }
 
-  function openMe() {
+  async function openMe() {
     if (!requireAccount('Create your player to unlock your own OVR, stats, game history, membership and settings.')) return;
-    closePrimaryLayers('profile');
-    setActive('me');
-    window.RealPlayProfile?.open?.();
-    window.setTimeout(() => {
-      syncMeHeader();
-      ensureProfileSettingsButton();
-    }, 50);
+    setNavBusy('me', true);
+    try {
+      const ready = await ensureProfileFeature();
+      if (!ready || !window.RealPlayProfile?.open) {
+        setActive('home');
+        console.error('[Real Play] Profile navigation could not initialize.');
+        return;
+      }
+
+      closePrimaryLayers('profile');
+      setActive('me');
+      window.RealPlayProfile.open();
+      window.setTimeout(() => {
+        syncMeHeader();
+        ensureProfileSettingsButton();
+      }, 50);
+    } finally {
+      setNavBusy('me', false);
+    }
   }
 
   function openSettingsFromMe() {
