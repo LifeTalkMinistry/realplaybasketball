@@ -16,6 +16,7 @@
   ];
 
   let runtimePromise = null;
+  let runtimeReady = false;
 
   function version() {
     return String(document.documentElement?.dataset?.rpDeploy || 'replay-runtime');
@@ -43,7 +44,7 @@
   }
 
   async function ensureReplayRuntime() {
-    if (window.__realPlayCareerReplayInstalled === true) return true;
+    if (runtimeReady) return true;
     if (runtimePromise) return runtimePromise;
 
     runtimePromise = (async () => {
@@ -53,6 +54,7 @@
       if (window.__realPlayCareerReplayInstalled !== true) {
         throw new Error('Real Play replay core did not initialize.');
       }
+      runtimeReady = true;
       try {
         window.dispatchEvent(new CustomEvent('realplay:replay-runtime-ready'));
       } catch (_error) {}
@@ -108,7 +110,7 @@
   document.addEventListener('click', (event) => {
     prewarmFromTarget(event.target);
     const button = event.target?.closest?.('[data-rp-career-replay-session]');
-    if (!button || window.__realPlayCareerReplayInstalled === true) return;
+    if (!button || runtimeReady) return;
 
     const sessionId = validSessionId(button.dataset.rpCareerReplaySession);
     if (!sessionId) return;
@@ -133,6 +135,6 @@
 
   window.RealPlayReplayRuntime = {
     ensure: ensureReplayRuntime,
-    isReady: () => window.__realPlayCareerReplayInstalled === true,
+    isReady: () => runtimeReady,
   };
 })();
