@@ -60,6 +60,19 @@
     'admin-support-levels.js',
     'admin-membership-token-control.js',
     'admin-player-temp-password.js',
+
+    // Phase 4A: admin-only enhancement layers. These used to be part of the
+    // global app enhancement loop, which meant every normal player downloaded
+    // them even though they cannot use the associated controls.
+    'real-play-world-player-admin.js',
+    'real-play-world-player-admin-identity.js',
+    'updates-session-title-admin.js',
+    'admin-live-stat-stability.js',
+    'admin-recorded-scoring-winner.js',
+    'admin-game-type-switch.js',
+    'admin-session-picker-v5-loader.js',
+    'career-game-replay-admin-edit.js',
+    'admin-game-rotation.js',
   ];
 
   let verifiedAdmin = Boolean(
