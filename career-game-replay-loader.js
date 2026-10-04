@@ -117,7 +117,10 @@
     button.setAttribute('aria-busy', 'true');
 
     ensureReplayRuntime()
-      .then(() => reopenSession(sessionId))
+      .then(() => {
+        if (button.isConnected) button.removeAttribute('aria-busy');
+        reopenSession(sessionId);
+      })
       .catch((error) => {
         console.error('[Real Play] Replay runtime failed to load.', error);
         if (button.isConnected) {
