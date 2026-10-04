@@ -342,6 +342,12 @@
     'home-main-announcement-art.css',
     'home-open-rank-art.css',
     'home-why-real-play.css',
+
+    // Primary navigation can be used the instant the shell is revealed.
+    // Keep the minimum World/Profile shells visually ready at that point so
+    // an early tap never opens an unstyled off-screen panel.
+    'real-play-world.css',
+    'real-play-profile.css',
   ]);
 
   (async () => {
