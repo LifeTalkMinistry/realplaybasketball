@@ -122,7 +122,7 @@
   async function ensureProfileFeature() {
     await loadFeatureScript(
       'profile-load-guard.js',
-      () => Boolean(window.__realPlayProfileLoadGuardInstalled)
+      () => Boolean(window.__rpProfileLoadGuard)
     );
     return loadFeatureScript(
       'real-play-profile.js',
