@@ -106,6 +106,7 @@
   }, { capture: true, passive: true });
 
   document.addEventListener('click', (event) => {
+    prewarmFromTarget(event.target);
     const button = event.target?.closest?.('[data-rp-career-replay-session]');
     if (!button || window.__realPlayCareerReplayInstalled === true) return;
 
