@@ -14,6 +14,8 @@
   let selectedView = 'feed';
   let feedObserver = null;
   let metadataLoading = false;
+  let resultTotal = 0;
+  let viewLoadSequence = 0;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -481,16 +483,124 @@
     if (attempt < 12) window.setTimeout(() => chooseUpdatesFilter(name, attempt + 1), 50);
   }
 
-  function setWorldView(view) {
-    selectedView = view === 'results' ? 'results' : 'feed';
-    setWorldResultsMode(true);
+  function syncWorldTabs() {
     const panel = updatesPanel();
     panel?.querySelectorAll('[data-rp-world-tab]').forEach((button) => {
       const active = button.dataset.rpWorldTab === selectedView;
       button.classList.toggle('active', active);
       button.setAttribute('aria-selected', active ? 'true' : 'false');
     });
-    chooseUpdatesFilter(selectedView === 'results' ? 'result' : 'all');
+  }
+
+  function loadWorldView(view, { initial = false } = {}) {
+    const nextView = view === 'results' ? 'results' : 'feed';
+    const isResults = nextView === 'results';
+    const category = isResults ? 'result' : '';
+    const routeTarget = isResults ? 'world-results' : 'world';
+    const pageSize = isResults ? 2 : 3;
+    const loadMode = isResults ? 'button' : 'auto';
+    const loadingLabel = isResults ? 'LOADING GAME RESULTS...' : 'LOADING LATEST FROM REAL PLAY...';
+    const sequence = ++viewLoadSequence;
+
+    selectedView = nextView;
+    setWorldResultsMode(true);
+    ensureWorldControls();
+    syncWorldTabs();
+    window.RealPlayRouteShell?.show?.(routeTarget);
+
+    let settled = false;
+    let timer = 0;
+
+    const cleanup = () => {
+      window.removeEventListener('realplay:updates-page-loaded', onLoaded);
+      window.removeEventListener('realplay:updates-page-error', onError);
+      if (timer) window.clearTimeout(timer);
+    };
+
+    const fail = (message) => {
+      if (settled || sequence !== viewLoadSequence) return;
+      settled = true;
+      cleanup();
+      if (initial) {
+        try {
+          window.dispatchEvent(new CustomEvent('realplay:world-load-error', {
+            detail: { message: message || 'WORLD could not finish loading.' },
+          }));
+        } catch (_error) {}
+        return;
+      }
+      window.RealPlayRouteShell?.error?.(
+        routeTarget,
+        message || (isResults ? 'Game results could not finish loading.' : 'The World feed could not finish loading.')
+      );
+    };
+
+    const reveal = (detail = {}) => {
+      if (settled || sequence !== viewLoadSequence) return;
+      settled = true;
+      cleanup();
+
+      if (isResults) resultTotal = Math.max(0, Number(detail.total) || 0);
+      loadResultMetadata();
+      setWorldResultsMode(true);
+      ensureWorldControls();
+      syncWorldTabs();
+      applyWorldFilters();
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (sequence !== viewLoadSequence) return;
+          if (initial) {
+            announceWorldReady({
+              loaded: Number(detail.loaded || 0),
+              rendered: Number(detail.rendered || 0),
+              hasMore: Boolean(detail.hasMore),
+            });
+          } else {
+            window.RealPlayRouteShell?.hide?.(routeTarget);
+          }
+        });
+      });
+    };
+
+    const onLoaded = (event) => {
+      const detail = event?.detail || {};
+      if (!detail.progressive || detail.append) return;
+      if (String(detail.category || '') !== category) return;
+      reveal(detail);
+    };
+
+    const onError = (event) => {
+      const detail = event?.detail || {};
+      if (detail.append) return;
+      if (String(detail.category || '') !== category) return;
+      fail(detail.message);
+    };
+
+    window.addEventListener('realplay:updates-page-loaded', onLoaded);
+    window.addEventListener('realplay:updates-page-error', onError);
+
+    window.RealPlayUpdates?.open?.({
+      progressive: true,
+      pageSize,
+      category,
+      loadMode,
+      loadingLabel,
+    });
+
+    setWorldResultsMode(true);
+    ensureWorldControls();
+    syncWorldTabs();
+
+    timer = window.setTimeout(() => {
+      fail(isResults
+        ? 'The latest game results did not finish loading.'
+        : 'The latest Real Play feed did not finish loading.');
+    }, 9000);
+  }
+
+  function setWorldView(view) {
+    loadWorldView(view, { initial: false });
   }
 
   function manilaWeekStart(value) {
@@ -803,7 +913,11 @@
     });
 
     const count = panel.querySelector('[data-rp-world-results-count]');
-    if (count) count.textContent = `${visibleCount} GAME${visibleCount === 1 ? '' : 'S'}`;
+    if (count) {
+      const unfiltered = selectedType === 'all' && selectedWeek === 'all';
+      const countValue = unfiltered && resultTotal > 0 ? resultTotal : visibleCount;
+      count.textContent = `${countValue} GAME${countValue === 1 ? '' : 'S'}`;
+    }
 
     const empty = panel.querySelector('[data-rp-world-results-empty]');
     empty?.classList.toggle('show', resultCards.length > 0 && visibleCount === 0);
@@ -821,41 +935,7 @@
     markWorldActive();
 
     if (window.RealPlayUpdates?.open) {
-
-      let firstPageSettled = false;
-      const handleFirstPage = (event) => {
-        if (firstPageSettled || !event?.detail?.progressive || event.detail.append) return;
-        firstPageSettled = true;
-        window.removeEventListener('realplay:updates-page-loaded', handleFirstPage);
-        loadResultMetadata();
-        announceWorldReady({
-          loaded: Number(event.detail.loaded || 0),
-          rendered: Number(event.detail.rendered || 0),
-          hasMore: Boolean(event.detail.hasMore),
-        });
-      };
-      window.addEventListener('realplay:updates-page-loaded', handleFirstPage);
-
-      window.RealPlayUpdates.open({ progressive: true, pageSize: 3 });
-      selectedView = 'feed';
-      setWorldResultsMode(true);
-      ensureWorldControls();
-      setWorldView('feed');
-      window.setTimeout(() => {
-        loadResultMetadata();
-        applyWorldFilters();
-      }, 0);
-
-      window.setTimeout(() => {
-        if (firstPageSettled) return;
-        firstPageSettled = true;
-        window.removeEventListener('realplay:updates-page-loaded', handleFirstPage);
-        try {
-          window.dispatchEvent(new CustomEvent('realplay:world-load-error', {
-            detail: { message: 'The latest Real Play feed did not finish loading.' },
-          }));
-        } catch (_error) {}
-      }, 8000);
+      loadWorldView('feed', { initial: true });
       return;
     }
 
@@ -880,6 +960,8 @@
 
   window.RealPlayWorldResults = {
     open: openAuthoritativeResults,
+    openResults: () => loadWorldView('results', { initial: false }),
+    openFeed: () => loadWorldView('feed', { initial: false }),
     refresh() {
       const result = window.RealPlayUpdates?.refresh?.({ quiet: true });
       window.setTimeout(() => {
