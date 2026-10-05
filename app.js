@@ -102,7 +102,11 @@
 
   function revealNewShell() {
     if (shellReady) return true;
-    if (!bootResourcesReady || !initialHomeReady || !initialInteractionReady || !hasNewShell()) return false;
+    // The visual shell is the loading authority now. Do not hold Home behind
+    // API/data settlement or optional feature scripts. As soon as the core
+    // Home + persistent navigation exist and their critical CSS is attached,
+    // uncover the app and let each destination own its own loading state.
+    if (!bootResourcesReady || !hasNewShell()) return false;
     shellReady = true;
     clearStaticBootFallback();
     html.classList.remove('rp-shell-booting', 'rp-shell-failed');
@@ -399,7 +403,10 @@
       console.warn('[Real Play] Navigation authority layer did not load; base navigation remains available.');
     }
 
-    await waitForVisualStability();
+    // Do not wait for fonts, hero images, Home API responses, or optional
+    // features before revealing the app. One painted core shell is enough.
+    // Images and data can settle progressively without ever showing legacy UI.
+    await nextPaint();
     bootResourcesReady = true;
     announceCoreAppReady();
     initialHomeReady = initialHomeReady || Boolean(window.__realPlayInitialHomeReady);
