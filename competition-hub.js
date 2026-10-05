@@ -424,6 +424,7 @@
     }
 
     removeScopedArtifacts();
+    hideStatsLoading();
     world.dataset.rpCompetitionPresentation = 'overall';
 
     const topTitle = world.querySelector('.rp-world-title strong');
@@ -474,7 +475,8 @@
     close();
     clearPlayerPresentation();
     playerPresentation = 'overall';
-    showStatsLoading('LOADING PLAYER RANKINGS...', 'BUILDING THE COMPLETE VERIFIED LEADERBOARD');
+    // Core navigation owns the Stats loading shell for overall rankings.
+    // Do not stack a second competition overlay on top of it.
     openPlayersRoute();
     playerDecorationTimer = window.setTimeout(() => decoratePlayerRankings(0), 45);
   }
