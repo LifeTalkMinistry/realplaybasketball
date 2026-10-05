@@ -28,6 +28,8 @@
   let competitionDraft = { sessionId: 0, context: '', seasonId: '', seasonNumber: '' };
   let competitionDirty = false;
   let raceTargets = [8, 16, 21];
+  let gameSetEditing = false;
+  let gameSetSessionId = 0;
 
   function hasCompetitionSupport() {
     return Array.isArray(control.competitionSeasons);
@@ -168,6 +170,11 @@
   async function loadControl() {
     const data = await api('/api/real-play/admin/career/control');
     control = data?.control || { session: null, players: [] };
+    const sessionId = Number(control?.session?.id || 0);
+    if (sessionId !== gameSetSessionId) {
+      gameSetSessionId = sessionId;
+      gameSetEditing = !control?.session?.rules;
+    }
     raceTargets = hasCompetitionSupport() ? [8, 12, 16, 21] : [8, 16, 21];
     return control;
   }
@@ -366,22 +373,28 @@
 
   function rulesHtml() {
     const rules = control.session?.rules || null;
-    const label = control.session?.rulesLabel || (rules ? 'GAME RULES SET' : 'RULES NOT SET');
-    const target = rules?.rulesetFamily === 'race_to' ? Number(rules.targetScore) : (raceTargets.includes(12) ? 12 : 21);
-    const format = rules?.playerFormat || '3v3';
-    const standardActive = rules?.rulesetFamily === 'standard';
-    return `<div class="rp-video-rules">
-      <div class="rp-video-rules-current"><span>CURRENT RULES</span><strong>${esc(label)}</strong></div>
-      <div class="rp-video-rules-mode-row">
-        <span>RULESET</span>
-        <button type="button" class="rp-video-standard-option ${standardActive ? 'active' : ''}" data-rp-video-rule-standard ${busy || standardActive ? 'disabled' : ''}>
-          ${standardActive ? 'STANDARD 3V3 · ACTIVE' : 'SWITCH TO STANDARD 3V3'}
-        </button>
-      </div>
+    const savedRace = rules?.rulesetFamily === 'race_to';
+    const target = savedRace ? Number(rules.targetScore) : (raceTargets.includes(12) ? 12 : 21);
+    const format = savedRace ? (rules?.playerFormat || '4v4') : '4v4';
+    const editing = gameSetEditing || !savedRace;
+    const label = savedRace
+      ? `RACE TO ${target} · ${String(format).toUpperCase()}`
+      : '';
+
+    if (!editing) {
+      return `<div class="rp-video-rules rp-video-game-set is-set">
+        <div class="rp-video-game-set-head"><span>GAME SET</span><b>SET ✓</b></div>
+        <strong class="rp-video-game-set-value">${esc(label)}</strong>
+        <button type="button" class="rp-video-game-set-change" data-rp-video-game-set-change ${busy ? 'disabled' : ''}>CHANGE GAME SET</button>
+      </div>`;
+    }
+
+    return `<div class="rp-video-rules rp-video-game-set is-editing">
+      <div class="rp-video-game-set-head"><span>GAME SET</span><small>Choose the game format</small></div>
       <form data-rp-video-race-form>
-        <label><span>SCORE TARGET</span><select name="target" aria-label="Race target">${raceTargets.map((value) => `<option value="${value}" ${target === value ? 'selected' : ''}>RACE TO ${value}</option>`).join('')}</select></label>
-        <label><span>FORMAT</span><select name="format" aria-label="Player format">${['3v3','4v4','5v5'].map((value) => `<option value="${value}" ${format === value ? 'selected' : ''}>${value.toUpperCase()}</option>`).join('')}</select></label>
-        <button type="submit" data-rp-video-race-apply ${busy ? 'disabled' : ''}>APPLY · RACE TO ${target} · ${String(format).toUpperCase()}</button>
+        <label><span>SCORE TARGET</span><select name="target" aria-label="Score target">${raceTargets.map((value) => `<option value="${value}" ${target === value ? 'selected' : ''}>RACE TO ${value}</option>`).join('')}</select></label>
+        <label><span>FORMAT</span><select name="format" aria-label="Game format">${['3v3','4v4','5v5'].map((value) => `<option value="${value}" ${format === value ? 'selected' : ''}>${value.toUpperCase()}</option>`).join('')}</select></label>
+        <button type="submit" class="rp-video-game-set-save" ${busy ? 'disabled' : ''}>SET GAME</button>
       </form>
     </div>`;
   }
@@ -411,7 +424,7 @@
       <div class="rp-video-rosters">${rosterCard('west')}${rosterCard('east')}</div>
       ${competitionHtml()}
       ${rulesHtml()}
-      <div class="rp-video-roster-check ${rosterReady ? 'ready' : ''}">${rules ? `${esc(control.session.rulesLabel || '')} ${bounds.requirementText()}. Current: ${west} West + ${east} East.` : 'Set the game rules to validate the roster size.'}</div>
+      <div class="rp-video-roster-check ${rosterReady ? 'ready' : ''}">${rules ? `${esc(control.session.rulesLabel || '')} ${bounds.requirementText()}. Current: ${west} West + ${east} East.` : 'Set the game first to validate the roster size.'}</div>
       <button type="button" class="rp-video-start" data-rp-video-start ${canStart ? '' : 'disabled'}>START VIDEO SCORING</button>
     </section>`;
   }
@@ -744,11 +757,13 @@
     notice = '';
     try {
       await controlAction({ action: 'set-rules', ...payload });
-      notice = `${control.session?.rulesLabel || 'Game rules'} selected.`;
+      gameSetEditing = false;
+      notice = `${control.session?.rulesLabel || 'Game'} set.`;
       noticeType = 'success';
     } catch (error) {
-      notice = error.message || 'Could not set game rules.';
+      notice = error.message || 'Could not set the game.';
       noticeType = 'error';
+      gameSetEditing = true;
     } finally {
       busy = false;
       render();
@@ -868,14 +883,6 @@
 
   document.addEventListener('change', (event) => {
     if (!videoMode) return;
-    const raceForm = event.target.closest('[data-rp-video-race-form]');
-    if (raceForm) {
-      const target = raceForm.querySelector('select[name="target"]')?.value || '';
-      const format = raceForm.querySelector('select[name="format"]')?.value || '';
-      const apply = raceForm.querySelector('[data-rp-video-race-apply]');
-      if (apply) apply.textContent = `APPLY · RACE TO ${target} · ${String(format).toUpperCase()}`;
-      return;
-    }
     const competitionContext = event.target.closest('[data-rp-video-competition-context]');
     const season = event.target.closest('[data-rp-video-competition-season]');
     if (competitionContext || season) {
@@ -978,8 +985,9 @@
       return;
     }
 
-    if (event.target.closest('[data-rp-video-rule-standard]')) {
-      setRules({ rulesetFamily: 'standard' });
+    if (event.target.closest('[data-rp-video-game-set-change]')) {
+      gameSetEditing = true;
+      render();
       return;
     }
 
