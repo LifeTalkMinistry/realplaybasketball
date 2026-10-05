@@ -2,7 +2,7 @@
   if (window.__realPlay4v4RotationCleanUiInstalled) return;
   window.__realPlay4v4RotationCleanUiInstalled = true;
 
-  const HOME_META = 'SAT + SUN · 8:00 PM – 10:00 PM';
+  const HOME_META_FALLBACK = 'SUNDAY · 8:00 PM – 10:00 PM';
   const TEAM_TITLE = 'SELECT YOUR TEAM';
   let queued = false;
 
@@ -44,12 +44,25 @@
     document.head.appendChild(style);
   }
 
+  function currentHomeMeta() {
+    const active = (Array.isArray(window.__realPlay4v4RotationDays) ? window.__realPlay4v4RotationDays : [])
+      .filter((rotation) => rotation?.enabled);
+    if (!active.length) return HOME_META_FALLBACK;
+    if (active.length === 1) return active[0].label || HOME_META_FALLBACK;
+    const sameWindow = active.every((rotation) => rotation.start === active[0].start && rotation.end === active[0].end);
+    if (!sameWindow) return `${active.length} ACTIVE ROTATION DAYS`;
+    const firstLabel = String(active[0].label || '');
+    const timeLabel = firstLabel.includes(' · ') ? firstLabel.split(' · ').slice(1).join(' · ') : '8:00 PM – 10:00 PM';
+    return `${active.map((rotation) => String(rotation.day || '').slice(0, 3)).join(' + ')} · ${timeLabel}`;
+  }
+
   function cleanHomeCard() {
     const card = document.querySelector('[data-rp-home-open-rank]');
     if (!card) return;
 
     const meta = card.querySelector('[data-rp-home-open-rank-meta]');
-    if (meta && meta.textContent.trim() !== HOME_META) meta.textContent = HOME_META;
+    const nextMeta = currentHomeMeta();
+    if (meta && meta.textContent.trim() !== nextMeta) meta.textContent = nextMeta;
 
     const capacity = card.querySelector('[data-rp-home-open-rank-capacity]');
     if (capacity && !capacity.hidden) capacity.hidden = true;
@@ -122,6 +135,7 @@
       queueEnforce();
     }).observe(document.documentElement, { childList: true, subtree: true });
     window.addEventListener('realplay:home-schedule-changed', queueEnforce);
+    window.addEventListener('realplay:4v4-rotation-schedule', queueEnforce);
     window.addEventListener('realplay:4v4-open', () => {
       cleanTeamScreen();
       queueEnforce();
