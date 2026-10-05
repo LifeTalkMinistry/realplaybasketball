@@ -100,13 +100,48 @@
     );
   }
 
+  function homeVisualReady() {
+    const home = document.querySelector('[data-rp-simple-home]');
+    if (!home?.classList.contains('rp-home-command-center')) return false;
+    if (!home.querySelector('[data-rp-home-whats-coming]')) return false;
+    if (!home.querySelector('[data-rp-home-project-credit] strong')) return false;
+
+    const scheduleTitle = String(
+      home.querySelector('[data-rp-home-open-rank-title]')?.textContent || ''
+    ).trim();
+    if (!scheduleTitle) return false;
+
+    const logo = home.querySelector('.rp-home-official-logo');
+    if (logo && (!logo.complete || !logo.naturalWidth)) return false;
+
+    return true;
+  }
+
+  async function waitForInitialHomeVisualReady(timeoutMs = 8000) {
+    const started = performance.now();
+    while (performance.now() - started < timeoutMs) {
+      initialHomeReady = initialHomeReady || Boolean(window.__realPlayInitialHomeReady);
+      if (initialHomeReady && homeVisualReady()) {
+        const fontReady = document.fonts?.ready
+          ? Promise.resolve(document.fonts.ready).catch(() => undefined)
+          : Promise.resolve();
+        await Promise.race([
+          fontReady,
+          new Promise((resolve) => window.setTimeout(resolve, 1200)),
+        ]);
+        await nextPaint();
+        return homeVisualReady();
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 50));
+    }
+    return false;
+  }
+
   function revealNewShell() {
     if (shellReady) return true;
-    // The visual shell is the loading authority now. Do not hold Home behind
-    // API/data settlement or optional feature scripts. As soon as the core
-    // Home + persistent navigation exist and their critical CSS is attached,
-    // uncover the app and let each destination own its own loading state.
-    if (!bootResourcesReady || !hasNewShell()) return false;
+    // HOME follows the same contract as every other destination: the loading
+    // UI stays in control until the actual Home page is fully assembled.
+    if (!bootResourcesReady || !initialHomeReady || !hasNewShell() || !homeVisualReady()) return false;
     shellReady = true;
     clearStaticBootFallback();
     html.classList.remove('rp-shell-booting', 'rp-shell-failed', 'rp-shell-static-failed');
@@ -403,20 +438,27 @@
       console.warn('[Real Play] Navigation authority layer did not load; base navigation remains available.');
     }
 
-    // Do not wait for fonts, hero images, Home API responses, or optional
-    // features before revealing the app. One painted core shell is enough.
-    // Images and data can settle progressively without ever showing legacy UI.
-    await nextPaint();
+    // HOME-critical enhancement: the founder/project identity is part of the
+    // finished Home composition, not something that should pop in afterward.
+    const founderCreditLoaded = await loadScript('public-founder-credit.js', 5000);
+    if (!founderCreditLoaded) {
+      console.warn('[Real Play] Home founder credit layer did not load during startup.');
+    }
+
+    const homeReady = await waitForInitialHomeVisualReady(8000);
+    if (!homeReady) {
+      showBootFailure('Home did not finish assembling.');
+      return;
+    }
+
     bootResourcesReady = true;
     announceCoreAppReady();
-    initialHomeReady = initialHomeReady || Boolean(window.__realPlayInitialHomeReady);
     revealNewShell();
 
     const enhancements = [
       'public-landing.js',
       'home-why-real-play.js',
       'visitor-mode.js',
-      'public-founder-credit.js',
       'home-future-4v4-preview.js',
       'home-future-4v4-card-cleanup.js',
       'login-landing-fix.js',
