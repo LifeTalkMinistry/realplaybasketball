@@ -91,6 +91,12 @@
     }
     .rp-replay-open-rank-edit:hover{border-color:rgba(85,224,245,.5);background:#082331;color:#d9fbff}
     .rp-replay-open-rank-edit:active{transform:scale(.96)}
+    .rp-replay-open-rank-edit.is-double-tap-armed{
+      border-color:rgba(85,224,245,.66);
+      background:#0a2a39;
+      color:#effeff;
+      box-shadow:0 0 0 2px rgba(85,224,245,.10),0 8px 22px rgba(0,0,0,.2);
+    }
     .rp-replay-open-rank-edit:disabled{opacity:.5;cursor:wait}
     @media(max-width:620px){
       .rp-career-replay-score-pop{
@@ -158,6 +164,8 @@
   const TOKEN_KEY = 'real_play_access_token';
   let replaySessionId = 0;
   let renumberBusy = false;
+  const OPEN_RANK_DOUBLE_TAP_MS = 520;
+  let openRankTapResetTimer = null;
 
   function replayRoot() {
     return document.querySelector('[data-rp-career-replay].open');
@@ -324,6 +332,45 @@
     }
   }
 
+  function clearOpenRankDoubleTap(button = null) {
+    if (openRankTapResetTimer) {
+      window.clearTimeout(openRankTapResetTimer);
+      openRankTapResetTimer = null;
+    }
+    const target = button || replayRoot()?.querySelector('[data-rp-replay-open-rank-edit]');
+    if (!target) return;
+    delete target.dataset.rpOpenRankTapAt;
+    target.classList.remove('is-double-tap-armed');
+    target.setAttribute('title', 'Double tap to edit Open Rank session number');
+    target.setAttribute('aria-label', 'Double tap to edit Open Rank session number');
+  }
+
+  function handleOpenRankDoubleTap(event, button) {
+    if (!button || renumberBusy) return;
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+
+    const now = Date.now();
+    const previous = Number(button.dataset.rpOpenRankTapAt || 0);
+    const isSecondTap = previous > 0 && (now - previous) <= OPEN_RANK_DOUBLE_TAP_MS;
+
+    if (isSecondTap) {
+      clearOpenRankDoubleTap(button);
+      renumberReplay(button);
+      return;
+    }
+
+    button.dataset.rpOpenRankTapAt = String(now);
+    button.classList.add('is-double-tap-armed');
+    button.setAttribute('title', 'Tap again to edit Open Rank session number');
+    button.setAttribute('aria-label', 'Tap again to edit Open Rank session number');
+
+    if (openRankTapResetTimer) window.clearTimeout(openRankTapResetTimer);
+    openRankTapResetTimer = window.setTimeout(() => {
+      if (button.isConnected) clearOpenRankDoubleTap(button);
+    }, OPEN_RANK_DOUBLE_TAP_MS + 80);
+  }
+
   function syncReplayNumberEditor() {
     const root = replayRoot();
     if (!root) return;
@@ -343,13 +390,13 @@
       button.type = 'button';
       button.className = 'rp-replay-open-rank-edit';
       button.dataset.rpReplayOpenRankEdit = String(replaySessionId);
-      button.setAttribute('aria-label', 'Edit Open Rank session number');
-      button.setAttribute('title', 'Edit Open Rank session number');
+      button.setAttribute('aria-label', 'Double tap to edit Open Rank session number');
+      button.setAttribute('title', 'Double tap to edit Open Rank session number');
       button.textContent = '#';
       const pencil = topbar.querySelector('[data-rp-replay-admin-edit]');
       if (pencil) topbar.insertBefore(button, pencil);
       else topbar.appendChild(button);
-      button.addEventListener('click', () => renumberReplay(button));
+      button.addEventListener('click', (event) => handleOpenRankDoubleTap(event, button));
     } else {
       button.dataset.rpReplayOpenRankEdit = String(replaySessionId);
     }
