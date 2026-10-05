@@ -77,3 +77,19 @@ test('recorded replay renumber verifies save response and fresh replay GET befor
   assert.match(replayRepair, /if \(refetched !== saved\)/);
   assert.match(replayRepair, /applyReplayTitle\(refetched\)/);
 });
+
+
+test('Audit START delegates roster-count validation to the standalone server authority', () => {
+  const startFix = read('admin-recorded-start-submit-fix.js');
+  const auditBridge = read('admin-courtside-live.js');
+
+  assert.match(auditBridge, /CAREER_CONTROL_PATH = '\/api\/real-play\/admin\/career\/control'/);
+  assert.match(auditBridge, /AUDIT_CONTROL_PATH = '\/api\/real-play\/admin\/audit\/control'/);
+  assert.match(auditBridge, /url\.pathname === CAREER_CONTROL_PATH/);
+  assert.match(auditBridge, /url\.pathname = AUDIT_CONTROL_PATH/);
+
+  assert.match(startFix, /json: \{ action: 'start-video-review' \}/);
+  assert.match(startFix, /standalone Audit start endpoint owns the canonical roster validation/);
+  assert.doesNotMatch(startFix, /counts\.west !== expected \|\| counts\.east !== expected/);
+  assert.doesNotMatch(startFix, /needs exactly \$\{expected\} West and \$\{expected\} East players/);
+});
