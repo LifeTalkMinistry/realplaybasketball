@@ -95,6 +95,8 @@
       const teamKeys = keys(block?.teamKeys);
       const requestedEnabled = typeof block?.enabled === 'boolean' ? block.enabled : DEFAULT_ACTIVE_DAYS.has(day);
       const enabled = Boolean(requestedEnabled && teamKeys.length);
+      const capacity = Math.max(1, Math.min(4, Math.round(Number(block?.capacity) || 4)));
+      const locationName = String(block?.locationName || block?.location_name || '').trim();
       return {
         id: `${day.toLowerCase()}-${start.replace(':','')}-${end.replace(':','')}`,
         day,
@@ -102,6 +104,8 @@
         end,
         label: `${day} · ${displayTime(start)} – ${displayTime(end)}`,
         enabled,
+        capacity,
+        locationName,
         teamKeys,
         filterMode: 'assigned',
       };
@@ -144,7 +148,7 @@
       .rp-team-rotation-card{width:min(100%,520px);max-height:min(92vh,760px);overflow:auto;padding:18px;border:1px solid rgba(47,216,255,.28);border-radius:24px;background:radial-gradient(circle at 15% 0%,rgba(0,174,255,.14),transparent 32%),radial-gradient(circle at 88% 8%,rgba(238,38,67,.12),transparent 30%),linear-gradient(180deg,#07131f,#02070d);color:#f4f8fb;box-shadow:0 24px 80px rgba(0,0,0,.55)}
       .rp-team-rotation-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.rp-team-rotation-head h2{margin:0;font:950 italic 1.35rem/1.05 system-ui,sans-serif;text-transform:uppercase}.rp-team-rotation-close{width:42px;height:42px;border:1px solid rgba(47,216,255,.25);border-radius:14px;background:#06111c;color:#dce9f3;font-size:1.25rem;font-weight:900;cursor:pointer}
       .rp-team-rotation-help{margin:8px 0 14px;color:#8ca0b1;font:750 .64rem/1.45 system-ui,sans-serif}.rp-team-rotation-list{display:grid;gap:7px}
-      .rp-team-rotation-option{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;width:100%;min-height:68px;padding:12px 15px;border:1px solid rgba(47,216,255,.24);border-radius:15px;background:#071522;color:#f5fbff;text-align:left;box-shadow:inset 3px 0 0 #28ccff;cursor:pointer}.rp-team-rotation-option:hover,.rp-team-rotation-option:focus-visible{border-color:#28ccff;outline:none}.rp-team-rotation-option small{display:block;margin-bottom:4px;color:#70879b;font-size:.55rem;font-weight:900;letter-spacing:.13em}.rp-team-rotation-option strong{font-size:.94rem}.rp-team-rotation-option b{color:#28ccff;font-size:1.3rem}.rp-team-rotation-option.is-disabled{min-height:44px;padding:9px 14px;border-color:rgba(255,255,255,.07);background:rgba(5,13,21,.52);box-shadow:none;color:#687b8a;cursor:default;opacity:.62}.rp-team-rotation-option.is-disabled small{margin-bottom:2px;color:#546775;font-size:.49rem}.rp-team-rotation-option.is-disabled strong{font-size:.78rem}.rp-team-rotation-option.is-disabled em{font-style:normal;color:#596d7b;font-size:.52rem;font-weight:900;letter-spacing:.08em}.rp-team-rotation-empty{padding:18px;border:1px dashed rgba(47,216,255,.2);border-radius:16px;color:#8295a5;text-align:center;font:850 .68rem/1.5 system-ui,sans-serif}
+      .rp-team-rotation-option{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;width:100%;min-height:68px;padding:12px 15px;border:1px solid rgba(47,216,255,.24);border-radius:15px;background:#071522;color:#f5fbff;text-align:left;box-shadow:inset 3px 0 0 #28ccff;cursor:pointer}.rp-team-rotation-option:hover,.rp-team-rotation-option:focus-visible{border-color:#28ccff;outline:none}.rp-team-rotation-option small{display:block;margin-bottom:4px;color:#70879b;font-size:.55rem;font-weight:900;letter-spacing:.13em}.rp-team-rotation-option strong{font-size:.94rem}.rp-team-rotation-option-meta{display:block;margin-top:5px;color:#71889a;font-size:.53rem;font-weight:800;letter-spacing:.035em}.rp-team-rotation-option b{color:#28ccff;font-size:1.3rem}.rp-team-rotation-option.is-disabled{min-height:44px;padding:9px 14px;border-color:rgba(255,255,255,.07);background:rgba(5,13,21,.52);box-shadow:none;color:#687b8a;cursor:default;opacity:.62}.rp-team-rotation-option.is-disabled small{margin-bottom:2px;color:#546775;font-size:.49rem}.rp-team-rotation-option.is-disabled strong{font-size:.78rem}.rp-team-rotation-option.is-disabled em{font-style:normal;color:#596d7b;font-size:.52rem;font-weight:900;letter-spacing:.08em}.rp-team-rotation-empty{padding:18px;border:1px dashed rgba(47,216,255,.2);border-radius:16px;color:#8295a5;text-align:center;font:850 .68rem/1.5 system-ui,sans-serif}
       .rp-4v4-team-slot{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;width:calc(100% - 28px);max-width:500px;margin:12px auto 4px;padding:11px 13px;border:1px solid rgba(47,216,255,.24);border-radius:13px;background:#071522;color:#eff9ff;text-align:left;cursor:pointer}.rp-4v4-team-slot small{display:block;color:#28ccff;font-size:.52rem;font-weight:900;letter-spacing:.11em}.rp-4v4-team-slot strong{font-size:.72rem}.rp-4v4-team-slot span:last-child{color:#7890a4;font-size:.56rem;font-weight:900}
     `;
     document.head.appendChild(style);
@@ -168,10 +172,12 @@
       list.innerHTML = '<div class="rp-team-rotation-empty">TEAM ROTATION IS NOT PUBLISHED YET.</div>';
       return;
     }
-    list.innerHTML = rotations.map((rotation) => rotation.enabled
-      ? `<button class="rp-team-rotation-option" type="button" data-rp-rotation-id="${esc(rotation.id)}"><span><small>ACTIVE TEAM ROTATION</small><strong>${esc(rotation.label)}</strong></span><b aria-hidden="true">›</b></button>`
-      : `<div class="rp-team-rotation-option is-disabled" aria-disabled="true"><span><small>ROTATION DAY</small><strong>${esc(rotation.day)}</strong></span><em>NOT ACTIVE YET</em></div>`
-    ).join('');
+    list.innerHTML = rotations.map((rotation) => {
+      const detail = [rotation.locationName, `${rotation.capacity} TEAM CAP`].filter(Boolean).join(' · ');
+      return rotation.enabled
+        ? `<button class="rp-team-rotation-option" type="button" data-rp-rotation-id="${esc(rotation.id)}"><span><small>ACTIVE TEAM ROTATION</small><strong>${esc(rotation.label)}</strong><span class="rp-team-rotation-option-meta">${esc(detail)}</span></span><b aria-hidden="true">›</b></button>`
+        : `<div class="rp-team-rotation-option is-disabled" aria-disabled="true"><span><small>ROTATION DAY</small><strong>${esc(rotation.day)}</strong></span><em>NOT ACTIVE YET</em></div>`;
+    }).join('');
     list.querySelectorAll('[data-rp-rotation-id]').forEach((button) => {
       button.addEventListener('click', () => chooseRotation(rotations.find((item) => item.id === button.dataset.rpRotationId && item.enabled)));
     });
