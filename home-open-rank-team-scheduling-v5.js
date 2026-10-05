@@ -9,7 +9,8 @@
   const TEAM_IMAGE_PATTERN = /\.(?:png|jpe?g|webp|svg)$/i;
   const DEFAULT_START = '20:00';
   const DEFAULT_END = '22:00';
-  const ROTATION_DAYS = ['SATURDAY', 'SUNDAY'];
+  const ROTATION_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+  const DEFAULT_ACTIVE_DAYS = new Set(['SUNDAY']);
   const FALLBACK_TEAMS = [
     { key: 'lions', name: 'LIONS' },
     { key: 'valiant', name: 'VALIANT' },
@@ -48,8 +49,12 @@
       .rp-home-team-schedule-blocks[hidden],.rp-home-team-schedule-open-note[hidden]{display:none!important}
       .rp-home-team-block{margin-top:9px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(4,10,16,.78)}
       .rp-home-team-block:first-child{margin-top:0}
+      .rp-home-team-block.is-disabled{border-color:rgba(255,255,255,.055);background:rgba(4,10,16,.42);opacity:.56;filter:saturate(.55)}
       .rp-home-team-block-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
       .rp-home-team-block-head strong{color:#dfe8ef;font:950 .56rem/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+      .rp-home-team-day-toggle{flex:0 0 auto;min-width:47px;height:28px;padding:0 9px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:#07111a;color:#7f93a3;font:950 .48rem/1 system-ui,sans-serif;letter-spacing:.08em;cursor:pointer}
+      .rp-home-team-day-toggle.is-on{border-color:rgba(49,211,255,.58);background:rgba(7,72,96,.72);color:#71e6ff;box-shadow:0 0 0 1px rgba(49,211,255,.08) inset}
+      .rp-home-team-block.is-disabled .rp-home-team-selected,.rp-home-team-block.is-disabled .rp-home-team-picker-shell{pointer-events:none}
       .rp-home-team-fixed-time{margin-bottom:10px;color:#f2f7fb;font:900 .69rem/1.2 system-ui,sans-serif;letter-spacing:.035em}
       .rp-home-team-selected{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;min-height:30px;align-items:center}
       .rp-home-team-selected-empty{color:#637887;font:800 .49rem/1.3 system-ui,sans-serif;letter-spacing:.035em}
@@ -159,6 +164,7 @@
     } catch (_error) { return null; }
   }
 
+  function blockEnabled(block) { return block?.dataset?.enabled === '1'; }
   function selectedTeamKeys(block) {
     return [...(block?.querySelectorAll('[data-rp-team-selected-key]') || [])]
       .map((node) => String(node.dataset.rpTeamSelectedKey || '').trim().toLowerCase()).filter(Boolean);
@@ -178,7 +184,17 @@
     const selectedWrap = block.querySelector('[data-rp-team-selected]');
     const picker = block.querySelector('[data-rp-team-picker]');
     const toggle = block.querySelector('[data-rp-team-picker-toggle]');
+    const dayToggle = block.querySelector('[data-rp-team-day-toggle]');
+    const enabled = blockEnabled(block);
     const available = teams.filter((team) => !selectedSet.has(team.key));
+
+    block.classList.toggle('is-disabled', !enabled);
+    if (dayToggle) {
+      dayToggle.classList.toggle('is-on', enabled);
+      dayToggle.textContent = enabled ? 'ON' : 'OFF';
+      dayToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      dayToggle.setAttribute('aria-label', `${block.dataset.rpTeamBlockDay || 'Rotation day'} ${enabled ? 'active' : 'inactive'}`);
+    }
 
     if (selectedWrap) selectedWrap.innerHTML = selected.length
       ? selected.map((key) => `<button class="rp-home-team-chip" type="button" data-rp-team-selected-key="${esc(key)}" aria-label="Remove ${esc(teamName(key))}"><span>${esc(teamName(key))}</span><span class="rp-home-team-chip-x" aria-hidden="true">×</span></button>`).join('')
@@ -190,23 +206,24 @@
       picker.hidden = !(pickerOpen && available.length);
     }
     if (toggle) {
-      toggle.disabled = !available.length;
+      toggle.disabled = !enabled || !available.length;
       toggle.textContent = available.length ? '+ ADD TEAM' : 'ALL TEAMS ADDED';
-      toggle.setAttribute('aria-expanded', pickerOpen && available.length ? 'true' : 'false');
+      toggle.setAttribute('aria-expanded', enabled && pickerOpen && available.length ? 'true' : 'false');
     }
-    block.dataset.pickerOpen = pickerOpen && available.length ? '1' : '0';
+    block.dataset.pickerOpen = enabled && pickerOpen && available.length ? '1' : '0';
   }
 
-  function addRotationBlock(day, teamKeys = []) {
+  function addRotationBlock(day, teamKeys = [], enabled = DEFAULT_ACTIVE_DAYS.has(day)) {
     const list = section()?.querySelector('[data-rp-team-schedule-blocks]');
     if (!list) return;
     const block = document.createElement('div');
     block.className = 'rp-home-team-block';
     block.dataset.rpTeamBlock = '1';
     block.dataset.rpTeamBlockDay = day;
+    block.dataset.enabled = enabled ? '1' : '0';
     block.dataset.pickerOpen = '0';
     block.innerHTML = `
-      <div class="rp-home-team-block-head"><strong data-rp-team-block-title>${esc(day)} ROTATION</strong></div>
+      <div class="rp-home-team-block-head"><strong data-rp-team-block-title>${esc(day)} ROTATION</strong><button class="rp-home-team-day-toggle" type="button" data-rp-team-day-toggle aria-pressed="${enabled ? 'true' : 'false'}">${enabled ? 'ON' : 'OFF'}</button></div>
       <div class="rp-home-team-fixed-time">8:00 PM – 10:00 PM</div>
       <span class="rp-home-team-schedule-label">TEAMS ON THIS DAY</span>
       <div class="rp-home-team-selected" data-rp-team-selected></div>
@@ -218,6 +235,17 @@
     renderBlockTeams(block, teamKeys, false);
 
     block.addEventListener('click', (event) => {
+      const dayToggle = event.target.closest?.('[data-rp-team-day-toggle]');
+      if (dayToggle) {
+        event.preventDefault();
+        const nextEnabled = !blockEnabled(block);
+        block.dataset.enabled = nextEnabled ? '1' : '0';
+        closeOtherPickers();
+        renderBlockTeams(block, selectedTeamKeys(block), false);
+        updateNote();
+        return;
+      }
+      if (!blockEnabled(block)) return;
       const remove = event.target.closest?.('[data-rp-team-selected-key]');
       if (remove) {
         event.preventDefault();
@@ -250,7 +278,8 @@
     list.innerHTML = '';
     ROTATION_DAYS.forEach((day) => {
       const source = schedule?.blocks?.find((block, index) => normalizeDay(block?.day, index) === day);
-      addRotationBlock(day, Array.isArray(source?.teamKeys) ? source.teamKeys : []);
+      const enabled = typeof source?.enabled === 'boolean' ? source.enabled : DEFAULT_ACTIVE_DAYS.has(day);
+      addRotationBlock(day, Array.isArray(source?.teamKeys) ? source.teamKeys : [], enabled);
     });
   }
 
@@ -273,53 +302,61 @@
   }
 
   function buildTeamSchedule() {
-    if (selectedMode() === 'open') return { version: 2, mode: 'open', rotationType: 'weekly', blocks: [] };
+    if (selectedMode() === 'open') return { version: 3, mode: 'open', rotationType: 'weekly', blocks: [] };
     const blocks = ROTATION_DAYS.map((day) => {
       const block = section()?.querySelector(`[data-rp-team-block-day="${day}"]`);
       const teamKeys = selectedTeamKeys(block);
-      return { day, start: DEFAULT_START, end: DEFAULT_END, teamKeys, teamNames: teamKeys.map(teamName) };
+      return { day, start: DEFAULT_START, end: DEFAULT_END, enabled: blockEnabled(block), teamKeys, teamNames: teamKeys.map(teamName) };
     });
-    return { version: 2, mode: 'assigned', rotationType: 'weekly', blocks };
+    return { version: 3, mode: 'assigned', rotationType: 'weekly', blocks };
   }
 
   function validateSchedule(schedule = buildTeamSchedule()) {
     if (schedule.mode === 'open') return { ok: true, warning: '' };
+    const activeBlocks = schedule.blocks.filter((block) => block?.enabled);
+    if (!activeBlocks.length) return { ok: false, message: 'Turn on at least one rotation day.' };
     const uses = new Map();
-    for (const day of ROTATION_DAYS) {
-      const block = schedule.blocks.find((item) => item.day === day);
-      if (!block || !block.teamKeys.length) return { ok: false, message: `Assign at least one team to ${day}.` };
-      block.teamKeys.forEach((key) => uses.set(key, (uses.get(key) || 0) + 1));
+    for (const block of activeBlocks) {
+      if (!block.teamKeys.length) return { ok: false, message: `Assign at least one team to ${block.day} or turn that day off.` };
+      block.teamKeys.forEach((key) => {
+        const days = uses.get(key) || [];
+        days.push(block.day);
+        uses.set(key, days);
+      });
     }
-    const repeated = [...uses.entries()].filter(([, count]) => count > 1).map(([key]) => teamName(key));
-    return { ok: true, warning: repeated.length ? `${repeated.join(', ')} ${repeated.length === 1 ? 'appears' : 'appear'} on both Saturday and Sunday — allowed, but double-check the weekly rotation.` : '' };
+    const repeated = [...uses.entries()].filter(([, days]) => days.length > 1).map(([key]) => teamName(key));
+    return { ok: true, warning: repeated.length ? `${repeated.join(', ')} ${repeated.length === 1 ? 'appears' : 'appear'} on multiple active days — allowed, but double-check the weekly rotation.` : '' };
   }
 
   function updateNote() {
     const note = section()?.querySelector('[data-rp-team-schedule-note]');
     if (!note) return;
     if (selectedMode() === 'open') {
-      note.textContent = 'No fixed Saturday/Sunday team assignment will be published.';
+      note.textContent = 'No fixed team schedule will be published.';
       note.className = 'rp-home-team-schedule-note';
       return;
     }
-    const result = validateSchedule();
-    note.textContent = result.ok ? (result.warning || 'Players check whether their team is scheduled Saturday or Sunday. Both sessions are 8:00 PM – 10:00 PM.') : result.message;
+    const schedule = buildTeamSchedule();
+    const result = validateSchedule(schedule);
+    const activeDays = schedule.blocks.filter((block) => block.enabled).map((block) => block.day);
+    note.textContent = result.ok ? (result.warning || `${activeDays.join(', ')} active · 8:00 PM – 10:00 PM. Turn on another day only when there is enough player demand.`) : result.message;
     note.className = `rp-home-team-schedule-note${result.ok ? (result.warning ? ' warning' : '') : ' error'}`;
   }
 
   function normalizePublished(schedule) {
     if (!schedule || typeof schedule !== 'object') return null;
-    if (schedule.mode === 'open') return { version: 2, mode: 'open', rotationType: 'weekly', blocks: [] };
+    if (schedule.mode === 'open') return { version: 3, mode: 'open', rotationType: 'weekly', blocks: [] };
     if (!Array.isArray(schedule.blocks)) return null;
 
     if (Number(schedule.version || 1) >= 2 && schedule.blocks.some((block) => block?.day)) {
       return {
-        version: 2,
+        version: 3,
         mode: 'assigned',
         rotationType: 'weekly',
         blocks: ROTATION_DAYS.map((day) => {
           const block = schedule.blocks.find((item) => String(item?.day || '').toUpperCase() === day);
-          return { day, start: DEFAULT_START, end: DEFAULT_END, teamKeys: Array.isArray(block?.teamKeys) ? block.teamKeys : [] };
+          const enabled = typeof block?.enabled === 'boolean' ? block.enabled : DEFAULT_ACTIVE_DAYS.has(day);
+          return { day, start: DEFAULT_START, end: DEFAULT_END, enabled, teamKeys: Array.isArray(block?.teamKeys) ? block.teamKeys : [] };
         }),
       };
     }
@@ -328,16 +365,20 @@
     const hasAssignedTeams = legacyBlocks.some((block) => Array.isArray(block?.teamKeys) && block.teamKeys.length);
     if (!hasAssignedTeams) return null;
     return {
-      version: 2,
+      version: 3,
       mode: 'assigned',
       rotationType: 'weekly',
       migratedFromLegacy: true,
-      blocks: ROTATION_DAYS.map((day, index) => ({
-        day,
-        start: DEFAULT_START,
-        end: DEFAULT_END,
-        teamKeys: Array.isArray(legacyBlocks[index]?.teamKeys) ? legacyBlocks[index].teamKeys : [],
-      })),
+      blocks: ROTATION_DAYS.map((day) => {
+        const legacy = day === 'SATURDAY' ? legacyBlocks[0] : day === 'SUNDAY' ? legacyBlocks[1] : null;
+        return {
+          day,
+          start: DEFAULT_START,
+          end: DEFAULT_END,
+          enabled: DEFAULT_ACTIVE_DAYS.has(day),
+          teamKeys: Array.isArray(legacy?.teamKeys) ? legacy.teamKeys : [],
+        };
+      }),
     };
   }
 
@@ -395,7 +436,7 @@
           <button class="rp-home-team-schedule-mode" type="button" data-rp-team-schedule-mode="open" aria-pressed="false">OPEN ROTATION</button>
           <button class="rp-home-team-schedule-mode is-active" type="button" data-rp-team-schedule-mode="assigned" aria-pressed="true">ASSIGNED ROTATION</button>
         </div>
-        <p class="rp-home-team-schedule-open-note" data-rp-team-schedule-open-note hidden>No fixed Saturday/Sunday group is published. Normal rotation applies.</p>
+        <p class="rp-home-team-schedule-open-note" data-rp-team-schedule-open-note hidden>No fixed team schedule is published. Normal rotation applies.</p>
         <div class="rp-home-team-schedule-blocks" data-rp-team-schedule-blocks-wrap><div data-rp-team-schedule-blocks></div></div>
         <p class="rp-home-team-schedule-note" data-rp-team-schedule-note aria-live="polite"></p>`;
       const status = mountedForm.querySelector('[data-rp-home-open-rank-edit-status]');
