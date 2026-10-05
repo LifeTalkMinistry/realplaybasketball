@@ -503,9 +503,13 @@
     const east = Number(metadata.eastScore);
     if (!Number.isFinite(west) || !Number.isFinite(east)) return null;
 
+    const westName = String(metadata.westTeamName || metadata.west_team_name || 'WEST').trim().toUpperCase() || 'WEST';
+    const eastName = String(metadata.eastTeamName || metadata.east_team_name || 'EAST').trim().toUpperCase() || 'EAST';
     const tie = west === east;
-    const winner = tie ? '' : (west > east ? 'WEST' : 'EAST');
-    const loser = tie ? '' : (west > east ? 'EAST' : 'WEST');
+    const winnerSide = tie ? '' : (west > east ? 'WEST' : 'EAST');
+    const loserSide = tie ? '' : (west > east ? 'EAST' : 'WEST');
+    const winner = winnerSide === 'WEST' ? westName : winnerSide === 'EAST' ? eastName : '';
+    const loser = loserSide === 'WEST' ? westName : loserSide === 'EAST' ? eastName : '';
     const winnerScore = Math.max(west, east);
     const loserScore = Math.min(west, east);
     const margin = Math.abs(west - east);
@@ -519,19 +523,19 @@
     const score = tie ? `${west}-${east}` : `${winnerScore}-${loserScore}`;
 
     let headline = tie
-      ? `WEST AND EAST FINISH LEVEL, ${score}`
+      ? `${westName} AND ${eastName} FINISH LEVEL, ${score}`
       : margin <= 2
         ? `${winner} HOLDS OFF ${loser}, ${score}`
         : `${winner} DEFEATS ${loser}, ${score}`;
 
-    if (!tie && mvpName && String(mvp.team || '').toUpperCase() === winner && Number(mvp.points || 0) >= Math.ceil(winnerScore / 2)) {
+    if (!tie && mvpName && String(mvp.team || '').toUpperCase() === winnerSide && Number(mvp.points || 0) >= Math.ceil(winnerScore / 2)) {
       headline = `${mvpName} LEADS ${winner} PAST ${loser}, ${score}`;
     }
 
     const summary = mvpName
-      ? `${mvpName} earned Game MVP${statParts.length ? ` with ${statParts.join(' · ')}` : ''} in the official ${score} result.`
+      ? `${mvpName} earned Game MVP${statParts.length ? ` with ${statParts.join(' · ')}` : ''} in the official ${score} result between ${westName} and ${eastName}.`
       : tie
-        ? `West and East finished level at ${score} in an official Real Play game.`
+        ? `${westName} and ${eastName} finished level at ${score} in an official Real Play game.`
         : `${winner} defeated ${loser}, ${score}, in an official Real Play game.`;
 
     return {
