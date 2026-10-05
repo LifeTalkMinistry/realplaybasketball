@@ -692,11 +692,15 @@
       const readiness = target === 'players'
         ? waitForRouteReady('realplay:players-loaded', 'realplay:players-load-error')
         : waitForRouteReady('realplay:chat-loaded', 'realplay:chat-load-error');
+      const statsReadiness = options?.statsContext === true && target === 'players'
+        ? waitForRouteReady('realplay:stats-view-ready', '', 14_000)
+        : null;
 
       window.setTimeout(() => activateWorldTab(tab), 30);
 
       try {
         await readiness;
+        if (statsReadiness) await statsReadiness;
         hideRouteShell(shellTarget);
       } catch (routeError) {
         showRouteError(shellTarget, routeError?.message || 'This Real Play page could not finish loading.');
