@@ -9,6 +9,7 @@
   let directoryLoaded = false;
   let directoryPromise = null;
   let busy = false;
+  let mountPromise = null;
   let mountedSessionId = 0;
   const designations = new Map();
 
@@ -240,41 +241,68 @@
     }
   }
 
-  async function mount() {
-    const section = auditSection();
-    if (!section) return false;
-
-    let control;
-    try {
-      control = await getControl();
-    } catch (_) {
-      return false;
-    }
-
-    const sessionId = Number(control?.session?.id || 0);
-    if (!sessionId) return false;
-
-    if (mountedSessionId && mountedSessionId !== sessionId) {
-      designations.delete(mountedSessionId);
-    }
-    mountedSessionId = sessionId;
-
-    try {
-      await loadDirectory(false);
-    } catch (error) {
-      setNotice(error.message || 'Registered team rosters are unavailable.', 'error');
-    }
-
+  function syncExistingSelects(sessionId) {
+    const state = designationState(sessionId);
     for (const side of ['west', 'east']) {
-      const card = section.querySelector(`.rp-video-roster-card.${side}`);
-      if (!card) continue;
-      card.querySelector('[data-rp-audit-team-designation-wrap]')?.remove();
-      const head = card.querySelector('.rp-video-roster-head');
-      const select = buildSelect(side, sessionId);
-      if (head) head.after(select);
-      else card.prepend(select);
+      const otherSide = side === 'west' ? 'east' : 'west';
+      const select = auditSection()?.querySelector(`[data-rp-audit-team-designation="${side}"]`);
+      if (!select) continue;
+      select.disabled = busy;
+      select.value = state[side] || '';
+      for (const option of select.options) {
+        if (!option.value) continue;
+        option.disabled = state[otherSide] === option.value && state[side] !== option.value;
+      }
     }
-    return true;
+  }
+
+  async function mount() {
+    if (mountPromise) return mountPromise;
+    mountPromise = (async () => {
+      const section = auditSection();
+      if (!section) return false;
+
+      let control;
+      try {
+        control = await getControl();
+      } catch (_) {
+        return false;
+      }
+
+      const sessionId = Number(control?.session?.id || 0);
+      if (!sessionId) return false;
+
+      if (mountedSessionId && mountedSessionId !== sessionId) {
+        designations.delete(mountedSessionId);
+      }
+      mountedSessionId = sessionId;
+
+      try {
+        await loadDirectory(false);
+      } catch (error) {
+        setNotice(error.message || 'Registered team rosters are unavailable.', 'error');
+      }
+
+      for (const side of ['west', 'east']) {
+        const card = section.querySelector(`.rp-video-roster-card.${side}`);
+        if (!card) continue;
+        let wrap = card.querySelector('[data-rp-audit-team-designation-wrap]');
+        if (!wrap) {
+          const head = card.querySelector('.rp-video-roster-head');
+          wrap = buildSelect(side, sessionId);
+          if (head) head.after(wrap);
+          else card.prepend(wrap);
+        }
+      }
+      syncExistingSelects(sessionId);
+      return true;
+    })();
+
+    try {
+      return await mountPromise;
+    } finally {
+      mountPromise = null;
+    }
   }
 
   document.addEventListener('change', (event) => {
