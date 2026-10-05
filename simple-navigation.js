@@ -637,14 +637,15 @@
     }
   }
 
-  async function openWorldTab(tab) {
+  async function openWorldTab(tab, options = {}) {
     const target = tab === 'players' ? 'players' : tab === 'chats' ? 'chats' : 'world';
+    const shellTarget = options?.statsContext === true && target === 'players' ? 'stats' : target;
 
     // Route ownership is synchronous: the instant a primary destination is
     // tapped, its shell replaces the previous page. Cleanup and network/script
     // work happen only after the new destination is already on screen.
     setActive(target);
-    showRouteShell(target);
+    showRouteShell(shellTarget);
     setNavBusy(target, true);
     closePrimaryLayers();
 
@@ -681,7 +682,7 @@
 
       if (!ready || !window.RealPlayWorld?.open) {
         console.error('[Real Play] Shared World navigation could not initialize.');
-        showRouteError(target, 'This Real Play page did not finish loading. Your Home page remains safe in the background.');
+        showRouteError(shellTarget, 'This Real Play page did not finish loading. Your Home page remains safe in the background.');
         return;
       }
 
@@ -696,14 +697,14 @@
 
       try {
         await readiness;
-        hideRouteShell(target);
+        hideRouteShell(shellTarget);
       } catch (routeError) {
-        showRouteError(target, routeError?.message || 'This Real Play page could not finish loading.');
+        showRouteError(shellTarget, routeError?.message || 'This Real Play page could not finish loading.');
         return;
       }
     } catch (error) {
       console.error('[Real Play] World navigation failed.', error);
-      showRouteError(target, error?.message || 'Real Play could not open this page.');
+      showRouteError(shellTarget, error?.message || 'Real Play could not open this page.');
     } finally {
       setNavBusy(target, false);
     }
@@ -873,7 +874,7 @@
         if (target === 'home') openHome();
         else if (target === 'world') openWorldTab('world');
         else if (target === 'players') {
-          if (button.dataset.rpCompetitionBypass === '1') openWorldTab('players');
+          if (button.dataset.rpCompetitionBypass === '1') openWorldTab('players', { statsContext: true });
           else openStats();
         }
         else if (target === 'chats') openWorldTab('chats');
