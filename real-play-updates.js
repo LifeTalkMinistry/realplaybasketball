@@ -23,6 +23,7 @@
   let progressiveCategory = '';
   let progressiveLoadMode = 'auto';
   let progressiveLoadingLabel = 'LOADING LATEST FROM REAL PLAY...';
+  let progressiveGeneration = 0;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -385,6 +386,10 @@
     if (loading) return;
     if (progressiveMode && append && !progressiveHasMore) return;
 
+    const requestGeneration = progressiveGeneration;
+    const requestCategory = progressiveCategory;
+    const requestLoadMode = progressiveLoadMode;
+
     loading = true;
     if (!quiet) setStatus('CHECKING REAL PLAY...');
     updateProgressiveSentinel();
@@ -394,12 +399,13 @@
       ? {
           limit: progressivePageSize,
           offset: requestedOffset,
-          category: progressiveCategory || undefined,
+          category: requestCategory || undefined,
         }
       : {};
 
     try {
       const data = await api('feed', payload);
+      if (progressiveMode && requestGeneration !== progressiveGeneration) return;
       const nextUpdates = Array.isArray(data.updates) ? data.updates : [];
 
       if (progressiveMode) {
@@ -426,8 +432,8 @@
               hasMore: progressiveHasMore,
               nextOffset: progressiveNextOffset,
               total: Number(data?.page?.total) || updates.length,
-              category: progressiveCategory || '',
-              loadMode: progressiveLoadMode,
+              category: requestCategory || '',
+              loadMode: requestLoadMode,
             },
           }));
         } catch (_error) {}
@@ -443,13 +449,14 @@
 
       if (!quiet) setStatus('');
     } catch (error) {
+      if (progressiveMode && requestGeneration !== progressiveGeneration) return;
       if (!quiet) setStatus(error.message || 'Could not load official updates.', 'error');
       if (progressiveMode) {
         try {
           window.dispatchEvent(new CustomEvent('realplay:updates-page-error', {
             detail: {
               append,
-              category: progressiveCategory || '',
+              category: requestCategory || '',
               message: error.message || 'Could not load official updates.',
             },
           }));
@@ -572,12 +579,24 @@
       }
     }
 
+    const openGeneration = ++progressiveGeneration;
+
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-updates-open');
     panel.scrollTop = 0;
     updateProgressiveSentinel();
-    refreshFeed({ force: progressiveMode });
+
+    const startOpenRefresh = () => {
+      if (openGeneration !== progressiveGeneration) return;
+      if (loading) {
+        window.setTimeout(startOpenRefresh, 40);
+        return;
+      }
+      refreshFeed({ force: progressiveMode });
+    };
+    startOpenRefresh();
+
     detectAdmin();
     startPolling();
   }
@@ -587,6 +606,7 @@
     panel.classList.remove('open');
     panel.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-updates-open');
+    progressiveGeneration += 1;
     progressiveMode = false;
     progressiveHasMore = false;
     progressiveCategory = '';
