@@ -67,6 +67,9 @@
 .rp-video-new-season{grid-column:1/-1}
 .rp-video-competition-help{color:#7897a6;font:700 9px/1.4 system-ui,sans-serif}
 .rp-video-competition-summary{padding:10px 12px;border:1px solid rgba(92,151,178,.2);border-radius:10px;background:#06131e;color:#b6f3fc;font:900 10px/1.4 system-ui,sans-serif;letter-spacing:.06em}
+.rp-video-competition .rp-video-rules-current{display:grid;gap:4px}
+.rp-video-competition .rp-video-rules-current span{color:#668ea1;font:850 8px/1 system-ui,sans-serif;letter-spacing:.11em}
+.rp-video-competition .rp-video-rules-current strong{color:#f1fbff;font:950 12px/1.2 system-ui,sans-serif;letter-spacing:.045em}
 .rp-video-game-set{gap:10px}
 .rp-video-game-set-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .rp-video-game-set-head>span{color:#73a3b7;font:900 8px/1 system-ui,sans-serif;letter-spacing:.13em}
