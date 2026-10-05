@@ -28,6 +28,7 @@
   let presentationTimer = null;
   let overallAutoLoadTimer = null;
   let statsLoadingOverlay = null;
+  let overallPlayersReady = false;
   let playerPresentation = '';
   let scopedRanking = null;
   let scopedRequestId = 0;
@@ -224,6 +225,14 @@
 
   function hideStatsLoading() {
     if (statsLoadingOverlay) statsLoadingOverlay.hidden = true;
+  }
+
+  function announceStatsViewReady(kind) {
+    try {
+      window.dispatchEvent(new CustomEvent('realplay:stats-view-ready', {
+        detail: { kind: kind || playerPresentation || 'stats' },
+      }));
+    } catch (_error) {}
   }
 
   function createPanel() {
@@ -474,6 +483,7 @@
   function openPlayerRankings() {
     close();
     clearPlayerPresentation();
+    overallPlayersReady = false;
     playerPresentation = 'overall';
     // Core navigation owns the Stats loading shell for overall rankings.
     // Do not stack a second competition overlay on top of it.
@@ -497,14 +507,29 @@
     params.set('context', config.competitionContext || 'open_ranking');
     if (config.competitionSeasonId) params.set('season_id', String(config.competitionSeasonId));
 
-    const response = await fetch(`${API_BASE_URL}/api/real-play/competition/stats?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      cache: 'no-store',
-    });
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12_000);
+    let response;
+    try {
+      response = await fetch(`${API_BASE_URL}/api/real-play/competition/stats?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        const timeoutError = new Error('Tune-Up stats took too long to load. Please try again.');
+        timeoutError.code = 'COMPETITION_STATS_TIMEOUT';
+        throw timeoutError;
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timeout);
+    }
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       const error = new Error(data?.message || data?.error || 'Could not load competition stats.');
@@ -586,7 +611,6 @@
       if (requestId === scopedRequestId && scopedRanking === config && playerPresentation === 'scoped') {
         config.loading = false;
         applyScopedRanking(0);
-        hideStatsLoading();
       }
     }
   }
@@ -663,6 +687,12 @@
     }
 
     world.scrollTop = 0;
+
+    if (!config.loading && !config.readyAnnounced) {
+      config.readyAnnounced = true;
+      hideStatsLoading();
+      announceStatsViewReady(config.error ? 'competition-error' : 'competition');
+    }
   }
 
   function openScopedRanking(config) {
@@ -675,12 +705,11 @@
       players: [],
       playerCount: 0,
       filterInitialized: false,
+      readyAnnounced: false,
     };
     playerPresentation = 'scoped';
-    showStatsLoading(
-      scopedRanking.title === 'TUNE-UP' ? 'LOADING TUNE-UP...' : 'LOADING COMPETITION STATS...',
-      'READING VERIFIED COMPETITION RESULTS'
-    );
+    // Core navigation owns the visible loading shell until both the shared
+    // player view and this competition's verified data are ready.
     openPlayersRoute();
     const activeScope = scopedRanking;
     playerDecorationTimer = window.setTimeout(() => applyScopedRanking(0), 45);
@@ -773,9 +802,11 @@
         return;
       }
       if (playerPresentation === 'overall') {
+        overallPlayersReady = true;
         decoratePlayerRankings(0);
         queueOverallPlayerPage(Boolean(event?.detail?.hasMore));
         hideStatsLoading();
+        announceStatsViewReady('overall');
       }
     });
 
