@@ -94,8 +94,10 @@
 
     const target = navItem.dataset.rpSimpleNavItem;
     if (target === STATS_NAV_ID) {
-      // Ranking cards deliberately reuse the public/authenticated Players route.
+      // Core navigation now owns the STATS transition and loading shell.
+      // Only the explicit competition bypass is allowed to reach PLAYERS.
       if (navItem.dataset.rpCompetitionBypass === '1') return;
+      if (typeof window.RealPlaySimpleNavigation?.stats === 'function') return;
       closeOtherPrimaryLayersForStats();
       if (typeof window.RealPlayCompetitionHub?.open === 'function') {
         event.preventDefault();
