@@ -203,9 +203,18 @@
     if (target === 'world') {
       return `
         <div class="rp-route-shell-content rp-route-shell-world">
-          <header class="rp-route-shell-heading"><small>REAL PLAY COMMUNITY</small><strong>WORLD</strong><span>LOADING COMMUNITY</span></header>
-          <div class="rp-route-skeleton-composer" aria-hidden="true"><span></span><i></i><i></i></div>
-          <div class="rp-route-skeleton-feed">${routeSkeletonRows(3)}</div>
+          <header class="rp-route-shell-heading rp-route-shell-world-head">
+            <small>REAL PLAY BASKETBALL</small>
+            <strong>WORLD</strong>
+            <span>LOADING LATEST FROM REAL PLAY</span>
+          </header>
+          <div class="rp-route-skeleton-world-tabs" aria-hidden="true"><i></i><i></i></div>
+          <div class="rp-route-skeleton-world-intro" aria-hidden="true"><span></span><b></b></div>
+          <div class="rp-route-skeleton-world-cards" aria-hidden="true">
+            <article><header><span></span><i></i></header><b></b><i></i><i></i></article>
+            <article><header><span></span><i></i></header><b></b><i></i></article>
+            <article><header><span></span><i></i></header><b></b><i></i></article>
+          </div>
         </div>`;
     }
     if (target === 'players') {
@@ -246,9 +255,12 @@
 
   function ensureRouteShell() {
     let shell = routeShell();
-    if (shell) return shell;
-    const app = document.querySelector('[data-rp-app]');
-    if (!app) return null;
+    if (shell) {
+      // Loading/error destinations must live outside the app content tree so
+      // no Home/menu stacking context can cover or clip them.
+      if (shell.parentElement !== document.body) document.body.appendChild(shell);
+      return shell;
+    }
 
     shell = document.createElement('section');
     shell.className = 'rp-route-shell';
@@ -256,7 +268,7 @@
     shell.hidden = true;
     shell.setAttribute('aria-live', 'polite');
     shell.setAttribute('aria-busy', 'true');
-    app.appendChild(shell);
+    document.body.appendChild(shell);
 
     shell.addEventListener('click', (event) => {
       const retry = event.target.closest('[data-rp-route-retry]');
@@ -403,12 +415,13 @@
   async function openWorldTab(tab) {
     const target = tab === 'players' ? 'players' : tab === 'chats' ? 'chats' : 'world';
 
-    // Navigation responds immediately. The destination shell becomes visible
-    // before any feature script or API request is awaited.
-    closePrimaryLayers();
+    // Route ownership is synchronous: the instant a primary destination is
+    // tapped, its shell replaces the previous page. Cleanup and network/script
+    // work happen only after the new destination is already on screen.
     setActive(target);
     showRouteShell(target);
     setNavBusy(target, true);
+    closePrimaryLayers();
 
     try {
       const ready = await ensureWorldFeature(tab);
@@ -481,10 +494,10 @@
   async function openMe() {
     if (!requireAccount('Create your player to unlock your own OVR, stats, game history, membership and settings.')) return;
 
-    closePrimaryLayers();
     setActive('me');
     showRouteShell('me');
     setNavBusy('me', true);
+    closePrimaryLayers();
 
     try {
       const ready = await ensureProfileFeature();
@@ -591,16 +604,26 @@
       </button>`).join('');
     app.appendChild(bar);
     ensureRouteShell();
-    bar.addEventListener('click', (event) => {
-      const button = event.target.closest('[data-rp-simple-nav-item]');
-      if (!button) return;
-      const target = button.dataset.rpSimpleNavItem;
-      if (target === 'home') openHome();
-      else if (target === 'world') openWorldTab('world');
-      else if (target === 'players') openWorldTab('players');
-      else if (target === 'chats') openWorldTab('chats');
-      else if (target === 'me') openMe();
-    });
+
+    if (!document.documentElement.dataset.rpPrimaryNavAuthorityBound) {
+      document.documentElement.dataset.rpPrimaryNavAuthorityBound = 'true';
+      document.addEventListener('click', (event) => {
+        const button = event.target.closest?.('[data-rp-simple-nav-item]');
+        if (!button) return;
+
+        // Primary navigation is core-shell authority. Optional feature scripts
+        // are not allowed to intercept or replace this transition.
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        const target = button.dataset.rpSimpleNavItem;
+        if (target === 'home') openHome();
+        else if (target === 'world') openWorldTab('world');
+        else if (target === 'players') openWorldTab('players');
+        else if (target === 'chats') openWorldTab('chats');
+        else if (target === 'me') openMe();
+      }, true);
+    }
     return true;
   }
 
