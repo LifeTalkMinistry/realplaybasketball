@@ -109,7 +109,7 @@
     if (!bootResourcesReady || !hasNewShell()) return false;
     shellReady = true;
     clearStaticBootFallback();
-    html.classList.remove('rp-shell-booting', 'rp-shell-failed');
+    html.classList.remove('rp-shell-booting', 'rp-shell-failed', 'rp-shell-static-failed');
     html.classList.add('rp-shell-ready');
     shellReadyObserver?.disconnect();
     shellReadyObserver = null;
