@@ -12,6 +12,7 @@
   let enforceQueued = false;
   let homeRefreshTimer = 0;
   let homeLoading = false;
+  let initialHomeReadyAnnounced = Boolean(window.__realPlayInitialHomeReady);
   let lastHomeRefreshAt = 0;
   let homeRefreshBlockedUntil = 0;
   let configuredHomeCapacity = 4;
@@ -406,7 +407,20 @@
       homeLoading = false;
     }
 
-    refreshOpenRankAvailability();
+    // HOME is not ready merely because its shell exists. Wait until the
+    // schedule/announcement pass and live availability pass have both settled,
+    // then publish one authoritative readiness signal for the startup gate.
+    await refreshOpenRankAvailability();
+
+    if (!initialHomeReadyAnnounced) {
+      initialHomeReadyAnnounced = true;
+      window.__realPlayInitialHomeReady = true;
+      try {
+        window.dispatchEvent(new CustomEvent('realplay:initial-home-ready', {
+          detail: { visualDataReady: true },
+        }));
+      } catch (_error) {}
+    }
   }
 
   function enforce() {
