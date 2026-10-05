@@ -527,12 +527,17 @@
     const loadMode = isResults ? 'button' : 'auto';
     const loadingLabel = isResults ? 'LOADING GAME RESULTS...' : 'LOADING LATEST FROM REAL PLAY...';
     const sequence = ++viewLoadSequence;
+    const loadingStartedAt = performance.now();
+    const minimumLoadingMs = isResults ? 700 : 450;
 
+    // The old view is never allowed to be the transition surface. Show the
+    // destination-owned loader first and keep it for a short minimum window so
+    // even fast/cache-hit requests cannot visually leak the previous content.
+    window.RealPlayRouteShell?.show?.(routeTarget);
     selectedView = nextView;
     setWorldResultsMode(true);
     ensureWorldControls();
     syncWorldTabs();
-    window.RealPlayRouteShell?.show?.(routeTarget);
 
     let settled = false;
     let timer = 0;
@@ -591,15 +596,23 @@
             }
           }
 
-          if (initial) {
-            announceWorldReady({
-              loaded: Number(detail.loaded || 0),
-              rendered: Number(detail.rendered || 0),
-              hasMore: Boolean(detail.hasMore),
-            });
-          } else {
-            window.RealPlayRouteShell?.hide?.(routeTarget);
-          }
+          const revealDestination = () => {
+            if (sequence !== viewLoadSequence) return;
+            if (initial) {
+              announceWorldReady({
+                loaded: Number(detail.loaded || 0),
+                rendered: Number(detail.rendered || 0),
+                hasMore: Boolean(detail.hasMore),
+              });
+            } else {
+              window.RealPlayRouteShell?.hide?.(routeTarget);
+            }
+          };
+
+          const elapsed = performance.now() - loadingStartedAt;
+          const remaining = Math.max(0, minimumLoadingMs - elapsed);
+          if (remaining > 0) window.setTimeout(revealDestination, remaining);
+          else revealDestination();
         });
       });
     };
