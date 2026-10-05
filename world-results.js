@@ -353,6 +353,39 @@
       .rp-updates.rp-world-results-entry .rp-world-results-empty.show{
         display:block;
       }
+
+      /* Progressive WORLD feed: three records at a time. The next batch is
+         requested only after the user scrolls toward the end of the loaded set. */
+      .rp-updates-progressive-initial{
+        min-height:150px;
+        display:grid;
+        place-items:center;
+        color:#61758b;
+        font-size:.46rem;
+        font-weight:950;
+        letter-spacing:.12em;
+        text-align:center;
+      }
+      .rp-updates-progressive-sentinel{
+        min-height:58px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:14px 8px calc(10px + env(safe-area-inset-bottom));
+        color:#52667c;
+        font-size:.42rem;
+        font-weight:950;
+        letter-spacing:.13em;
+        text-align:center;
+      }
+      .rp-updates-progressive-sentinel.loading span{
+        color:#4fdcff;
+        animation:rpWorldMorePulse .9s ease-in-out infinite alternate;
+      }
+      @keyframes rpWorldMorePulse{from{opacity:.38}to{opacity:1}}
+      @media(prefers-reduced-motion:reduce){
+        .rp-updates-progressive-sentinel.loading span{animation:none;opacity:.8}
+      }
       @media(max-width:360px){
         .rp-world-results-filter-row{gap:6px}
         .rp-world-results-filter select{font-size:.53rem;padding-left:9px}
@@ -471,29 +504,19 @@
     return 'other';
   }
 
-  async function loadResultMetadata() {
-    if (metadataLoading) return;
-    metadataLoading = true;
-    try {
-      const response = await fetch(PUBLIC_UPDATES_URL, {
-        headers: { Accept: 'application/json' },
-        cache: 'no-store',
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) return;
-      const next = new Map();
-      (Array.isArray(data?.updates) ? data.updates : [])
-        .filter((item) => item?.category === 'result')
-        .forEach((item) => next.set(String(item.id), item));
-      resultMetadata = next;
-      rebuildWeekOptions();
-      decorateStoryCards();
-      applyWorldFilters();
-    } catch (_error) {
-      // The official cards remain usable even if filter metadata cannot refresh.
-    } finally {
-      metadataLoading = false;
-    }
+  function loadResultMetadata() {
+    // WORLD is progressively paginated. Reuse only the update records that
+    // RealPlayUpdates has actually loaded so this layer never performs a
+    // hidden full-history request behind the first three visible cards.
+    const loaded = window.RealPlayUpdates?.getUpdates?.();
+    const next = new Map();
+    (Array.isArray(loaded) ? loaded : [])
+      .filter((item) => item?.category === 'result')
+      .forEach((item) => next.set(String(item.id), item));
+    resultMetadata = next;
+    rebuildWeekOptions();
+    decorateStoryCards();
+    applyWorldFilters();
   }
 
 
@@ -658,9 +681,7 @@
     if (!feedObserver) {
       feedObserver = new MutationObserver(() => {
         if (!panel.classList.contains('rp-world-results-entry')) return;
-        rebuildWeekOptions();
-        decorateStoryCards();
-        applyWorldFilters();
+        loadResultMetadata();
       });
       feedObserver.observe(feed, { childList: true });
     }
@@ -753,13 +774,36 @@
     markWorldActive();
 
     if (window.RealPlayUpdates?.open) {
-      window.RealPlayUpdates.open();
+      window.RealPlayRouteShell?.show?.('world');
+
+      let firstPageSettled = false;
+      const handleFirstPage = (event) => {
+        if (firstPageSettled || !event?.detail?.progressive || event.detail.append) return;
+        firstPageSettled = true;
+        window.removeEventListener('realplay:updates-page-loaded', handleFirstPage);
+        window.RealPlayRouteShell?.hide?.('world');
+        loadResultMetadata();
+      };
+      window.addEventListener('realplay:updates-page-loaded', handleFirstPage);
+
+      window.RealPlayUpdates.open({ progressive: true, pageSize: 3 });
       selectedView = 'feed';
       setWorldResultsMode(true);
       ensureWorldControls();
-      loadResultMetadata();
       setWorldView('feed');
-      window.setTimeout(applyWorldFilters, 0);
+      window.setTimeout(() => {
+        loadResultMetadata();
+        applyWorldFilters();
+      }, 0);
+
+      window.setTimeout(() => {
+        if (firstPageSettled) return;
+        firstPageSettled = true;
+        window.removeEventListener('realplay:updates-page-loaded', handleFirstPage);
+        const hasCards = Boolean(updatesPanel()?.querySelector('[data-updates-feed] .rp-update-card'));
+        if (hasCards) window.RealPlayRouteShell?.hide?.('world');
+        else window.RealPlayRouteShell?.error?.('world', 'The latest Real Play feed did not finish loading.');
+      }, 8000);
       return;
     }
 
