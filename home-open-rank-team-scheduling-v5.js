@@ -9,6 +9,7 @@
   const TEAM_IMAGE_PATTERN = /\.(?:png|jpe?g|webp|svg)$/i;
   const DEFAULT_START = '20:00';
   const DEFAULT_END = '22:00';
+  const DEFAULT_TEAM_CAP = 4;
   const ROTATION_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
   const DEFAULT_ACTIVE_DAYS = new Set(['SUNDAY']);
   const FALLBACK_TEAMS = [
@@ -50,12 +51,16 @@
       .rp-home-team-block{margin-top:9px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(4,10,16,.78)}
       .rp-home-team-block:first-child{margin-top:0}
       .rp-home-team-block.is-disabled{border-color:rgba(255,255,255,.055);background:rgba(4,10,16,.42);opacity:.68;filter:saturate(.55)}
-      .rp-home-team-block.is-disabled .rp-home-team-fixed-time,.rp-home-team-block.is-disabled .rp-home-team-schedule-label,.rp-home-team-block.is-disabled .rp-home-team-selected,.rp-home-team-block.is-disabled .rp-home-team-picker-shell{display:none!important}
+      .rp-home-team-block.is-disabled .rp-home-team-block-fields,.rp-home-team-block.is-disabled .rp-home-team-schedule-label,.rp-home-team-block.is-disabled .rp-home-team-selected,.rp-home-team-block.is-disabled .rp-home-team-picker-shell{display:none!important}
       .rp-home-team-block-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
       .rp-home-team-block-head strong{color:#dfe8ef;font:950 .56rem/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}
       .rp-home-team-day-toggle{flex:0 0 auto;min-width:47px;height:28px;padding:0 9px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:#07111a;color:#7f93a3;font:950 .48rem/1 system-ui,sans-serif;letter-spacing:.08em;cursor:pointer}
       .rp-home-team-day-toggle.is-on{border-color:rgba(49,211,255,.58);background:rgba(7,72,96,.72);color:#71e6ff;box-shadow:0 0 0 1px rgba(49,211,255,.08) inset}
-      .rp-home-team-fixed-time{margin-bottom:10px;color:#f2f7fb;font:900 .69rem/1.2 system-ui,sans-serif;letter-spacing:.035em}
+      .rp-home-team-block-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:9px 0 10px}
+      .rp-home-team-block-field{display:grid;gap:5px;color:#71899c;font:900 .45rem/1.15 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}
+      .rp-home-team-block-field.is-wide{grid-column:1 / -1}
+      .rp-home-team-block-field input{box-sizing:border-box;width:100%;min-width:0;height:38px;padding:0 9px;border:1px solid rgba(99,153,181,.2);border-radius:9px;outline:none;background:#06101a;color:#eef8ff;font:850 .67rem/1.1 system-ui,sans-serif}
+      .rp-home-team-block-field input:focus{border-color:rgba(49,211,255,.58);box-shadow:0 0 0 2px rgba(49,211,255,.07)}
       .rp-home-team-selected{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;min-height:30px;align-items:center}
       .rp-home-team-selected-empty{color:#637887;font:800 .49rem/1.3 system-ui,sans-serif;letter-spacing:.035em}
       .rp-home-team-chip{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:0 8px 0 10px;border:1px solid rgba(52,211,255,.36);border-radius:999px;background:rgba(7,58,79,.5);color:#dff8ff;font:950 .49rem/1 system-ui,sans-serif;letter-spacing:.055em;text-transform:uppercase;cursor:pointer}
@@ -160,11 +165,32 @@
       const response = await nativeFetch(PUBLIC_UPDATES_URL, { headers: { Accept: 'application/json' }, cache: 'no-store' });
       if (!response.ok) return null;
       const data = await response.json();
-      return teamScheduleOf(matchingSchedule(data?.updates));
+      const update = matchingSchedule(data?.updates);
+      const schedule = teamScheduleOf(update);
+      if (!schedule || typeof schedule !== 'object') return null;
+      const body = String(update?.body || '');
+      const legacyTeamCap = Number(body.match(/\b(\d{1,2})\s+TEAM\s+CAP\b/i)?.[1]);
+      const legacyCapacity = Number.isFinite(legacyTeamCap) && legacyTeamCap > 0 ? capacityValue(legacyTeamCap) : DEFAULT_TEAM_CAP;
+      return {
+        ...schedule,
+        legacyCapacity,
+        legacyLocationName: String(update?.location_name || update?.locationName || '').trim(),
+      };
     } catch (_error) { return null; }
   }
 
   function blockEnabled(block) { return block?.dataset?.enabled === '1'; }
+  function clockValue(value, fallback) {
+    const text = String(value || '').trim();
+    return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(text) ? text : fallback;
+  }
+  function capacityValue(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.max(1, Math.min(DEFAULT_TEAM_CAP, Math.round(parsed))) : DEFAULT_TEAM_CAP;
+  }
+  function blockCapacity(block) {
+    return capacityValue(block?.querySelector?.('[data-rp-team-block-capacity]')?.value);
+  }
   function selectedTeamKeys(block) {
     return [...(block?.querySelectorAll('[data-rp-team-selected-key]') || [])]
       .map((node) => String(node.dataset.rpTeamSelectedKey || '').trim().toLowerCase()).filter(Boolean);
@@ -186,7 +212,9 @@
     const toggle = block.querySelector('[data-rp-team-picker-toggle]');
     const dayToggle = block.querySelector('[data-rp-team-day-toggle]');
     const enabled = blockEnabled(block);
-    const available = teams.filter((team) => !selectedSet.has(team.key));
+    const capacity = blockCapacity(block);
+    const roomAvailable = selected.length < capacity;
+    const available = roomAvailable ? teams.filter((team) => !selectedSet.has(team.key)) : [];
 
     block.classList.toggle('is-disabled', !enabled);
     if (dayToggle) {
@@ -207,15 +235,22 @@
     }
     if (toggle) {
       toggle.disabled = !enabled || !available.length;
-      toggle.textContent = available.length ? '+ ADD TEAM' : 'ALL TEAMS ADDED';
+      toggle.textContent = available.length ? '+ ADD TEAM' : (selected.length >= capacity ? 'TEAM CAP REACHED' : 'ALL TEAMS ADDED');
       toggle.setAttribute('aria-expanded', enabled && pickerOpen && available.length ? 'true' : 'false');
     }
     block.dataset.pickerOpen = enabled && pickerOpen && available.length ? '1' : '0';
   }
 
-  function addRotationBlock(day, teamKeys = [], enabled = DEFAULT_ACTIVE_DAYS.has(day)) {
+  function addRotationBlock(day, config = {}) {
     const list = section()?.querySelector('[data-rp-team-schedule-blocks]');
     if (!list) return;
+    const teamKeys = Array.isArray(config?.teamKeys) ? config.teamKeys : [];
+    const enabled = typeof config?.enabled === 'boolean' ? config.enabled : DEFAULT_ACTIVE_DAYS.has(day);
+    const start = clockValue(config?.start, DEFAULT_START);
+    const end = clockValue(config?.end, DEFAULT_END);
+    const capacity = capacityValue(config?.capacity);
+    const locationName = String(config?.locationName || config?.location_name || '').trim();
+
     const block = document.createElement('div');
     block.className = 'rp-home-team-block';
     block.dataset.rpTeamBlock = '1';
@@ -224,7 +259,12 @@
     block.dataset.pickerOpen = '0';
     block.innerHTML = `
       <div class="rp-home-team-block-head"><strong data-rp-team-block-title>${esc(day)} ROTATION</strong><button class="rp-home-team-day-toggle" type="button" data-rp-team-day-toggle aria-pressed="${enabled ? 'true' : 'false'}">${enabled ? 'ON' : 'OFF'}</button></div>
-      <div class="rp-home-team-fixed-time">8:00 PM – 10:00 PM</div>
+      <div class="rp-home-team-block-fields">
+        <label class="rp-home-team-block-field">START TIME<input type="time" value="${esc(start)}" data-rp-team-block-start></label>
+        <label class="rp-home-team-block-field">END TIME<input type="time" value="${esc(end)}" data-rp-team-block-end></label>
+        <label class="rp-home-team-block-field">TEAM CAP<input type="number" min="1" max="${DEFAULT_TEAM_CAP}" inputmode="numeric" value="${capacity}" data-rp-team-block-capacity></label>
+        <label class="rp-home-team-block-field is-wide">COURT / LOCATION<input type="text" maxlength="180" value="${esc(locationName)}" placeholder="Optional" data-rp-team-block-location></label>
+      </div>
       <span class="rp-home-team-schedule-label">TEAMS ON THIS DAY</span>
       <div class="rp-home-team-selected" data-rp-team-selected></div>
       <div class="rp-home-team-picker-shell">
@@ -233,6 +273,16 @@
       </div>`;
     list.appendChild(block);
     renderBlockTeams(block, teamKeys, false);
+
+    block.addEventListener('input', (event) => {
+      if (event.target?.matches?.('[data-rp-team-block-capacity]')) {
+        renderBlockTeams(block, selectedTeamKeys(block), false);
+      }
+      if (event.target?.matches?.('[data-rp-team-block-start],[data-rp-team-block-end],[data-rp-team-block-capacity],[data-rp-team-block-location]')) updateNote();
+    });
+    block.addEventListener('change', (event) => {
+      if (event.target?.matches?.('[data-rp-team-block-start],[data-rp-team-block-end],[data-rp-team-block-capacity],[data-rp-team-block-location]')) updateNote();
+    });
 
     block.addEventListener('click', (event) => {
       const dayToggle = event.target.closest?.('[data-rp-team-day-toggle]');
@@ -258,7 +308,7 @@
         event.preventDefault();
         const selected = selectedTeamKeys(block);
         const key = String(option.dataset.rpTeamPickerOption || '').toLowerCase();
-        if (key && !selected.includes(key)) selected.push(key);
+        if (key && !selected.includes(key) && selected.length < blockCapacity(block)) selected.push(key);
         renderBlockTeams(block, selected, true);
         updateNote();
         return;
@@ -278,8 +328,7 @@
     list.innerHTML = '';
     ROTATION_DAYS.forEach((day) => {
       const source = schedule?.blocks?.find((block, index) => normalizeDay(block?.day, index) === day);
-      const enabled = typeof source?.enabled === 'boolean' ? source.enabled : DEFAULT_ACTIVE_DAYS.has(day);
-      addRotationBlock(day, Array.isArray(source?.teamKeys) ? source.teamKeys : [], enabled);
+      addRotationBlock(day, source || { enabled: DEFAULT_ACTIVE_DAYS.has(day) });
     });
   }
 
@@ -302,13 +351,22 @@
   }
 
   function buildTeamSchedule() {
-    if (selectedMode() === 'open') return { version: 3, mode: 'open', rotationType: 'weekly', blocks: [] };
+    if (selectedMode() === 'open') return { version: 4, mode: 'open', rotationType: 'weekly', blocks: [] };
     const blocks = ROTATION_DAYS.map((day) => {
       const block = section()?.querySelector(`[data-rp-team-block-day="${day}"]`);
       const teamKeys = selectedTeamKeys(block);
-      return { day, start: DEFAULT_START, end: DEFAULT_END, enabled: blockEnabled(block), teamKeys, teamNames: teamKeys.map(teamName) };
+      return {
+        day,
+        enabled: blockEnabled(block),
+        start: clockValue(block?.querySelector('[data-rp-team-block-start]')?.value, DEFAULT_START),
+        end: clockValue(block?.querySelector('[data-rp-team-block-end]')?.value, DEFAULT_END),
+        capacity: blockCapacity(block),
+        locationName: String(block?.querySelector('[data-rp-team-block-location]')?.value || '').trim(),
+        teamKeys,
+        teamNames: teamKeys.map(teamName),
+      };
     });
-    return { version: 3, mode: 'assigned', rotationType: 'weekly', blocks };
+    return { version: 4, mode: 'assigned', rotationType: 'weekly', blocks };
   }
 
   function validateSchedule(schedule = buildTeamSchedule()) {
@@ -317,7 +375,21 @@
     if (!activeBlocks.length) return { ok: false, message: 'Turn on at least one rotation day.' };
     const uses = new Map();
     for (const block of activeBlocks) {
+      if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(block.start || '')) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(block.end || ''))) {
+        return { ok: false, message: `Choose a valid start and end time for ${block.day}.` };
+      }
+      const [startHour, startMinute] = block.start.split(':').map(Number);
+      const [endHour, endMinute] = block.end.split(':').map(Number);
+      if ((endHour * 60 + endMinute) <= (startHour * 60 + startMinute)) {
+        return { ok: false, message: `${block.day} end time must be later than its start time.` };
+      }
+      if (!Number.isFinite(Number(block.capacity)) || Number(block.capacity) < 1 || Number(block.capacity) > DEFAULT_TEAM_CAP) {
+        return { ok: false, message: `${block.day} team cap must be between 1 and ${DEFAULT_TEAM_CAP}.` };
+      }
       if (!block.teamKeys.length) return { ok: false, message: `Assign at least one team to ${block.day} or turn that day off.` };
+      if (block.teamKeys.length > Number(block.capacity)) {
+        return { ok: false, message: `${block.day} has ${block.teamKeys.length} teams but its team cap is ${block.capacity}.` };
+      }
       block.teamKeys.forEach((key) => {
         const days = uses.get(key) || [];
         days.push(block.day);
@@ -339,24 +411,32 @@
     const schedule = buildTeamSchedule();
     const result = validateSchedule(schedule);
     const activeDays = schedule.blocks.filter((block) => block.enabled).map((block) => block.day);
-    note.textContent = result.ok ? (result.warning || `${activeDays.join(', ')} active · 8:00 PM – 10:00 PM. Turn on another day only when there is enough player demand.`) : result.message;
+    note.textContent = result.ok ? (result.warning || `${activeDays.join(', ')} active. Each active day keeps its own time, team cap and court/location.`) : result.message;
     note.className = `rp-home-team-schedule-note${result.ok ? (result.warning ? ' warning' : '') : ' error'}`;
   }
 
   function normalizePublished(schedule) {
     if (!schedule || typeof schedule !== 'object') return null;
-    if (schedule.mode === 'open') return { version: 3, mode: 'open', rotationType: 'weekly', blocks: [] };
+    if (schedule.mode === 'open') return { version: 4, mode: 'open', rotationType: 'weekly', blocks: [] };
     if (!Array.isArray(schedule.blocks)) return null;
 
     if (Number(schedule.version || 1) >= 2 && schedule.blocks.some((block) => block?.day)) {
       return {
-        version: 3,
+        version: 4,
         mode: 'assigned',
         rotationType: 'weekly',
         blocks: ROTATION_DAYS.map((day) => {
           const block = schedule.blocks.find((item) => String(item?.day || '').toUpperCase() === day);
           const enabled = typeof block?.enabled === 'boolean' ? block.enabled : DEFAULT_ACTIVE_DAYS.has(day);
-          return { day, start: DEFAULT_START, end: DEFAULT_END, enabled, teamKeys: Array.isArray(block?.teamKeys) ? block.teamKeys : [] };
+          return {
+            day,
+            enabled,
+            start: clockValue(block?.start, DEFAULT_START),
+            end: clockValue(block?.end, DEFAULT_END),
+            capacity: capacityValue(block?.capacity ?? schedule?.legacyCapacity),
+            locationName: String(block?.locationName || block?.location_name || schedule?.legacyLocationName || '').trim(),
+            teamKeys: Array.isArray(block?.teamKeys) ? block.teamKeys : [],
+          };
         }),
       };
     }
@@ -365,7 +445,7 @@
     const hasAssignedTeams = legacyBlocks.some((block) => Array.isArray(block?.teamKeys) && block.teamKeys.length);
     if (!hasAssignedTeams) return null;
     return {
-      version: 3,
+      version: 4,
       mode: 'assigned',
       rotationType: 'weekly',
       migratedFromLegacy: true,
@@ -373,8 +453,10 @@
         const legacy = day === 'SATURDAY' ? legacyBlocks[0] : day === 'SUNDAY' ? legacyBlocks[1] : null;
         return {
           day,
-          start: DEFAULT_START,
-          end: DEFAULT_END,
+          start: clockValue(legacy?.start, DEFAULT_START),
+          end: clockValue(legacy?.end, DEFAULT_END),
+          capacity: capacityValue(schedule?.legacyCapacity),
+          locationName: String(schedule?.legacyLocationName || '').trim(),
           enabled: DEFAULT_ACTIVE_DAYS.has(day),
           teamKeys: Array.isArray(legacy?.teamKeys) ? legacy.teamKeys : [],
         };
@@ -398,22 +480,6 @@
     if (node) node.textContent = `${teams.length} CURRENT TEAM${teams.length === 1 ? '' : 'S'}`;
   }
 
-  function syncSessionWindow(targetForm = mountedForm, notify = false) {
-    if (!targetForm) return;
-    const startsAt = targetForm.elements?.startsAt;
-    const endsAt = targetForm.elements?.endsAt;
-    let changedStart = false;
-    let changedEnd = false;
-    if (startsAt && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(String(startsAt.value || ''))) {
-      const next = `${startsAt.value.slice(0, 11)}${DEFAULT_START}`;
-      if (startsAt.value !== next) { startsAt.value = next; changedStart = true; }
-    }
-    if (endsAt && endsAt.value !== DEFAULT_END) { endsAt.value = DEFAULT_END; changedEnd = true; }
-    if (notify) {
-      if (changedStart) startsAt.dispatchEvent(new Event('change', { bubbles: true }));
-      if (changedEnd) endsAt.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-  }
 
   function mount() {
     installStyles();
@@ -446,7 +512,6 @@
         button.addEventListener('click', () => setMode(button.dataset.rpTeamScheduleMode));
       });
       mountedForm.addEventListener('submit', (event) => {
-        syncSessionWindow(mountedForm, false);
         const result = validateSchedule();
         if (result.ok) return;
         event.preventDefault();
@@ -458,6 +523,11 @@
     }
 
     if (!root.querySelector('[data-rp-team-block]')) ensureAssignedBlocks();
+    const seasonField = mountedForm.elements?.title;
+    if (seasonField && seasonField.dataset.rpTeamScheduleSeasonBound !== '1') {
+      seasonField.dataset.rpTeamScheduleSeasonBound = '1';
+      seasonField.addEventListener('change', () => hydrate());
+    }
     renderTeamCount();
     updateNote();
     return true;
@@ -469,7 +539,6 @@
     if (token !== hydrationToken || !mountedForm?.isConnected) return;
     teams = loadedTeams;
     applySchedule(published);
-    syncSessionWindow(mountedForm, false);
     renderTeamCount();
     updateNote();
   }
@@ -478,7 +547,6 @@
     getSchedule: buildTeamSchedule,
     validate: validateSchedule,
     snapshot() {
-      syncSessionWindow(mountedForm, false);
       const teamSchedule = buildTeamSchedule();
       return { teamSchedule, validation: validateSchedule(teamSchedule) };
     },
@@ -491,7 +559,6 @@
       if (url === UPDATES_API_URL && method === 'POST' && typeof init?.body === 'string' && mountedForm && section()) {
         const payload = JSON.parse(init.body);
         if (String(payload?.action || '').toLowerCase() === 'publish' && String(payload?.category || '').toLowerCase() === 'schedule') {
-          syncSessionWindow(mountedForm, false);
           const teamSchedule = buildTeamSchedule();
           const result = validateSchedule(teamSchedule);
           if (result.ok) {
