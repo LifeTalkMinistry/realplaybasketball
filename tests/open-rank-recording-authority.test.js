@@ -47,8 +47,18 @@ test('manual Open Rank correction is produced only as repair for recorded result
   assert.doesNotMatch(admin, /EDIT OPEN RANK NUMBER/);
 });
 
-test('recorded replay renderer gives canonical Open Rank identity priority over technical title', () => {
+test('recorded replay renderer gives competition-season identity priority and falls back to Open Rank', () => {
   const replay = read('career-game-replay.js');
+
+  assert.match(replay, /function positiveReplaySeasonNumber\(value\)/);
+  assert.match(replay, /function competitionReplayTitle\(game\)/);
+  assert.match(replay, /game\?\.seasonNumber \?\? game\?\.season_number/);
+  assert.match(replay, /game\?\.seasonGameNumber \?\? game\?\.season_game_number/);
+  assert.match(replay, /game\?\.competitionContext \?\? game\?\.competition_context/);
+  assert.match(replay, /TUNE-UP/);
+  assert.match(replay, /LEAGUE/);
+  assert.match(replay, /SEASON \$\{seasonNumber\} #\$\{String\(seasonGameNumber\)\.padStart\(2, '0'\)\}/);
+  assert.match(replay, /if \(competitionTitle\) return competitionTitle/);
 
   assert.match(replay, /function positiveReplayOpenRankNumber\(value\)/);
   assert.match(replay, /function canonicalReplayTitle\(number\)/);
@@ -56,6 +66,7 @@ test('recorded replay renderer gives canonical Open Rank identity priority over 
   assert.match(replay, /game\?\.openRankNumber \?\? game\?\.open_rank_number/);
   assert.match(replay, /RealPlayOpenRankIdentity\?\.numberForSession\?\.\(sessionId\)/);
   assert.match(replay, /return number \? canonicalReplayTitle\(number\) : String\(game\?\.title \|\| 'REAL PLAY GAME'\)/);
+
   assert.match(replay, /const replayTitle = replayDisplayTitle\(game\)/);
   assert.match(replay, /<h2>\$\{esc\(replayTitle\)\}<\/h2>/);
   assert.match(replay, /data-rp-career-replay-brand-session>\$\{esc\(replayTitle\)\}<\/div>/);
