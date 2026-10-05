@@ -765,6 +765,10 @@
   }
 
   function openAuthoritativeResults() {
+    // WORLD owns its destination immediately, before any optional feature/data
+    // work. This guarantees Home can never remain visible after a WORLD tap.
+    window.RealPlayRouteShell?.show?.('world');
+
     removeLegacyWorldResults();
     injectWorldResultsStyles();
 
@@ -774,7 +778,6 @@
     markWorldActive();
 
     if (window.RealPlayUpdates?.open) {
-      window.RealPlayRouteShell?.show?.('world');
 
       let firstPageSettled = false;
       const handleFirstPage = (event) => {
@@ -821,37 +824,17 @@
     }
   }
 
-  function patchSimpleNavigationApi(attempt = 0) {
-    if (window.RealPlaySimpleNavigation) {
-      window.RealPlaySimpleNavigation.world = openAuthoritativeResults;
-      return;
-    }
-    if (attempt < 40) window.setTimeout(() => patchSimpleNavigationApi(attempt + 1), 100);
-  }
-
+  // Primary navigation belongs exclusively to simple-navigation.js. WORLD is a
+  // feature implementation, not a second router, so it must never intercept
+  // bottom-nav clicks or replace the core route authority.
   document.addEventListener('click', (event) => {
-    const worldButton = event.target.closest?.('[data-rp-simple-nav-item="world"]');
-    if (worldButton) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      openAuthoritativeResults();
-      return;
-    }
-
-    const otherNav = event.target.closest?.('[data-rp-simple-nav-item]');
-    if (otherNav && otherNav.dataset.rpSimpleNavItem !== 'world') {
-      setWorldResultsMode(false);
-      return;
-    }
-
     if (event.target.closest?.('[data-rp-home-command-card], [data-rp-simple-updates], [data-rp-simple-next]')) {
       setWorldResultsMode(false);
     }
-  }, true);
+  });
 
   injectWorldResultsStyles();
   removeLegacyWorldResults();
-  patchSimpleNavigationApi();
 
   window.RealPlayWorldResults = {
     open: openAuthoritativeResults,
