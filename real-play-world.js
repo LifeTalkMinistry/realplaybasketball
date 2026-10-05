@@ -323,8 +323,18 @@
       messages = Array.isArray(data.messages) ? data.messages : [];
       renderChat({ scroll: scroll || wasNearBottom });
       if (!quiet) setChatStatus('');
+      try {
+        window.dispatchEvent(new CustomEvent('realplay:chat-loaded', {
+          detail: { channel: currentChannel || 'world', count: messages.length },
+        }));
+      } catch (_error) {}
     } catch (error) {
       if (!quiet) setChatStatus(error.message || 'Could not load chat.', 'error');
+      try {
+        window.dispatchEvent(new CustomEvent('realplay:chat-load-error', {
+          detail: { message: error.message || 'Could not load chat.' },
+        }));
+      } catch (_error) {}
     }
   }
 
