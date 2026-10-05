@@ -351,33 +351,8 @@
     assignTeam(select.dataset.rpAuditTeamDesignation, select.value);
   }, true);
 
-  document.addEventListener('click', (event) => {
-    const admin = adminRoot();
-    if (!admin || !admin.contains(event.target)) return;
-
-    const add = event.target.closest?.('[data-rp-video-add]');
-    if (add && mountedSessionId) {
-      const side = String(add.dataset.team || '').toLowerCase();
-      if (['west', 'east'].includes(side)) designationState(mountedSessionId)[side] = '';
-      return;
-    }
-
-    const remove = event.target.closest?.('[data-rp-video-remove]');
-    if (remove && mountedSessionId) {
-      const card = remove.closest('.rp-video-roster-card');
-      const side = card?.classList.contains('west') ? 'west' : card?.classList.contains('east') ? 'east' : '';
-      if (side) designationState(mountedSessionId)[side] = '';
-      return;
-    }
-
-    const move = event.target.closest?.('[data-rp-video-switch]');
-    if (move && mountedSessionId) {
-      const targetSide = String(move.dataset.rpVideoSwitch || '').toLowerCase();
-      designationState(mountedSessionId).west = '';
-      designationState(mountedSessionId).east = '';
-      if (['west', 'east'].includes(targetSide)) designationState(mountedSessionId)[targetSide] = '';
-    }
-  }, true);
+  // Roster edits do not erase the game's public team identity.
+  // The designation changes only through the DESIGNATED TEAM selector.
 
   window.addEventListener('realplay:admin-render', () => {
     window.requestAnimationFrame(() => mount());
