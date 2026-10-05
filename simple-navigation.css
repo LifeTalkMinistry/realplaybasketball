@@ -699,90 +699,291 @@ body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-simple-home.rp
   animation:rpRouteShellSweep 1.15s ease-in-out infinite;
 }
 
-.rp-route-skeleton-world-tabs{
-  width:min(100%,360px);
-  margin:0 auto 2px;
+.rp-route-shell-world-premium{
+  width:min(100%,560px);
+  min-height:calc(100dvh - var(--rp-simple-nav-height) - env(safe-area-inset-bottom) - 36px);
+  align-content:start;
+  gap:16px;
+}
+
+.rp-route-shell-world-premium-head{
+  min-height:94px;
+  padding:18px 4px 10px;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.rp-route-shell-world-premium-head strong{
+  order:1;
+  font-size:1.72rem;
+  letter-spacing:.035em;
+  text-shadow:0 0 24px rgba(255,255,255,.08);
+}
+.rp-route-shell-world-premium-head small{
+  order:2;
+  margin-top:7px;
+  color:#6f8298;
+  font-size:.43rem;
+  letter-spacing:.18em;
+}
+
+.rp-route-world-premium-tabs{
+  width:min(100%,352px);
+  margin:0 auto;
   padding:4px;
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:4px;
-  border:1px solid rgba(255,255,255,.07);
-  border-radius:13px;
-  background:rgba(4,9,16,.88);
+  border:1px solid rgba(96,125,160,.14);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(6,12,20,.94),rgba(3,8,14,.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.018),
+    0 14px 32px rgba(0,0,0,.18);
 }
-.rp-route-skeleton-world-tabs i{
+.rp-route-world-premium-tabs span{
+  height:40px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+  color:#586a7e;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
+  font-size:.56rem;
+  font-style:italic;
+  font-weight:950;
+  letter-spacing:.11em;
+}
+.rp-route-world-premium-tabs span.active{
+  color:#f5fbff;
+  background:
+    linear-gradient(105deg,rgba(15,133,190,.18),rgba(6,14,23,.96) 54%,rgba(132,24,39,.12));
+  box-shadow:
+    inset 0 0 0 1px rgba(61,213,255,.13),
+    0 8px 18px rgba(0,0,0,.18);
+}
+
+.rp-route-world-premium-stage{
+  position:relative;
+  isolation:isolate;
+  min-height:330px;
+  overflow:hidden;
+  padding:34px 24px 30px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  border:1px solid transparent;
+  border-radius:24px;
+  background:
+    linear-gradient(155deg,rgba(4,10,17,.985),rgba(2,6,11,.995)) padding-box,
+    linear-gradient(120deg,rgba(42,194,255,.32),rgba(255,255,255,.045) 52%,rgba(255,54,73,.25)) border-box;
+  box-shadow:
+    0 28px 56px rgba(0,0,0,.34),
+    inset 0 1px 0 rgba(255,255,255,.025);
+}
+.rp-route-world-premium-stage::before{
+  content:'';
+  position:absolute;
+  z-index:-2;
+  inset:0;
+  background:
+    radial-gradient(circle at 17% 20%,rgba(21,127,255,.13),transparent 34%),
+    radial-gradient(circle at 83% 24%,rgba(208,34,48,.10),transparent 32%),
+    radial-gradient(circle at 50% 92%,rgba(19,114,183,.08),transparent 42%);
+}
+.rp-route-world-premium-stage::after{
+  content:'';
+  position:absolute;
+  z-index:-1;
+  left:12%;
+  right:12%;
+  bottom:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(55,214,255,.65),rgba(255,255,255,.20),rgba(255,61,78,.55),transparent);
+  opacity:.68;
+}
+
+.rp-route-world-premium-orbit{
+  position:absolute;
+  z-index:-1;
+  top:42%;
+  left:50%;
+  width:236px;
+  height:236px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  pointer-events:none;
+}
+.rp-route-world-premium-orbit::before,
+.rp-route-world-premium-orbit::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  border:1px solid rgba(68,195,255,.09);
+}
+.rp-route-world-premium-orbit::after{
+  inset:24px;
+  border-color:rgba(255,71,85,.065);
+}
+.rp-route-world-premium-orbit i{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(16px);
+  opacity:.42;
+}
+.rp-route-world-premium-orbit i:nth-child(1){
+  width:88px;
+  height:88px;
+  top:24px;
+  left:12px;
+  background:rgba(21,157,255,.22);
+  animation:rpWorldPremiumFloat 2.8s ease-in-out infinite alternate;
+}
+.rp-route-world-premium-orbit i:nth-child(2){
+  width:76px;
+  height:76px;
+  right:10px;
+  bottom:38px;
+  background:rgba(228,33,53,.16);
+  animation:rpWorldPremiumFloat 3.2s ease-in-out .25s infinite alternate-reverse;
+}
+.rp-route-world-premium-orbit i:nth-child(3){
+  width:50px;
+  height:50px;
+  left:94px;
+  bottom:8px;
+  background:rgba(255,255,255,.055);
+}
+
+.rp-route-world-premium-logo-wrap{
+  position:relative;
+  width:min(78%,270px);
+  min-height:90px;
+  display:grid;
+  place-items:center;
+  margin-top:-8px;
+}
+.rp-route-world-premium-logo-wrap::before{
+  content:'';
+  position:absolute;
+  width:170px;
+  height:70px;
+  border-radius:50%;
+  background:rgba(35,165,255,.075);
+  filter:blur(24px);
+}
+.rp-route-world-premium-logo-wrap img{
+  position:relative;
+  z-index:1;
   display:block;
-  height:38px;
-  border-radius:9px;
-  background:#08131d;
+  width:100%;
+  height:auto;
+  max-height:96px;
+  object-fit:contain;
+  filter:
+    drop-shadow(0 10px 22px rgba(0,0,0,.34))
+    drop-shadow(-8px 0 18px rgba(31,156,255,.05))
+    drop-shadow(8px 0 18px rgba(255,54,67,.04));
 }
-.rp-route-skeleton-world-intro{
+
+.rp-route-world-premium-copy{
+  margin-top:20px;
+  display:grid;
+  justify-items:center;
+  gap:7px;
+  text-align:center;
+}
+.rp-route-world-premium-copy small{
+  color:#46d7ff;
+  font-size:.43rem;
+  font-weight:950;
+  letter-spacing:.18em;
+}
+.rp-route-world-premium-copy strong{
+  color:#f8fbff;
+  font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
+  font-size:1.16rem;
+  font-style:italic;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:.04em;
+  text-shadow:0 0 18px rgba(255,255,255,.06);
+}
+.rp-route-world-premium-copy p{
+  width:min(100%,285px);
+  margin:1px 0 0;
+  color:#718297;
+  font-size:.59rem;
+  font-weight:700;
+  line-height:1.55;
+}
+
+.rp-route-world-premium-progress{
+  width:min(72%,230px);
+  height:2px;
+  margin-top:22px;
+  overflow:hidden;
+  border-radius:999px;
+  background:rgba(255,255,255,.055);
+  box-shadow:0 0 0 1px rgba(255,255,255,.012);
+}
+.rp-route-world-premium-progress span{
+  display:block;
+  width:46%;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,rgba(47,211,255,0),#38d7ff 28%,#f3fbff 52%,#ff4a5c 76%,rgba(255,74,92,0));
+  filter:drop-shadow(0 0 5px rgba(59,214,255,.24));
+  animation:rpWorldPremiumProgress 1.35s cubic-bezier(.45,0,.2,1) infinite;
+}
+
+.rp-route-world-premium-status{
+  min-height:34px;
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:18px;
-  min-height:30px;
-  padding:6px 3px 2px;
+  justify-content:center;
+  gap:9px;
+  color:#53677e;
+  font-size:.40rem;
+  font-weight:950;
+  letter-spacing:.13em;
 }
-.rp-route-skeleton-world-intro span{
-  width:42%;
-  height:9px;
-  border-radius:999px;
-  background:#0a1722;
+.rp-route-world-premium-status i{
+  width:3px;
+  height:3px;
+  border-radius:50%;
+  background:#42d8ff;
+  box-shadow:0 0 8px rgba(66,216,255,.7);
+  animation:rpWorldPremiumDot 1s ease-in-out infinite alternate;
 }
-.rp-route-skeleton-world-intro b{
-  width:34%;
-  height:7px;
-  border-radius:999px;
-  background:#08131d;
+.rp-route-world-premium-status b{
+  color:#687b91;
+  font:inherit;
 }
-.rp-route-skeleton-world-cards{
-  display:grid;
-  gap:12px;
+
+.rp-route-world-premium-tabs span::after,
+.rp-route-world-premium-orbit i::after,
+.rp-route-world-premium-logo-wrap span::after,
+.rp-route-world-premium-progress span::after,
+.rp-route-world-premium-status span::after,
+.rp-route-world-premium-status i::after,
+.rp-route-world-premium-status b::after{
+  display:none!important;
 }
-.rp-route-skeleton-world-cards article{
-  min-height:148px;
-  padding:15px;
-  display:grid;
-  align-content:start;
-  gap:11px;
-  border:1px solid rgba(69,216,255,.10);
-  border-radius:18px;
-  background:linear-gradient(145deg,rgba(5,11,19,.96),rgba(3,7,13,.985));
+
+@keyframes rpWorldPremiumProgress{
+  0%{transform:translateX(-115%);opacity:.45}
+  50%{opacity:1}
+  100%{transform:translateX(235%);opacity:.45}
 }
-.rp-route-skeleton-world-cards article header{
-  display:flex;
-  align-items:center;
-  gap:10px;
+@keyframes rpWorldPremiumFloat{
+  from{transform:translate3d(0,-5px,0) scale(.96)}
+  to{transform:translate3d(7px,7px,0) scale(1.05)}
 }
-.rp-route-skeleton-world-cards article header span{
-  width:30px;
-  height:30px;
-  border-radius:9px;
-  background:#0a1924;
-}
-.rp-route-skeleton-world-cards article header i{
-  width:32%;
-  height:8px;
-  border-radius:999px;
-  background:#0b1722;
-}
-.rp-route-skeleton-world-cards article>b{
-  display:block;
-  width:76%;
-  height:14px;
-  border-radius:999px;
-  background:#0b1722;
-}
-.rp-route-skeleton-world-cards article>i{
-  display:block;
-  width:92%;
-  height:9px;
-  border-radius:999px;
-  background:#08131d;
-}
-.rp-route-skeleton-world-cards article>i:last-child{
-  width:58%;
+@keyframes rpWorldPremiumDot{
+  from{opacity:.28;transform:scale(.78)}
+  to{opacity:1;transform:scale(1.22)}
 }
 
 .rp-route-skeleton-channels{
@@ -928,6 +1129,28 @@ body.rp-route-shell-open .rp-simple-nav{
 
 @media(max-width:420px){
   .rp-route-shell{padding:14px 12px 24px}
+  .rp-route-shell-world-premium{
+    min-height:calc(100dvh - var(--rp-simple-nav-height) - env(safe-area-inset-bottom) - 28px);
+    gap:13px;
+  }
+  .rp-route-shell-world-premium-head{
+    min-height:78px;
+    padding:12px 2px 7px;
+  }
+  .rp-route-shell-world-premium-head strong{font-size:1.48rem}
+  .rp-route-world-premium-tabs{width:100%}
+  .rp-route-world-premium-stage{
+    min-height:314px;
+    padding:30px 18px 26px;
+    border-radius:22px;
+  }
+  .rp-route-world-premium-logo-wrap{
+    width:min(80%,245px);
+  }
+  .rp-route-world-premium-copy{margin-top:17px}
+  .rp-route-world-premium-copy strong{font-size:1.06rem}
+  .rp-route-world-premium-copy p{font-size:.56rem}
+
   .rp-route-shell-heading{min-height:68px}
   .rp-route-shell-heading strong{font-size:1.28rem}
   .rp-route-skeleton-row{grid-template-columns:34px minmax(0,1fr) 52px}
@@ -937,6 +1160,13 @@ body.rp-route-shell-open .rp-simple-nav{
 }
 
 @media(prefers-reduced-motion:reduce){
+  .rp-route-world-premium-progress span,
+  .rp-route-world-premium-orbit i,
+  .rp-route-world-premium-status i{
+    animation:none!important;
+  }
+  .rp-route-world-premium-progress span{transform:translateX(58%);opacity:.8}
+
   .rp-route-shell [aria-hidden="true"] i::after,
   .rp-route-shell [aria-hidden="true"] span::after,
   .rp-route-shell [aria-hidden="true"] b::after,
