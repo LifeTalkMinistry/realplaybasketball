@@ -20,6 +20,9 @@
   let progressiveNextOffset = 0;
   let progressiveHasMore = false;
   let progressiveScrollTick = 0;
+  let progressiveCategory = '';
+  let progressiveLoadMode = 'auto';
+  let progressiveLoadingLabel = 'LOADING LATEST FROM REAL PLAY...';
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -78,6 +81,8 @@
           'offset',
           String(Number.isSafeInteger(requestedOffset) && requestedOffset >= 0 ? requestedOffset : 0)
         );
+        const requestedCategory = String(payload?.category || '').trim().toLowerCase();
+        if (requestedCategory) publicUrl.searchParams.set('category', requestedCategory);
       }
       const response = await fetch(publicUrl.href, {
         method: 'GET',
@@ -305,6 +310,12 @@
     sentinel.dataset.updatesProgressiveSentinel = 'true';
     sentinel.hidden = true;
     sentinel.innerHTML = '<span>SCROLL FOR MORE</span>';
+    sentinel.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-updates-load-more]');
+      if (!button) return;
+      event.preventDefault();
+      loadMoreProgressive();
+    });
     feed.insertAdjacentElement('afterend', sentinel);
     return sentinel;
   }
@@ -317,14 +328,21 @@
 
     if (loading && progressiveNextOffset > 0) {
       sentinel.classList.add('loading');
-      sentinel.innerHTML = '<span>LOADING MORE FROM REAL PLAY...</span>';
+      sentinel.innerHTML = progressiveLoadMode === 'button'
+        ? '<button type="button" class="rp-updates-load-more" data-updates-load-more disabled>LOADING MORE RESULTS...</button>'
+        : '<span>LOADING MORE FROM REAL PLAY...</span>';
       return;
     }
 
     sentinel.classList.remove('loading');
-    sentinel.innerHTML = progressiveHasMore
-      ? '<span>SCROLL FOR MORE</span>'
-      : '<span>YOU\'RE ALL CAUGHT UP.</span>';
+    if (!progressiveHasMore) {
+      sentinel.innerHTML = '<span>YOU\'RE ALL CAUGHT UP.</span>';
+      return;
+    }
+
+    sentinel.innerHTML = progressiveLoadMode === 'button'
+      ? '<button type="button" class="rp-updates-load-more" data-updates-load-more>SEE MORE RESULTS</button>'
+      : '<span>SCROLL FOR MORE</span>';
   }
 
   function mergeUpdatePages(existing, incoming) {
@@ -344,6 +362,7 @@
   }
 
   function handleProgressiveScroll() {
+    if (progressiveLoadMode !== 'auto') return;
     if (!progressiveMode || loading || !progressiveHasMore || !panel) return;
     if (panel.scrollTop < 60) return;
     if (progressiveScrollTick) return;
@@ -372,7 +391,11 @@
 
     const requestedOffset = progressiveMode && append ? progressiveNextOffset : 0;
     const payload = progressiveMode
-      ? { limit: progressivePageSize, offset: requestedOffset }
+      ? {
+          limit: progressivePageSize,
+          offset: requestedOffset,
+          category: progressiveCategory || undefined,
+        }
       : {};
 
     try {
@@ -402,6 +425,9 @@
               rendered: updates.length,
               hasMore: progressiveHasMore,
               nextOffset: progressiveNextOffset,
+              total: Number(data?.page?.total) || updates.length,
+              category: progressiveCategory || '',
+              loadMode: progressiveLoadMode,
             },
           }));
         } catch (_error) {}
@@ -518,6 +544,10 @@
     progressivePageSize = Math.max(1, Math.min(12, Number(options?.pageSize) || 3));
     progressiveNextOffset = 0;
     progressiveHasMore = progressiveMode;
+    progressiveCategory = String(options?.category || '').trim().toLowerCase();
+    progressiveLoadMode = options?.loadMode === 'button' ? 'button' : 'auto';
+    progressiveLoadingLabel = String(options?.loadingLabel || '').trim()
+      || (progressiveCategory === 'result' ? 'LOADING GAME RESULTS...' : 'LOADING LATEST FROM REAL PLAY...');
     filter = 'all';
     renderFilters();
 
@@ -527,7 +557,7 @@
       lastRenderKey = '';
       const root = panel.querySelector('[data-updates-feed]');
       if (root) {
-        root.innerHTML = '<div class="rp-updates-progressive-initial"><span>LOADING LATEST FROM REAL PLAY...</span></div>';
+        root.innerHTML = `<div class="rp-updates-progressive-initial"><span>${esc(progressiveLoadingLabel)}</span></div>`;
       }
     }
 
@@ -548,6 +578,9 @@
     document.body.classList.remove('rp-updates-open');
     progressiveMode = false;
     progressiveHasMore = false;
+    progressiveCategory = '';
+    progressiveLoadMode = 'auto';
+    progressiveLoadingLabel = 'LOADING LATEST FROM REAL PLAY...';
     updateProgressiveSentinel();
     stopPolling();
   }
@@ -574,5 +607,12 @@
     loadMore: loadMoreProgressive,
     getUpdates: () => updates,
     isProgressive: () => progressiveMode,
+    progressiveState: () => ({
+      category: progressiveCategory,
+      loadMode: progressiveLoadMode,
+      hasMore: progressiveHasMore,
+      nextOffset: progressiveNextOffset,
+      pageSize: progressivePageSize,
+    }),
   };
 })();
