@@ -27,6 +27,7 @@
   let playerDecorationTimer = null;
   let presentationTimer = null;
   let overallAutoLoadTimer = null;
+  let statsLoadingOverlay = null;
   let playerPresentation = '';
   let scopedRanking = null;
   let scopedRequestId = 0;
@@ -118,6 +119,27 @@
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-status]{display:none!important}
       body.rp-simple-navigation-active .rp-world[data-rp-competition-presentation="overall"] [data-world-player-more],
       body.rp-simple-navigation-active .rp-world[data-rp-competition-presentation="scoped"] [data-world-player-more]{display:none!important}
+
+      /* Stats owns its loading state. Never expose the shared Players directory while a Stats view is booting. */
+      .rp-stats-loading-overlay{
+        position:fixed;z-index:575;inset:0 0 calc(var(--rp-simple-nav-height,72px) + env(safe-area-inset-bottom)) 0;
+        display:grid;place-items:center;padding:24px;box-sizing:border-box;color:#eef7ff;
+        background:
+          radial-gradient(circle at 18% 16%,rgba(25,151,255,.16),transparent 30%),
+          radial-gradient(circle at 82% 42%,rgba(255,35,58,.11),transparent 30%),
+          linear-gradient(180deg,#03060c 0%,#020409 52%,#010205 100%);
+      }
+      .rp-stats-loading-card{display:grid;justify-items:center;gap:11px;text-align:center}
+      .rp-stats-loading-mark{
+        width:46px;height:46px;border:3px solid rgba(83,218,255,.16);border-top-color:#55ddff;border-radius:50%;
+        animation:rp-stats-loading-spin .75s linear infinite;box-shadow:0 0 22px rgba(60,205,255,.12)
+      }
+      .rp-stats-loading-card strong{
+        font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.15rem;font-style:italic;font-weight:950;letter-spacing:.08em
+      }
+      .rp-stats-loading-card span{color:#688096;font:900 .5rem/1.45 Arial,sans-serif;letter-spacing:.10em}
+      @keyframes rp-stats-loading-spin{to{transform:rotate(360deg)}}
+      @media(prefers-reduced-motion:reduce){.rp-stats-loading-mark{animation:none;border-top-color:rgba(83,218,255,.16);box-shadow:0 0 0 2px #55ddff inset}}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row:not([data-rp-competition-scope-row]){display:none!important}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row[data-rp-competition-scope-row]{display:grid}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking .rp-world-topbar{display:none!important}
@@ -176,6 +198,32 @@
       @media(prefers-reduced-motion:reduce){.rp-competition-card{transition:none}}
     `;
     document.head.appendChild(style);
+  }
+
+  function showStatsLoading(title = 'LOADING STATS...', detail = 'PREPARING VERIFIED PLAYER DATA') {
+    if (!statsLoadingOverlay) {
+      statsLoadingOverlay = document.createElement('section');
+      statsLoadingOverlay.className = 'rp-stats-loading-overlay';
+      statsLoadingOverlay.dataset.rpStatsLoading = 'true';
+      statsLoadingOverlay.setAttribute('role', 'status');
+      statsLoadingOverlay.setAttribute('aria-live', 'polite');
+      statsLoadingOverlay.innerHTML = `
+        <div class="rp-stats-loading-card">
+          <div class="rp-stats-loading-mark" aria-hidden="true"></div>
+          <strong data-rp-stats-loading-title>LOADING STATS...</strong>
+          <span data-rp-stats-loading-detail>PREPARING VERIFIED PLAYER DATA</span>
+        </div>`;
+      document.body.appendChild(statsLoadingOverlay);
+    }
+    const heading = statsLoadingOverlay.querySelector('[data-rp-stats-loading-title]');
+    const copy = statsLoadingOverlay.querySelector('[data-rp-stats-loading-detail]');
+    if (heading) heading.textContent = title;
+    if (copy) copy.textContent = detail;
+    statsLoadingOverlay.hidden = false;
+  }
+
+  function hideStatsLoading() {
+    if (statsLoadingOverlay) statsLoadingOverlay.hidden = true;
   }
 
   function createPanel() {
@@ -343,6 +391,7 @@
     }
     const wasScoped = playerPresentation === 'scoped';
     scopedRequestId += 1;
+    hideStatsLoading();
     removeScopedArtifacts();
     playerPresentation = '';
     scopedRanking = null;
@@ -425,6 +474,7 @@
     close();
     clearPlayerPresentation();
     playerPresentation = 'overall';
+    showStatsLoading('LOADING PLAYER RANKINGS...', 'BUILDING THE COMPLETE VERIFIED LEADERBOARD');
     openPlayersRoute();
     playerDecorationTimer = window.setTimeout(() => decoratePlayerRankings(0), 45);
   }
@@ -534,6 +584,7 @@
       if (requestId === scopedRequestId && scopedRanking === config && playerPresentation === 'scoped') {
         config.loading = false;
         applyScopedRanking(0);
+        hideStatsLoading();
       }
     }
   }
@@ -624,6 +675,10 @@
       filterInitialized: false,
     };
     playerPresentation = 'scoped';
+    showStatsLoading(
+      scopedRanking.title === 'TUNE-UP' ? 'LOADING TUNE-UP...' : 'LOADING COMPETITION STATS...',
+      'READING VERIFIED COMPETITION RESULTS'
+    );
     openPlayersRoute();
     const activeScope = scopedRanking;
     playerDecorationTimer = window.setTimeout(() => applyScopedRanking(0), 45);
@@ -718,6 +773,7 @@
       if (playerPresentation === 'overall') {
         decoratePlayerRankings(0);
         queueOverallPlayerPage(Boolean(event?.detail?.hasMore));
+        hideStatsLoading();
       }
     });
 
