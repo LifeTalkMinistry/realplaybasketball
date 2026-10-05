@@ -49,12 +49,12 @@
       .rp-home-team-schedule-blocks[hidden],.rp-home-team-schedule-open-note[hidden]{display:none!important}
       .rp-home-team-block{margin-top:9px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(4,10,16,.78)}
       .rp-home-team-block:first-child{margin-top:0}
-      .rp-home-team-block.is-disabled{border-color:rgba(255,255,255,.055);background:rgba(4,10,16,.42);opacity:.56;filter:saturate(.55)}
+      .rp-home-team-block.is-disabled{border-color:rgba(255,255,255,.055);background:rgba(4,10,16,.42);opacity:.68;filter:saturate(.55)}
+      .rp-home-team-block.is-disabled .rp-home-team-fixed-time,.rp-home-team-block.is-disabled .rp-home-team-schedule-label,.rp-home-team-block.is-disabled .rp-home-team-selected,.rp-home-team-block.is-disabled .rp-home-team-picker-shell{display:none!important}
       .rp-home-team-block-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
       .rp-home-team-block-head strong{color:#dfe8ef;font:950 .56rem/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}
       .rp-home-team-day-toggle{flex:0 0 auto;min-width:47px;height:28px;padding:0 9px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:#07111a;color:#7f93a3;font:950 .48rem/1 system-ui,sans-serif;letter-spacing:.08em;cursor:pointer}
       .rp-home-team-day-toggle.is-on{border-color:rgba(49,211,255,.58);background:rgba(7,72,96,.72);color:#71e6ff;box-shadow:0 0 0 1px rgba(49,211,255,.08) inset}
-      .rp-home-team-block.is-disabled .rp-home-team-selected,.rp-home-team-block.is-disabled .rp-home-team-picker-shell{pointer-events:none}
       .rp-home-team-fixed-time{margin-bottom:10px;color:#f2f7fb;font:900 .69rem/1.2 system-ui,sans-serif;letter-spacing:.035em}
       .rp-home-team-selected{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;min-height:30px;align-items:center}
       .rp-home-team-selected-empty{color:#637887;font:800 .49rem/1.3 system-ui,sans-serif;letter-spacing:.035em}
