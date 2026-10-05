@@ -481,7 +481,7 @@
   }
 
   function selectControl(key) {
-    if (!FILTERS.some(([filterKey]) => filterKey === key)) return;
+    if (!FILTERS.some(([filterKey]) => filterKey === key)) return false;
 
     if (key === 'ranked') {
       if (filterMode === key) directions.rank = directions.rank === 'asc' ? 'desc' : 'asc';
@@ -508,6 +508,7 @@
 
     renderControls();
     scheduleSort();
+    return true;
   }
 
   function ensureOvrInfoButton(playersView) {
@@ -569,6 +570,12 @@
     enforceRankAuthority(false);
     return true;
   }
+
+  window.addEventListener('realplay:player-filter-select', (event) => {
+    const key = String(event?.detail?.key || '').trim().toLowerCase();
+    if (!key) return;
+    selectControl(key);
+  });
 
   installStyles();
   if (!install()) {
