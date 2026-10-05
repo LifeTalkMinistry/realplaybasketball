@@ -601,7 +601,7 @@
 
     return `
       <button type="button" class="rp-world-player-row" data-rp-competition-scope-row="true"
-        data-world-player-id="${esc(playerId)}" aria-label="${esc(name)} Tune-Up statistics">
+        data-world-player-id="${esc(playerId)}" aria-label="${esc(name)} competition statistics">
         <span class="rp-world-player-name"><strong>${esc(name)}</strong><b>${esc(jersey)}</b></span>
         <span class="rp-world-player-metrics">${rating}${winRate}</span>
       </button>`;
@@ -800,6 +800,8 @@
       copy: 'Every ranking and statistic on this page belongs only to League Season ' + cleanSeason + '.',
       emptyTitle: 'NO SEASON ' + cleanSeason + ' RESULTS YET.',
       emptyCopy: 'Season ' + cleanSeason + ' rankings and stats will appear here after verified League games begin.',
+      competitionContext: 'league',
+      competitionSeasonId: Number.isSafeInteger(Number(cleanSeason)) ? Number(cleanSeason) : null,
       parent: 'league',
     });
   }
