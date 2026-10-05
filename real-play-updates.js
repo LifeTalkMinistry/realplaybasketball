@@ -444,6 +444,17 @@
       if (!quiet) setStatus('');
     } catch (error) {
       if (!quiet) setStatus(error.message || 'Could not load official updates.', 'error');
+      if (progressiveMode) {
+        try {
+          window.dispatchEvent(new CustomEvent('realplay:updates-page-error', {
+            detail: {
+              append,
+              category: progressiveCategory || '',
+              message: error.message || 'Could not load official updates.',
+            },
+          }));
+        } catch (_error) {}
+      }
       if (error.status === 401 && !visitor()) {
         closeUpdates();
         document.querySelector('[data-auth-open]')?.click();
