@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-rp-deploy="20261005-world-team-identity-v186" lang="en" class="rp-shell-booting">
+<html data-rp-deploy="20261005-instant-route-shell-v187" lang="en" class="rp-shell-booting">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -13,9 +13,10 @@
     html.rp-shell-booting body::before{content:'REAL PLAY';top:45%;color:#f6f9ff;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:clamp(2rem,9vw,3.25rem);font-style:italic;font-weight:950;letter-spacing:.025em}
     html.rp-shell-booting body::after{content:'APPLYING THE LATEST UPDATES\\A This may take a little longer than usual.\\A Thank you for your patience.';white-space:pre-line;width:min(88vw,420px);line-height:1.55;letter-spacing:.08em;top:calc(45% + 58px);color:#42d8ff;font-family:Arial,sans-serif;font-size:.56rem;font-weight:900;letter-spacing:.22em;animation:rpStaticBootPulse 1.1s ease-in-out infinite alternate}
     @keyframes rpStaticBootPulse{from{opacity:.38}to{opacity:1}}
+    html.rp-shell-booting.rp-shell-static-failed body::after{content:'LOAD FAILED · REFRESH';color:#ff7b8c;animation:none;opacity:1}
     @media(prefers-reduced-motion:reduce){html.rp-shell-booting body::after{animation:none;opacity:.78}}
   </style>
-  <script>window.__rpStaticBootFallback=setTimeout(function(){document.documentElement.classList.remove('rp-shell-booting')},8000);</script>
+  <script>window.__rpStaticBootFallback=setTimeout(function(){document.documentElement.classList.add('rp-shell-static-failed')},8000);</script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="site.webmanifest?v=20260906-main-menu-physics-v8" />
   <link rel="stylesheet" href="styles.css" />
@@ -24,7 +25,7 @@
   <link rel="stylesheet" href="auth.css" />
   <link rel="stylesheet" href="three-v-three-beta.css?v=20260930-slot-team-screen-v8" />
   <script src="real-play-api-compat.js?v=20261004-summary-compat-v1" defer></script>
-  <script src="app.js?v=20261005-audit-team-designation-v174" defer></script>
+  <script src="app.js?v=20261005-instant-route-shell-v175" defer></script>
   <script src="profile-share-linked-card.js?v=20261004-public-updates-dedupe-v114" defer></script>
   <script src="auth.js?v=20260903-mobile-brand-space-v3" defer></script>
   <script src="ranking-reservation-snapshot-standby-fit.js?v=20260918-snapshot-standby-fit-v98" defer></script>
