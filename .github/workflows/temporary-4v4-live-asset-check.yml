@@ -23,6 +23,26 @@ jobs:
           echo '--- LIVE DEPLOY ID ---'
           grep -o 'data-rp-deploy="[^"]*"' /tmp/rp-index.html | head -1 || true
 
+          echo '--- AUDIT START AUTHORITY LIVE CHECK ---'
+          curl -fsSL --retry 3 "https://joinrealplay.com/admin-recorded-start-submit-fix.js?cb=${CB}" -o /tmp/rp-audit-start.js
+          curl -fsSL --retry 3 "https://joinrealplay.com/admin-courtside-live.js?cb=${CB}" -o /tmp/rp-audit-bridge.js
+          node --check /tmp/rp-audit-start.js
+          node --check /tmp/rp-audit-bridge.js
+          grep -n "standalone Audit start endpoint owns the canonical roster validation" /tmp/rp-audit-start.js
+          if grep -n "counts.west !== expected || counts.east !== expected" /tmp/rp-audit-start.js; then
+            echo 'ERROR: live Audit START still contains the retired exact-roster validator.'
+            exit 1
+          fi
+          if grep -n 'needs exactly ${expected} West and ${expected} East players' /tmp/rp-audit-start.js; then
+            echo 'ERROR: live Audit START still serves the retired exact-count error text.'
+            exit 1
+          fi
+          grep -n "CAREER_CONTROL_PATH = '/api/real-play/admin/career/control'" /tmp/rp-audit-bridge.js
+          grep -n "AUDIT_CONTROL_PATH = '/api/real-play/admin/audit/control'" /tmp/rp-audit-bridge.js
+          grep -n "url.pathname = AUDIT_CONTROL_PATH" /tmp/rp-audit-bridge.js
+          echo '--- AUDIT LIVE ASSET SHA256 ---'
+          sha256sum /tmp/rp-audit-start.js /tmp/rp-audit-bridge.js
+
           curl -fsSL --retry 3 "https://joinrealplay.com/home-4v4-slot-picker.js?cb=${CB}" -o /tmp/rp-slot.js
           echo '--- SLOT ID READ ---'
           grep -n "getAttribute('data-rp-4v4-slot')" /tmp/rp-slot.js || true
