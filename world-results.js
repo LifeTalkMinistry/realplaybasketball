@@ -518,6 +518,90 @@
     });
   }
 
+  const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+
+  async function waitForWorldViewVisualSettle({ isResults, expected = 0, sequence }) {
+    const panel = updatesPanel();
+    const feed = panel?.querySelector('[data-updates-feed]');
+    if (!panel || !feed) throw new Error('WORLD view is not mounted yet.');
+
+    // Let fonts settle before we judge card geometry. A cached API response can
+    // otherwise arrive before the display font, card measurements and artwork.
+    try {
+      await Promise.race([
+        document.fonts?.ready || Promise.resolve(),
+        wait(1200),
+      ]);
+    } catch (_error) {}
+
+    // Wait for any actual image assets already inside the destination. The
+    // route shell stays above the page during this entire process.
+    const pendingImages = [...panel.querySelectorAll('img[src]')]
+      .filter((img) => !img.complete);
+    if (pendingImages.length) {
+      await Promise.race([
+        Promise.all(pendingImages.map((img) => new Promise((resolve) => {
+          img.addEventListener('load', resolve, { once: true });
+          img.addEventListener('error', resolve, { once: true });
+        }))),
+        wait(1400),
+      ]);
+    }
+
+    // Require the destination DOM to stop changing for a real quiet window.
+    // This is the missing contract: "data returned" is not the same as
+    // "RESULTS is visually finished."
+    await new Promise((resolve) => {
+      let done = false;
+      let quietTimer = 0;
+      let maxTimer = 0;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        if (quietTimer) window.clearTimeout(quietTimer);
+        if (maxTimer) window.clearTimeout(maxTimer);
+        observer.disconnect();
+        resolve();
+      };
+      const armQuiet = () => {
+        if (quietTimer) window.clearTimeout(quietTimer);
+        quietTimer = window.setTimeout(finish, isResults ? 650 : 420);
+      };
+      const observer = new MutationObserver(armQuiet);
+      observer.observe(feed, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'hidden', 'style'],
+      });
+      armQuiet();
+      maxTimer = window.setTimeout(finish, isResults ? 2200 : 1500);
+    });
+
+    // Two paints after the quiet window make the handoff atomic.
+    await new Promise((resolve) => window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(resolve);
+    }));
+
+    if (sequence !== viewLoadSequence) throw new Error('WORLD view changed while loading.');
+
+    if (isResults) {
+      const resultCards = [...feed.querySelectorAll('.rp-update-result')]
+        .filter((card) => !card.hidden);
+      const needed = Math.max(0, Number(expected) || 0);
+      if (needed > 0 && resultCards.length < needed) {
+        throw new Error('Game results are still being prepared.');
+      }
+
+      // Each visible card must have measurable layout before the shell leaves.
+      const unstable = resultCards.some((card) => {
+        const rect = card.getBoundingClientRect();
+        return rect.width < 40 || rect.height < 40;
+      });
+      if (unstable) throw new Error('Game results are still settling.');
+    }
+  }
+
   function loadWorldView(view, { initial = false } = {}) {
     const nextView = view === 'results' ? 'results' : 'feed';
     const isResults = nextView === 'results';
@@ -528,7 +612,9 @@
     const loadingLabel = isResults ? 'LOADING GAME RESULTS...' : 'LOADING LATEST FROM REAL PLAY...';
     const sequence = ++viewLoadSequence;
     const loadingStartedAt = performance.now();
-    const minimumLoadingMs = isResults ? 700 : 450;
+    // Deliberate branded holding time. The user has explicitly preferred a
+    // stable loader over briefly exposing an assembling destination.
+    const minimumLoadingMs = isResults ? 1500 : 850;
 
     // The old view is never allowed to be the transition surface. Show the
     // destination-owned loader first and keep it for a short minimum window so
@@ -566,55 +652,53 @@
       );
     };
 
-    const reveal = (detail = {}) => {
+    const reveal = async (detail = {}) => {
       if (settled || sequence !== viewLoadSequence) return;
-      settled = true;
-      cleanup();
 
       if (isResults) {
         resultTotal = detail.categoryScopedByServer && Number.isFinite(Number(detail.total))
           ? Math.max(0, Number(detail.total))
           : 0;
       }
+
       loadResultMetadata();
       setWorldResultsMode(true);
       ensureWorldControls();
       syncWorldTabs();
       applyWorldFilters();
 
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          if (sequence !== viewLoadSequence) return;
-
-          if (isResults) {
-            const visibleResults = [...(updatesPanel()?.querySelectorAll('[data-updates-feed] .rp-update-result') || [])]
-              .filter((card) => !card.hidden);
-            const expected = Math.min(pageSize, Math.max(0, Number(detail.loaded) || 0));
-            if (expected > 0 && visibleResults.length < expected) {
-              fail('Game results are still being prepared.');
-              return;
-            }
-          }
-
-          const revealDestination = () => {
-            if (sequence !== viewLoadSequence) return;
-            if (initial) {
-              announceWorldReady({
-                loaded: Number(detail.loaded || 0),
-                rendered: Number(detail.rendered || 0),
-                hasMore: Boolean(detail.hasMore),
-              });
-            } else {
-              window.RealPlayRouteShell?.hide?.(routeTarget);
-            }
-          };
-
-          const elapsed = performance.now() - loadingStartedAt;
-          const remaining = Math.max(0, minimumLoadingMs - elapsed);
-          if (remaining > 0) window.setTimeout(revealDestination, remaining);
-          else revealDestination();
+      try {
+        await waitForWorldViewVisualSettle({
+          isResults,
+          expected: Math.min(pageSize, Math.max(0, Number(detail.loaded) || 0)),
+          sequence,
         });
-      });
+      } catch (error) {
+        fail(error?.message || (isResults
+          ? 'Game results are still being prepared.'
+          : 'The World feed is still being prepared.'));
+        return;
+      }
+
+      if (settled || sequence !== viewLoadSequence) return;
+
+      const elapsed = performance.now() - loadingStartedAt;
+      const remaining = Math.max(0, minimumLoadingMs - elapsed);
+      if (remaining > 0) await wait(remaining);
+
+      if (settled || sequence !== viewLoadSequence) return;
+      settled = true;
+      cleanup();
+
+      if (initial) {
+        announceWorldReady({
+          loaded: Number(detail.loaded || 0),
+          rendered: Number(detail.rendered || 0),
+          hasMore: Boolean(detail.hasMore),
+        });
+      } else {
+        window.RealPlayRouteShell?.hide?.(routeTarget);
+      }
     };
 
     const onLoaded = (event) => {
