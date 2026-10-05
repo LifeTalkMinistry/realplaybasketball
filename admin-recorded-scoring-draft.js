@@ -126,7 +126,7 @@
     const tags = momentKind
       ? (Array.isArray(event?.tags) && event.tags.length
           ? event.tags.map((tag) => String(tag || '').toLowerCase()).filter(Boolean)
-          : [String(event?.highlightType || 'honorable_play').toLowerCase()])
+          : [String(event?.highlightType || (momentKind === 'incident' ? 'other_incident' : 'honorable_play')).toLowerCase()])
       : [];
     return {
       localId: `server-${eventType}-${Number(event.id || 0)}-${makeId()}`,
@@ -598,7 +598,7 @@
     const highlights = draftEvents.filter((event) => event.eventType === 'highlight').length;
     const incidents = draftEvents.filter((event) => event.eventType === 'incident').length;
     adminBody.innerHTML = `<div class="rp-video-screen rp-video-sheet-review">
-      <div class="rp-admin-title"><span class="rp-admin-kicker">DRAFT SCORE SHEET</span><h1>REVIEW BEFORE SUBMIT</h1><p>These numbers are still local. Verify them before they become the official game record.</p></div>
+      <div class="rp-admin-title"><span class="rp-admin-kicker">DRAFT SCORE SHEET</span><h1>REVIEW BEFORE SUBMIT</h1><p>Verify the stats and stamped moments before they become part of this game's permanent record.</p></div>
       ${message ? `<div class="rp-video-notice ${error ? 'error' : 'success'}">${esc(message)}</div>` : ''}
       <div class="rp-video-scoreboard"><div><small>WEST</small><strong>${teamScore('west')}</strong></div><span>—</span><div><small>EAST</small><strong>${teamScore('east')}</strong></div></div>
       <div class="rp-video-sheet-meta"><span>${draftEvents.length}<small>TOTAL EVENTS</small></span><span>${made}<small>SCORING MARKERS</small></span><span>${draftEvents.filter((event) => event.eventType === 'stat').length}<small>STAT EVENTS</small></span><span>${highlights}<small>HIGHLIGHTS</small></span><span>${incidents}<small>INCIDENTS</small></span></div>
@@ -753,6 +753,7 @@
       }
 
       if (active) {
+        closeMomentModal();
         active = false;
         activeScreen = null;
         window.__realPlayRecordedScoringDraftActive = false;
