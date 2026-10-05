@@ -132,6 +132,11 @@
     return /^\s*ENDS\s+.+?\s*·\s*\d{1,3}\s+(?:TEAM|PLAYER)\s+CAP\s*$/i.test(String(update.body || ''));
   }
 
+  function isRecurringTeamSchedule(update) {
+    const schedule = update?.metadata?.teamSchedule || update?.metadata?.team_schedule;
+    return Number(schedule?.version || 0) >= 4 && String(schedule?.rotationType || '').toLowerCase() === 'weekly';
+  }
+
   function homeRoot() {
     return document.querySelector('[data-rp-simple-home]');
   }
@@ -390,7 +395,7 @@
           time: Date.parse(item.event_at || item.eventAt || ''),
           published: Date.parse(item.published_at || item.publishedAt || '') || 0,
         }))
-        .filter((entry) => Number.isFinite(entry.time) && entry.time >= now - 60_000)
+        .filter((entry) => isRecurringTeamSchedule(entry.item) || (Number.isFinite(entry.time) && entry.time >= now - 60_000))
         .sort((a, b) => b.published - a.published || a.time - b.time);
 
       renderAnnouncement(announcement);
