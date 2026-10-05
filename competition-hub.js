@@ -26,6 +26,7 @@
   let navObserver = null;
   let playerDecorationTimer = null;
   let presentationTimer = null;
+  let overallAutoLoadTimer = null;
   let playerPresentation = '';
   let scopedRanking = null;
   let scopedRequestId = 0;
@@ -115,6 +116,8 @@
       /* Scoped competition rankings: custom context header, exact Player Rankings body below. */
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-view="players"] .rp-world-player-directory-head{display:none!important}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-status]{display:none!important}
+      body.rp-simple-navigation-active .rp-world[data-rp-competition-presentation="overall"] [data-world-player-more],
+      body.rp-simple-navigation-active .rp-world[data-rp-competition-presentation="scoped"] [data-world-player-more]{display:none!important}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row:not([data-rp-competition-scope-row]){display:none!important}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row[data-rp-competition-scope-row]{display:grid}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking .rp-world-topbar{display:none!important}
@@ -334,6 +337,10 @@
       window.clearTimeout(presentationTimer);
       presentationTimer = null;
     }
+    if (overallAutoLoadTimer) {
+      window.clearTimeout(overallAutoLoadTimer);
+      overallAutoLoadTimer = null;
+    }
     const wasScoped = playerPresentation === 'scoped';
     scopedRequestId += 1;
     removeScopedArtifacts();
@@ -396,6 +403,16 @@
       back.addEventListener('click', returnFromOverallRanking);
       directoryHead.appendChild(back);
     }
+  }
+
+  function queueOverallPlayerPage(hasMore) {
+    if (playerPresentation !== 'overall' || !hasMore) return;
+    if (overallAutoLoadTimer) window.clearTimeout(overallAutoLoadTimer);
+    overallAutoLoadTimer = window.setTimeout(() => {
+      overallAutoLoadTimer = null;
+      if (playerPresentation !== 'overall') return;
+      try { window.RealPlayPlayers?.refresh?.({ append: true }); } catch (_error) {}
+    }, 0);
   }
 
   function returnFromOverallRanking() {
@@ -693,8 +710,15 @@
     document.addEventListener('click', handlePlayersNavCapture, true);
     document.addEventListener('click', maintainPlayerPresentation);
     window.addEventListener('focus', maintainPlayerPresentation);
-    window.addEventListener('realplay:players-loaded', () => {
-      if (playerPresentation === 'scoped') applyScopedRanking(0);
+    window.addEventListener('realplay:players-loaded', (event) => {
+      if (playerPresentation === 'scoped') {
+        applyScopedRanking(0);
+        return;
+      }
+      if (playerPresentation === 'overall') {
+        decoratePlayerRankings(0);
+        queueOverallPlayerPage(Boolean(event?.detail?.hasMore));
+      }
     });
 
     navObserver = new MutationObserver(() => renamePlayersNav());
