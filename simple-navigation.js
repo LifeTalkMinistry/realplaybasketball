@@ -16,6 +16,7 @@
   let homeRefreshTimer = null;
   let installed = false;
   const featureScriptPromises = new Map();
+  const featureStylePromises = new Map();
 
   function deployVersion() {
     return String(document.documentElement?.dataset?.rpDeploy || 'primary-nav');
@@ -90,6 +91,56 @@
     return promise;
   }
 
+
+  function loadFeatureStylesheet(href, timeoutMs = 6500) {
+    const deploy = deployVersion();
+    const target = new URL(`${href}?v=${encodeURIComponent(deploy)}`, document.baseURI).href;
+    const existing = [...document.querySelectorAll('link[rel="stylesheet"]')]
+      .find((link) => link.href === target || new URL(link.href, document.baseURI).pathname.endsWith('/' + href));
+
+    const ready = (link) => {
+      if (!link || link.disabled) return false;
+      try { return Boolean(link.sheet); } catch (_error) { return false; }
+    };
+
+    if (ready(existing)) return Promise.resolve(true);
+    if (featureStylePromises.has(href)) return featureStylePromises.get(href);
+
+    const promise = new Promise((resolve) => {
+      const link = existing || document.createElement('link');
+      let settled = false;
+      let poll = 0;
+      let timer = 0;
+
+      const finish = (ok) => {
+        if (settled) return;
+        settled = true;
+        if (poll) window.clearInterval(poll);
+        if (timer) window.clearTimeout(timer);
+        resolve(Boolean(ok));
+      };
+
+      if (!existing) {
+        link.rel = 'stylesheet';
+        link.href = target;
+        link.dataset.rpRouteStyle = href;
+        document.head.appendChild(link);
+      }
+
+      link.addEventListener('load', () => finish(true), { once: true });
+      link.addEventListener('error', () => finish(false), { once: true });
+
+      poll = window.setInterval(() => {
+        if (ready(link)) finish(true);
+      }, 40);
+
+      timer = window.setTimeout(() => finish(ready(link)), timeoutMs);
+    }).finally(() => featureStylePromises.delete(href));
+
+    featureStylePromises.set(href, promise);
+    return promise;
+  }
+
   function setNavBusy(target, busy) {
     const button = nav()?.querySelector(`[data-rp-simple-nav-item="${target}"]`);
     if (!button) return;
@@ -130,11 +181,19 @@
   }
 
   async function ensureWorldFeedFeature() {
-    const updatesReady = await loadFeatureScript(
-      'real-play-updates.js',
-      () => Boolean(window.RealPlayUpdates?.open)
-    );
-    if (!updatesReady) return false;
+    // WORLD's real page is not allowed to replace its loading screen until its
+    // own visual system is physically attached. Previously the data could win
+    // the race before these styles loaded, exposing Home underneath WORLD.
+    const [updatesStyle, cleanupStyle, resultsStyle, updatesReady] = await Promise.all([
+      loadFeatureStylesheet('real-play-updates.css'),
+      loadFeatureStylesheet('real-play-updates-cleanup.css'),
+      loadFeatureStylesheet('world-results.css'),
+      loadFeatureScript(
+        'real-play-updates.js',
+        () => Boolean(window.RealPlayUpdates?.open)
+      ),
+    ]);
+    if (!updatesStyle || !cleanupStyle || !resultsStyle || !updatesReady) return false;
 
     return loadFeatureScript(
       'world-results.js',
@@ -483,16 +542,28 @@
       if (target === 'world') {
         if (!ready || !window.RealPlayWorldResults?.open) {
           console.error('[Real Play] World feed navigation could not initialize.');
-          showRouteError('world', 'The World feed did not finish loading. Your Home page remains safe in the background.');
+          showRouteError('world', 'The World feed did not finish loading.');
           return;
         }
 
-        // Critical routing rule: WORLD must never reveal the old community
-        // composer/feed. That legacy surface remains internal infrastructure
-        // for PLAYERS and CHATS only.
+        // Critical routing rule: WORLD must never reveal Home or the old
+        // community composer between loading and the real WORLD page.
         try { window.RealPlayWorld?.close?.(); } catch (_error) {}
         closePrimaryLayers('updates');
+
+        const readiness = waitForRouteReady(
+          'realplay:world-loaded',
+          'realplay:world-load-error',
+          9000
+        );
         window.RealPlayWorldResults.open();
+
+        try {
+          await readiness;
+          hideRouteShell('world');
+        } catch (routeError) {
+          showRouteError('world', routeError?.message || 'The World feed could not finish loading.');
+        }
         return;
       }
 
