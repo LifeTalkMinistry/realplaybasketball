@@ -1,0 +1,18 @@
+.rp-video-scoreboard>span.rp-audit-clock-center{display:grid;min-width:92px;gap:3px;padding:7px 10px;border:1px solid rgba(96,151,176,.2);border-radius:11px;background:rgba(3,13,21,.72);text-align:center;color:#65899a}
+.rp-video-scoreboard>span.rp-audit-clock-center small{font:900 6px/1 system-ui,sans-serif;letter-spacing:.14em;color:#678c9d}
+.rp-video-scoreboard>span.rp-audit-clock-center strong{font:950 24px/.95 system-ui,sans-serif;color:#d8e9ef;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.rp-video-scoreboard>span.rp-audit-clock-center em{font:900 6px/1 system-ui,sans-serif;letter-spacing:.11em;color:#718f9b;font-style:normal}
+.rp-video-scoreboard>span.rp-audit-clock-center.synced{border-color:rgba(46,216,245,.34);background:rgba(6,31,42,.88)}
+.rp-video-scoreboard>span.rp-audit-clock-center.synced strong{color:#effcff}
+.rp-video-scoreboard>span.rp-audit-clock-center.synced em{color:#4adcf4}
+.rp-video-scoreboard>span.rp-audit-clock-center.before em{color:#e4b76c}
+.rp-video-scoreboard>span.rp-audit-clock-center.after em{color:#ef8c96}
+.rp-audit-clock-sync{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 11px;border:1px solid rgba(63,157,188,.22);border-radius:11px;background:rgba(4,20,30,.86)}
+.rp-audit-clock-sync-copy{display:grid;min-width:0;gap:3px}
+.rp-audit-clock-sync-copy span{font:900 7px/1 system-ui,sans-serif;letter-spacing:.12em;color:#55dff6}
+.rp-audit-clock-sync-copy strong{font:900 10px/1.25 system-ui,sans-serif;color:#e8f9ff}
+.rp-audit-clock-sync-copy small{font:650 8px/1.35 system-ui,sans-serif;color:#6f92a2}
+.rp-audit-clock-sync>button{flex:0 0 auto;min-height:36px;padding:0 11px;border:1px solid rgba(53,213,241,.36);border-radius:9px;background:#082838;color:#b9f4ff;font:900 7px/1 system-ui,sans-serif;letter-spacing:.08em;cursor:pointer}
+.rp-audit-clock-sync>button:hover,.rp-audit-clock-sync>button:focus-visible{border-color:rgba(53,213,241,.7);background:#0b3547;color:#f1fdff;outline:none}
+.rp-audit-clock-sync>button:disabled{opacity:.5;cursor:wait}
+@media(max-width:699px){.rp-video-scoreboard{gap:7px;padding:11px}.rp-video-scoreboard>span.rp-audit-clock-center{min-width:74px;padding:6px}.rp-video-scoreboard>span.rp-audit-clock-center strong{font-size:20px}.rp-audit-clock-sync{align-items:stretch;flex-direction:column}.rp-audit-clock-sync>button{width:100%}}

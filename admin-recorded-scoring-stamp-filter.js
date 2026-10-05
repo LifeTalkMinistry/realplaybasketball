@@ -268,7 +268,8 @@
       const replay = category === 'score'
         ? Number(event?.replayStartMs ?? Math.max(0, timestamp - 7000))
         : Math.max(0, timestamp - 5000);
-      const title = `${categoryTitle(category)} at ${formatTime(timestamp)}`;
+      const auditClock = window.__realPlayAuditClockLabel?.(timestamp) || null;
+      const title = auditClock ? `${categoryTitle(category)} · Audit ${auditClock} · Video ${formatTime(timestamp)}` : `${categoryTitle(category)} · Video ${formatTime(timestamp)}`;
       return `<button type="button" class="rp-audit-stamp-marker" style="left:${left}%" data-rp-audit-category="${category}" data-rp-video-marker="${replay}" title="${title}" aria-label="${title}">${markerText(category)}</button>`;
     }).join('');
     if (overlay.innerHTML !== nextHtml) overlay.innerHTML = nextHtml;
