@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20261004-audit-competition-race12-v40';
+  const ADMIN_ASSET_VERSION = '20261005-audit-team-designation-v41';
   const REPLAY_ADMIN_ROOT_VERSION = '20260915-replay-editor-root-v1';
   const ADMIN_CSS = [
     'admin-game-control.css',
@@ -19,6 +19,7 @@
     'admin-player-ownership.css',
     'admin-membership-review.css',
     'admin-recorded-scoring.css',
+    'admin-audit-team-designation.css',
     'admin-recorded-scoring-draft.css',
     'admin-recorded-scoring-score-confirmation.css',
     'admin-recorded-scoring-youtube.css',
@@ -45,6 +46,7 @@
     'admin-recorded-scoring-mobile-workspace.js',
     'admin-recorded-scoring-cancel.js',
     'admin-recorded-scoring.js',
+    'admin-audit-team-designation.js',
     'admin-recorded-scoring-youtube.js',
     'admin-recorded-scoring-stamp-filter.js',
     'admin-recorded-scoring-youtube-keyboard.js',
