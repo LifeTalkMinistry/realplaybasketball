@@ -17,6 +17,7 @@
     ['blk', 'BLOCK'],
     ['foul', 'FOUL'],
     ['highlight', 'HIGHLIGHT'],
+    ['incident', 'INCIDENT'],
   ];
 
   let screenRef = null;
@@ -68,8 +69,9 @@
   }
 
   function eventCategory(event) {
-    const type = String(event?.eventType || '').toLowerCase();
+    const type = String(event?.eventType || event?.momentKind || '').toLowerCase();
     if (type === 'highlight') return 'highlight';
+    if (type === 'incident') return 'incident';
     if (type === 'shot') {
       return String(event?.shotResult || '').toLowerCase() === 'make' ? 'score' : 'miss';
     }
@@ -95,6 +97,7 @@
       blk: 'B',
       foul: 'F',
       highlight: '★',
+      incident: '!',
     }[category] || '•';
   }
 
@@ -109,6 +112,7 @@
       blk: 'Block',
       foul: 'Foul',
       highlight: 'Highlight',
+      incident: 'Game Incident',
     }[category] || 'Audit event';
   }
 
@@ -139,6 +143,7 @@
       .rp-audit-stamp-marker[data-rp-audit-category="to"],.rp-audit-stamp-marker[data-rp-audit-category="foul"]{border-color:rgba(232,120,120,.42);color:#ffb3b3}
       .rp-audit-stamp-marker[data-rp-audit-category="stl"],.rp-audit-stamp-marker[data-rp-audit-category="blk"]{border-color:rgba(167,142,245,.46);color:#d2c5ff}
       .rp-audit-stamp-marker[data-rp-audit-category="highlight"]{border-color:rgba(255,202,92,.66);background:#2a1d08;color:#ffd878;font-size:13px}
+      .rp-audit-stamp-marker[data-rp-audit-category="incident"]{border-color:rgba(255,104,104,.64);background:#2b0e13;color:#ff9d9d;font-size:12px}
       @media(max-width:699px){.rp-audit-filter-menu{grid-template-columns:repeat(2,minmax(0,1fr));bottom:auto;top:calc(100% + 6px)}.rp-audit-filter-toggle{min-height:28px}}
     `;
     document.head.appendChild(style);
@@ -271,11 +276,13 @@
     const nextHtml = items.map(({ event, category }) => {
       const timestamp = Math.max(0, Number(event?.videoTimestampMs || 0));
       const left = Math.max(0, Math.min(100, timestamp / duration * 100));
-      const replay = (category === 'score' || category === 'highlight')
+      const replay = (category === 'score' || category === 'highlight' || category === 'incident')
         ? Number(event?.replayStartMs ?? Math.max(0, timestamp - 7000))
         : Math.max(0, timestamp - 5000);
       const auditClock = window.__realPlayAuditClockLabel?.(timestamp) || null;
-      const title = auditClock ? `${categoryTitle(category)} · Audit ${auditClock} · Video ${formatTime(timestamp)}` : `${categoryTitle(category)} · Video ${formatTime(timestamp)}`;
+      const tags = Array.isArray(event?.tags) ? event.tags.map((tag) => String(tag || '').replaceAll('_', ' ')).filter(Boolean) : [];
+      const tagText = tags.length ? ` · ${tags.join(' + ')}` : '';
+      const title = auditClock ? `${categoryTitle(category)}${tagText} · Audit ${auditClock} · Video ${formatTime(timestamp)}` : `${categoryTitle(category)}${tagText} · Video ${formatTime(timestamp)}`;
       return `<button type="button" class="rp-audit-stamp-marker" style="left:${left}%" data-rp-audit-category="${category}" data-rp-video-marker="${replay}" title="${title}" aria-label="${title}">${markerText(category)}</button>`;
     }).join('');
     if (overlay.innerHTML !== nextHtml) overlay.innerHTML = nextHtml;
@@ -352,7 +359,7 @@
       return;
     }
 
-    if (event.target.closest('[data-rp-video-shot],[data-rp-video-stat],[data-rp-video-highlight],[data-rp-draft-remove-shot],[data-rp-draft-remove-stat],[data-rp-video-undo]')) {
+    if (event.target.closest('[data-rp-video-shot],[data-rp-video-stat],[data-rp-video-moment],[data-rp-moment-save],[data-rp-draft-remove-shot],[data-rp-draft-remove-stat],[data-rp-video-undo]')) {
       scheduleRefresh(0);
       setTimeout(() => scheduleRefresh(0), 40);
     }
