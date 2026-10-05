@@ -404,23 +404,76 @@
       : {};
 
     try {
-      const data = await api('feed', payload);
-      if (progressiveMode && requestGeneration !== progressiveGeneration) return;
-      const nextUpdates = Array.isArray(data.updates) ? data.updates : [];
+      let data = null;
+      let nextUpdates = [];
+      let cursor = requestedOffset;
+      let pageHasMore = true;
+      let scopedTotal = null;
+      let categoryScopedByServer = false;
+      let guard = 0;
+
+      do {
+        data = await api('feed', progressiveMode
+          ? {
+              limit: progressivePageSize,
+              offset: cursor,
+              category: requestCategory || undefined,
+            }
+          : payload);
+
+        if (progressiveMode && requestGeneration !== progressiveGeneration) return;
+
+        const rawUpdates = Array.isArray(data?.updates) ? data.updates : [];
+        const matchingUpdates = requestCategory
+          ? rawUpdates.filter((item) => String(item?.category || '').trim().toLowerCase() === requestCategory)
+          : rawUpdates;
+
+        nextUpdates = mergeUpdatePages(nextUpdates, matchingUpdates);
+
+        const responseCategory = String(data?.page?.category || '').trim().toLowerCase();
+        categoryScopedByServer = Boolean(requestCategory && responseCategory === requestCategory);
+        if (categoryScopedByServer && Number.isFinite(Number(data?.page?.total))) {
+          scopedTotal = Math.max(0, Number(data.page.total));
+        }
+
+        const fallbackNextOffset = cursor + rawUpdates.length;
+        const responseNextOffset = Number(data?.page?.nextOffset);
+        const nextCursor = Number.isSafeInteger(responseNextOffset) && responseNextOffset >= 0
+          ? responseNextOffset
+          : fallbackNextOffset;
+        pageHasMore = typeof data?.page?.hasMore === 'boolean'
+          ? data.page.hasMore
+          : rawUpdates.length >= progressivePageSize;
+
+        // A stale/older backend may ignore the requested category. Never leak
+        // those unrelated records into RESULTS. Keep filling this batch behind
+        // the loading screen until we have two real results or exhaust data.
+        if (!progressiveMode || !requestCategory || categoryScopedByServer) {
+          cursor = nextCursor;
+          break;
+        }
+
+        if (!rawUpdates.length || nextCursor <= cursor) {
+          pageHasMore = false;
+          cursor = nextCursor;
+          break;
+        }
+
+        cursor = nextCursor;
+        guard += 1;
+      } while (pageHasMore && nextUpdates.length < progressivePageSize && guard < 24);
 
       if (progressiveMode) {
         updates = append ? mergeUpdatePages(updates, nextUpdates) : nextUpdates;
-        const fallbackNextOffset = requestedOffset + nextUpdates.length;
-        const pageNextOffset = Number(data?.page?.nextOffset);
-        progressiveNextOffset = Number.isSafeInteger(pageNextOffset) && pageNextOffset >= 0
-          ? pageNextOffset
-          : fallbackNextOffset;
-        progressiveHasMore = typeof data?.page?.hasMore === 'boolean'
-          ? data.page.hasMore
-          : nextUpdates.length >= progressivePageSize;
+        progressiveNextOffset = pageHasMore ? cursor : null;
+        progressiveHasMore = Boolean(pageHasMore);
 
         lastFeedSignature = feedSignature(updates);
         renderFeed({ force: true });
+
+        const visibleRendered = requestCategory
+          ? updates.filter((item) => String(item?.category || '').trim().toLowerCase() === requestCategory).length
+          : updates.length;
 
         try {
           window.dispatchEvent(new CustomEvent('realplay:updates-page-loaded', {
@@ -428,19 +481,21 @@
               progressive: true,
               append,
               loaded: nextUpdates.length,
-              rendered: updates.length,
+              rendered: visibleRendered,
               hasMore: progressiveHasMore,
               nextOffset: progressiveNextOffset,
-              total: Number(data?.page?.total) || updates.length,
+              total: scopedTotal,
               category: requestCategory || '',
+              categoryScopedByServer,
               loadMode: requestLoadMode,
             },
           }));
         } catch (_error) {}
       } else {
-        const nextSignature = feedSignature(nextUpdates);
+        const rawUpdates = Array.isArray(data?.updates) ? data.updates : [];
+        const nextSignature = feedSignature(rawUpdates);
         const changed = nextSignature !== lastFeedSignature;
-        updates = nextUpdates;
+        updates = rawUpdates;
         if (force || changed) {
           lastFeedSignature = nextSignature;
           renderFeed({ force });
@@ -566,7 +621,7 @@
     progressiveLoadMode = options?.loadMode === 'button' ? 'button' : 'auto';
     progressiveLoadingLabel = String(options?.loadingLabel || '').trim()
       || (progressiveCategory === 'result' ? 'LOADING GAME RESULTS...' : 'LOADING LATEST FROM REAL PLAY...');
-    filter = 'all';
+    filter = progressiveMode && progressiveCategory ? progressiveCategory : 'all';
     renderFilters();
 
     if (progressiveMode) {
