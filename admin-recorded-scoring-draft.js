@@ -17,6 +17,32 @@
   let recoveryAnnounced = false;
   let detectTimer = null;
   let activeScreen = null;
+  let momentModalState = null;
+
+  const MOMENT_CATEGORIES = Object.freeze({
+    highlight: [
+      ['honorable_play', '★', 'Honorable Play'],
+      ['clutch_shot', '🔥', 'Clutch Shot'],
+      ['scoring_highlight', '🏀', 'Scoring Highlight'],
+      ['assist_playmaking', '🎯', 'Assist / Playmaking'],
+      ['defensive_play', '🛡', 'Defensive Play'],
+      ['steal_highlight', '✋', 'Steal'],
+      ['block_highlight', '🚫', 'Block'],
+      ['rebound_highlight', '💪', 'Rebound'],
+      ['hustle_play', '⚡', 'Hustle Play'],
+      ['skill_move', '✨', 'Skill Move'],
+      ['game_winner', '🏆', 'Game Winner'],
+    ],
+    incident: [
+      ['injury', '🩹', 'Injury'],
+      ['hard_fall_collision', '⚠', 'Hard Fall / Collision'],
+      ['medical_attention', '＋', 'Medical Attention'],
+      ['ejection_disqualification', '🚪', 'Ejection / DQ'],
+      ['dispute_review', '🔎', 'Dispute / Review'],
+      ['unsportsmanlike_incident', '!', 'Unsportsmanlike'],
+      ['other_incident', '•', 'Other Incident'],
+    ],
+  });
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -90,21 +116,49 @@
   }
 
   function normalizeServerEvent(event) {
-    const eventType = String(event?.eventType || '').toLowerCase();
-    if (!['shot', 'stat', 'highlight'].includes(eventType)) return null;
+    const rawType = String(event?.eventType || event?.momentKind || '').toLowerCase();
+    const eventType = rawType === 'moment' ? String(event?.momentKind || 'highlight').toLowerCase() : rawType;
+    if (!['shot', 'stat', 'highlight', 'incident'].includes(eventType)) return null;
     const timestamp = Number(event.videoTimestampMs || 0);
+    const momentKind = ['highlight', 'incident'].includes(eventType)
+      ? String(event?.momentKind || eventType).toLowerCase()
+      : null;
+    const tags = momentKind
+      ? (Array.isArray(event?.tags) && event.tags.length
+          ? event.tags.map((tag) => String(tag || '').toLowerCase()).filter(Boolean)
+          : [String(event?.highlightType || 'honorable_play').toLowerCase()])
+      : [];
     return {
       localId: `server-${eventType}-${Number(event.id || 0)}-${makeId()}`,
       playerId: Number(event.playerId),
       eventType,
+      momentKind,
+      tags,
       statKey: eventType === 'stat' ? String(event.statKey || '').toLowerCase() : null,
       shotValue: eventType === 'shot' ? Number(event.shotValue) : null,
       shotResult: eventType === 'shot' ? String(event.shotResult || '').toLowerCase() : null,
-      highlightType: eventType === 'highlight' ? String(event.highlightType || 'honorable_play') : null,
+      highlightType: eventType === 'highlight' ? (tags[0] || 'honorable_play') : null,
       videoTimestampMs: timestamp,
-      replayStartMs: (eventType === 'highlight' || (eventType === 'shot' && String(event.shotResult) === 'make'))
+      replayStartMs: (momentKind || (eventType === 'shot' && String(event.shotResult) === 'make'))
         ? Number(event.replayStartMs ?? Math.max(0, timestamp - 7000))
         : null,
+    };
+  }
+
+  function normalizeLocalDraftEvent(event) {
+    if (!event || typeof event !== 'object') return event;
+    const type = String(event.eventType || '').toLowerCase();
+    if (!['highlight', 'incident'].includes(type)) return event;
+    const kind = String(event.momentKind || type).toLowerCase();
+    const tags = Array.isArray(event.tags) && event.tags.length
+      ? event.tags.map((tag) => String(tag || '').toLowerCase()).filter(Boolean)
+      : [String(event.highlightType || (kind === 'incident' ? 'other_incident' : 'honorable_play')).toLowerCase()];
+    return {
+      ...event,
+      eventType: kind,
+      momentKind: kind,
+      tags,
+      highlightType: kind === 'highlight' ? (tags[0] || 'honorable_play') : null,
     };
   }
 
@@ -134,7 +188,7 @@
     try {
       const parsed = JSON.parse(localStorage.getItem(storageKey) || 'null');
       if (!parsed || parsed.version !== DRAFT_VERSION || Number(parsed.sessionId) !== Number(control.session?.id)) return null;
-      return Array.isArray(parsed.events) ? parsed.events : [];
+      return Array.isArray(parsed.events) ? parsed.events.map(normalizeLocalDraftEvent) : [];
     } catch (_) {
       return null;
     }
@@ -228,10 +282,10 @@
     )).length;
   }
 
-  function highlightCount(playerId) {
+  function momentCount(playerId) {
     return draftEvents.filter((event) => (
       Number(event.playerId) === Number(playerId)
-      && event.eventType === 'highlight'
+      && ['highlight', 'incident'].includes(String(event.eventType || '').toLowerCase())
     )).length;
   }
 
@@ -278,21 +332,87 @@
     patchScoringUI();
   }
 
-  function addHighlight(playerId) {
-    const timestamp = videoTimestamp();
+  function addMoment(playerId, momentKind, tags, timestamp) {
+    const kind = String(momentKind || '').toLowerCase();
+    const cleanTags = [...new Set((Array.isArray(tags) ? tags : [])
+      .map((tag) => String(tag || '').toLowerCase())
+      .filter(Boolean))];
+    if (!['highlight', 'incident'].includes(kind) || !cleanTags.length) return;
+    const stampedAt = Math.max(0, Math.round(Number(timestamp || 0)));
     draftEvents.push({
       localId: makeId(),
       playerId: Number(playerId),
-      eventType: 'highlight',
+      eventType: kind,
+      momentKind: kind,
+      tags: cleanTags,
       statKey: null,
       shotValue: null,
       shotResult: null,
-      highlightType: 'honorable_play',
-      videoTimestampMs: timestamp,
-      replayStartMs: Math.max(0, timestamp - 7000),
+      highlightType: kind === 'highlight' ? cleanTags[0] : null,
+      videoTimestampMs: stampedAt,
+      replayStartMs: Math.max(0, stampedAt - 7000),
     });
     saveDraft();
     patchScoringUI();
+  }
+
+  function momentCategoryMarkup(kind) {
+    const selected = momentModalState?.tags || new Set();
+    return (MOMENT_CATEGORIES[kind] || []).map(([key, icon, label]) => (
+      `<button type="button" class="rp-moment-category ${selected.has(key) ? 'selected' : ''}" data-rp-moment-tag="${esc(key)}" aria-pressed="${selected.has(key) ? 'true' : 'false'}"><span>${icon}</span><strong>${esc(label)}</strong></button>`
+    )).join('');
+  }
+
+  function closeMomentModal() {
+    momentModalState = null;
+    root()?.querySelector('[data-rp-moment-modal]')?.remove();
+  }
+
+  function renderMomentModal() {
+    const adminRoot = root();
+    if (!adminRoot || !momentModalState) return;
+    let modal = adminRoot.querySelector('[data-rp-moment-modal]');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'rp-moment-modal';
+      modal.dataset.rpMomentModal = '1';
+      adminRoot.appendChild(modal);
+    }
+    const player = playerById(momentModalState.playerId);
+    const kind = momentModalState.kind;
+    modal.innerHTML = `<div class="rp-moment-dialog" role="dialog" aria-modal="true" aria-label="Stamp game moment">
+      <div class="rp-moment-dialog-head">
+        <div><small>STAMP MOMENT · VIDEO ${formatTime(momentModalState.timestamp)}</small><strong>${esc(playerLabel(player))}</strong></div>
+        <button type="button" data-rp-moment-cancel aria-label="Close moment stamp">×</button>
+      </div>
+      <div class="rp-moment-kind-tabs">
+        <button type="button" class="${kind === 'highlight' ? 'active' : ''}" data-rp-moment-kind="highlight"><span>★</span><strong>HIGHLIGHT</strong><small>Worth finding again later</small></button>
+        <button type="button" class="${kind === 'incident' ? 'active incident' : ''}" data-rp-moment-kind="incident"><span>⚠</span><strong>GAME INCIDENT</strong><small>Track when something happened</small></button>
+      </div>
+      <div class="rp-moment-dialog-copy">
+        <strong>${kind === 'highlight' ? 'WHAT MADE THIS PLAY STAND OUT?' : 'WHAT HAPPENED AT THIS MOMENT?'}</strong>
+        <small>Select one or more categories. These labels never change the official stats.</small>
+      </div>
+      <div class="rp-moment-category-grid">${momentCategoryMarkup(kind)}</div>
+      <div class="rp-moment-actions">
+        <button type="button" data-rp-moment-cancel>CANCEL</button>
+        <button type="button" class="save" data-rp-moment-save ${momentModalState.tags.size ? '' : 'disabled'}>SAVE ${kind === 'highlight' ? 'HIGHLIGHT' : 'INCIDENT'}</button>
+      </div>
+    </div>`;
+  }
+
+  function openMomentModal(playerId) {
+    const screen = scoringScreen();
+    const video = screen?.querySelector('[data-rp-recorded-video]');
+    const timestamp = videoTimestamp();
+    if (video && !video.paused) video.pause();
+    momentModalState = {
+      playerId: Number(playerId),
+      timestamp,
+      kind: 'highlight',
+      tags: new Set(),
+    };
+    renderMomentModal();
   }
 
   function markerHtml() {
@@ -334,7 +454,7 @@
     return `<section class="rp-video-player-panel rp-video-draft-panel" data-rp-draft-player-id="${Number(playerId)}">
       <div class="rp-video-player-panel-head">
         <div><small>${esc(String(player.team || '').toUpperCase())} · LOCAL SCORE SHEET</small><strong>${esc(playerLabel(player))}</strong></div>
-        <button type="button" class="rp-video-highlight-stamp" data-rp-video-highlight title="Stamp this moment as a future highlight" aria-label="Stamp this moment as a future highlight">★ HIGHLIGHT <b data-rp-highlight-count>${highlightCount(playerId)}</b></button>
+        <button type="button" class="rp-video-highlight-stamp" data-rp-video-moment title="Stamp this video moment" aria-label="Stamp this video moment">STAMP MOMENT <b data-rp-moment-count>${momentCount(playerId)}</b></button>
         <button type="button" data-rp-video-close-player>×</button>
       </div>
       <div class="rp-video-player-line">${playerSummaryLine(stats)}</div>
@@ -380,8 +500,8 @@
     const headName = current.querySelector('.rp-video-player-panel-head strong');
     if (headSmall && player) headSmall.textContent = `${String(player.team || '').toUpperCase()} · LOCAL SCORE SHEET`;
     if (headName && player) headName.textContent = playerLabel(player);
-    const highlightBadge = current.querySelector('[data-rp-highlight-count]');
-    if (highlightBadge) highlightBadge.textContent = String(highlightCount(playerId));
+    const momentBadge = current.querySelector('[data-rp-moment-count]');
+    if (momentBadge) momentBadge.textContent = String(momentCount(playerId));
 
     current.querySelectorAll('[data-rp-video-shot]').forEach((button) => {
       const value = Number(button.dataset.value || 0);
@@ -470,16 +590,18 @@
 
   function showReview(message = '', error = false) {
     if (!active) return;
+    closeMomentModal();
     reviewMode = true;
     const adminBody = body();
     if (!adminBody) return;
     const made = draftEvents.filter((event) => event.eventType === 'shot' && event.shotResult === 'make').length;
     const highlights = draftEvents.filter((event) => event.eventType === 'highlight').length;
+    const incidents = draftEvents.filter((event) => event.eventType === 'incident').length;
     adminBody.innerHTML = `<div class="rp-video-screen rp-video-sheet-review">
       <div class="rp-admin-title"><span class="rp-admin-kicker">DRAFT SCORE SHEET</span><h1>REVIEW BEFORE SUBMIT</h1><p>These numbers are still local. Verify them before they become the official game record.</p></div>
       ${message ? `<div class="rp-video-notice ${error ? 'error' : 'success'}">${esc(message)}</div>` : ''}
       <div class="rp-video-scoreboard"><div><small>WEST</small><strong>${teamScore('west')}</strong></div><span>—</span><div><small>EAST</small><strong>${teamScore('east')}</strong></div></div>
-      <div class="rp-video-sheet-meta"><span>${draftEvents.length}<small>TOTAL EVENTS</small></span><span>${made}<small>SCORING MARKERS</small></span><span>${draftEvents.filter((event) => event.eventType === 'stat').length}<small>STAT EVENTS</small></span><span>${highlights}<small>HIGHLIGHTS</small></span></div>
+      <div class="rp-video-sheet-meta"><span>${draftEvents.length}<small>TOTAL EVENTS</small></span><span>${made}<small>SCORING MARKERS</small></span><span>${draftEvents.filter((event) => event.eventType === 'stat').length}<small>STAT EVENTS</small></span><span>${highlights}<small>HIGHLIGHTS</small></span><span>${incidents}<small>INCIDENTS</small></span></div>
       <div class="rp-video-sheet-teams">${reviewTeam('west')}${reviewTeam('east')}</div>
       <div class="rp-video-auto-note"><strong>ONE OFFICIAL WRITE</strong><span>VERIFY &amp; SUBMIT sends this complete sheet to Real Play in one transaction. Until then, you can go back and change anything.</span></div>
       <div class="rp-video-sheet-actions">
@@ -507,6 +629,8 @@
             shotValue: event.shotValue,
             shotResult: event.shotResult,
             highlightType: event.highlightType || null,
+            momentKind: event.momentKind || (['highlight', 'incident'].includes(event.eventType) ? event.eventType : null),
+            tags: Array.isArray(event.tags) ? event.tags : null,
             videoTimestampMs: Number(event.videoTimestampMs || 0),
             replayStartMs: event.replayStartMs === null || event.replayStartMs === undefined
               ? null
@@ -548,6 +672,7 @@
       const nextControl = controlData?.control || { session: null, players: [] };
       const sessionId = Number(nextControl?.session?.id || 0);
       if (!sessionId || nextControl?.session?.scoringAuthority !== 'video') {
+        closeMomentModal();
         active = false;
         activeScreen = null;
         window.__realPlayRecordedScoringDraftActive = false;
@@ -578,11 +703,14 @@
             }, 0);
           }
         } else {
+          const serverMoments = Array.isArray(state.moments)
+            ? state.moments
+            : (Array.isArray(state.highlights)
+                ? state.highlights.map((highlight) => ({ ...highlight, momentKind: 'highlight' }))
+                : []);
           const serverEvents = [
             ...(Array.isArray(state.events) ? state.events : []),
-            ...(Array.isArray(state.highlights)
-              ? state.highlights.map((highlight) => ({ ...highlight, eventType: 'highlight' }))
-              : []),
+            ...serverMoments.map((moment) => ({ ...moment, eventType: moment.momentKind || 'highlight' })),
           ];
           draftEvents = serverEvents
             .map(normalizeServerEvent)
@@ -650,7 +778,65 @@
       return;
     }
 
+    const momentCancel = event.target.closest('[data-rp-moment-cancel]');
+    if (momentCancel) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      closeMomentModal();
+      return;
+    }
+
+    const momentKind = event.target.closest('[data-rp-moment-kind]');
+    if (momentKind && momentModalState) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const nextKind = String(momentKind.dataset.rpMomentKind || 'highlight').toLowerCase();
+      if (['highlight', 'incident'].includes(nextKind)) {
+        momentModalState.kind = nextKind;
+        momentModalState.tags = new Set();
+        renderMomentModal();
+      }
+      return;
+    }
+
+    const momentTag = event.target.closest('[data-rp-moment-tag]');
+    if (momentTag && momentModalState) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const tag = String(momentTag.dataset.rpMomentTag || '').toLowerCase();
+      if (tag) {
+        if (momentModalState.tags.has(tag)) momentModalState.tags.delete(tag);
+        else if (momentModalState.tags.size < 6) momentModalState.tags.add(tag);
+        renderMomentModal();
+      }
+      return;
+    }
+
+    if (event.target.closest('[data-rp-moment-save]') && momentModalState) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (momentModalState.tags.size) {
+        addMoment(
+          momentModalState.playerId,
+          momentModalState.kind,
+          [...momentModalState.tags],
+          momentModalState.timestamp
+        );
+        closeMomentModal();
+      }
+      return;
+    }
+
     if (!active || reviewMode || !scoringScreen()) return;
+
+    const moment = event.target.closest('[data-rp-video-moment]');
+    if (moment) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const playerId = activePlayerId();
+      if (playerId) openMomentModal(playerId);
+      return;
+    }
 
     const shot = event.target.closest('[data-rp-video-shot]');
     if (shot) {
@@ -667,15 +853,6 @@
       event.stopImmediatePropagation();
       const playerId = activePlayerId();
       if (playerId) addStat(playerId, stat.dataset.rpVideoStat);
-      return;
-    }
-
-    const highlight = event.target.closest('[data-rp-video-highlight]');
-    if (highlight) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      const playerId = activePlayerId();
-      if (playerId) addHighlight(playerId);
       return;
     }
 
