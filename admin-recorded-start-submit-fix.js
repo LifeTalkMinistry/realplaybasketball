@@ -59,17 +59,6 @@
     node.textContent = message;
   }
 
-  function rosterCounts(control) {
-    const players = Array.isArray(control?.players) ? control.players : [];
-    return players.reduce((counts, player) => {
-      if (!player?.checkedIn || !player?.team) return counts;
-      const team = String(player.team).toLowerCase();
-      if (team === 'west') counts.west += 1;
-      if (team === 'east') counts.east += 1;
-      return counts;
-    }, { west: 0, east: 0 });
-  }
-
   function visibleRaceSelection() {
     const form = body()?.querySelector('[data-rp-video-race-form]');
     if (!form) return null;
@@ -91,8 +80,8 @@
     button.disabled = false;
     button.removeAttribute('aria-disabled');
     button.title = body()?.querySelector('[data-rp-video-competition]')
-      ? 'Real Play will validate the competition, season, rules, exact roster, and video before the audit starts.'
-      : 'Real Play will validate the rules, exact roster, and video before the audit starts.';
+      ? 'Real Play will validate the competition, season, rules, roster, and video before the audit starts.'
+      : 'Real Play will validate the rules, roster, and video before the audit starts.';
   }
 
   function scheduleStartUnlock() {
@@ -181,11 +170,12 @@
 
       const rules = control?.session?.rules || null;
       const expected = Number(rules?.playersPerSide || 0);
-      const counts = rosterCounts(control);
       if (!expected) throw new Error('Confirm the game rules before starting recorded scoring.');
-      if (counts.west !== expected || counts.east !== expected) {
-        throw new Error(`${control.session?.rulesLabel || 'Current rules'} needs exactly ${expected} West and ${expected} East players. Current: ${counts.west} West · ${counts.east} East.`);
-      }
+
+      // Do not duplicate roster-count authority in this click override. The
+      // standalone Audit start endpoint owns the canonical roster validation
+      // (including the 4v4 4–6 roster allowance) and returns the authoritative
+      // GAME_ROSTER_FORMAT_MISMATCH response for invalid rosters.
 
       const state = await api(`/api/real-play/admin/recorded-scoring?session_id=${encodeURIComponent(control.session.id)}`);
       if (!state?.recording) throw new Error('Upload or attach the full game video before starting recorded scoring.');
