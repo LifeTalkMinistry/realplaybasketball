@@ -16,6 +16,7 @@
     ['stl', 'STEAL'],
     ['blk', 'BLOCK'],
     ['foul', 'FOUL'],
+    ['highlight', 'HIGHLIGHT'],
   ];
 
   let screenRef = null;
@@ -67,10 +68,12 @@
   }
 
   function eventCategory(event) {
-    if (String(event?.eventType || '').toLowerCase() === 'shot') {
+    const type = String(event?.eventType || '').toLowerCase();
+    if (type === 'highlight') return 'highlight';
+    if (type === 'shot') {
       return String(event?.shotResult || '').toLowerCase() === 'make' ? 'score' : 'miss';
     }
-    if (String(event?.eventType || '').toLowerCase() !== 'stat') return null;
+    if (type !== 'stat') return null;
     const key = String(event?.statKey || '').toLowerCase();
     if (['ast', 'assist', 'assists'].includes(key)) return 'ast';
     if (['reb', 'rebound', 'rebounds'].includes(key)) return 'reb';
@@ -91,6 +94,7 @@
       stl: 'S',
       blk: 'B',
       foul: 'F',
+      highlight: '★',
     }[category] || '•';
   }
 
@@ -104,6 +108,7 @@
       stl: 'Steal',
       blk: 'Block',
       foul: 'Foul',
+      highlight: 'Highlight',
     }[category] || 'Audit event';
   }
 
@@ -133,6 +138,7 @@
       .rp-audit-stamp-marker[data-rp-audit-category="reb"]{border-color:rgba(121,214,171,.46);color:#adf2d1}
       .rp-audit-stamp-marker[data-rp-audit-category="to"],.rp-audit-stamp-marker[data-rp-audit-category="foul"]{border-color:rgba(232,120,120,.42);color:#ffb3b3}
       .rp-audit-stamp-marker[data-rp-audit-category="stl"],.rp-audit-stamp-marker[data-rp-audit-category="blk"]{border-color:rgba(167,142,245,.46);color:#d2c5ff}
+      .rp-audit-stamp-marker[data-rp-audit-category="highlight"]{border-color:rgba(255,202,92,.66);background:#2a1d08;color:#ffd878;font-size:13px}
       @media(max-width:699px){.rp-audit-filter-menu{grid-template-columns:repeat(2,minmax(0,1fr));bottom:auto;top:calc(100% + 6px)}.rp-audit-filter-toggle{min-height:28px}}
     `;
     document.head.appendChild(style);
@@ -265,7 +271,7 @@
     const nextHtml = items.map(({ event, category }) => {
       const timestamp = Math.max(0, Number(event?.videoTimestampMs || 0));
       const left = Math.max(0, Math.min(100, timestamp / duration * 100));
-      const replay = category === 'score'
+      const replay = (category === 'score' || category === 'highlight')
         ? Number(event?.replayStartMs ?? Math.max(0, timestamp - 7000))
         : Math.max(0, timestamp - 5000);
       const auditClock = window.__realPlayAuditClockLabel?.(timestamp) || null;
@@ -346,7 +352,7 @@
       return;
     }
 
-    if (event.target.closest('[data-rp-video-shot],[data-rp-video-stat],[data-rp-draft-remove-shot],[data-rp-draft-remove-stat],[data-rp-video-undo]')) {
+    if (event.target.closest('[data-rp-video-shot],[data-rp-video-stat],[data-rp-video-highlight],[data-rp-draft-remove-shot],[data-rp-draft-remove-stat],[data-rp-video-undo]')) {
       scheduleRefresh(0);
       setTimeout(() => scheduleRefresh(0), 40);
     }
