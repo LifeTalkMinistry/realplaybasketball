@@ -258,7 +258,8 @@
     const missingWinRate = !winRateNode || winRateNode.classList.contains('empty') || /^—/.test(winRateText);
     const winrate = missingWinRate ? null : Number.parseFloat(winRateText.replace(/[^0-9.\-]/g, ''));
     const userId = String(row.dataset.worldPlayerId || '').trim();
-    const player = authorityPlayerById.get(userId) || null;
+    const scopedPlayer = row.__rpCompetitionScopedPlayer || null;
+    const player = scopedPlayer || authorityPlayerById.get(userId) || null;
     const stats = player?.leaderboardStats || {};
     const career = player?.careerStats || {};
     const games = pickNumber(stats.games, stats.gamesPlayed, player?.games, player?.gamesPlayed, career.games, career.gamesPlayed) ?? 0;
@@ -287,14 +288,20 @@
     const teammvp = pickNumber(stats.teamMvpCount, recognitionValue(player, 'most_team_mvp', 'teamMvpCount')) ?? 0;
     const shootingQualified = stats.shootingQualified === true || (stats.shootingQualified !== false && games >= 3 && (attempts ?? 0) >= 10);
     const reboundQualified = stats.reboundQualified === true || (stats.reboundQualified !== false && games >= 3);
-    const ranked = rankAuthorityReady ? rankByUserId.has(userId) : false;
+    const scopedRank = Number(scopedPlayer?.rank);
+    const ranked = scopedPlayer
+      ? Boolean(scopedPlayer.ranked) && Number.isSafeInteger(scopedRank) && scopedRank > 0
+      : (rankAuthorityReady ? rankByUserId.has(userId) : false);
+    const rank = scopedPlayer
+      ? (Number.isSafeInteger(scopedRank) && scopedRank > 0 ? scopedRank : null)
+      : (rankByUserId.get(userId) ?? null);
 
     return {
       row, name, userId, player,
       jersey: Number.isFinite(jersey) ? jersey : null,
       ovr: Number.isFinite(ovr) ? ovr : null,
       winrate: Number.isFinite(winrate) ? winrate : null,
-      rank: rankByUserId.get(userId) ?? null,
+      rank,
       ranked, games, overallmvp, teammvp, shooting: fieldGoalPct,
       rebounding, scoring, assists, steals, blocks, shootingQualified, reboundQualified,
     };
