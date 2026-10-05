@@ -566,7 +566,11 @@
       settled = true;
       cleanup();
 
-      if (isResults) resultTotal = Math.max(0, Number(detail.total) || 0);
+      if (isResults) {
+        resultTotal = detail.categoryScopedByServer && Number.isFinite(Number(detail.total))
+          ? Math.max(0, Number(detail.total))
+          : 0;
+      }
       loadResultMetadata();
       setWorldResultsMode(true);
       ensureWorldControls();
@@ -576,6 +580,17 @@
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
           if (sequence !== viewLoadSequence) return;
+
+          if (isResults) {
+            const visibleResults = [...(updatesPanel()?.querySelectorAll('[data-updates-feed] .rp-update-result') || [])]
+              .filter((card) => !card.hidden);
+            const expected = Math.min(pageSize, Math.max(0, Number(detail.loaded) || 0));
+            if (expected > 0 && visibleResults.length < expected) {
+              fail('Game results are still being prepared.');
+              return;
+            }
+          }
+
           if (initial) {
             announceWorldReady({
               loaded: Number(detail.loaded || 0),
@@ -925,6 +940,12 @@
       panel.querySelector('[data-rp-world-results-empty]')?.classList.remove('show');
       return;
     }
+
+    // RESULTS is a hard content boundary. Even if an older API response
+    // contains schedules/announcements, those cards must never be exposed.
+    allCards
+      .filter((card) => !card.classList.contains('rp-update-result'))
+      .forEach((card) => { card.hidden = true; });
 
     let visibleCount = 0;
     resultCards.forEach((card) => {
