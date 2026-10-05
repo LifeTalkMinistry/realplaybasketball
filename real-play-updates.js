@@ -15,6 +15,11 @@
   let pollTimer = null;
   let lastFeedSignature = '';
   let lastRenderKey = '';
+  let progressiveMode = false;
+  let progressivePageSize = 3;
+  let progressiveNextOffset = 0;
+  let progressiveHasMore = false;
+  let progressiveScrollTick = 0;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -64,7 +69,17 @@
   async function api(action, payload = {}) {
     const accessToken = token();
     if (!accessToken && visitor() && action === 'feed') {
-      const response = await fetch(PUBLIC_UPDATES_URL, {
+      const publicUrl = new URL(PUBLIC_UPDATES_URL);
+      const requestedLimit = Number(payload?.limit);
+      const requestedOffset = Number(payload?.offset);
+      if (Number.isSafeInteger(requestedLimit) && requestedLimit > 0) {
+        publicUrl.searchParams.set('limit', String(requestedLimit));
+        publicUrl.searchParams.set(
+          'offset',
+          String(Number.isSafeInteger(requestedOffset) && requestedOffset >= 0 ? requestedOffset : 0)
+        );
+      }
+      const response = await fetch(publicUrl.href, {
         method: 'GET',
         headers: { Accept: 'application/json' },
         cache: 'no-store',
@@ -156,6 +171,8 @@
     panel.querySelector('[data-updates-admin-cancel]')?.addEventListener('click', closeAdminForm);
     panel.querySelector('[data-updates-admin-form]')?.addEventListener('submit', publishUpdate);
     panel.querySelector('[data-updates-feed]')?.addEventListener('click', handleFeedClick);
+    panel.addEventListener('scroll', handleProgressiveScroll, { passive: true });
+    ensureProgressiveSentinel();
     return panel;
   }
 
@@ -266,6 +283,71 @@
       </article>`).join('');
   }
 
+  function progressiveSentinel() {
+    return panel?.querySelector('[data-updates-progressive-sentinel]') || null;
+  }
+
+  function ensureProgressiveSentinel() {
+    if (!panel) return null;
+    let sentinel = progressiveSentinel();
+    if (sentinel) return sentinel;
+    const feed = panel.querySelector('[data-updates-feed]');
+    if (!feed) return null;
+    sentinel = document.createElement('div');
+    sentinel.className = 'rp-updates-progressive-sentinel';
+    sentinel.dataset.updatesProgressiveSentinel = 'true';
+    sentinel.hidden = true;
+    sentinel.innerHTML = '<span>SCROLL FOR MORE</span>';
+    feed.insertAdjacentElement('afterend', sentinel);
+    return sentinel;
+  }
+
+  function updateProgressiveSentinel() {
+    const sentinel = ensureProgressiveSentinel();
+    if (!sentinel) return;
+    sentinel.hidden = !progressiveMode;
+    if (!progressiveMode) return;
+
+    if (loading && progressiveNextOffset > 0) {
+      sentinel.classList.add('loading');
+      sentinel.innerHTML = '<span>LOADING MORE FROM REAL PLAY...</span>';
+      return;
+    }
+
+    sentinel.classList.remove('loading');
+    sentinel.innerHTML = progressiveHasMore
+      ? '<span>SCROLL FOR MORE</span>'
+      : '<span>YOU\'RE ALL CAUGHT UP.</span>';
+  }
+
+  function mergeUpdatePages(existing, incoming) {
+    const seen = new Set();
+    return [...existing, ...incoming].filter((item) => {
+      const id = String(item?.id ?? '');
+      if (!id) return true;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }
+
+  function loadMoreProgressive() {
+    if (!progressiveMode || loading || !progressiveHasMore) return;
+    refreshFeed({ quiet: true, append: true });
+  }
+
+  function handleProgressiveScroll() {
+    if (!progressiveMode || loading || !progressiveHasMore || !panel) return;
+    if (panel.scrollTop < 60) return;
+    if (progressiveScrollTick) return;
+    progressiveScrollTick = window.requestAnimationFrame(() => {
+      progressiveScrollTick = 0;
+      if (!progressiveMode || loading || !progressiveHasMore || !panel) return;
+      const distanceToBottom = panel.scrollHeight - panel.scrollTop - panel.clientHeight;
+      if (distanceToBottom <= 260) loadMoreProgressive();
+    });
+  }
+
   function renderAdmin() {
     const wrap = panel?.querySelector('[data-updates-admin]');
     if (!wrap) return;
@@ -273,20 +355,59 @@
     if (!admin) closeAdminForm();
   }
 
-  async function refreshFeed({ quiet = false, force = false } = {}) {
+  async function refreshFeed({ quiet = false, force = false, append = false } = {}) {
     if (loading) return;
+    if (progressiveMode && append && !progressiveHasMore) return;
+
     loading = true;
     if (!quiet) setStatus('CHECKING REAL PLAY...');
+    updateProgressiveSentinel();
+
+    const requestedOffset = progressiveMode && append ? progressiveNextOffset : 0;
+    const payload = progressiveMode
+      ? { limit: progressivePageSize, offset: requestedOffset }
+      : {};
+
     try {
-      const data = await api('feed');
+      const data = await api('feed', payload);
       const nextUpdates = Array.isArray(data.updates) ? data.updates : [];
-      const nextSignature = feedSignature(nextUpdates);
-      const changed = nextSignature !== lastFeedSignature;
-      updates = nextUpdates;
-      if (force || changed) {
-        lastFeedSignature = nextSignature;
-        renderFeed({ force });
+
+      if (progressiveMode) {
+        updates = append ? mergeUpdatePages(updates, nextUpdates) : nextUpdates;
+        const fallbackNextOffset = requestedOffset + nextUpdates.length;
+        const pageNextOffset = Number(data?.page?.nextOffset);
+        progressiveNextOffset = Number.isSafeInteger(pageNextOffset) && pageNextOffset >= 0
+          ? pageNextOffset
+          : fallbackNextOffset;
+        progressiveHasMore = typeof data?.page?.hasMore === 'boolean'
+          ? data.page.hasMore
+          : nextUpdates.length >= progressivePageSize;
+
+        lastFeedSignature = feedSignature(updates);
+        renderFeed({ force: true });
+
+        try {
+          window.dispatchEvent(new CustomEvent('realplay:updates-page-loaded', {
+            detail: {
+              progressive: true,
+              append,
+              loaded: nextUpdates.length,
+              rendered: updates.length,
+              hasMore: progressiveHasMore,
+              nextOffset: progressiveNextOffset,
+            },
+          }));
+        } catch (_error) {}
+      } else {
+        const nextSignature = feedSignature(nextUpdates);
+        const changed = nextSignature !== lastFeedSignature;
+        updates = nextUpdates;
+        if (force || changed) {
+          lastFeedSignature = nextSignature;
+          renderFeed({ force });
+        }
       }
+
       if (!quiet) setStatus('');
     } catch (error) {
       if (!quiet) setStatus(error.message || 'Could not load official updates.', 'error');
@@ -296,6 +417,7 @@
       }
     } finally {
       loading = false;
+      updateProgressiveSentinel();
     }
   }
 
@@ -383,15 +505,31 @@
     pollTimer = null;
   }
 
-  function openUpdates() {
+  function openUpdates(options = {}) {
     createPanel();
+    progressiveMode = Boolean(options?.progressive);
+    progressivePageSize = Math.max(1, Math.min(12, Number(options?.pageSize) || 3));
+    progressiveNextOffset = 0;
+    progressiveHasMore = progressiveMode;
     filter = 'all';
     renderFilters();
+
+    if (progressiveMode) {
+      updates = [];
+      lastFeedSignature = '';
+      lastRenderKey = '';
+      const root = panel.querySelector('[data-updates-feed]');
+      if (root) {
+        root.innerHTML = '<div class="rp-updates-progressive-initial"><span>LOADING LATEST FROM REAL PLAY...</span></div>';
+      }
+    }
+
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-updates-open');
     panel.scrollTop = 0;
-    refreshFeed();
+    updateProgressiveSentinel();
+    refreshFeed({ force: progressiveMode });
     detectAdmin();
     startPolling();
   }
@@ -401,6 +539,9 @@
     panel.classList.remove('open');
     panel.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-updates-open');
+    progressiveMode = false;
+    progressiveHasMore = false;
+    updateProgressiveSentinel();
     stopPolling();
   }
 
@@ -423,6 +564,8 @@
     open: openUpdates,
     close: closeUpdates,
     refresh: refreshFeed,
+    loadMore: loadMoreProgressive,
     getUpdates: () => updates,
+    isProgressive: () => progressiveMode,
   };
 })();
