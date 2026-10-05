@@ -68,7 +68,19 @@
     if (directoryPromise) return directoryPromise;
     if (directoryLoaded && !force) return directory;
     directoryPromise = (async () => {
-      const data = await api('/api/real-play/4v4/admin/rosters');
+      let data;
+      try {
+        data = await api('/api/real-play/4v4/admin/rosters');
+      } catch (adminRosterError) {
+        // Compatibility fallback while the backend update is still being pulled
+        // onto the production machine. The existing player-state endpoint
+        // already carries the same team roster directory for player accounts.
+        try {
+          data = await api('/api/real-play/4v4/me');
+        } catch (_) {
+          throw adminRosterError;
+        }
+      }
       directory = {
         preferencePlayers: Array.isArray(data?.preferencePlayers) ? data.preferencePlayers : [],
         teamStates: Array.isArray(data?.teamStates) ? data.teamStates : [],
