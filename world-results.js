@@ -410,6 +410,44 @@
     return document.querySelector('[data-rp-updates]');
   }
 
+  function worldVisualReady() {
+    const panel = updatesPanel();
+    if (!panel?.classList.contains('open')) return false;
+    if (!panel.classList.contains('rp-world-results-entry')) return false;
+    if (!document.body.classList.contains('rp-updates-open')) return false;
+
+    const style = window.getComputedStyle(panel);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    if (style.position !== 'fixed') return false;
+
+    return Boolean(panel.querySelector('[data-rp-world-results-controls]'));
+  }
+
+  function announceWorldReady(detail = {}) {
+    let attempts = 0;
+    const verify = () => {
+      attempts += 1;
+      if (worldVisualReady()) {
+        try {
+          window.dispatchEvent(new CustomEvent('realplay:world-loaded', {
+            detail: { ...detail, visualReady: true },
+          }));
+        } catch (_error) {}
+        return;
+      }
+      if (attempts < 24) {
+        window.requestAnimationFrame(verify);
+        return;
+      }
+      try {
+        window.dispatchEvent(new CustomEvent('realplay:world-load-error', {
+          detail: { message: 'WORLD loaded data but its page was not visually ready.' },
+        }));
+      } catch (_error) {}
+    };
+    window.requestAnimationFrame(() => window.requestAnimationFrame(verify));
+  }
+
   function setWorldResultsMode(enabled) {
     const panel = updatesPanel();
     if (!panel) return;
@@ -765,10 +803,8 @@
   }
 
   function openAuthoritativeResults() {
-    // WORLD owns its destination immediately, before any optional feature/data
-    // work. This guarantees Home can never remain visible after a WORLD tap.
-    window.RealPlayRouteShell?.show?.('world');
-
+    // Core navigation owns the loading shell. This feature only prepares the
+    // real WORLD page and announces when that page is actually paint-ready.
     removeLegacyWorldResults();
     injectWorldResultsStyles();
 
@@ -784,8 +820,12 @@
         if (firstPageSettled || !event?.detail?.progressive || event.detail.append) return;
         firstPageSettled = true;
         window.removeEventListener('realplay:updates-page-loaded', handleFirstPage);
-        window.RealPlayRouteShell?.hide?.('world');
         loadResultMetadata();
+        announceWorldReady({
+          loaded: Number(event.detail.loaded || 0),
+          rendered: Number(event.detail.rendered || 0),
+          hasMore: Boolean(event.detail.hasMore),
+        });
       };
       window.addEventListener('realplay:updates-page-loaded', handleFirstPage);
 
@@ -803,25 +843,20 @@
         if (firstPageSettled) return;
         firstPageSettled = true;
         window.removeEventListener('realplay:updates-page-loaded', handleFirstPage);
-        const hasCards = Boolean(updatesPanel()?.querySelector('[data-updates-feed] .rp-update-card'));
-        if (hasCards) window.RealPlayRouteShell?.hide?.('world');
-        else window.RealPlayRouteShell?.error?.('world', 'The latest Real Play feed did not finish loading.');
+        try {
+          window.dispatchEvent(new CustomEvent('realplay:world-load-error', {
+            detail: { message: 'The latest Real Play feed did not finish loading.' },
+          }));
+        } catch (_error) {}
       }, 8000);
       return;
     }
 
-    const legacyUpdates = document.querySelector('[data-rp-main-action="updates"]');
-    if (legacyUpdates) {
-      legacyUpdates.click();
-      window.setTimeout(() => {
-        legacyUpdates.click();
-        selectedView = 'feed';
-        setWorldResultsMode(true);
-        ensureWorldControls();
-        loadResultMetadata();
-        setWorldView('feed');
-      }, 0);
-    }
+    try {
+      window.dispatchEvent(new CustomEvent('realplay:world-load-error', {
+        detail: { message: 'WORLD could not initialize its official feed.' },
+      }));
+    } catch (_error) {}
   }
 
   // Primary navigation belongs exclusively to simple-navigation.js. WORLD is a
