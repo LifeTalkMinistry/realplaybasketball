@@ -585,6 +585,11 @@
         return;
       }
       setStatus(error.message || 'Could not load your profile.', 'error');
+      try {
+        window.dispatchEvent(new CustomEvent('realplay:profile-load-error', {
+          detail: { message: error.message || 'Could not load your profile.' },
+        }));
+      } catch (_eventError) {}
     } finally {
       loading = false;
     }
