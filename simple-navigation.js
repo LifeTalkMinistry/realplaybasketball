@@ -169,6 +169,133 @@
     return document.querySelector('[data-rp-simple-nav]');
   }
 
+  function routeShell() {
+    return document.querySelector('[data-rp-route-shell]');
+  }
+
+  function routeSkeletonRows(count = 4) {
+    return Array.from({ length: count }, (_, index) => `
+      <div class="rp-route-skeleton-row" aria-hidden="true">
+        <span class="rp-route-skeleton-avatar"></span>
+        <span class="rp-route-skeleton-copy"><i></i><i></i></span>
+        <b></b>
+      </div>`).join('');
+  }
+
+  function routeShellMarkup(target) {
+    if (target === 'world') {
+      return `
+        <div class="rp-route-shell-content rp-route-shell-world">
+          <header class="rp-route-shell-heading"><small>REAL PLAY COMMUNITY</small><strong>WORLD</strong><span>LOADING COMMUNITY</span></header>
+          <div class="rp-route-skeleton-composer" aria-hidden="true"><span></span><i></i><i></i></div>
+          <div class="rp-route-skeleton-feed">${routeSkeletonRows(3)}</div>
+        </div>`;
+    }
+    if (target === 'players') {
+      return `
+        <div class="rp-route-shell-content rp-route-shell-players">
+          <header class="rp-route-shell-heading"><small>REAL PLAY COMMUNITY</small><strong>PLAYERS</strong><span>LOADING PLAYER DIRECTORY</span></header>
+          <div class="rp-route-skeleton-search" aria-hidden="true"></div>
+          <div class="rp-route-skeleton-feed">${routeSkeletonRows(6)}</div>
+        </div>`;
+    }
+    if (target === 'chats') {
+      return `
+        <div class="rp-route-shell-content rp-route-shell-chats">
+          <header class="rp-route-shell-heading"><small>REAL PLAY CHAT</small><strong>CHATS</strong><span>LOADING CONVERSATIONS</span></header>
+          <div class="rp-route-skeleton-channels" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="rp-route-skeleton-thread" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+        </div>`;
+    }
+    if (target === 'me') {
+      return `
+        <div class="rp-route-shell-content rp-route-shell-me">
+          <header class="rp-route-shell-heading"><small>REAL PLAY PLAYER</small><strong>ME</strong><span>LOADING YOUR PROFILE</span></header>
+          <div class="rp-route-skeleton-profile" aria-hidden="true">
+            <div class="rp-route-skeleton-profile-id"><span></span><i></i></div>
+            <div class="rp-route-skeleton-stat-grid"><i></i><i></i><i></i><i></i></div>
+            <div class="rp-route-skeleton-history">${routeSkeletonRows(3)}</div>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="rp-route-shell-content">
+        <header class="rp-route-shell-heading"><small>REAL PLAY BASKETBALL</small><strong>LOADING</strong><span>PREPARING THIS PAGE</span></header>
+        <div class="rp-route-skeleton-feed">${routeSkeletonRows(4)}</div>
+      </div>`;
+  }
+
+  function ensureRouteShell() {
+    let shell = routeShell();
+    if (shell) return shell;
+    const app = document.querySelector('[data-rp-app]');
+    if (!app) return null;
+
+    shell = document.createElement('section');
+    shell.className = 'rp-route-shell';
+    shell.dataset.rpRouteShell = 'true';
+    shell.hidden = true;
+    shell.setAttribute('aria-live', 'polite');
+    shell.setAttribute('aria-busy', 'true');
+    app.appendChild(shell);
+
+    shell.addEventListener('click', (event) => {
+      const retry = event.target.closest('[data-rp-route-retry]');
+      if (!retry) return;
+      const target = String(shell.dataset.rpRoute || '');
+      if (target === 'me') openMe();
+      else if (target === 'players') openWorldTab('players');
+      else if (target === 'chats') openWorldTab('chats');
+      else openWorldTab('world');
+    });
+    return shell;
+  }
+
+  function showRouteShell(target) {
+    const shell = ensureRouteShell();
+    if (!shell) return;
+    shell.dataset.rpRoute = target;
+    shell.classList.remove('error');
+    shell.setAttribute('aria-busy', 'true');
+    shell.innerHTML = routeShellMarkup(target);
+    shell.hidden = false;
+    document.body.classList.add('rp-route-shell-open', 'rp-simple-subview');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  function showRouteError(target, message) {
+    const shell = ensureRouteShell();
+    if (!shell) return;
+    shell.dataset.rpRoute = target;
+    shell.classList.add('error');
+    shell.setAttribute('aria-busy', 'false');
+    const label = target === 'me' ? 'ME' : target === 'players' ? 'PLAYERS' : target === 'chats' ? 'CHATS' : 'WORLD';
+    shell.innerHTML = `
+      <div class="rp-route-shell-content rp-route-shell-error">
+        <header class="rp-route-shell-heading"><small>REAL PLAY BASKETBALL</small><strong>${label}</strong><span>COULD NOT OPEN THIS PAGE</span></header>
+        <div class="rp-route-shell-error-card">
+          <b>PAGE NOT READY.</b>
+          <p>${esc(message || 'Real Play could not finish loading this page.')}</p>
+          <button type="button" data-rp-route-retry>TRY AGAIN</button>
+        </div>
+      </div>`;
+    shell.hidden = false;
+    document.body.classList.add('rp-route-shell-open', 'rp-simple-subview');
+  }
+
+  function hideRouteShell(target = '') {
+    const shell = routeShell();
+    if (!shell) return;
+    if (target && shell.dataset.rpRoute && shell.dataset.rpRoute !== target) return;
+    shell.hidden = true;
+    shell.classList.remove('error');
+    shell.removeAttribute('data-rp-route');
+    shell.setAttribute('aria-busy', 'false');
+    document.body.classList.remove('rp-route-shell-open');
+  }
+
   function setActive(next) {
     active = NAV_ITEMS.some((item) => item.id === next) ? next : 'home';
     nav()?.querySelectorAll('[data-rp-simple-nav-item]').forEach((button) => {
@@ -258,25 +385,38 @@
 
   async function openWorldTab(tab) {
     const target = tab === 'players' ? 'players' : tab === 'chats' ? 'chats' : 'world';
+
+    // Navigation responds immediately. The destination shell becomes visible
+    // before any feature script or API request is awaited.
+    closePrimaryLayers();
+    setActive(target);
+    showRouteShell(target);
     setNavBusy(target, true);
+
     try {
       const ready = await ensureWorldFeature(tab);
       if (!ready || !window.RealPlayWorld?.open) {
-        setActive('home');
         console.error('[Real Play] World navigation could not initialize.');
+        showRouteError(target, 'The World feature did not finish loading. Your Home page remains safe in the background.');
         return;
       }
 
       closePrimaryLayers('world');
       window.RealPlayWorld.open();
-      setActive(target);
-      window.setTimeout(() => activateWorldTab(tab), 30);
+      window.setTimeout(() => {
+        activateWorldTab(tab);
+        window.requestAnimationFrame(() => hideRouteShell(target));
+      }, 30);
+    } catch (error) {
+      console.error('[Real Play] World navigation failed.', error);
+      showRouteError(target, error?.message || 'Real Play could not open this page.');
     } finally {
       setNavBusy(target, false);
     }
   }
 
   function openHome() {
+    hideRouteShell();
     closePrimaryLayers();
     document.body.classList.remove('rp-simple-subview');
     setActive('home');
@@ -306,22 +446,30 @@
 
   async function openMe() {
     if (!requireAccount('Create your player to unlock your own OVR, stats, game history, membership and settings.')) return;
+
+    closePrimaryLayers();
+    setActive('me');
+    showRouteShell('me');
     setNavBusy('me', true);
+
     try {
       const ready = await ensureProfileFeature();
       if (!ready || !window.RealPlayProfile?.open) {
-        setActive('home');
         console.error('[Real Play] Profile navigation could not initialize.');
+        showRouteError('me', 'Your profile feature did not finish loading. Try again without leaving the app shell.');
         return;
       }
 
       closePrimaryLayers('profile');
-      setActive('me');
       window.RealPlayProfile.open();
       window.setTimeout(() => {
         syncMeHeader();
         ensureProfileSettingsButton();
+        window.requestAnimationFrame(() => hideRouteShell('me'));
       }, 50);
+    } catch (error) {
+      console.error('[Real Play] Profile navigation failed.', error);
+      showRouteError('me', error?.message || 'Real Play could not open your profile.');
     } finally {
       setNavBusy('me', false);
     }
@@ -408,6 +556,7 @@
         <span aria-hidden="true">${item.icon}</span><small>${item.label}</small>
       </button>`).join('');
     app.appendChild(bar);
+    ensureRouteShell();
     bar.addEventListener('click', (event) => {
       const button = event.target.closest('[data-rp-simple-nav-item]');
       if (!button) return;
@@ -545,5 +694,13 @@
     chats: () => openWorldTab('chats'),
     me: openMe,
     refreshHome,
+  };
+
+  // Shared route-shell authority for future dedicated pages. A feature can
+  // opt into the same transition language without inventing another loader.
+  window.RealPlayRouteShell = {
+    show: showRouteShell,
+    hide: hideRouteShell,
+    error: showRouteError,
   };
 })();
