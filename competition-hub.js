@@ -682,7 +682,13 @@
       const initialKey = hasRanked ? 'ranked' : 'unranked';
       window.setTimeout(() => {
         if (scopedRanking !== config || playerPresentation !== 'scoped') return;
-        controls.querySelector(`[data-player-sort="${initialKey}"]`)?.click();
+        try {
+          window.dispatchEvent(new CustomEvent('realplay:player-filter-select', {
+            detail: { key: initialKey, source: 'competition-scope' },
+          }));
+        } catch (_error) {
+          controls.querySelector(`[data-player-sort="${initialKey}"]`)?.click();
+        }
       }, 0);
     }
 
