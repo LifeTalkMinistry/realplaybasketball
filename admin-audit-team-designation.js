@@ -185,18 +185,29 @@
       const card = section.querySelector(`.rp-video-roster-card.${side}`);
       if (!card) continue;
       card.querySelectorAll('.rp-video-roster-player').forEach((row) => {
-        row.querySelector('[data-rp-borrowed-badge]')?.remove();
-        if (!destination) return;
+        const existing = row.querySelector('[data-rp-borrowed-badge]');
+        if (!destination) {
+          existing?.remove();
+          return;
+        }
         const id = Number(row.querySelector('[data-player-id]')?.dataset.playerId);
         const source = preferencePlayerBySignedId(id);
         const home = String(source?.preferredClub || '').trim().toLowerCase();
-        if (!home || home === destination) return;
+        if (!home || home === destination) {
+          existing?.remove();
+          return;
+        }
+        const label = `BORROWED · ${home.toUpperCase()}`;
+        if (existing) {
+          if (existing.textContent !== label) existing.textContent = label;
+          return;
+        }
         const copy = row.firstElementChild;
         if (!copy) return;
         const badge = document.createElement('small');
         badge.className = 'rp-video-borrowed-badge';
         badge.dataset.rpBorrowedBadge = '1';
-        badge.textContent = `BORROWED · ${home.toUpperCase()}`;
+        badge.textContent = label;
         copy.appendChild(badge);
       });
     }
