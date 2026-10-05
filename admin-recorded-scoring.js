@@ -369,13 +369,19 @@
     const label = control.session?.rulesLabel || (rules ? 'GAME RULES SET' : 'RULES NOT SET');
     const target = rules?.rulesetFamily === 'race_to' ? Number(rules.targetScore) : (raceTargets.includes(12) ? 12 : 21);
     const format = rules?.playerFormat || '3v3';
+    const standardActive = rules?.rulesetFamily === 'standard';
     return `<div class="rp-video-rules">
       <div class="rp-video-rules-current"><span>CURRENT RULES</span><strong>${esc(label)}</strong></div>
-      <button type="button" data-rp-video-rule-standard ${busy ? 'disabled' : ''}>STANDARD 3V3</button>
+      <div class="rp-video-rules-mode-row">
+        <span>RULESET</span>
+        <button type="button" class="rp-video-standard-option ${standardActive ? 'active' : ''}" data-rp-video-rule-standard ${busy || standardActive ? 'disabled' : ''}>
+          ${standardActive ? 'STANDARD 3V3 · ACTIVE' : 'SWITCH TO STANDARD 3V3'}
+        </button>
+      </div>
       <form data-rp-video-race-form>
-        <select name="target" aria-label="Race target">${raceTargets.map((value) => `<option value="${value}" ${target === value ? 'selected' : ''}>RACE TO ${value}</option>`).join('')}</select>
-        <select name="format" aria-label="Player format">${['3v3','4v4','5v5'].map((value) => `<option value="${value}" ${format === value ? 'selected' : ''}>${value.toUpperCase()}</option>`).join('')}</select>
-        <button type="submit" ${busy ? 'disabled' : ''}>SET RACE TO</button>
+        <label><span>SCORE TARGET</span><select name="target" aria-label="Race target">${raceTargets.map((value) => `<option value="${value}" ${target === value ? 'selected' : ''}>RACE TO ${value}</option>`).join('')}</select></label>
+        <label><span>FORMAT</span><select name="format" aria-label="Player format">${['3v3','4v4','5v5'].map((value) => `<option value="${value}" ${format === value ? 'selected' : ''}>${value.toUpperCase()}</option>`).join('')}</select></label>
+        <button type="submit" data-rp-video-race-apply ${busy ? 'disabled' : ''}>APPLY · RACE TO ${target} · ${String(format).toUpperCase()}</button>
       </form>
     </div>`;
   }
@@ -862,6 +868,14 @@
 
   document.addEventListener('change', (event) => {
     if (!videoMode) return;
+    const raceForm = event.target.closest('[data-rp-video-race-form]');
+    if (raceForm) {
+      const target = raceForm.querySelector('select[name="target"]')?.value || '';
+      const format = raceForm.querySelector('select[name="format"]')?.value || '';
+      const apply = raceForm.querySelector('[data-rp-video-race-apply]');
+      if (apply) apply.textContent = `APPLY · RACE TO ${target} · ${String(format).toUpperCase()}`;
+      return;
+    }
     const competitionContext = event.target.closest('[data-rp-video-competition-context]');
     const season = event.target.closest('[data-rp-video-competition-season]');
     if (competitionContext || season) {
