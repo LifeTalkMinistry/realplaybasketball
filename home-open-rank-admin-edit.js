@@ -5,6 +5,8 @@
   const TOKEN_KEY = 'real_play_access_token';
   const PUBLIC_UPDATES_URL = 'https://api.clarapmc.com/api/real-play/public/updates';
   const UPDATES_API_URL = 'https://api.clarapmc.com/api/real-play/updates';
+  const SEASONS = ['TUNE UP SEASON 1', 'LEAGUE SEASON 1'];
+  const DAY_INDEX = { SUNDAY: 0, MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4, FRIDAY: 5, SATURDAY: 6 };
 
   let admin = false;
   let verifiedToken = '';
@@ -229,8 +231,9 @@
       .rp-home-open-rank-edit-close{width:34px;height:34px;flex:0 0 34px;border:1px solid rgba(255,255,255,.09);border-radius:50%;background:#0b131d;color:#b9c9d7;font-size:1.05rem;cursor:pointer}
       .rp-home-open-rank-edit-form{display:grid;gap:12px}
       .rp-home-open-rank-edit-form label{display:grid;gap:7px;color:#7790a6;font:900 .52rem/1.2 system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase}
-      .rp-home-open-rank-edit-form input{width:100%;min-height:47px;box-sizing:border-box;padding:0 13px;border:1px solid rgba(114,164,193,.23);border-radius:12px;outline:none;background:#06101a;color:#edf8ff;font:800 16px/1.2 system-ui,sans-serif}
-      .rp-home-open-rank-edit-form input:focus{border-color:rgba(73,225,255,.66);box-shadow:0 0 0 2px rgba(73,225,255,.08)}
+      .rp-home-open-rank-edit-form input,.rp-home-open-rank-edit-form select{width:100%;min-height:47px;box-sizing:border-box;padding:0 13px;border:1px solid rgba(114,164,193,.23);border-radius:12px;outline:none;background:#06101a;color:#edf8ff;font:800 16px/1.2 system-ui,sans-serif}
+      .rp-home-open-rank-edit-form select{appearance:auto;cursor:pointer}
+      .rp-home-open-rank-edit-form input:focus,.rp-home-open-rank-edit-form select:focus{border-color:rgba(73,225,255,.66);box-shadow:0 0 0 2px rgba(73,225,255,.08)}
       .rp-home-open-rank-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
       .rp-home-open-rank-edit-actions{display:grid;grid-template-columns:.8fr 1.2fr;gap:9px;margin-top:4px}
       .rp-home-open-rank-edit-actions button{min-height:48px;border-radius:12px;font:950 .63rem/1 var(--rp-display,Arial,sans-serif);font-style:italic;letter-spacing:.09em;text-transform:uppercase;cursor:pointer}
@@ -259,13 +262,12 @@
           <button class="rp-home-open-rank-edit-close" type="button" data-rp-home-open-rank-edit-close aria-label="Close editor">×</button>
         </header>
         <form class="rp-home-open-rank-edit-form" data-rp-home-open-rank-edit-form>
-          <label>Title<input name="title" type="text" maxlength="140" required></label>
-          <label>Date & start time<input name="startsAt" type="datetime-local" required></label>
-          <div class="rp-home-open-rank-edit-grid">
-            <label>End time<input name="endsAt" type="time" required></label>
-            <label>Team cap<input name="capacity" type="number" min="1" max="4" inputmode="numeric" required></label>
-          </div>
-          <label>Court / location<input name="locationName" type="text" maxlength="180" placeholder="Optional"></label>
+          <label>Season
+            <select name="title" required>
+              <option value="TUNE UP SEASON 1">TUNE UP SEASON 1</option>
+              <option value="LEAGUE SEASON 1">LEAGUE SEASON 1</option>
+            </select>
+          </label>
           <p class="rp-home-open-rank-edit-status" data-rp-home-open-rank-edit-status></p>
           <div class="rp-home-open-rank-edit-actions">
             <button class="rp-home-open-rank-edit-cancel" type="button" data-rp-home-open-rank-edit-cancel>CANCEL</button>
@@ -300,6 +302,47 @@
     }
   }
 
+  function normalizedSeasonTitle(value) {
+    const text = String(value || '').trim().toUpperCase();
+    return /LEAGUE/.test(text) ? 'LEAGUE SEASON 1' : 'TUNE UP SEASON 1';
+  }
+
+  function nextOccurrenceForBlock(block) {
+    const dayName = String(block?.day || '').trim().toUpperCase();
+    const targetDay = DAY_INDEX[dayName];
+    const start = String(block?.start || '').trim();
+    if (!Number.isInteger(targetDay) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(start)) return '';
+
+    const now = new Date();
+    const dateParts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Manila',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(now);
+    const part = (type) => dateParts.find((item) => item.type === type)?.value || '';
+    const todayText = `${part('year')}-${part('month')}-${part('day')}`;
+    const localNoon = new Date(`${todayText}T12:00:00+08:00`);
+    const currentDay = localNoon.getUTCDay();
+    let add = (targetDay - currentDay + 7) % 7;
+    let candidate = new Date(`${todayText}T${start}:00+08:00`);
+    if (add > 0) {
+      candidate = new Date(candidate.getTime() + add * 86400000);
+    } else if (candidate.getTime() <= now.getTime() + 60_000) {
+      candidate = new Date(candidate.getTime() + 7 * 86400000);
+    }
+    return candidate.toISOString();
+  }
+
+  function primaryScheduleEnvelope(teamSchedule) {
+    const active = (Array.isArray(teamSchedule?.blocks) ? teamSchedule.blocks : [])
+      .filter((block) => block?.enabled)
+      .map((block) => ({ block, eventAt: nextOccurrenceForBlock(block) }))
+      .filter((entry) => entry.eventAt)
+      .sort((a, b) => Date.parse(a.eventAt) - Date.parse(b.eventAt));
+    return active[0] || null;
+  }
+
   function openEditor() {
     if (!admin || saving) return;
     const backdrop = ensureEditor();
@@ -308,12 +351,8 @@
 
     const update = currentOverride || currentOpenRank;
     const cardRoot = card();
-    form.elements.title.value = String(update?.title || cardRoot?.querySelector('[data-rp-home-open-rank-title]')?.textContent || 'SUNDAY OPEN RANKING').trim();
-    form.elements.startsAt.value = toManilaDateTimeInput(update?.event_at || update?.eventAt) || nextSundayDefault();
-    form.elements.endsAt.value = endTime24FromLabel(parseEndLabel(update));
-    form.elements.capacity.value = String(parseCapacity(update));
-    form.elements.locationName.value = String(update?.location_name || update?.locationName || '').trim();
-    editorStatus('This only controls the public Home schedule card. Game Control stays separate.');
+    form.elements.title.value = normalizedSeasonTitle(update?.title || cardRoot?.querySelector('[data-rp-home-open-rank-title]')?.textContent);
+    editorStatus('Choose the season here. Time, team cap and court/location are configured inside each active rotation day.');
     backdrop.hidden = false;
     document.body.classList.add('rp-home-open-rank-editing');
     window.setTimeout(() => form.elements.title.focus({ preventScroll: true }), 0);
@@ -348,25 +387,22 @@
     event.preventDefault();
     if (!admin || saving) return;
     const form = event.currentTarget;
-    const title = String(form.elements.title.value || '').trim();
-    const startsAtInput = String(form.elements.startsAt.value || '').trim();
-    const endsAt = String(form.elements.endsAt.value || '').trim();
-    const locationName = String(form.elements.locationName.value || '').trim();
-    const capacity = Number(form.elements.capacity.value);
-    const eventAt = fromManilaDateTimeInput(startsAtInput);
-    const eventDate = new Date(eventAt || 0);
+    const title = normalizedSeasonTitle(form.elements.title.value);
 
-    if (!title) return editorStatus('Enter a title.', true);
-    if (!eventAt || Number.isNaN(eventDate.getTime())) return editorStatus('Choose a valid date and start time.', true);
-    if (eventDate.getTime() < Date.now() - 60_000) return editorStatus('Choose a current or future session time.', true);
-    if (!/^\d{2}:\d{2}$/.test(endsAt)) return editorStatus('Choose a valid end time.', true);
-    if (!Number.isFinite(capacity) || capacity < 1 || capacity > 4) return editorStatus('Team cap must be between 1 and 4.', true);
+    if (!SEASONS.includes(title)) return editorStatus('Choose a valid season.', true);
 
     const schedulingApi = window.__realPlayHomeTeamScheduling;
     if (!schedulingApi?.snapshot) return editorStatus('Team scheduling is still loading. Close this editor, reopen it, and try again.', true);
     const scheduleSnapshot = schedulingApi.snapshot();
     if (!scheduleSnapshot?.validation?.ok) return editorStatus(scheduleSnapshot?.validation?.message || 'Fix the team schedule before saving.', true);
     const teamSchedule = scheduleSnapshot.teamSchedule;
+    const envelope = primaryScheduleEnvelope(teamSchedule);
+    if (!envelope) return editorStatus('Turn on at least one valid rotation day.', true);
+    const primaryBlock = envelope.block;
+    const eventAt = envelope.eventAt;
+    const endsAt = String(primaryBlock.end || '22:00');
+    const capacity = Number(primaryBlock.capacity || 4);
+    const locationName = String(primaryBlock.locationName || '').trim();
 
     setEditorBusy(true);
     editorStatus('Saving Home schedule…');
@@ -381,7 +417,7 @@
         eventAt,
         locationName,
         pinned: true,
-        metadata: { teamSchedule },
+        metadata: { teamSchedule, scheduleScope: 'season-weekly-rotation', seasonTitle: title },
       });
 
       let updates = Array.isArray(published?.updates) ? published.updates : [];
@@ -423,8 +459,11 @@
     const now = Date.now();
     const candidates = list
       .filter((item) => item?.category === 'schedule' && (isManualHomeOverride(item) || scheduleType(item) === 'open-rank'))
-      .map((item) => ({ item, time: Date.parse(item.event_at || item.eventAt || '') }))
-      .filter((entry) => Number.isFinite(entry.time) && entry.time >= now - 60_000)
+      .map((item) => {
+        const schedule = item?.metadata?.teamSchedule || item?.metadata?.team_schedule;
+        return { item, time: Date.parse(item.event_at || item.eventAt || ''), recurring: Number(schedule?.version || 0) >= 4 && schedule?.rotationType === 'weekly' };
+      })
+      .filter((entry) => entry.recurring || (Number.isFinite(entry.time) && entry.time >= now - 60_000))
       .sort((left, right) => left.time - right.time);
 
     const overrides = candidates
