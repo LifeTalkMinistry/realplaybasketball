@@ -215,7 +215,9 @@
       if (!members.length) throw new Error(`${club.toUpperCase()} has no registered players to auto-populate.`);
 
       const expected = Number(control?.session?.rules?.playersPerSide || 0);
-      const activeMembers = expected > 0 ? members.slice(0, expected) : members;
+      const isFourVFour = String(control?.session?.rules?.playerFormat || '').toLowerCase() === '4v4';
+      const maxRoster = isFourVFour ? 6 : (expected > 0 ? expected : members.length);
+      const rosterMembers = members.slice(0, maxRoster);
       const existing = (control.players || []).filter(
         (player) => player.checkedIn && String(player.team || '').toLowerCase() === side
       );
@@ -227,7 +229,7 @@
         });
       }
 
-      for (const player of activeMembers) {
+      for (const player of rosterMembers) {
         const signedId = signedPlayerId(player);
         await controlAction({
           action: 'video-roster-add',
@@ -237,13 +239,15 @@
       }
 
       state[side] = club;
-      const extras = Math.max(0, members.length - activeMembers.length);
-      const formatText = expected > 0 ? `${expected}v${expected}` : 'this game';
-      setNotice(
-        extras
-          ? `${club.toUpperCase()} → ${side.toUpperCase()}: ${activeMembers.length} active players loaded for ${formatText}. ${extras} registered substitute${extras === 1 ? '' : 's'} remain outside the active roster.`
-          : `${club.toUpperCase()} → ${side.toUpperCase()}: ${activeMembers.length} registered player${activeMembers.length === 1 ? '' : 's'} auto-populated.`
-      );
+      const extras = Math.max(0, members.length - rosterMembers.length);
+      if (isFourVFour && rosterMembers.length > expected) {
+        const substitutes = rosterMembers.length - expected;
+        setNotice(`${club.toUpperCase()} → ${side.toUpperCase()}: all ${rosterMembers.length} roster players loaded — ${expected} on court with ${substitutes} substitute${substitutes === 1 ? '' : 's'} available.`);
+      } else if (extras) {
+        setNotice(`${club.toUpperCase()} → ${side.toUpperCase()}: ${rosterMembers.length} roster players loaded. ${extras} player${extras === 1 ? '' : 's'} exceed this game format's roster limit.`);
+      } else {
+        setNotice(`${club.toUpperCase()} → ${side.toUpperCase()}: ${rosterMembers.length} registered player${rosterMembers.length === 1 ? '' : 's'} auto-populated.`);
+      }
     } catch (error) {
       state[side] = '';
       setNotice(error.message || `Could not load ${club.toUpperCase()}.`, 'error');
