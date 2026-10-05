@@ -7,7 +7,6 @@
 
   const FILTER_LABELS = [
     'RANK OVR',
-    'UNRANK OVR',
     'WIN RATE',
     'MOST OVERALL MVP',
     'MOST TEAM MVP',
@@ -118,6 +117,7 @@
       /* Scoped competition rankings: custom context header, exact Player Rankings body below. */
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-view="players"] .rp-world-player-directory-head{display:none!important}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-status]{display:none!important}
+      body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-sort] [data-player-sort="unranked"]{display:none!important}
       body.rp-simple-navigation-active .rp-world[data-rp-competition-presentation="overall"] [data-world-player-more],
       body.rp-simple-navigation-active .rp-world[data-rp-competition-presentation="scoped"] [data-world-player-more]{display:none!important}
 
@@ -539,6 +539,51 @@
     return data;
   }
 
+  function normalizeAutomaticCompetitionRanks(players) {
+    const source = (Array.isArray(players) ? players : []).map((player) => ({ ...player }));
+    source.sort((left, right) => {
+      const leftRank = Number(left?.rank);
+      const rightRank = Number(right?.rank);
+      const leftHasRank = Number.isSafeInteger(leftRank) && leftRank > 0;
+      const rightHasRank = Number.isSafeInteger(rightRank) && rightRank > 0;
+      if (leftHasRank && rightHasRank && leftRank !== rightRank) return leftRank - rightRank;
+
+      const leftOvr = Number(left?.ovr ?? left?.provisionalOvr);
+      const rightOvr = Number(right?.ovr ?? right?.provisionalOvr);
+      const leftHasOvr = Number.isFinite(leftOvr);
+      const rightHasOvr = Number.isFinite(rightOvr);
+      if (leftHasOvr !== rightHasOvr) return leftHasOvr ? -1 : 1;
+      if (leftHasOvr && rightHasOvr && leftOvr !== rightOvr) return rightOvr - leftOvr;
+
+      const leftGames = Number(left?.record?.games ?? left?.leaderboardStats?.games ?? 0);
+      const rightGames = Number(right?.record?.games ?? right?.leaderboardStats?.games ?? 0);
+      if (leftGames !== rightGames) return rightGames - leftGames;
+
+      const leftWinRate = Number(left?.winRate ?? left?.record?.winRate ?? 0);
+      const rightWinRate = Number(right?.winRate ?? right?.record?.winRate ?? 0);
+      if (leftWinRate !== rightWinRate) return rightWinRate - leftWinRate;
+
+      return String(left?.playerName || '').localeCompare(String(right?.playerName || ''), undefined, {
+        sensitivity: 'base',
+        numeric: true,
+      });
+    });
+
+    return source.map((player, index) => {
+      const ovrValue = player?.ovr ?? player?.provisionalOvr ?? null;
+      const ovr = ovrValue !== null && ovrValue !== undefined && Number.isFinite(Number(ovrValue))
+        ? Number(ovrValue)
+        : null;
+      return {
+        ...player,
+        ranked: true,
+        rank: index + 1,
+        officialRank: index + 1,
+        ovr,
+      };
+    });
+  }
+
   function scopedPlayerRow(player) {
     const playerId = String(player?.userId ?? player?.identityKey ?? '').trim();
     const name = player?.playerName || 'REAL PLAY PLAYER';
@@ -598,7 +643,7 @@
     try {
       const data = await fetchScopedCompetitionStats(config);
       if (requestId !== scopedRequestId || scopedRanking !== config || playerPresentation !== 'scoped') return;
-      config.players = Array.isArray(data?.players) ? data.players : [];
+      config.players = normalizeAutomaticCompetitionRanks(data?.players);
       config.playerCount = Number.isFinite(Number(data?.playerCount))
         ? Math.max(0, Math.trunc(Number(data.playerCount)))
         : config.players.length;
@@ -678,8 +723,7 @@
 
     if (!config.filterInitialized && !config.loading && !config.error && Array.isArray(config.players) && config.players.length) {
       config.filterInitialized = true;
-      const hasRanked = config.players.some((player) => Boolean(player?.ranked) && Number(player?.rank) > 0);
-      const initialKey = hasRanked ? 'ranked' : 'unranked';
+      const initialKey = 'ranked';
       window.setTimeout(() => {
         if (scopedRanking !== config || playerPresentation !== 'scoped') return;
         try {
