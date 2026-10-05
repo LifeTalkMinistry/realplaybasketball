@@ -233,18 +233,41 @@
   function routeShellMarkup(target) {
     if (target === 'world') {
       return `
-        <div class="rp-route-shell-content rp-route-shell-world">
-          <header class="rp-route-shell-heading rp-route-shell-world-head">
-            <small>REAL PLAY BASKETBALL</small>
+        <div class="rp-route-shell-content rp-route-shell-world-premium">
+          <header class="rp-route-shell-heading rp-route-shell-world-premium-head">
             <strong>WORLD</strong>
-            <span>LOADING LATEST FROM REAL PLAY</span>
+            <small>REAL PLAY BASKETBALL</small>
           </header>
-          <div class="rp-route-skeleton-world-tabs" aria-hidden="true"><i></i><i></i></div>
-          <div class="rp-route-skeleton-world-intro" aria-hidden="true"><span></span><b></b></div>
-          <div class="rp-route-skeleton-world-cards" aria-hidden="true">
-            <article><header><span></span><i></i></header><b></b><i></i><i></i></article>
-            <article><header><span></span><i></i></header><b></b><i></i></article>
-            <article><header><span></span><i></i></header><b></b><i></i></article>
+
+          <div class="rp-route-world-premium-tabs" aria-hidden="true">
+            <span class="active">FEED</span>
+            <span>RESULTS</span>
+          </div>
+
+          <section class="rp-route-world-premium-stage">
+            <div class="rp-route-world-premium-orbit" aria-hidden="true">
+              <i></i><i></i><i></i>
+            </div>
+
+            <div class="rp-route-world-premium-logo-wrap" aria-hidden="true">
+              <img src="assets/branding/real-play-official-logo.png" alt="">
+            </div>
+
+            <div class="rp-route-world-premium-copy">
+              <small>REAL PLAY WORLD</small>
+              <strong>GETTING THE LATEST</strong>
+              <p>Verified games, schedules and official updates are being prepared.</p>
+            </div>
+
+            <div class="rp-route-world-premium-progress" aria-hidden="true">
+              <span></span>
+            </div>
+          </section>
+
+          <div class="rp-route-world-premium-status" aria-hidden="true">
+            <span>LIVE DATA</span>
+            <i></i>
+            <b>SYNCING</b>
           </div>
         </div>`;
     }
