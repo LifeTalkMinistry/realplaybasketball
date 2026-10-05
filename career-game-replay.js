@@ -56,7 +56,26 @@
     );
   }
 
+  function positiveReplaySeasonNumber(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const number = Number(value);
+    return Number.isSafeInteger(number) && number > 0 ? number : null;
+  }
+
+  function competitionReplayTitle(game) {
+    const seasonNumber = positiveReplaySeasonNumber(game?.seasonNumber ?? game?.season_number);
+    const seasonGameNumber = positiveReplaySeasonNumber(game?.seasonGameNumber ?? game?.season_game_number);
+    const context = String(game?.competitionContext ?? game?.competition_context ?? '').trim().toLowerCase();
+    if (!seasonNumber || !seasonGameNumber || !['open_ranking', 'league'].includes(context)) return '';
+
+    const label = context === 'league' ? 'LEAGUE' : 'TUNE-UP';
+    return `${label} · SEASON ${seasonNumber} #${String(seasonGameNumber).padStart(2, '0')}`;
+  }
+
   function replayDisplayTitle(game) {
+    const competitionTitle = competitionReplayTitle(game);
+    if (competitionTitle) return competitionTitle;
+
     const number = canonicalReplayNumber(game);
     return number ? canonicalReplayTitle(number) : String(game?.title || 'REAL PLAY GAME');
   }
