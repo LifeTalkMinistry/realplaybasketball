@@ -75,13 +75,34 @@
     })[0]?.update || null;
   }
 
-  function fromSchedule(schedule) {
+  function eventDayName(update) {
+    const value = update?.event_at || update?.eventAt;
+    const date = new Date(value || '');
+    if (Number.isNaN(date.getTime())) return '';
+    try {
+      return new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Manila', weekday: 'long' }).format(date).toUpperCase();
+    } catch (_error) { return ''; }
+  }
+
+  function legacyCapacity(update) {
+    const teamCap = Number(String(update?.body || '').match(/\b(\d{1,2})\s+TEAM\s+CAP\b/i)?.[1]);
+    return Number.isFinite(teamCap) && teamCap > 0 ? Math.max(1, Math.min(4, Math.round(teamCap))) : 4;
+  }
+
+  function fromSchedule(schedule, update = null) {
     if (!schedule || schedule.mode === 'open' || !Array.isArray(schedule.blocks)) return [];
     const hasDayMetadata = Number(schedule.version || 1) >= 2 && schedule.blocks.some((block) => block?.day);
-    const legacyByDay = {
-      SATURDAY: schedule.blocks[0] || null,
-      SUNDAY: schedule.blocks[1] || null,
-    };
+    const singleLegacyDay = !hasDayMetadata && schedule.blocks.length === 1 && DAYS.includes(eventDayName(update))
+      ? eventDayName(update)
+      : '';
+    const legacyByDay = singleLegacyDay
+      ? { [singleLegacyDay]: schedule.blocks[0] || null }
+      : {
+          SATURDAY: schedule.blocks[0] || null,
+          SUNDAY: schedule.blocks[1] || null,
+        };
+    const fallbackCapacity = legacyCapacity(update);
+    const fallbackLocation = String(update?.location_name || update?.locationName || '').trim();
     const source = DAYS.map((day) => ({
       day,
       block: hasDayMetadata
@@ -90,13 +111,15 @@
     }));
 
     return source.map(({ day, block }) => {
-      const start = hasDayMetadata ? (clock(block?.start) || '20:00') : '20:00';
-      const end = hasDayMetadata ? (clock(block?.end) || '22:00') : '22:00';
+      const start = clock(block?.start) || '20:00';
+      const end = clock(block?.end) || '22:00';
       const teamKeys = keys(block?.teamKeys);
-      const requestedEnabled = typeof block?.enabled === 'boolean' ? block.enabled : DEFAULT_ACTIVE_DAYS.has(day);
+      const requestedEnabled = hasDayMetadata
+        ? (typeof block?.enabled === 'boolean' ? block.enabled : DEFAULT_ACTIVE_DAYS.has(day))
+        : Boolean(block && teamKeys.length);
       const enabled = Boolean(requestedEnabled && teamKeys.length);
-      const capacity = Math.max(1, Math.min(4, Math.round(Number(block?.capacity) || 4)));
-      const locationName = String(block?.locationName || block?.location_name || '').trim();
+      const capacity = Math.max(1, Math.min(4, Math.round(Number(block?.capacity) || fallbackCapacity)));
+      const locationName = String(block?.locationName || block?.location_name || fallbackLocation).trim();
       return {
         id: `${day.toLowerCase()}-${start.replace(':','')}-${end.replace(':','')}`,
         day,
@@ -118,7 +141,8 @@
       try {
         const response = await fetch(API, { headers: { Accept: 'application/json' }, cache: 'no-store' });
         const data = response.ok ? await response.json() : {};
-        rotations = fromSchedule(teamScheduleOf(chooseCurrentSchedule(data?.updates)));
+        const currentSchedule = chooseCurrentSchedule(data?.updates);
+        rotations = fromSchedule(teamScheduleOf(currentSchedule), currentSchedule);
       } catch (_error) {
         rotations = [];
       }

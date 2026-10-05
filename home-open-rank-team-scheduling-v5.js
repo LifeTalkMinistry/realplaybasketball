@@ -128,6 +128,13 @@
       return year && month && day ? `${year}-${month}-${day}` : '';
     } catch (_error) { return ''; }
   }
+  function manilaDayName(value) {
+    const date = new Date(value || '');
+    if (Number.isNaN(date.getTime())) return '';
+    try {
+      return new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Manila', weekday: 'long' }).format(date).toUpperCase();
+    } catch (_error) { return ''; }
+  }
   function matchingSchedule(updates) {
     const list = scheduleCandidates(updates);
     if (!list.length || !mountedForm) return null;
@@ -175,6 +182,7 @@
         ...schedule,
         legacyCapacity,
         legacyLocationName: String(update?.location_name || update?.locationName || '').trim(),
+        legacyEventDay: manilaDayName(update?.event_at || update?.eventAt),
       };
     } catch (_error) { return null; }
   }
@@ -444,20 +452,25 @@
     const legacyBlocks = schedule.blocks.slice(0, 2);
     const hasAssignedTeams = legacyBlocks.some((block) => Array.isArray(block?.teamKeys) && block.teamKeys.length);
     if (!hasAssignedTeams) return null;
+    const singleLegacyDay = legacyBlocks.length === 1 && ROTATION_DAYS.includes(String(schedule?.legacyEventDay || '').toUpperCase())
+      ? String(schedule.legacyEventDay).toUpperCase()
+      : '';
     return {
       version: 4,
       mode: 'assigned',
       rotationType: 'weekly',
       migratedFromLegacy: true,
       blocks: ROTATION_DAYS.map((day) => {
-        const legacy = day === 'SATURDAY' ? legacyBlocks[0] : day === 'SUNDAY' ? legacyBlocks[1] : null;
+        const legacy = singleLegacyDay
+          ? (day === singleLegacyDay ? legacyBlocks[0] : null)
+          : (day === 'SATURDAY' ? legacyBlocks[0] : day === 'SUNDAY' ? legacyBlocks[1] : null);
         return {
           day,
           start: clockValue(legacy?.start, DEFAULT_START),
           end: clockValue(legacy?.end, DEFAULT_END),
           capacity: capacityValue(schedule?.legacyCapacity),
           locationName: String(schedule?.legacyLocationName || '').trim(),
-          enabled: DEFAULT_ACTIVE_DAYS.has(day),
+          enabled: singleLegacyDay ? day === singleLegacyDay : DEFAULT_ACTIVE_DAYS.has(day),
           teamKeys: Array.isArray(legacy?.teamKeys) ? legacy.teamKeys : [],
         };
       }),
@@ -552,7 +565,26 @@
     },
   };
 
-  window.fetch = function realPlayRotationScheduleFetch(input, init = {}) {
+  function legacyCompatibleSchedule(teamSchedule) {
+    if (!teamSchedule || teamSchedule.mode === 'open') {
+      return teamSchedule?.mode === 'open' ? { version: 1, mode: 'open', blocks: [] } : null;
+    }
+    const activeBlocks = (Array.isArray(teamSchedule.blocks) ? teamSchedule.blocks : []).filter((block) => block?.enabled);
+    if (activeBlocks.length !== 1) return null;
+    return {
+      version: 1,
+      mode: 'assigned',
+      blocks: activeBlocks.map((block) => ({
+        start: clockValue(block?.start, DEFAULT_START),
+        end: clockValue(block?.end, DEFAULT_END),
+        teamKeys: Array.isArray(block?.teamKeys) ? block.teamKeys : [],
+        teamNames: Array.isArray(block?.teamNames) ? block.teamNames : [],
+      })),
+    };
+  }
+
+  window.fetch = async function realPlayRotationScheduleFetch(input, init = {}) {
+    let legacyRetryPayload = null;
     try {
       const url = typeof input === 'string' ? input : String(input?.url || '');
       const method = String(init?.method || (typeof input !== 'string' ? input?.method : '') || 'GET').toUpperCase();
@@ -562,14 +594,44 @@
           const teamSchedule = buildTeamSchedule();
           const result = validateSchedule(teamSchedule);
           if (result.ok) {
-            payload.metadata = { ...(payload.metadata && typeof payload.metadata === 'object' ? payload.metadata : {}), teamSchedule };
+            const metadata = payload.metadata && typeof payload.metadata === 'object' ? payload.metadata : {};
+            payload.metadata = { ...metadata, teamSchedule };
             init = { ...init, body: JSON.stringify(payload) };
+
+            const legacySchedule = legacyCompatibleSchedule(teamSchedule);
+            if (legacySchedule) {
+              legacyRetryPayload = {
+                ...payload,
+                metadata: { ...metadata, teamSchedule: legacySchedule },
+              };
+            }
           }
         }
       }
     } catch (_error) {}
-    return nativeFetch(input, init);
+
+    const response = await nativeFetch(input, init);
+    if (!legacyRetryPayload || response.status !== 400) return response;
+
+    let legacyBackendError = false;
+    try {
+      const data = await response.clone().json();
+      const message = String(data?.message || data?.error || '');
+      const code = String(data?.code || '');
+      legacyBackendError = code === 'TEAM_SCHEDULE_BLOCK_EMPTY'
+        || /assign at least one team to block\s+\d+/i.test(message);
+    } catch (_error) {}
+
+    if (!legacyBackendError) return response;
+
+    const retry = await nativeFetch(input, { ...init, body: JSON.stringify(legacyRetryPayload) });
+    if (retry.ok) {
+      window.__realPlayLegacyScheduleFallbackUsed = true;
+      window.dispatchEvent(new CustomEvent('realplay:legacy-schedule-fallback'));
+    }
+    return retry;
   };
+
 
   const observer = new MutationObserver(() => {
     if (mountedForm?.isConnected) return;

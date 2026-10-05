@@ -151,7 +151,7 @@
     loadCancellationControl();
     const script = document.createElement('script');
     script.dataset.rpTeamRotationPickerLoader = '1';
-    script.src = 'home-4v4-team-schedule-rotation-v2.js?v=20261005-day-owned-schedule-v2';
+    script.src = 'home-4v4-team-schedule-rotation-v2.js?v=20261005-live-backend-compat-v3';
     script.async = false;
     script.addEventListener('error', () => console.warn('[Real Play] Team schedule rotation picker did not load.'), { once: true });
     document.head.appendChild(script);

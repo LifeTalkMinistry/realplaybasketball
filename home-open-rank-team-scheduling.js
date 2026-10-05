@@ -16,7 +16,7 @@
     if (document.querySelector('script[data-rp-team-rotation-scheduler-loader]')) return;
     const script = document.createElement('script');
     script.dataset.rpTeamRotationSchedulerLoader = '1';
-    script.src = 'home-open-rank-team-scheduling-v5.js?v=20261005-day-owned-schedule-v2';
+    script.src = 'home-open-rank-team-scheduling-v5.js?v=20261005-live-backend-compat-v3';
     script.async = false;
     script.addEventListener('load', loadPremiumCards, { once: true });
     script.addEventListener('error', () => console.warn('[Real Play] Team schedule rotation layer did not load.'), { once: true });
