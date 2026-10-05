@@ -70,10 +70,16 @@
 .rp-video-rules-current{display:grid;gap:3px}
 .rp-video-rules-current span{color:#668ea1;font:850 8px/1 system-ui,sans-serif;letter-spacing:.11em}
 .rp-video-rules-current strong{color:#f1fbff;font:900 11px/1.2 system-ui,sans-serif;letter-spacing:.05em}
-.rp-video-rules>button,.rp-video-rules form button{min-height:38px;border:1px solid rgba(37,216,248,.3);border-radius:9px;background:#082533;color:#b6f3fc;font:900 8px/1 system-ui,sans-serif;letter-spacing:.08em}
+.rp-video-rules-mode-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 9px;border:1px solid rgba(92,151,178,.16);border-radius:9px;background:rgba(4,14,22,.62)}
+.rp-video-rules-mode-row>span{color:#668ea1;font:850 7px/1 system-ui,sans-serif;letter-spacing:.11em}
+.rp-video-standard-option{min-height:30px;padding:0 10px;border:1px solid rgba(37,216,248,.22);border-radius:8px;background:#071923;color:#8fc6d4;font:900 7px/1 system-ui,sans-serif;letter-spacing:.07em}
+.rp-video-standard-option.active{border-color:rgba(65,212,159,.24);background:rgba(20,79,62,.28);color:#8fe4c2}
+.rp-video-standard-option:disabled{opacity:.62}
 .rp-video-rules form{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.rp-video-rules form label{display:grid;gap:5px}
+.rp-video-rules form label>span{color:#668ea1;font:850 7px/1 system-ui,sans-serif;letter-spacing:.1em}
 .rp-video-rules select{min-height:38px;border:1px solid rgba(91,151,178,.23);border-radius:9px;background:#050e17;color:#e7f8ff;padding:0 8px;font:800 9px/1 system-ui,sans-serif}
-.rp-video-rules form button{grid-column:1/-1}
+.rp-video-rules form button{grid-column:1/-1;min-height:42px;border:1px solid rgba(37,216,248,.34);border-radius:9px;background:#0a2a38;color:#c9f7ff;font:950 8px/1 system-ui,sans-serif;letter-spacing:.08em}
 .rp-video-roster-check{padding:9px;border-radius:9px;background:rgba(64,90,104,.18);color:#7897a6;font:700 9px/1.4 system-ui,sans-serif;text-align:center}
 .rp-video-roster-check.ready{background:rgba(28,102,78,.24);color:#91e8c5}
 .rp-video-start,.rp-video-finish{min-height:48px;border:0;border-radius:12px;background:#20d8f4;color:#001017;font:950 10px/1 system-ui,sans-serif;letter-spacing:.11em}
