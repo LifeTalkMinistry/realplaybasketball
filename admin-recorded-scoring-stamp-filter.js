@@ -20,6 +20,27 @@
     ['incident', 'INCIDENT'],
   ];
 
+  const MOMENT_TAG_LABELS = Object.freeze({
+    honorable_play: 'Honorable Play',
+    clutch_shot: 'Clutch Shot',
+    scoring_highlight: 'Scoring Highlight',
+    assist_playmaking: 'Assist / Playmaking',
+    defensive_play: 'Defensive Play',
+    steal_highlight: 'Steal',
+    block_highlight: 'Block',
+    rebound_highlight: 'Rebound',
+    hustle_play: 'Hustle Play',
+    skill_move: 'Skill Move',
+    game_winner: 'Game Winner',
+    injury: 'Injury',
+    hard_fall_collision: 'Hard Fall / Collision',
+    medical_attention: 'Medical Attention',
+    ejection_disqualification: 'Ejection / DQ',
+    dispute_review: 'Dispute / Review',
+    unsportsmanlike_incident: 'Unsportsmanlike',
+    other_incident: 'Other Incident',
+  });
+
   let screenRef = null;
   let draftKey = '';
   let resolvingKey = null;
@@ -280,7 +301,9 @@
         ? Number(event?.replayStartMs ?? Math.max(0, timestamp - 7000))
         : Math.max(0, timestamp - 5000);
       const auditClock = window.__realPlayAuditClockLabel?.(timestamp) || null;
-      const tags = Array.isArray(event?.tags) ? event.tags.map((tag) => String(tag || '').replaceAll('_', ' ')).filter(Boolean) : [];
+      const tags = Array.isArray(event?.tags)
+        ? event.tags.map((tag) => MOMENT_TAG_LABELS[String(tag || '').toLowerCase()] || String(tag || '').replaceAll('_', ' ')).filter(Boolean)
+        : [];
       const tagText = tags.length ? ` · ${tags.join(' + ')}` : '';
       const title = auditClock ? `${categoryTitle(category)}${tagText} · Audit ${auditClock} · Video ${formatTime(timestamp)}` : `${categoryTitle(category)}${tagText} · Video ${formatTime(timestamp)}`;
       return `<button type="button" class="rp-audit-stamp-marker" style="left:${left}%" data-rp-audit-category="${category}" data-rp-video-marker="${replay}" title="${title}" aria-label="${title}">${markerText(category)}</button>`;
