@@ -98,7 +98,24 @@
     else button.removeAttribute('aria-busy');
   }
 
+  async function ensureWorldFeedFeature() {
+    const updatesReady = await loadFeatureScript(
+      'real-play-updates.js',
+      () => Boolean(window.RealPlayUpdates?.open)
+    );
+    if (!updatesReady) return false;
+
+    return loadFeatureScript(
+      'world-results.js',
+      () => Boolean(window.RealPlayWorldResults?.open)
+    );
+  }
+
   async function ensureWorldFeature(tab) {
+    // WORLD is no longer owned by the legacy community/composer view.
+    // Only PLAYERS and CHATS still depend on real-play-world.js.
+    if (tab === 'world') return ensureWorldFeedFeature();
+
     if (!(await loadFeatureScript('real-play-world.js', () => Boolean(window.RealPlayWorld?.open)))) {
       return false;
     }
@@ -395,9 +412,26 @@
 
     try {
       const ready = await ensureWorldFeature(tab);
+
+      if (target === 'world') {
+        if (!ready || !window.RealPlayWorldResults?.open) {
+          console.error('[Real Play] World feed navigation could not initialize.');
+          showRouteError('world', 'The World feed did not finish loading. Your Home page remains safe in the background.');
+          return;
+        }
+
+        // Critical routing rule: WORLD must never reveal the old community
+        // composer/feed. That legacy surface remains internal infrastructure
+        // for PLAYERS and CHATS only.
+        try { window.RealPlayWorld?.close?.(); } catch (_error) {}
+        closePrimaryLayers('updates');
+        window.RealPlayWorldResults.open();
+        return;
+      }
+
       if (!ready || !window.RealPlayWorld?.open) {
-        console.error('[Real Play] World navigation could not initialize.');
-        showRouteError(target, 'The World feature did not finish loading. Your Home page remains safe in the background.');
+        console.error('[Real Play] Shared World navigation could not initialize.');
+        showRouteError(target, 'This Real Play page did not finish loading. Your Home page remains safe in the background.');
         return;
       }
 
