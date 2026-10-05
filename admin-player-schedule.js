@@ -9,8 +9,23 @@
     valiant: 'VALIANT',
     watchmen: 'WATCHMEN',
     conquerors: 'CONQUERORS',
+    chosen: 'CHOSEN',
+    eagles: 'EAGLES',
+    steadfast: 'STEADFAST',
+    warriors: 'WARRIORS',
   });
-  const CLUB_ORDER = Object.freeze(['lions', 'valiant', 'watchmen', 'conquerors']);
+  // Fallback only. The admin UI should prefer the canonical club list returned
+  // by the API so future teams appear here without another frontend patch.
+  const DEFAULT_CLUB_ORDER = Object.freeze([
+    'lions',
+    'valiant',
+    'watchmen',
+    'conquerors',
+    'chosen',
+    'eagles',
+    'steadfast',
+    'warriors',
+  ]);
 
   let selectedPlayerId = null;
   let selectedPlayerIdentity = null;
@@ -119,19 +134,45 @@
   }
 
   function teamLabel(club) {
-    return CLUB_LABELS[String(club || '').toLowerCase()] || String(club || 'TEAM').toUpperCase();
+    const normalized = String(club || '').trim().toLowerCase();
+    return CLUB_LABELS[normalized]
+      || normalized.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase()
+      || 'TEAM';
   }
 
   function normalizeTeamStates(state) {
     const rows = Array.isArray(state?.teamStates) ? state.teamStates : [];
-    const byClub = new Map(rows.map((team) => [String(team?.club || '').toLowerCase(), team]));
-    return CLUB_ORDER.map((club) => {
+    const byClub = new Map();
+    rows.forEach((team) => {
+      const club = String(team?.club || '').trim().toLowerCase();
+      if (club) byClub.set(club, team);
+    });
+
+    const orderedClubs = [];
+    const seen = new Set();
+    const addClub = (value) => {
+      const club = String(value || '').trim().toLowerCase();
+      if (!club || seen.has(club)) return;
+      seen.add(club);
+      orderedClubs.push(club);
+    };
+
+    // API authority first, then any team states not present in the registry.
+    // The fallback keeps the admin usable during a partial/older response.
+    if (Array.isArray(state?.clubs)) state.clubs.forEach(addClub);
+    rows.forEach((team) => addClub(team?.club));
+    if (!orderedClubs.length) DEFAULT_CLUB_ORDER.forEach(addClub);
+
+    return orderedClubs.map((club) => {
       const row = byClub.get(club) || {};
+      const capacity = Math.max(1, Number(row.capacity) || 6);
+      const memberCount = Math.max(0, Number(row.memberCount) || 0);
       return {
         club,
         status: String(row.status || 'available').toLowerCase(),
-        memberCount: Math.max(0, Number(row.memberCount) || 0),
-        capacity: Math.max(1, Number(row.capacity) || 4),
+        memberCount,
+        capacity,
+        rosterFull: Boolean(row.rosterFull) || memberCount >= capacity,
       };
     });
   }
@@ -139,9 +180,11 @@
   function teamStatusText(team, isCurrent) {
     const count = Math.min(team.capacity, team.memberCount);
     if (isCurrent) {
-      return `CURRENT · ${count}/${team.capacity} PLAYERS${team.status === 'secured' ? ' · SECURED' : ' · FORMING'}`;
+      const stateLabel = team.rosterFull ? 'FULL' : team.status === 'secured' ? 'SECURED' : 'FORMING';
+      return `CURRENT · ${count}/${team.capacity} PLAYERS · ${stateLabel}`;
     }
-    if (team.status === 'secured' || count >= team.capacity) return `FULL · ${count}/${team.capacity} PLAYERS`;
+    if (team.rosterFull) return `FULL · ${count}/${team.capacity} PLAYERS`;
+    if (team.status === 'secured') return `SECURED · ${count}/${team.capacity} PLAYERS`;
     if (count > 0) return `FORMING · ${count}/${team.capacity} PLAYERS`;
     return `AVAILABLE · 0/${team.capacity} PLAYERS`;
   }
@@ -152,12 +195,12 @@
     const available = state?.fourVFourAvailable !== false;
     const current = joinedClub ? teams.find((team) => team.club === joinedClub) || null : null;
     const currentSummary = current
-      ? `${teamLabel(current.club)} · ${Math.min(current.memberCount, current.capacity)}/${current.capacity} PLAYERS · ${current.status === 'secured' ? 'SECURED' : 'FORMING'}`
+      ? `${teamLabel(current.club)} · ${Math.min(current.memberCount, current.capacity)}/${current.capacity} PLAYERS · ${current.rosterFull ? 'FULL' : current.status === 'secured' ? 'SECURED' : 'FORMING'}`
       : 'NO TEAM YET';
 
     const teamButtons = teams.map((team) => {
       const isCurrent = team.club === joinedClub;
-      const isFull = team.status === 'secured' || team.memberCount >= team.capacity;
+      const isFull = team.rosterFull;
       const disabled = !available || isCurrent || (isFull && !isCurrent);
       const classes = [
         'rp-player-admin-action',
@@ -191,7 +234,7 @@
       ${unavailableMessage ? `<p class="rp-player-admin-warning">${esc(unavailableMessage)}</p>` : ''}
       <div class="rp-admin-4v4-section-label">MOVE / ASSIGN PLAYER</div>
       <div class="rp-admin-team-list">${teamButtons}</div>
-      <p class="rp-admin-4v4-note">Moving a player automatically releases their previous 4v4 team slot. Teams already at 4/4 cannot receive another player.</p>
+      <p class="rp-admin-4v4-note">Moving a player automatically releases their previous 4v4 team slot. Teams at roster capacity cannot receive another player.</p>
       ${current && available ? `
         <div class="rp-admin-4v4-section-label">REMOVE ASSIGNMENT</div>
         <button type="button" class="rp-player-admin-action danger" data-admin-reservation-cancel>
