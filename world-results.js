@@ -384,6 +384,32 @@
         color:#4fdcff;
         animation:rpWorldMorePulse .9s ease-in-out infinite alternate;
       }
+      .rp-updates-progressive-sentinel .rp-updates-load-more{
+        min-width:min(100%,250px);
+        min-height:44px;
+        padding:0 22px;
+        border:1px solid rgba(63,214,255,.22);
+        border-radius:14px;
+        color:#f5fbff;
+        background:
+          linear-gradient(100deg,rgba(15,144,207,.20),rgba(4,13,22,.98) 48%,rgba(165,24,44,.16));
+        box-shadow:
+          inset 0 0 0 1px rgba(255,255,255,.018),
+          0 10px 24px rgba(0,0,0,.22);
+        font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.58rem;
+        font-style:italic;
+        font-weight:950;
+        letter-spacing:.09em;
+        cursor:pointer;
+      }
+      .rp-updates-progressive-sentinel .rp-updates-load-more:disabled{
+        cursor:default;
+        opacity:.72;
+      }
+      .rp-updates.rp-world-results-entry.rp-world-results-view .rp-updates-progressive-sentinel{
+        padding-top:17px;
+      }
       @keyframes rpWorldMorePulse{from{opacity:.38}to{opacity:1}}
       @media(prefers-reduced-motion:reduce){
         .rp-updates-progressive-sentinel.loading span{animation:none;opacity:.8}
