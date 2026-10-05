@@ -352,6 +352,7 @@
     const update = currentOverride || currentOpenRank;
     const cardRoot = card();
     form.elements.title.value = normalizedSeasonTitle(update?.title || cardRoot?.querySelector('[data-rp-home-open-rank-title]')?.textContent);
+    form.elements.title.dispatchEvent(new Event('change', { bubbles: true }));
     editorStatus('Choose the season here. Time, team cap and court/location are configured inside each active rotation day.');
     backdrop.hidden = false;
     document.body.classList.add('rp-home-open-rank-editing');
