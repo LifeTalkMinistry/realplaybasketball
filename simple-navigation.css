@@ -525,7 +525,7 @@ body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-simple-home.rp
 
 .rp-route-shell{
   position:fixed;
-  z-index:560;
+  z-index:2147482000;
   top:0;
   left:50%;
   width:min(100%,620px);
@@ -699,6 +699,92 @@ body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-simple-home.rp
   animation:rpRouteShellSweep 1.15s ease-in-out infinite;
 }
 
+.rp-route-skeleton-world-tabs{
+  width:min(100%,360px);
+  margin:0 auto 2px;
+  padding:4px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:13px;
+  background:rgba(4,9,16,.88);
+}
+.rp-route-skeleton-world-tabs i{
+  display:block;
+  height:38px;
+  border-radius:9px;
+  background:#08131d;
+}
+.rp-route-skeleton-world-intro{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  min-height:30px;
+  padding:6px 3px 2px;
+}
+.rp-route-skeleton-world-intro span{
+  width:42%;
+  height:9px;
+  border-radius:999px;
+  background:#0a1722;
+}
+.rp-route-skeleton-world-intro b{
+  width:34%;
+  height:7px;
+  border-radius:999px;
+  background:#08131d;
+}
+.rp-route-skeleton-world-cards{
+  display:grid;
+  gap:12px;
+}
+.rp-route-skeleton-world-cards article{
+  min-height:148px;
+  padding:15px;
+  display:grid;
+  align-content:start;
+  gap:11px;
+  border:1px solid rgba(69,216,255,.10);
+  border-radius:18px;
+  background:linear-gradient(145deg,rgba(5,11,19,.96),rgba(3,7,13,.985));
+}
+.rp-route-skeleton-world-cards article header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.rp-route-skeleton-world-cards article header span{
+  width:30px;
+  height:30px;
+  border-radius:9px;
+  background:#0a1924;
+}
+.rp-route-skeleton-world-cards article header i{
+  width:32%;
+  height:8px;
+  border-radius:999px;
+  background:#0b1722;
+}
+.rp-route-skeleton-world-cards article>b{
+  display:block;
+  width:76%;
+  height:14px;
+  border-radius:999px;
+  background:#0b1722;
+}
+.rp-route-skeleton-world-cards article>i{
+  display:block;
+  width:92%;
+  height:9px;
+  border-radius:999px;
+  background:#08131d;
+}
+.rp-route-skeleton-world-cards article>i:last-child{
+  width:58%;
+}
+
 .rp-route-skeleton-channels{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
@@ -819,8 +905,25 @@ body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-simple-home.rp
   letter-spacing:.08em;
 }
 
+/* While a destination is pending, the previous page is not allowed to
+   remain visible underneath it. Only the route shell + persistent nav own the UI. */
+body.rp-route-shell-open [data-rp-main-menu],
+body.rp-route-shell-open [data-rp-world],
+body.rp-route-shell-open [data-rp-profile],
+body.rp-route-shell-open [data-rp-updates]{
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+body.rp-route-shell-open .rp-route-shell{
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+
 body.rp-route-shell-open .rp-simple-nav{
-  z-index:590;
+  z-index:2147483000;
+  visibility:visible!important;
+  pointer-events:auto!important;
 }
 
 @media(max-width:420px){
@@ -840,7 +943,13 @@ body.rp-route-shell-open .rp-simple-nav{
   .rp-route-skeleton-row i::after,
   .rp-route-skeleton-row b::after,
   .rp-route-skeleton-avatar::after,
-  .rp-route-skeleton-search::after{
+  .rp-route-skeleton-search::after,
+  .rp-route-skeleton-world-tabs i::after,
+  .rp-route-skeleton-world-intro span::after,
+  .rp-route-skeleton-world-intro b::after,
+  .rp-route-skeleton-world-cards span::after,
+  .rp-route-skeleton-world-cards i::after,
+  .rp-route-skeleton-world-cards b::after{
     animation:none!important;
     opacity:.35;
   }
