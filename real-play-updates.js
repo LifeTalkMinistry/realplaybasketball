@@ -240,14 +240,21 @@
   }
 
   function resultBlock(update) {
-    const west = Number(update?.metadata?.westScore);
-    const east = Number(update?.metadata?.eastScore);
+    const metadata = update?.metadata || {};
+    const west = Number(metadata.westScore);
+    const east = Number(metadata.eastScore);
     if (!Number.isFinite(west) || !Number.isFinite(east)) return '';
+
+    // WEST/EAST are internal scoring sides. If this game explicitly persisted
+    // designated team names, show those public identities instead.
+    const westName = String(metadata.westTeamName || metadata.west_team_name || 'WEST').trim().toUpperCase() || 'WEST';
+    const eastName = String(metadata.eastTeamName || metadata.east_team_name || 'EAST').trim().toUpperCase() || 'EAST';
+
     const mvpName = resultMvpName(update);
     const mvp = mvpName
       ? `<div class="rp-update-mvp"><span>GAME MVP</span><strong>${esc(mvpName)}</strong></div>`
       : '';
-    return `<div class="rp-update-score"><div><span>WEST</span><strong>${west}</strong></div><b>FINAL</b><div><span>EAST</span><strong>${east}</strong></div></div>${mvp}`;
+    return `<div class="rp-update-score"><div><span>${esc(westName)}</span><strong>${west}</strong></div><b>FINAL</b><div><span>${esc(eastName)}</span><strong>${east}</strong></div></div>${mvp}`;
   }
 
   function scheduleMeta(update) {
