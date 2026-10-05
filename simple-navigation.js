@@ -7,7 +7,7 @@
   const NAV_ITEMS = [
     { id: 'home', label: 'HOME', icon: '⌂' },
     { id: 'world', label: 'WORLD', icon: '◎' },
-    { id: 'players', label: 'PLAYERS', icon: '▥' },
+    { id: 'players', label: 'STATS', icon: '▥' },
     { id: 'chats', label: 'CHATS', icon: '◌' },
     { id: 'me', label: 'ME', icon: '●' },
   ];
@@ -226,6 +226,22 @@
     return true;
   }
 
+  async function ensureStatsFeature() {
+    const hubReady = await loadFeatureScript(
+      'competition-hub.js',
+      () => Boolean(window.RealPlayCompetitionHub?.open)
+    );
+    if (!hubReady) return false;
+
+    // Keep the established compact Stats presentation, but navigation authority
+    // remains in this core file so PLAYERS can never flash before STATS.
+    await loadFeatureScript(
+      'competition-hub-cleanup.js',
+      () => Boolean(window.__realPlayCompetitionHubCleanupInstalled)
+    );
+    return true;
+  }
+
   async function ensureProfileFeature() {
     await loadFeatureScript(
       'profile-load-guard.js',
@@ -370,6 +386,14 @@
           </div>
         </div>`;
     }
+    if (target === 'stats') {
+      return `
+        <div class="rp-route-shell-content rp-route-shell-players">
+          <header class="rp-route-shell-heading"><small>REAL PLAY BASKETBALL</small><strong>STATS</strong><span>PREPARING VERIFIED RANKINGS &amp; COMPETITION DATA</span></header>
+          <div class="rp-route-skeleton-search" aria-hidden="true"></div>
+          <div class="rp-route-skeleton-feed">${routeSkeletonRows(6)}</div>
+        </div>`;
+    }
     if (target === 'players') {
       return `
         <div class="rp-route-shell-content rp-route-shell-players">
@@ -428,6 +452,7 @@
       if (!retry) return;
       const target = String(shell.dataset.rpRoute || '');
       if (target === 'me') openMe();
+      else if (target === 'stats') openStats();
       else if (target === 'players') openWorldTab('players');
       else if (target === 'chats') openWorldTab('chats');
       else if (target === 'world-results' && window.RealPlayWorldResults?.openResults) {
@@ -458,8 +483,10 @@
     shell.setAttribute('aria-busy', 'false');
     const label = target === 'me'
       ? 'ME'
-      : target === 'players'
-        ? 'PLAYERS'
+      : target === 'stats'
+        ? 'STATS'
+        : target === 'players'
+          ? 'PLAYERS'
         : target === 'chats'
           ? 'CHATS'
           : target === 'world-results'
@@ -574,6 +601,40 @@
       return;
     }
     if (attempt < 14) window.setTimeout(() => activateWorldTab(tab, attempt + 1), 60);
+  }
+
+  async function openStats() {
+    // STATS owns the screen synchronously. Do not open the shared Players
+    // directory first and then decorate it; that creates a visible data leak.
+    setActive('players');
+    showRouteShell('stats');
+    setNavBusy('players', true);
+    closePrimaryLayers();
+
+    try {
+      const ready = await ensureStatsFeature();
+      if (!ready || !window.RealPlayCompetitionHub?.open) {
+        console.error('[Real Play] Stats navigation could not initialize.');
+        showRouteError('stats', 'The Stats page did not finish loading.');
+        return;
+      }
+
+      window.RealPlayCompetitionHub.open();
+      await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+
+      const hub = document.querySelector('[data-rp-competition-hub]');
+      if (!hub?.classList.contains('open') || hub.getAttribute('aria-hidden') === 'true') {
+        showRouteError('stats', 'The Stats page did not finish opening.');
+        return;
+      }
+
+      hideRouteShell('stats');
+    } catch (error) {
+      console.error('[Real Play] Stats navigation failed.', error);
+      showRouteError('stats', error?.message || 'Real Play could not open Stats.');
+    } finally {
+      setNavBusy('players', false);
+    }
   }
 
   async function openWorldTab(tab) {
@@ -811,7 +872,10 @@
         const target = button.dataset.rpSimpleNavItem;
         if (target === 'home') openHome();
         else if (target === 'world') openWorldTab('world');
-        else if (target === 'players') openWorldTab('players');
+        else if (target === 'players') {
+          if (button.dataset.rpCompetitionBypass === '1') openWorldTab('players');
+          else openStats();
+        }
         else if (target === 'chats') openWorldTab('chats');
         else if (target === 'me') openMe();
       }, true);
@@ -939,6 +1003,7 @@
   window.RealPlaySimpleNavigation = {
     home: openHome,
     world: () => openWorldTab('world'),
+    stats: openStats,
     players: () => openWorldTab('players'),
     chats: () => openWorldTab('chats'),
     me: openMe,
