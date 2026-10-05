@@ -357,7 +357,13 @@
   });
 
   const observer = new MutationObserver(() => {
-    if (!auditSection()) return;
+    const section = auditSection();
+    if (!section) return;
+    const missingDesignation = ['west', 'east'].some((side) => {
+      const card = section.querySelector(`.rp-video-roster-card.${side}`);
+      return Boolean(card && !card.querySelector('[data-rp-audit-team-designation-wrap]'));
+    });
+    if (!missingDesignation) return;
     window.requestAnimationFrame(() => mount());
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
