@@ -98,6 +98,37 @@
     else button.removeAttribute('aria-busy');
   }
 
+  function waitForRouteReady(successEvent, errorEvent = '', timeoutMs = 8000) {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      let timer = 0;
+
+      const cleanup = () => {
+        if (timer) window.clearTimeout(timer);
+        window.removeEventListener(successEvent, onSuccess);
+        if (errorEvent) window.removeEventListener(errorEvent, onError);
+      };
+      const finish = (fn, value) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        fn(value);
+      };
+      const onSuccess = (event) => finish(resolve, event?.detail || {});
+      const onError = (event) => finish(
+        reject,
+        new Error(event?.detail?.message || 'This Real Play page could not finish loading.')
+      );
+
+      window.addEventListener(successEvent, onSuccess, { once: true });
+      if (errorEvent) window.addEventListener(errorEvent, onError, { once: true });
+      timer = window.setTimeout(
+        () => finish(reject, new Error('This Real Play page took too long to load.')),
+        Math.max(2000, Number(timeoutMs) || 8000)
+      );
+    });
+  }
+
   async function ensureWorldFeedFeature() {
     const updatesReady = await loadFeatureScript(
       'real-play-updates.js',
@@ -450,10 +481,20 @@
 
       closePrimaryLayers('world');
       window.RealPlayWorld.open();
-      window.setTimeout(() => {
-        activateWorldTab(tab);
-        window.requestAnimationFrame(() => hideRouteShell(target));
-      }, 30);
+
+      const readiness = target === 'players'
+        ? waitForRouteReady('realplay:players-loaded', 'realplay:players-load-error')
+        : waitForRouteReady('realplay:chat-loaded', 'realplay:chat-load-error');
+
+      window.setTimeout(() => activateWorldTab(tab), 30);
+
+      try {
+        await readiness;
+        hideRouteShell(target);
+      } catch (routeError) {
+        showRouteError(target, routeError?.message || 'This Real Play page could not finish loading.');
+        return;
+      }
     } catch (error) {
       console.error('[Real Play] World navigation failed.', error);
       showRouteError(target, error?.message || 'Real Play could not open this page.');
@@ -508,12 +549,18 @@
       }
 
       closePrimaryLayers('profile');
+      const readiness = waitForRouteReady('realplay:profile-loaded', 'realplay:profile-load-error');
       window.RealPlayProfile.open();
-      window.setTimeout(() => {
+
+      try {
+        await readiness;
         syncMeHeader();
         ensureProfileSettingsButton();
-        window.requestAnimationFrame(() => hideRouteShell('me'));
-      }, 50);
+        hideRouteShell('me');
+      } catch (routeError) {
+        showRouteError('me', routeError?.message || 'Your profile could not finish loading.');
+        return;
+      }
     } catch (error) {
       console.error('[Real Play] Profile navigation failed.', error);
       showRouteError('me', error?.message || 'Real Play could not open your profile.');
