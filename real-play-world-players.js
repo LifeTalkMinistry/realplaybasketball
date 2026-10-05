@@ -198,8 +198,18 @@
 
       renderPlayers();
       setPlayersStatus('');
+      try {
+        window.dispatchEvent(new CustomEvent('realplay:players-loaded', {
+          detail: { count: players.length, hasMore: hasMorePlayers },
+        }));
+      } catch (_error) {}
     } catch (error) {
       setPlayersStatus(error.message || 'Could not load players.', 'error');
+      try {
+        window.dispatchEvent(new CustomEvent('realplay:players-load-error', {
+          detail: { message: error.message || 'Could not load players.' },
+        }));
+      } catch (_error) {}
       if (error.status === 401) {
         worldPanel?.querySelector('[data-world-close]')?.click();
         document.querySelector('[data-auth-open]')?.click();
