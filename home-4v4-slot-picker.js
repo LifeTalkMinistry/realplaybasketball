@@ -118,7 +118,7 @@
     if (document.querySelector('script[data-rp-rotation-clean-ui-loader]')) return;
     const cleanUi = document.createElement('script');
     cleanUi.dataset.rpRotationCleanUiLoader = '1';
-    cleanUi.src = 'home-4v4-rotation-clean-ui.js?v=20261005-weekly-day-toggles-v1';
+    cleanUi.src = 'home-4v4-rotation-clean-ui.js?v=20261005-day-owned-schedule-v2';
     cleanUi.async = false;
     cleanUi.addEventListener('error', () => console.warn('[Real Play] 4v4 rotation clean UI guard did not load.'), { once: true });
     document.head.appendChild(cleanUi);
@@ -151,7 +151,7 @@
     loadCancellationControl();
     const script = document.createElement('script');
     script.dataset.rpTeamRotationPickerLoader = '1';
-    script.src = 'home-4v4-team-schedule-rotation-v2.js?v=20261005-weekly-day-toggles-v1';
+    script.src = 'home-4v4-team-schedule-rotation-v2.js?v=20261005-day-owned-schedule-v2';
     script.async = false;
     script.addEventListener('error', () => console.warn('[Real Play] Team schedule rotation picker did not load.'), { once: true });
     document.head.appendChild(script);
