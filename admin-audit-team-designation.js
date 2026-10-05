@@ -193,8 +193,22 @@
     const state = designationState(sessionId);
 
     if (!club) {
-      state[side] = '';
+      busy = true;
       mount();
+      try {
+        await controlAction({
+          action: 'set-team-designation',
+          side,
+          teamName: null,
+        });
+        state[side] = '';
+        setNotice(`${side.toUpperCase()} team designation cleared.`);
+      } catch (error) {
+        setNotice(error.message || `Could not clear the ${side.toUpperCase()} team designation.`, 'error');
+      } finally {
+        busy = false;
+        refreshAudit();
+      }
       return;
     }
 
@@ -237,6 +251,12 @@
           team: side,
         });
       }
+
+      await controlAction({
+        action: 'set-team-designation',
+        side,
+        teamName: club,
+      });
 
       state[side] = club;
       const extras = Math.max(0, members.length - rosterMembers.length);
@@ -292,6 +312,9 @@
         designations.delete(mountedSessionId);
       }
       mountedSessionId = sessionId;
+      const state = designationState(sessionId);
+      state.west = String(control?.session?.westTeamName || '').trim().toLowerCase();
+      state.east = String(control?.session?.eastTeamName || '').trim().toLowerCase();
 
       try {
         await loadDirectory(false);
