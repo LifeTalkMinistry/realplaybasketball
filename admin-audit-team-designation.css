@@ -1,0 +1,48 @@
+.rp-video-team-designation{
+  display:grid;
+  gap:5px;
+  padding:8px 9px;
+  border-bottom:1px solid rgba(92,151,178,.12);
+  background:rgba(4,15,24,.72);
+}
+.rp-video-team-designation small{
+  color:#6b95a8;
+  font:850 7px/1 system-ui,sans-serif;
+  letter-spacing:.1em;
+}
+.rp-video-team-designation select{
+  width:100%;
+  min-width:0;
+  min-height:34px;
+  box-sizing:border-box;
+  border:1px solid rgba(38,212,244,.26);
+  border-radius:8px;
+  background:#050e17;
+  color:#dff7ff;
+  padding:0 7px;
+  font:850 8px/1 system-ui,sans-serif;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.rp-video-team-designation select:focus{
+  outline:none;
+  border-color:rgba(38,212,244,.65);
+  box-shadow:0 0 0 2px rgba(38,212,244,.08);
+}
+.rp-video-team-designation select:disabled{opacity:.45}
+.rp-audit-team-designation-notice{
+  margin:0;
+  padding:9px 10px;
+  border:1px solid rgba(38,212,244,.2);
+  border-radius:9px;
+  background:rgba(7,40,52,.5);
+  color:#9defff;
+  font:750 9px/1.4 system-ui,sans-serif;
+  text-align:center;
+}
+.rp-audit-team-designation-notice.error{
+  border-color:rgba(255,101,116,.28);
+  background:rgba(57,12,20,.42);
+  color:#ff9ca6;
+}
+.rp-audit-team-designation-notice[hidden]{display:none!important}
