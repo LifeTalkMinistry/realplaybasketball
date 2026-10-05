@@ -91,17 +91,19 @@
 
   function normalizeServerEvent(event) {
     const eventType = String(event?.eventType || '').toLowerCase();
-    if (!['shot', 'stat'].includes(eventType)) return null;
+    if (!['shot', 'stat', 'highlight'].includes(eventType)) return null;
+    const timestamp = Number(event.videoTimestampMs || 0);
     return {
-      localId: `server-${Number(event.id || 0)}-${makeId()}`,
+      localId: `server-${eventType}-${Number(event.id || 0)}-${makeId()}`,
       playerId: Number(event.playerId),
       eventType,
       statKey: eventType === 'stat' ? String(event.statKey || '').toLowerCase() : null,
       shotValue: eventType === 'shot' ? Number(event.shotValue) : null,
       shotResult: eventType === 'shot' ? String(event.shotResult || '').toLowerCase() : null,
-      videoTimestampMs: Number(event.videoTimestampMs || 0),
-      replayStartMs: eventType === 'shot' && String(event.shotResult) === 'make'
-        ? Number(event.replayStartMs ?? Math.max(0, Number(event.videoTimestampMs || 0) - 7000))
+      highlightType: eventType === 'highlight' ? String(event.highlightType || 'honorable_play') : null,
+      videoTimestampMs: timestamp,
+      replayStartMs: (eventType === 'highlight' || (eventType === 'shot' && String(event.shotResult) === 'make'))
+        ? Number(event.replayStartMs ?? Math.max(0, timestamp - 7000))
         : null,
     };
   }
@@ -226,6 +228,13 @@
     )).length;
   }
 
+  function highlightCount(playerId) {
+    return draftEvents.filter((event) => (
+      Number(event.playerId) === Number(playerId)
+      && event.eventType === 'highlight'
+    )).length;
+  }
+
   function removeLatest(predicate) {
     for (let index = draftEvents.length - 1; index >= 0; index -= 1) {
       if (predicate(draftEvents[index])) {
@@ -269,6 +278,23 @@
     patchScoringUI();
   }
 
+  function addHighlight(playerId) {
+    const timestamp = videoTimestamp();
+    draftEvents.push({
+      localId: makeId(),
+      playerId: Number(playerId),
+      eventType: 'highlight',
+      statKey: null,
+      shotValue: null,
+      shotResult: null,
+      highlightType: 'honorable_play',
+      videoTimestampMs: timestamp,
+      replayStartMs: Math.max(0, timestamp - 7000),
+    });
+    saveDraft();
+    patchScoringUI();
+  }
+
   function markerHtml() {
     const duration = Number(recording?.durationMs || 0);
     if (!duration) return '';
@@ -306,7 +332,11 @@
     if (!player) return '<div class="rp-video-select-prompt">SELECT A PLAYER TO SCORE AN EVENT</div>';
     const stats = summaryForPlayer(playerId);
     return `<section class="rp-video-player-panel rp-video-draft-panel" data-rp-draft-player-id="${Number(playerId)}">
-      <div class="rp-video-player-panel-head"><div><small>${esc(String(player.team || '').toUpperCase())} · LOCAL SCORE SHEET</small><strong>${esc(playerLabel(player))}</strong></div><button type="button" data-rp-video-close-player>×</button></div>
+      <div class="rp-video-player-panel-head">
+        <div><small>${esc(String(player.team || '').toUpperCase())} · LOCAL SCORE SHEET</small><strong>${esc(playerLabel(player))}</strong></div>
+        <button type="button" class="rp-video-highlight-stamp" data-rp-video-highlight title="Stamp this moment as a future highlight" aria-label="Stamp this moment as a future highlight">★ HIGHLIGHT <b data-rp-highlight-count>${highlightCount(playerId)}</b></button>
+        <button type="button" data-rp-video-close-player>×</button>
+      </div>
       <div class="rp-video-player-line">${playerSummaryLine(stats)}</div>
       <div class="rp-video-shot-grid rp-video-draft-shot-grid">
         ${shotCell(playerId, 1, 'miss', '1PT MISS')}
@@ -350,6 +380,8 @@
     const headName = current.querySelector('.rp-video-player-panel-head strong');
     if (headSmall && player) headSmall.textContent = `${String(player.team || '').toUpperCase()} · LOCAL SCORE SHEET`;
     if (headName && player) headName.textContent = playerLabel(player);
+    const highlightBadge = current.querySelector('[data-rp-highlight-count]');
+    if (highlightBadge) highlightBadge.textContent = String(highlightCount(playerId));
 
     current.querySelectorAll('[data-rp-video-shot]').forEach((button) => {
       const value = Number(button.dataset.value || 0);
@@ -442,11 +474,12 @@
     const adminBody = body();
     if (!adminBody) return;
     const made = draftEvents.filter((event) => event.eventType === 'shot' && event.shotResult === 'make').length;
+    const highlights = draftEvents.filter((event) => event.eventType === 'highlight').length;
     adminBody.innerHTML = `<div class="rp-video-screen rp-video-sheet-review">
       <div class="rp-admin-title"><span class="rp-admin-kicker">DRAFT SCORE SHEET</span><h1>REVIEW BEFORE SUBMIT</h1><p>These numbers are still local. Verify them before they become the official game record.</p></div>
       ${message ? `<div class="rp-video-notice ${error ? 'error' : 'success'}">${esc(message)}</div>` : ''}
       <div class="rp-video-scoreboard"><div><small>WEST</small><strong>${teamScore('west')}</strong></div><span>—</span><div><small>EAST</small><strong>${teamScore('east')}</strong></div></div>
-      <div class="rp-video-sheet-meta"><span>${draftEvents.length}<small>TOTAL EVENTS</small></span><span>${made}<small>SCORING MARKERS</small></span><span>${draftEvents.filter((event) => event.eventType === 'stat').length}<small>STAT EVENTS</small></span></div>
+      <div class="rp-video-sheet-meta"><span>${draftEvents.length}<small>TOTAL EVENTS</small></span><span>${made}<small>SCORING MARKERS</small></span><span>${draftEvents.filter((event) => event.eventType === 'stat').length}<small>STAT EVENTS</small></span><span>${highlights}<small>HIGHLIGHTS</small></span></div>
       <div class="rp-video-sheet-teams">${reviewTeam('west')}${reviewTeam('east')}</div>
       <div class="rp-video-auto-note"><strong>ONE OFFICIAL WRITE</strong><span>VERIFY &amp; SUBMIT sends this complete sheet to Real Play in one transaction. Until then, you can go back and change anything.</span></div>
       <div class="rp-video-sheet-actions">
@@ -473,7 +506,11 @@
             statKey: event.statKey,
             shotValue: event.shotValue,
             shotResult: event.shotResult,
+            highlightType: event.highlightType || null,
             videoTimestampMs: Number(event.videoTimestampMs || 0),
+            replayStartMs: event.replayStartMs === null || event.replayStartMs === undefined
+              ? null
+              : Number(event.replayStartMs),
           })),
         },
       });
@@ -541,7 +578,13 @@
             }, 0);
           }
         } else {
-          draftEvents = (Array.isArray(state.events) ? state.events : [])
+          const serverEvents = [
+            ...(Array.isArray(state.events) ? state.events : []),
+            ...(Array.isArray(state.highlights)
+              ? state.highlights.map((highlight) => ({ ...highlight, eventType: 'highlight' }))
+              : []),
+          ];
+          draftEvents = serverEvents
             .map(normalizeServerEvent)
             .filter(Boolean);
           saveDraft();
@@ -624,6 +667,15 @@
       event.stopImmediatePropagation();
       const playerId = activePlayerId();
       if (playerId) addStat(playerId, stat.dataset.rpVideoStat);
+      return;
+    }
+
+    const highlight = event.target.closest('[data-rp-video-highlight]');
+    if (highlight) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const playerId = activePlayerId();
+      if (playerId) addHighlight(playerId);
       return;
     }
 
