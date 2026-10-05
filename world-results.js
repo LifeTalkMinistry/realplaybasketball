@@ -416,11 +416,18 @@
     if (!panel.classList.contains('rp-world-results-entry')) return false;
     if (!document.body.classList.contains('rp-updates-open')) return false;
 
+    // The core route shell intentionally keeps WORLD visibility:hidden while
+    // loading so HOME can never flash underneath it. That hidden state is not
+    // a failure; it is the transition contract. Verify that the real WORLD
+    // page is structurally/layout ready underneath the shell, then let core
+    // navigation remove the shell and reveal it atomically.
     const style = window.getComputedStyle(panel);
-    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    if (style.display === 'none') return false;
     if (style.position !== 'fixed') return false;
 
-    return Boolean(panel.querySelector('[data-rp-world-results-controls]'));
+    const controls = panel.querySelector('[data-rp-world-results-controls]');
+    const feed = panel.querySelector('[data-updates-feed]');
+    return Boolean(controls && feed);
   }
 
   function announceWorldReady(detail = {}) {
