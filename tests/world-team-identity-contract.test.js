@@ -25,3 +25,18 @@ test('World story renderer uses public team names while retaining WEST/EAST as i
   assert.match(world, /\$\{winner\} HOLDS OFF \$\{loser\}/);
   assert.match(world, /String\(mvp\.team \|\| ''\)\.toUpperCase\(\) === winnerSide/);
 });
+
+
+test('Results score boxes show persisted public team names instead of hardcoded WEST/EAST', () => {
+  const updates = read('real-play-updates.js');
+  const start = updates.indexOf('function resultBlock(update)');
+  const end = updates.indexOf('function scheduleMeta', start);
+  const block = updates.slice(start, end);
+
+  assert.match(block, /metadata\.westTeamName/);
+  assert.match(block, /metadata\.eastTeamName/);
+  assert.match(block, /esc\(westName\)/);
+  assert.match(block, /esc\(eastName\)/);
+  assert.doesNotMatch(block, /<span>WEST<\/span>/);
+  assert.doesNotMatch(block, /<span>EAST<\/span>/);
+});
