@@ -91,6 +91,24 @@
     return (control.players || []).filter((player) => player.checkedIn && String(player.team || '').toLowerCase() === team);
   }
 
+  function rosterBounds(rules = control.session?.rules || null) {
+    const expected = Number(rules?.playersPerSide || 0);
+    const max = String(rules?.playerFormat || '').toLowerCase() === '4v4' ? 6 : expected;
+    return {
+      expected,
+      max,
+      valid(count) {
+        const value = Number(count || 0);
+        return expected > 0 && value >= expected && value <= max;
+      },
+      requirementText() {
+        return max > expected
+          ? `needs at least ${expected} and allows up to ${max} rostered players per side`
+          : `needs exactly ${expected} players per side`;
+      },
+    };
+  }
+
   function activeRosterIds() {
     return new Set((control.players || []).filter((player) => player.checkedIn && player.team).map((player) => Number(player.userId)));
   }
@@ -364,10 +382,11 @@
 
   function rosterSetupHtml() {
     const rules = control.session?.rules || null;
-    const expected = Number(rules?.playersPerSide || 0);
+    const bounds = rosterBounds(rules);
+    const expected = bounds.expected;
     const west = rosterPlayers('west').length;
     const east = rosterPlayers('east').length;
-    const rosterReady = expected > 0 && west === expected && east === expected;
+    const rosterReady = bounds.valid(west) && bounds.valid(east);
     const uploaded = Boolean(recordingState.recording);
     const canStart = uploaded && rosterReady && (!hasCompetitionSupport() || Boolean(control.session?.competition)) && !busy;
     return `<section class="rp-video-step ${rosterReady ? 'complete' : ''}" data-rp-video-roster-setup>
@@ -386,7 +405,7 @@
       <div class="rp-video-rosters">${rosterCard('west')}${rosterCard('east')}</div>
       ${competitionHtml()}
       ${rulesHtml()}
-      <div class="rp-video-roster-check ${rosterReady ? 'ready' : ''}">${rules ? `${esc(control.session.rulesLabel || '')} needs exactly ${expected} West + ${expected} East. Current: ${west} + ${east}.` : 'Set the game rules to validate the roster size.'}</div>
+      <div class="rp-video-roster-check ${rosterReady ? 'ready' : ''}">${rules ? `${esc(control.session.rulesLabel || '')} ${bounds.requirementText()}. Current: ${west} West + ${east} East.` : 'Set the game rules to validate the roster size.'}</div>
       <button type="button" class="rp-video-start" data-rp-video-start ${canStart ? '' : 'disabled'}>START VIDEO SCORING</button>
     </section>`;
   }
@@ -622,10 +641,11 @@
     if (!section) return false;
 
     const rules = control.session?.rules || null;
-    const expected = Number(rules?.playersPerSide || 0);
+    const bounds = rosterBounds(rules);
+    const expected = bounds.expected;
     const west = rosterPlayers('west').length;
     const east = rosterPlayers('east').length;
-    const rosterReady = expected > 0 && west === expected && east === expected;
+    const rosterReady = bounds.valid(west) && bounds.valid(east);
     const canStart = Boolean(recordingState.recording) && rosterReady && (!hasCompetitionSupport() || Boolean(control.session?.competition)) && !busy;
 
     const rosters = section.querySelector('.rp-video-rosters');
@@ -635,7 +655,7 @@
     if (check) {
       check.classList.toggle('ready', rosterReady);
       check.textContent = rules
-        ? `${control.session?.rulesLabel || ''} needs exactly ${expected} West + ${expected} East. Current: ${west} + ${east}.`
+        ? `${control.session?.rulesLabel || ''} ${bounds.requirementText()}. Current: ${west} West + ${east} East.`
         : 'Set the game rules to validate the roster size.';
     }
 
