@@ -2,6 +2,9 @@
   if (window.__realPlayCompetitionHubInstalled) return;
   window.__realPlayCompetitionHubInstalled = true;
 
+  const TOKEN_KEY = 'real_play_access_token';
+  const API_BASE_URL = 'https://api.clarapmc.com';
+
   const FILTER_LABELS = [
     'RANK OVR',
     'UNRANK OVR',
@@ -25,6 +28,7 @@
   let presentationTimer = null;
   let playerPresentation = '';
   let scopedRanking = null;
+  let scopedRequestId = 0;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -111,7 +115,8 @@
       /* Scoped competition rankings: custom context header, exact Player Rankings body below. */
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-view="players"] .rp-world-player-directory-head{display:none!important}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-status]{display:none!important}
-      body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row{display:none!important}
+      body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row:not([data-rp-competition-scope-row]){display:none!important}
+      body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row[data-rp-competition-scope-row]{display:grid}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking .rp-world-topbar{display:none!important}
       .rp-competition-world-scope-header{display:block;padding:2px 2px 4px;margin:0}
       .rp-competition-scope-topbar{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:10px;margin:0 0 8px}
@@ -329,9 +334,16 @@
       window.clearTimeout(presentationTimer);
       presentationTimer = null;
     }
+    const wasScoped = playerPresentation === 'scoped';
+    scopedRequestId += 1;
     removeScopedArtifacts();
     playerPresentation = '';
     scopedRanking = null;
+    if (wasScoped) {
+      window.setTimeout(() => {
+        try { window.RealPlayPlayers?.refresh?.(); } catch (_error) {}
+      }, 0);
+    }
   }
 
   function openPlayersRoute() {
@@ -400,6 +412,115 @@
     playerDecorationTimer = window.setTimeout(() => decoratePlayerRankings(0), 45);
   }
 
+  function scopedToken() {
+    return localStorage.getItem(TOKEN_KEY) || '';
+  }
+
+  async function fetchScopedCompetitionStats(config) {
+    const accessToken = scopedToken();
+    if (!accessToken) {
+      const error = new Error('Please log in to view verified competition stats.');
+      error.status = 401;
+      throw error;
+    }
+
+    const params = new URLSearchParams();
+    params.set('context', config.competitionContext || 'open_ranking');
+    if (config.competitionSeasonId) params.set('season_id', String(config.competitionSeasonId));
+
+    const response = await fetch(`${API_BASE_URL}/api/real-play/competition/stats?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      cache: 'no-store',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(data?.message || data?.error || 'Could not load competition stats.');
+      error.status = response.status;
+      throw error;
+    }
+    return data;
+  }
+
+  function scopedPlayerRow(player) {
+    const playerId = String(player?.userId ?? player?.identityKey ?? '').trim();
+    const name = player?.playerName || 'REAL PLAY PLAYER';
+    const rawNumber = player?.playerNumber;
+    const jersey = rawNumber === null || rawNumber === undefined || rawNumber === ''
+      ? '#—'
+      : `#${Number(rawNumber)}`;
+    const rating = player?.ranked && player?.ovr !== null && player?.ovr !== undefined
+      ? `<span class="rp-world-player-ovr">${esc(player.ovr)} <small>OVR</small></span>`
+      : '<span class="rp-world-player-ovr unranked">UNRANKED</span>';
+    const winRateValue = Number(player?.winRate ?? player?.record?.winRate);
+    const winRate = Number.isFinite(winRateValue)
+      ? `<span class="rp-world-player-winrate">${Math.round(winRateValue)}% <small>WR</small></span>`
+      : '<span class="rp-world-player-winrate empty">— <small>WR</small></span>';
+
+    return `
+      <button type="button" class="rp-world-player-row" data-rp-competition-scope-row="true"
+        data-world-player-id="${esc(playerId)}" aria-label="${esc(name)} Tune-Up statistics">
+        <span class="rp-world-player-name"><strong>${esc(name)}</strong><b>${esc(jersey)}</b></span>
+        <span class="rp-world-player-metrics">${rating}${winRate}</span>
+      </button>`;
+  }
+
+  function renderScopedCompetitionRows(list, config) {
+    if (config.loading) {
+      list.innerHTML = '<div class="rp-competition-scope-empty-row" data-rp-competition-scope-empty><div><strong>LOADING VERIFIED RESULTS...</strong><p>Reading finalized competition records.</p></div></div>';
+      return;
+    }
+
+    if (config.error) {
+      list.innerHTML = '<div class="rp-competition-scope-empty-row" data-rp-competition-scope-empty><div><strong>COULD NOT LOAD TUNE-UP STATS.</strong><p>' + esc(config.error) + '</p></div></div>';
+      return;
+    }
+
+    const players = Array.isArray(config.players) ? config.players : [];
+    if (!players.length) {
+      list.innerHTML = '<div class="rp-competition-scope-empty-row" data-rp-competition-scope-empty><div><strong>' + esc(config.emptyTitle) + '</strong><p>' + esc(config.emptyCopy) + '</p></div></div>';
+      return;
+    }
+
+    list.innerHTML = players.map(scopedPlayerRow).join('');
+    const rows = [...list.querySelectorAll('[data-rp-competition-scope-row]')];
+    rows.forEach((row, index) => {
+      row.__rpCompetitionScopedPlayer = players[index] || null;
+    });
+  }
+
+  async function loadScopedCompetition(config) {
+    if (!config?.competitionContext) return;
+    const requestId = ++scopedRequestId;
+    config.loading = true;
+    config.error = '';
+    config.players = [];
+    config.playerCount = 0;
+    applyScopedRanking(0);
+
+    try {
+      const data = await fetchScopedCompetitionStats(config);
+      if (requestId !== scopedRequestId || scopedRanking !== config || playerPresentation !== 'scoped') return;
+      config.players = Array.isArray(data?.players) ? data.players : [];
+      config.playerCount = Number.isFinite(Number(data?.playerCount))
+        ? Math.max(0, Math.trunc(Number(data.playerCount)))
+        : config.players.length;
+    } catch (error) {
+      if (requestId !== scopedRequestId || scopedRanking !== config || playerPresentation !== 'scoped') return;
+      config.error = error?.message || 'Could not load competition stats.';
+      config.players = [];
+      config.playerCount = 0;
+    } finally {
+      if (requestId === scopedRequestId && scopedRanking === config && playerPresentation === 'scoped') {
+        config.loading = false;
+        applyScopedRanking(0);
+      }
+    }
+  }
+
   function applyScopedRanking(attempt = 0) {
     const config = scopedRanking;
     if (!config || playerPresentation !== 'scoped') return;
@@ -446,18 +567,30 @@
     const playerCount = header.querySelector('[data-rp-competition-scope-player-count]');
     if (topTitle) topTitle.textContent = config.title;
     if (playerCount) {
-      const count = Number.isFinite(Number(config.playerCount)) ? Math.max(0, Math.trunc(Number(config.playerCount))) : 0;
-      playerCount.textContent = count + ' PLAYER' + (count === 1 ? '' : 'S');
+      if (config.loading) {
+        playerCount.textContent = 'LOADING';
+      } else {
+        const count = Number.isFinite(Number(config.playerCount))
+          ? Math.max(0, Math.trunc(Number(config.playerCount)))
+          : (Array.isArray(config.players) ? config.players.length : 0);
+        playerCount.textContent = count + ' PLAYER' + (count === 1 ? '' : 'S');
+      }
     }
 
-    let empty = list.querySelector('[data-rp-competition-scope-empty]');
-    if (!empty) {
-      empty = document.createElement('div');
-      empty.className = 'rp-competition-scope-empty-row';
-      empty.dataset.rpCompetitionScopeEmpty = 'true';
-      list.prepend(empty);
+    renderScopedCompetitionRows(list, config);
+
+    const more = playersView.querySelector('[data-world-player-more]');
+    if (more) more.hidden = true;
+
+    if (!config.filterInitialized && !config.loading && !config.error && Array.isArray(config.players) && config.players.length) {
+      config.filterInitialized = true;
+      const hasRanked = config.players.some((player) => Boolean(player?.ranked) && Number(player?.rank) > 0);
+      const initialKey = hasRanked ? 'ranked' : 'unranked';
+      window.setTimeout(() => {
+        if (scopedRanking !== config || playerPresentation !== 'scoped') return;
+        controls.querySelector(`[data-player-sort="${initialKey}"]`)?.click();
+      }, 0);
     }
-    empty.innerHTML = '<div><strong>' + esc(config.emptyTitle) + '</strong><p>' + esc(config.emptyCopy) + '</p></div>';
 
     world.scrollTop = 0;
   }
@@ -465,10 +598,19 @@
   function openScopedRanking(config) {
     close();
     clearPlayerPresentation();
-    scopedRanking = config;
+    scopedRanking = {
+      ...config,
+      loading: Boolean(config.competitionContext),
+      error: '',
+      players: [],
+      playerCount: 0,
+      filterInitialized: false,
+    };
     playerPresentation = 'scoped';
     openPlayersRoute();
+    const activeScope = scopedRanking;
     playerDecorationTimer = window.setTimeout(() => applyScopedRanking(0), 45);
+    if (activeScope.competitionContext) loadScopedCompetition(activeScope);
   }
 
   function returnFromScopedRanking() {
@@ -486,6 +628,7 @@
       copy: 'Every ranking and statistic on this page belongs only to the Tune-Up competition.',
       emptyTitle: 'NO TUNE-UP RESULTS YET.',
       emptyCopy: 'Tune-Up rankings and stats will appear here when verified Tune-Up games begin.',
+      competitionContext: 'open_ranking',
       parent: 'hub',
     });
   }
@@ -550,6 +693,9 @@
     document.addEventListener('click', handlePlayersNavCapture, true);
     document.addEventListener('click', maintainPlayerPresentation);
     window.addEventListener('focus', maintainPlayerPresentation);
+    window.addEventListener('realplay:players-loaded', () => {
+      if (playerPresentation === 'scoped') applyScopedRanking(0);
+    });
 
     navObserver = new MutationObserver(() => renamePlayersNav());
     navObserver.observe(document.documentElement, { childList: true, subtree: true });
