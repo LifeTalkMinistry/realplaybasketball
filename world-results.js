@@ -791,6 +791,18 @@
       throw new Error('The first game result is still being prepared.');
     }
 
+    // If the first card needs a team-MVP fallback, that is part of the visible
+    // card itself, so keep the loader until that one critical hydration ends.
+    if (firstCard?.dataset.rpWorldMvpHydrating === 'true') {
+      const mvpStarted = performance.now();
+      while (
+        firstCard?.dataset.rpWorldMvpHydrating === 'true'
+        && performance.now() - mvpStarted < 3200
+      ) {
+        await new Promise((resolve) => window.requestAnimationFrame(resolve));
+      }
+    }
+
     const criticalRoot = firstCard || feed;
 
     // Only typography/assets that can affect the first visible card hold the
@@ -1279,10 +1291,14 @@
   }
 
   function hydrateMissingWorldTeamMvps(card, metadata, westMvp, eastMvp) {
-    if (westMvp && eastMvp) return;
+    if (westMvp && eastMvp) {
+      if (card) delete card.dataset.rpWorldMvpHydrating;
+      return;
+    }
     const sessionId = Number(metadata.sessionId ?? metadata.session_id);
     if (!Number.isSafeInteger(sessionId) || sessionId <= 0) return;
 
+    card.dataset.rpWorldMvpHydrating = 'true';
     loadReplayTeamMvps(sessionId).then((mvps) => {
       if (!card?.isConnected) return;
       const rows = card.querySelectorAll('.rp-world-scorecard-mvp-row');
@@ -1293,7 +1309,9 @@
 
       if (!westMvp && mvps?.west) rows[0].outerHTML = worldMvpRow(westName, mvps.west);
       if (!eastMvp && mvps?.east) rows[1].outerHTML = worldMvpRow(eastName, mvps.east);
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => {
+      if (card?.isConnected) delete card.dataset.rpWorldMvpHydrating;
+    });
   }
 
   function worldMvpRow(teamName, mvp) {
