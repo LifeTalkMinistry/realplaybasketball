@@ -44,3 +44,27 @@ test('ME can recover Profile runtime on an early tap', () => {
   assert.match(nav, /Boolean\(window\.RealPlayProfile\?\.open\)/);
   assert.match(nav, /window\.RealPlayProfile\.open\(\)/);
 });
+
+
+test('universal loader uses route-specific first-layer readiness contracts', () => {
+  const nav = read('simple-navigation.js');
+
+  assert.match(nav, /const ROUTE_LAYER_CONTRACTS =/);
+  assert.match(nav, /world:\s*\{/);
+  assert.match(nav, /stats:\s*\{/);
+  assert.match(nav, /players:\s*\{/);
+  assert.match(nav, /chats:\s*\{/);
+  assert.match(nav, /me:\s*\{/);
+  assert.match(nav, /waitForRouteLayer\('world'/);
+  assert.match(nav, /waitForRouteLayer\('stats'/);
+  assert.match(nav, /waitForRouteLayer\(target/);
+  assert.match(nav, /waitForRouteLayer\('me'/);
+});
+
+test('route readiness waits only for visible critical images, not the whole page', () => {
+  const nav = read('simple-navigation.js');
+
+  assert.match(nav, /function waitForCriticalImages/);
+  assert.match(nav, /rect\.top <= viewportHeight \* 1\.15/);
+  assert.match(nav, /Images and data farther down the page remain progressive/);
+});
