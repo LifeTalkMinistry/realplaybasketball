@@ -775,32 +775,48 @@
     const feed = panel?.querySelector('[data-updates-feed]');
     if (!panel || !feed) throw new Error('WORLD view is not mounted yet.');
 
-    // Let fonts settle before we judge card geometry. A cached API response can
-    // otherwise arrive before the display font, card measurements and artwork.
+    // WORLD readiness is intentionally first-layer only. The loader protects
+    // the first usable frame, not the entire result history.
+    const criticalCards = () => [...feed.querySelectorAll('.rp-update-result')]
+      .filter((card) => !card.hidden);
+    const requiredFirstCard = Math.max(0, Number(expected) || 0) > 0;
+
+    const started = performance.now();
+    let firstCard = criticalCards()[0] || null;
+    while (requiredFirstCard && !firstCard && performance.now() - started < 1800) {
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+      firstCard = criticalCards()[0] || null;
+    }
+    if (requiredFirstCard && !firstCard) {
+      throw new Error('The first game result is still being prepared.');
+    }
+
+    const criticalRoot = firstCard || feed;
+
+    // Only typography/assets that can affect the first visible card hold the
+    // loader. Lower cards and later pages continue progressively.
     try {
       await Promise.race([
         document.fonts?.ready || Promise.resolve(),
-        wait(1200),
+        wait(700),
       ]);
     } catch (_error) {}
 
-    // Wait for any actual image assets already inside the destination. The
-    // route shell stays above the page during this entire process.
-    const pendingImages = [...panel.querySelectorAll('img[src]')]
-      .filter((img) => !img.complete);
+    const pendingImages = [...criticalRoot.querySelectorAll('img[src]')]
+      .filter((img) => !img.complete)
+      .slice(0, 6);
     if (pendingImages.length) {
       await Promise.race([
         Promise.all(pendingImages.map((img) => new Promise((resolve) => {
           img.addEventListener('load', resolve, { once: true });
           img.addEventListener('error', resolve, { once: true });
         }))),
-        wait(1400),
+        wait(900),
       ]);
     }
 
-    // Require the destination DOM to stop changing for a real quiet window.
-    // This is the missing contract: "data returned" is not the same as
-    // "RESULTS is visually finished."
+    // Require a short quiet window only on the critical first layer. Mutations
+    // farther down the feed are explicitly allowed after reveal.
     await new Promise((resolve) => {
       let done = false;
       let quietTimer = 0;
@@ -815,40 +831,37 @@
       };
       const armQuiet = () => {
         if (quietTimer) window.clearTimeout(quietTimer);
-        quietTimer = window.setTimeout(finish, isResults ? 650 : 420);
+        quietTimer = window.setTimeout(finish, isResults ? 260 : 220);
       };
       const observer = new MutationObserver(armQuiet);
-      observer.observe(feed, {
+      observer.observe(criticalRoot, {
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['class', 'hidden', 'style'],
+        attributeFilter: ['class', 'hidden', 'style', 'src'],
       });
       armQuiet();
-      maxTimer = window.setTimeout(finish, isResults ? 2200 : 1500);
+      maxTimer = window.setTimeout(finish, 850);
     });
 
-    // Two paints after the quiet window make the handoff atomic.
     await new Promise((resolve) => window.requestAnimationFrame(() => {
       window.requestAnimationFrame(resolve);
     }));
 
     if (sequence !== viewLoadSequence) throw new Error('WORLD view changed while loading.');
 
-    if (isResults) {
-      const resultCards = [...feed.querySelectorAll('.rp-update-result')]
-        .filter((card) => !card.hidden);
-      const needed = Math.max(0, Number(expected) || 0);
-      if (needed > 0 && resultCards.length < needed) {
-        throw new Error('Game results are still being prepared.');
-      }
+    const panelRect = panel.getBoundingClientRect();
+    const feedRect = feed.getBoundingClientRect();
+    if (panelRect.width < 40 || panelRect.height < 40 || feedRect.width < 40) {
+      throw new Error('WORLD is still settling.');
+    }
 
-      // Each visible card must have measurable layout before the shell leaves.
-      const unstable = resultCards.some((card) => {
-        const rect = card.getBoundingClientRect();
-        return rect.width < 40 || rect.height < 40;
-      });
-      if (unstable) throw new Error('Game results are still settling.');
+    if (requiredFirstCard) {
+      const card = criticalCards()[0];
+      const rect = card?.getBoundingClientRect?.();
+      if (!card || !rect || rect.width < 40 || rect.height < 40) {
+        throw new Error('The first game result is still settling.');
+      }
     }
   }
 
