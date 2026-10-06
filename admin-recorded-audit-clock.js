@@ -22,6 +22,21 @@
     return root()?.querySelector('.rp-video-scoring-screen') || null;
   }
 
+  function correctionAuditState() {
+    const scoring = screen();
+    if (!scoring?.matches?.('[data-rp-replay-correction-mode]')) return null;
+    try {
+      const state = window.__realPlayReplayCorrectionAuditState?.();
+      return state?.active ? state : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function activeRecording() {
+    return correctionAuditState()?.recording || recording;
+  }
+
   function media() {
     return screen()?.querySelector('[data-rp-recorded-video]') || null;
   }
@@ -63,16 +78,22 @@
   }
 
   function anchorMs() {
-    const value = Number(recording?.auditClockEndVideoMs);
+    const value = Number(activeRecording()?.auditClockEndVideoMs);
     return Number.isFinite(value) && value >= 0 ? value : null;
   }
 
   function durationMs() {
-    const value = Number(recording?.auditClockDurationMs || DEFAULT_DURATION_MS);
+    const value = Number(activeRecording()?.auditClockDurationMs || DEFAULT_DURATION_MS);
     return Number.isFinite(value) && value > 0 ? value : DEFAULT_DURATION_MS;
   }
 
   function currentVideoMs() {
+    const correction = correctionAuditState();
+    const correctionMs = Number(correction?.currentVideoMs);
+    if (Number.isFinite(correctionMs) && correctionMs >= 0) {
+      return Math.max(0, Math.round(correctionMs));
+    }
+
     const node = media();
     if (!node) return 0;
     return Math.max(0, Math.round(Number(node.currentTime || 0) * 1000));
@@ -155,22 +176,43 @@
     if (!control) return;
     const end = anchorMs();
     const current = currentVideoMs();
-    const signature = [end ?? 'none', current, saving ? 1 : 0, recording?.auditClockSetAt || ''].join(':');
+    const correction = correctionAuditState();
+    const recordingState = activeRecording();
+    const signature = [
+      end ?? 'none',
+      current,
+      saving ? 1 : 0,
+      recordingState?.auditClockSetAt || '',
+      correction?.sessionId || 0,
+    ].join(':');
     if (control.dataset.rpAuditClockSignature === signature) return;
     control.dataset.rpAuditClockSignature = signature;
+
+    const correctionControl = correction
+      ? `<button type="button" disabled>${end === null ? 'NO SAVED GAME-END ANCHOR' : 'ORIGINAL AUDIT ANCHOR'}</button>`
+      : `<button type="button" data-rp-audit-clock-set ${saving ? 'disabled' : ''}>${saving ? 'SAVING…' : end === null ? 'SET CURRENT FRAME = 0:00' : 'RE-SET GAME END'}</button>`;
 
     control.innerHTML = `
       <div class="rp-audit-clock-sync-copy">
         <span>END-ANCHOR SYNC · 15:00 AUDIT WINDOW</span>
-        <strong>${end === null ? 'Find the exact final frame, then set it as 0:00.' : `GAME END · VIDEO ${formatTime(end, true)} → 0:00`}</strong>
-        <small>${end === null ? `Current video frame: ${formatTime(current, true)}` : 'Raw video timestamps remain unchanged. This clock is derived backward from the saved end anchor.'}</small>
+        <strong>${end === null ? (correction ? 'This game has no saved Audit Clock end anchor.' : 'Find the exact final frame, then set it as 0:00.') : `GAME END · VIDEO ${formatTime(end, true)} → 0:00`}</strong>
+        <small>${end === null ? `Current video frame: ${formatTime(current, true)}` : correction ? 'Using this finalized game’s original saved Audit Clock anchor during the second-pass audit.' : 'Raw video timestamps remain unchanged. This clock is derived backward from the saved end anchor.'}</small>
       </div>
-      <button type="button" data-rp-audit-clock-set ${saving ? 'disabled' : ''}>${saving ? 'SAVING…' : end === null ? 'SET CURRENT FRAME = 0:00' : 'RE-SET GAME END'}</button>
+      ${correctionControl}
     `;
   }
 
   async function refreshState() {
     if (!screen() || loading) return;
+
+    const correction = correctionAuditState();
+    if (correction) {
+      sessionId = Number(correction.sessionId || 0);
+      recording = correction.recording || null;
+      render();
+      return;
+    }
+
     loading = true;
     try {
       const controlData = await api('/api/real-play/admin/career/control');
@@ -283,6 +325,7 @@
   }, true);
 
   window.addEventListener('realplay:admin-render', () => scheduleRefresh(0));
+  window.addEventListener('realplay:replay-correction-audit-state', () => scheduleRefresh(0));
   window.addEventListener('realplay:recorded-scoring-cancelled', () => {
     sessionId = 0;
     recording = null;
