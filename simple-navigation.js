@@ -220,6 +220,9 @@
       rootReady: (root) => root.classList.contains('open')
         && root.getAttribute('aria-hidden') !== 'true',
       layerReady: (layer) => !layer.hidden,
+      dataReady: (layer, detail) => Number(detail?.count || 0) > 0
+        ? Boolean(layer.querySelector('.rp-chat-message'))
+        : Boolean(layer.querySelector('.rp-chat-empty')),
     },
     me: {
       root: '[data-rp-profile]',
