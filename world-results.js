@@ -532,7 +532,7 @@
       }
       .rp-world-scorecard-stats-head{
         display:grid;
-        grid-template-columns:minmax(0,1fr) 116px;
+        grid-template-columns:minmax(0,1fr) 174px;
         align-items:center;
         gap:10px;
         padding:10px 2px 7px;
@@ -547,7 +547,7 @@
       .rp-world-scorecard-stats-head>span,
       .rp-world-scorecard-mvp-stats{
         display:grid;
-        grid-template-columns:repeat(3,1fr);
+        grid-template-columns:repeat(6,1fr);
         align-items:center;
         text-align:center;
       }
@@ -643,7 +643,7 @@
         .rp-world-scorecard-matchup{grid-template-columns:minmax(60px,1fr) minmax(100px,1.2fr) minmax(60px,1fr);gap:5px}
         .rp-world-scorecard-team-logo,.rp-world-scorecard-team-fallback{width:42px;height:42px}
         .rp-world-scorecard-score b{font-size:1.95rem}
-        .rp-world-scorecard-stats-head,.rp-world-scorecard-mvp-row{grid-template-columns:minmax(0,1fr) 102px}
+        .rp-world-scorecard-stats-head,.rp-world-scorecard-mvp-row{grid-template-columns:minmax(0,1fr) 156px}
         .rp-world-results-filter-row{gap:6px}
         .rp-world-results-filter select{font-size:.53rem;padding-left:9px}
       }
@@ -1157,6 +1157,9 @@
     const points = Number(mvp?.points || 0);
     const assists = Number(mvp?.assists || 0);
     const rebounds = Number(mvp?.rebounds || 0);
+    const steals = Number(mvp?.steals || 0);
+    const blocks = Number(mvp?.blocks || 0);
+    const turnovers = Number(mvp?.turnovers || 0);
     return `
       <div class="rp-world-scorecard-mvp-row">
         <div class="rp-world-scorecard-mvp-name">
@@ -1164,7 +1167,7 @@
           <strong>${esc(name)}</strong>
         </div>
         <div class="rp-world-scorecard-mvp-stats" aria-label="${esc(name)} stats">
-          <b>${points}</b><b>${assists}</b><b>${rebounds}</b>
+          <b>${points}</b><b>${assists}</b><b>${rebounds}</b><b>${steals}</b><b>${blocks}</b><b>${turnovers}</b>
         </div>
       </div>`;
   }
@@ -1218,7 +1221,7 @@
 
       <div class="rp-world-scorecard-stats-head">
         <strong>STATS</strong>
-        <span><b>PTS</b><b>AST</b><b>REBS</b></span>
+        <span><b>PTS</b><b>AST</b><b>REB</b><b>STL</b><b>BLK</b><b>TO</b></span>
       </div>
       <div class="rp-world-scorecard-mvp-list">
         ${worldMvpRow(westName, westMvp)}
