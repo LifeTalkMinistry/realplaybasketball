@@ -24,6 +24,7 @@
   let streamUrl = '';
   let youtubeId = '';
   let youtubePlayer = null;
+  let mediaDurationMs = 0;
   let clockTimer = null;
   let notice = '';
   let noticeError = false;
@@ -46,7 +47,7 @@
     return {
       active: true,
       sessionId: Number(context.session.id),
-      recording: context.recording || null,
+      recording: context.recording ? { ...context.recording, durationMs: effectiveMediaDurationMs() || context.recording.durationMs || null } : null,
       events: draftEvents,
       moments: Array.isArray(context.moments) ? context.moments : [],
       currentVideoMs: currentVideoTimestamp(),
@@ -321,8 +322,21 @@
     return [...draftEvents, ...moments];
   }
 
+  function effectiveMediaDurationMs() {
+    const recorded = Number(context?.recording?.durationMs || 0);
+    if (Number.isFinite(recorded) && recorded > 0) return Math.round(recorded);
+    return Number.isFinite(mediaDurationMs) && mediaDurationMs > 0 ? Math.round(mediaDurationMs) : 0;
+  }
+
+  function adoptMediaDuration(value) {
+    const next = Math.round(Number(value || 0));
+    if (!Number.isSafeInteger(next) || next <= 0 || next === mediaDurationMs) return;
+    mediaDurationMs = next;
+    if (correctionActive && !reviewMode) patchScoringUI();
+  }
+
   function markerButtons() {
-    const duration = Number(context?.recording?.durationMs || 0);
+    const duration = effectiveMediaDurationMs();
     if (!duration) return '';
     const filter = auditFilter();
 
@@ -503,6 +517,10 @@
           playerVars: { controls: 1, playsinline: 1, rel: 0, start: Math.floor(playheadMs / 1000) },
           events: {
             onReady: (event) => {
+              const durationSeconds = Number(event.target.getDuration?.());
+              if (Number.isFinite(durationSeconds) && durationSeconds > 0) {
+                adoptMediaDuration(durationSeconds * 1000);
+              }
               if (playheadMs > 0) event.target.seekTo(playheadMs / 1000, true);
             },
           },
@@ -524,7 +542,10 @@
     if (!video) return;
     const restore = () => {
       const duration = Number.isFinite(video.duration) ? video.duration : 0;
-      if (duration > 0 && playheadMs > 0) video.currentTime = Math.min(duration, playheadMs / 1000);
+      if (duration > 0) {
+        adoptMediaDuration(duration * 1000);
+        if (playheadMs > 0) video.currentTime = Math.min(duration, playheadMs / 1000);
+      }
     };
     video.addEventListener('loadedmetadata', restore, { once: true });
     if (video.readyState >= 1) restore();
@@ -608,6 +629,8 @@
       const nextDraftEvents = (Array.isArray(nextContext.events) ? nextContext.events : []).map(normalizeEvent);
 
       context = nextContext;
+      const storedDuration = Math.round(Number(context?.recording?.durationMs || 0));
+      mediaDurationMs = Number.isSafeInteger(storedDuration) && storedDuration > 0 ? storedDuration : 0;
       draftEvents = nextDraftEvents;
       selectedPlayerId = context.players?.[0]?.playerId ?? null;
       notice = '';
@@ -635,6 +658,7 @@
       correctionActive = false;
       reviewMode = false;
       context = null;
+      mediaDurationMs = 0;
       draftEvents = [];
       selectedPlayerId = null;
       if (openedAdmin) adminRoot()?.querySelector('[data-admin-exit]')?.click();
@@ -702,6 +726,7 @@
     correctionActive = false;
     reviewMode = false;
     context = null;
+    mediaDurationMs = 0;
     draftEvents = [];
     selectedPlayerId = null;
     notice = '';

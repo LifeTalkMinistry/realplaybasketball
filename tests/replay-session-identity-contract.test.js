@@ -38,6 +38,6 @@ test('session identity repair is cache-busted for replay and admin assets', () =
   const index = read('index.html');
   const admin = read('admin-access-bootstrap.js');
 
-  assert.match(index, /20261006-replay-session-identity-v213/);
-  assert.match(admin, /20261006-replay-session-identity-v62/);
+  assert.match(index, /20261006-replay-audit-stamps-v214/);
+  assert.match(admin, /20261006-replay-audit-stamps-v63/);
 });
