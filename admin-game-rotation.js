@@ -71,15 +71,13 @@
 
   function hashButtonFrom(target) {
     if (!(target instanceof Element)) return null;
-    const topbar = target.closest('.rp-career-replay-topbar');
-    if (!topbar || !target.closest('[data-rp-career-replay].open')) return null;
     const direct = target.closest('button,[role="button"]');
-    const hash = direct && topbar.contains(direct) && String(direct.textContent || '').trim() === '#'
-      ? direct
-      : [...topbar.querySelectorAll('button,[role="button"]')]
-        .find((button) => String(button.textContent || '').trim() === '#') || null;
-    if (hash) hash.classList.add('rp-replay-admin-hash');
-    return hash;
+    if (!direct) return null;
+    const topbar = direct.closest('.rp-career-replay-topbar');
+    if (!topbar || !direct.closest('[data-rp-career-replay].open')) return null;
+    if (String(direct.textContent || '').trim() !== '#') return null;
+    direct.classList.add('rp-replay-admin-hash');
+    return direct;
   }
 
   function adminEditButton(hash) {
@@ -117,6 +115,14 @@
 
     hash.classList.add('rp-replay-admin-doubletap-hit');
     window.setTimeout(() => hash.classList.remove('rp-replay-admin-doubletap-hit'), 180);
+
+    const replayRoot = hash.closest('[data-rp-career-replay].open');
+    const sessionId = Number(replayRoot?.dataset?.rpCareerReplaySession || 0);
+    const openCorrection = window.__realPlayOpenReplayCorrection;
+    if (typeof openCorrection === 'function' && Number.isSafeInteger(sessionId) && sessionId > 0) {
+      openCorrection(sessionId);
+      return;
+    }
 
     const edit = adminEditButton(hash);
     if (edit) edit.click();
