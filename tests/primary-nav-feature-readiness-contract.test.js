@@ -77,3 +77,16 @@ test('ME readiness binds to the active profile and does not fail on hidden-shell
   assert.match(nav, /skipGeometry: true/);
   assert.match(nav, /detail\?\.state/);
 });
+
+
+test('STATS loader waits for cleanup and top-level presentation before reveal', () => {
+  const nav = read('simple-navigation.js');
+
+  assert.match(nav, /competition-hub-cleanup\.js/);
+  assert.match(nav, /competition-hub-top-level\.js/);
+  assert.match(nav, /data-rp-competition-top-level-styles/);
+  assert.match(nav, /data-rp-competition-hub-cleanup-styles/);
+  assert.match(nav, /window\.getComputedStyle\(close\)\.display !== 'none'/);
+  assert.match(nav, /rp-competition-intro/);
+  assert.match(nav, /rp-competition-footnote/);
+});
