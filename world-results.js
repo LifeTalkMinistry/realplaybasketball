@@ -77,7 +77,7 @@
       }
       .rp-world-tabs{
         width:min(100%,360px);
-        margin:15px auto 0;
+        margin:0 auto;
         padding:4px;
         display:grid;
         grid-template-columns:1fr 1fr;
@@ -1408,8 +1408,6 @@
       controls.className = 'rp-world-results-controls';
       controls.dataset.rpWorldResultsControls = 'true';
       controls.innerHTML = `
-        <h1>WORLD</h1>
-        <small>REAL PLAY BASKETBALL</small>
         <nav class="rp-world-tabs" role="tablist" aria-label="World views">
           <button type="button" class="rp-world-tab active" data-rp-world-tab="feed" role="tab" aria-selected="true">FEED</button>
           <button type="button" class="rp-world-tab" data-rp-world-tab="results" role="tab" aria-selected="false">RESULTS</button>
