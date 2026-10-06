@@ -656,29 +656,134 @@
     }
   }
 
-  function markerBelongsToPlayer(marker, player) {
-    const markerId = marker?.playerId ?? marker?.player_id ?? null;
-    const playerId = player?.playerId ?? player?.player_id ?? player?.id ?? null;
-    if (markerId !== null && playerId !== null && String(markerId) === String(playerId)) return true;
-    return normalizeName(marker?.playerName ?? marker?.player_name) === normalizeName(player?.playerName);
+  const PLAYER_REPLAY_TYPES = {
+    score: { label: 'SCORE', eventLabel: 'MADE BASKET', icon: '🏀', leadMs: 7000 },
+    reb: { label: 'REB', eventLabel: 'REBOUND', icon: 'R', leadMs: 5000 },
+    ast: { label: 'AST', eventLabel: 'ASSIST', icon: 'A', leadMs: 5000 },
+    stl: { label: 'STL', eventLabel: 'STEAL', icon: 'S', leadMs: 5000 },
+    blk: { label: 'BLK', eventLabel: 'BLOCK', icon: 'B', leadMs: 5000 },
+    to: { label: 'TO', eventLabel: 'TURNOVER', icon: 'TO', leadMs: 5000 },
+  };
+
+  function replayEventCategory(event) {
+    const type = normalizeName(event?.eventType ?? event?.event_type ?? event?.type);
+    const shotResult = normalizeName(event?.shotResult ?? event?.shot_result ?? event?.result);
+    if (type === 'shot' || shotResult) {
+      if (['make', 'made'].includes(shotResult)) return 'score';
+      return null;
+    }
+
+    const key = normalizeName(event?.statKey ?? event?.stat_key ?? event?.stat ?? event?.key);
+    if (['ast', 'assist', 'assists'].includes(key)) return 'ast';
+    if (['reb', 'rebound', 'rebounds'].includes(key)) return 'reb';
+    if (['to', 'tov', 'turnover', 'turnovers'].includes(key)) return 'to';
+    if (['stl', 'steal', 'steals'].includes(key)) return 'stl';
+    if (['blk', 'block', 'blocks'].includes(key)) return 'blk';
+    return null;
   }
 
-  function timelineHtml(player, markers) {
-    const playerMarkers = markers
-      .filter((marker) => markerBelongsToPlayer(marker, player))
-      .sort((a, b) => num(a.videoTimestampMs) - num(b.videoTimestampMs));
-    if (!playerMarkers.length) {
-      return '<p class="rp-career-player-detail-empty">No made-basket timestamps were recorded for this player.</p>';
-    }
-    return playerMarkers.map((marker) => {
-      const shotValue = num(marker.shotValue) || 1;
-      const timestamp = num(marker.videoTimestampMs);
-      const replayStart = num(marker.replayStartMs);
-      return `<button type="button" class="rp-career-player-detail-marker" data-rp-player-marker="${replayStart}">
-        <span><b>🏀 ${shotValue}PT MADE</b><small>${formatTime(timestamp)} · replay from ${formatTime(replayStart)}</small></span>
-        <strong>WATCH ›</strong>
-      </button>`;
+  function replayEventTimestampMs(event) {
+    return Math.max(0, num(
+      event?.videoTimestampMs
+      ?? event?.video_timestamp_ms
+      ?? event?.timestampMs
+      ?? event?.timestamp_ms
+      ?? event?.timeMs
+      ?? event?.time_ms
+    ));
+  }
+
+  function replayEventStartMs(event, category) {
+    const stored = Number(event?.replayStartMs ?? event?.replay_start_ms);
+    if (category === 'score' && Number.isFinite(stored) && stored >= 0) return Math.round(stored);
+    return Math.max(0, Math.round(replayEventTimestampMs(event) - (PLAYER_REPLAY_TYPES[category]?.leadMs || 5000)));
+  }
+
+  function markerBelongsToPlayer(marker, player) {
+    const markerIds = [
+      marker?.playerId,
+      marker?.player_id,
+      marker?.userId,
+      marker?.user_id,
+    ].filter((value) => value !== null && value !== undefined && value !== '').map(String);
+    const playerIds = [
+      player?.playerId,
+      player?.player_id,
+      player?.userId,
+      player?.user_id,
+      player?.id,
+    ].filter((value) => value !== null && value !== undefined && value !== '').map(String);
+    if (markerIds.some((value) => playerIds.includes(value))) return true;
+    return normalizeName(marker?.playerName ?? marker?.player_name ?? marker?.name)
+      === normalizeName(player?.playerName ?? player?.player_name ?? player?.name);
+  }
+
+  function playerReplayEvents(player, category) {
+    const timelineEvents = Array.isArray(currentReplayData?.timelineEvents)
+      ? currentReplayData.timelineEvents
+      : Array.isArray(currentReplayData?.timeline_events)
+        ? currentReplayData.timeline_events
+        : [];
+    const markers = Array.isArray(currentReplayData?.markers) ? currentReplayData.markers : [];
+    const source = timelineEvents.length
+      ? timelineEvents
+      : markers.map((marker) => ({ ...marker, eventType: 'shot', shotResult: 'make' }));
+
+    const seen = new Set();
+    return source
+      .map((event, index) => {
+        const eventCategory = replayEventCategory(event);
+        if (eventCategory !== category || !markerBelongsToPlayer(event, player)) return null;
+        const timestamp = replayEventTimestampMs(event);
+        const replayStart = replayEventStartMs(event, eventCategory);
+        const rawId = event?.eventId ?? event?.event_id ?? event?.id ?? '';
+        const key = rawId !== '' ? String(rawId) : `${eventCategory}:${timestamp}:${index}`;
+        if (seen.has(key)) return null;
+        seen.add(key);
+        return { event, category: eventCategory, timestamp, replayStart };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.timestamp - b.timestamp || a.replayStart - b.replayStart);
+  }
+
+  function replayFilterHtml(active = 'score') {
+    return Object.entries(PLAYER_REPLAY_TYPES).map(([key, meta]) => {
+      const selected = key === active;
+      return `<button type="button" class="${selected ? 'active' : ''}" role="tab" aria-selected="${selected ? 'true' : 'false'}" data-rp-player-replay-filter="${key}">${meta.label}</button>`;
     }).join('');
+  }
+
+  function replayEventTitle(item) {
+    if (item.category === 'score') {
+      const shotValue = num(item.event?.shotValue ?? item.event?.shot_value ?? item.event?.points ?? item.event?.value) || 1;
+      return `${shotValue}PT MADE`;
+    }
+    return PLAYER_REPLAY_TYPES[item.category]?.eventLabel || 'PLAY';
+  }
+
+  function timelineHtml(player, category = 'score') {
+    const meta = PLAYER_REPLAY_TYPES[category] || PLAYER_REPLAY_TYPES.score;
+    const events = playerReplayEvents(player, category);
+    if (!events.length) {
+      return `<p class="rp-career-player-detail-empty">No ${meta.eventLabel.toLowerCase()} replay timestamps were recorded for this player.</p>`;
+    }
+    return events.map((item) => `<button type="button" class="rp-career-player-detail-marker" data-rp-player-marker="${item.replayStart}">
+      <span class="rp-career-player-detail-marker-main"><i class="rp-career-player-detail-marker-icon" data-rp-player-replay-kind="${item.category}">${meta.icon}</i><span><b>${esc(replayEventTitle(item))}</b><small>${formatTime(item.timestamp)} · replay from ${formatTime(item.replayStart)}</small></span></span>
+      <strong>WATCH ›</strong>
+    </button>`).join('');
+  }
+
+  function setPlayerReplayFilter(detail, category) {
+    if (!detail || !PLAYER_REPLAY_TYPES[category]) return;
+    detail.dataset.rpPlayerReplayCategory = category;
+    detail.querySelectorAll('[data-rp-player-replay-filter]').forEach((button) => {
+      const selected = button.dataset.rpPlayerReplayFilter === category;
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-selected', selected ? 'true' : 'false');
+      button.tabIndex = selected ? 0 : -1;
+    });
+    const list = detail.querySelector('[data-rp-player-replay-list]');
+    if (list && detail._rpPlayer) list.innerHTML = timelineHtml(detail._rpPlayer, category);
   }
 
   function closeBreakdown(restoreFocus = true) {
@@ -714,7 +819,6 @@
     const tov = num(player.tov);
     const astTo = tov > 0 ? (ast / tov).toFixed(2) : (ast > 0 ? 'NO TO' : '—');
     const pointsPerAttempt = totalAttempts > 0 ? (points / totalAttempts).toFixed(2) : '—';
-    const markers = Array.isArray(currentReplayData?.markers) ? currentReplayData.markers : [];
     const team = String(player.team || '').toUpperCase() || 'TEAM';
 
     const detail = document.createElement('div');
@@ -772,9 +876,12 @@
           </div>
         </section>
 
-        <section class="rp-career-player-detail-section">
-          <div class="rp-career-player-detail-title"><strong>MADE BASKETS</strong><span>TAP TO REPLAY</span></div>
-          <div class="rp-career-player-detail-timeline">${timelineHtml(player, markers)}</div>
+        <section class="rp-career-player-detail-section rp-career-player-detail-replays">
+          <div class="rp-career-player-detail-title"><strong>PLAY REPLAYS</strong><span>TAP TO REPLAY</span></div>
+          <div class="rp-career-player-replay-tabs" role="tablist" aria-label="Choose replay type">
+            ${replayFilterHtml('score')}
+          </div>
+          <div class="rp-career-player-detail-timeline" data-rp-player-replay-list>${timelineHtml(player, 'score')}</div>
         </section>
       </section>`;
 
@@ -877,6 +984,15 @@
     const close = event.target.closest('[data-rp-career-player-detail-close]');
     if (close) {
       closeBreakdown(true);
+      return;
+    }
+
+    const replayFilter = event.target.closest('[data-rp-player-replay-filter]');
+    if (replayFilter) {
+      event.preventDefault();
+      event.stopPropagation();
+      const detail = replayFilter.closest('[data-rp-career-player-detail]');
+      setPlayerReplayFilter(detail, replayFilter.dataset.rpPlayerReplayFilter);
       return;
     }
 
