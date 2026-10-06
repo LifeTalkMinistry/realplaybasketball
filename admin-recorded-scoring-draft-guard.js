@@ -21,7 +21,8 @@
   }
 
   function scoringScreen() {
-    return body()?.querySelector('.rp-video-scoring-screen') || null;
+    const screen = body()?.querySelector('.rp-video-scoring-screen') || null;
+    return screen?.matches?.('[data-rp-replay-correction-mode]') ? null : screen;
   }
 
   function token() {
