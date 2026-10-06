@@ -531,8 +531,9 @@
         background:rgba(255,255,255,.095);
       }
       .rp-world-scorecard-stats-head{
+        --rp-world-stat-width:174px;
         display:grid;
-        grid-template-columns:minmax(0,1fr) 174px;
+        grid-template-columns:minmax(0,1fr) var(--rp-world-stat-width);
         align-items:center;
         gap:10px;
         padding:10px 2px 7px;
@@ -547,11 +548,24 @@
       .rp-world-scorecard-stats-head>span,
       .rp-world-scorecard-mvp-stats{
         display:grid;
-        grid-template-columns:repeat(6,1fr);
-        align-items:center;
+        grid-template-columns:repeat(6,minmax(0,1fr));
+        align-items:stretch;
+        min-width:0;
         text-align:center;
       }
+      .rp-world-scorecard-stats-head b,
+      .rp-world-scorecard-mvp-stats b{
+        display:grid;
+        place-items:center;
+        min-width:0;
+        border-left:1px solid rgba(255,255,255,.075);
+      }
+      .rp-world-scorecard-stats-head b:last-child,
+      .rp-world-scorecard-mvp-stats b:last-child{
+        border-right:1px solid rgba(255,255,255,.075);
+      }
       .rp-world-scorecard-stats-head b{
+        min-height:18px;
         color:#7b8895;
         font-size:.43rem;
         font-weight:900;
@@ -559,8 +573,9 @@
       }
       .rp-world-scorecard-mvp-list{display:grid}
       .rp-world-scorecard-mvp-row{
+        --rp-world-stat-width:174px;
         display:grid;
-        grid-template-columns:minmax(0,1fr) 116px;
+        grid-template-columns:minmax(0,1fr) var(--rp-world-stat-width);
         align-items:center;
         gap:10px;
         min-height:44px;
@@ -590,6 +605,7 @@
         white-space:nowrap;
       }
       .rp-world-scorecard-mvp-stats b{
+        min-height:28px;
         color:#dce8f1;
         font-size:.58rem;
         font-weight:900;
@@ -643,7 +659,7 @@
         .rp-world-scorecard-matchup{grid-template-columns:minmax(60px,1fr) minmax(100px,1.2fr) minmax(60px,1fr);gap:5px}
         .rp-world-scorecard-team-logo,.rp-world-scorecard-team-fallback{width:42px;height:42px}
         .rp-world-scorecard-score b{font-size:1.95rem}
-        .rp-world-scorecard-stats-head,.rp-world-scorecard-mvp-row{grid-template-columns:minmax(0,1fr) 156px}
+        .rp-world-scorecard-stats-head,.rp-world-scorecard-mvp-row{--rp-world-stat-width:156px;grid-template-columns:minmax(0,1fr) var(--rp-world-stat-width)}
         .rp-world-results-filter-row{gap:6px}
         .rp-world-results-filter select{font-size:.53rem;padding-left:9px}
       }
