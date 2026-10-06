@@ -615,28 +615,44 @@
         font-size:.58rem;
         font-weight:900;
       }
-      .rp-world-scorecard-recap-row{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:12px;
+      .rp-updates.rp-world-results-entry .rp-update-card.rp-update-result{
+        cursor:default!important;
+      }
+      .rp-world-scorecard-actions{
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        align-items:stretch;
+        margin-top:8px;
         min-height:42px;
-        padding:8px 2px 0;
+        border-top:1px solid rgba(255,255,255,.075);
       }
-      .rp-world-scorecard-recap-row strong{
-        color:#d9e5ef;
-        font-size:.56rem;
-        font-weight:800;
-      }
-      .rp-world-scorecard-recap-row button{
-        padding:0;
+      .rp-world-scorecard-actions button{
+        min-width:0;
+        min-height:42px;
+        padding:0 7px;
         border:0;
-        color:#58ddff;
+        border-right:1px solid rgba(255,255,255,.075);
+        color:#9aabba;
         background:transparent;
-        font-family:inherit;
-        font-size:.48rem;
-        font-weight:850;
+        font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.47rem;
+        font-style:italic;
+        font-weight:950;
+        letter-spacing:.035em;
+        text-align:center;
         cursor:pointer;
+        transition:color .14s ease,background .14s ease;
+      }
+      .rp-world-scorecard-actions button:last-child{border-right:0}
+      .rp-world-scorecard-actions button.watch{color:#55dcff}
+      .rp-world-scorecard-actions button:hover,
+      .rp-world-scorecard-actions button:focus-visible{
+        color:#eefaff;
+        background:rgba(63,211,255,.045);
+        outline:none;
+      }
+      .rp-world-scorecard-actions button:active{
+        background:rgba(63,211,255,.075);
       }
       .rp-world-scorecard-recap-copy{
         margin-top:8px;
@@ -1392,9 +1408,10 @@
 
       <div class="rp-world-scorecard-divider"></div>
 
-      <div class="rp-world-scorecard-recap-row">
-        <strong>Game Recap</strong>
-        <button type="button" data-rp-world-story-toggle aria-expanded="false">Read the story now</button>
+      <div class="rp-world-scorecard-actions" role="group" aria-label="Game actions">
+        <button type="button" data-rp-world-game-recap>GAME RECAP</button>
+        <button type="button" class="watch" data-rp-world-watch>WATCH</button>
+        <button type="button" data-rp-world-story-toggle aria-expanded="false">READ STORY</button>
       </div>
       <div class="rp-world-scorecard-recap-copy" data-rp-world-story-copy hidden>
         ${story.headline ? `<strong>${esc(story.headline)}</strong>` : ''}
@@ -1410,7 +1427,7 @@
       const open = copy.hidden;
       copy.hidden = !open;
       button.setAttribute('aria-expanded', open ? 'true' : 'false');
-      button.textContent = open ? 'Hide story' : 'Read the story now';
+      button.textContent = open ? 'HIDE STORY' : 'READ STORY';
     });
 
     hydrateMissingWorldTeamMvps(card, metadata, westMvp, eastMvp);
