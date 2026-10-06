@@ -705,6 +705,18 @@ body.rp-simple-navigation-active .rp-main-menu.rp-simple-menu .rp-simple-home.rp
   align-content:start;
   gap:16px;
 }
+.rp-route-shell-world-minimal{
+  align-content:center;
+}
+.rp-route-shell-world-minimal .rp-route-world-premium-stage{
+  min-height:300px;
+}
+.rp-route-shell-world-minimal .rp-route-world-premium-logo-wrap{
+  margin-top:0;
+}
+.rp-route-shell-world-minimal .rp-route-world-premium-progress{
+  margin-top:26px;
+}
 
 .rp-route-shell-world-premium-head{
   min-height:94px;
@@ -1132,6 +1144,12 @@ body.rp-route-shell-open .rp-simple-nav{
   .rp-route-shell-world-premium{
     min-height:calc(100dvh - var(--rp-simple-nav-height) - env(safe-area-inset-bottom) - 28px);
     gap:13px;
+  }
+  .rp-route-shell-world-minimal{
+    align-content:center;
+  }
+  .rp-route-shell-world-minimal .rp-route-world-premium-stage{
+    min-height:280px;
   }
   .rp-route-shell-world-premium-head{
     min-height:78px;
