@@ -78,7 +78,9 @@
   }
 
   function anchorMs() {
-    const value = Number(activeRecording()?.auditClockEndVideoMs);
+    const raw = activeRecording()?.auditClockEndVideoMs;
+    if (raw === null || raw === undefined || raw === '') return null;
+    const value = Number(raw);
     return Number.isFinite(value) && value >= 0 ? value : null;
   }
 
