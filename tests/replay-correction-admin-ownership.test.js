@@ -42,8 +42,8 @@ test('replay correction Admin assets use the new ownership cache version', () =>
   const admin = read('admin-access-bootstrap.js');
   const index = read('index.html');
 
-  assert.match(admin, /20261006-replay-audit-stamps-v63/);
-  assert.match(index, /20261006-replay-audit-stamps-v214/);
+  assert.match(admin, /20261006-score-stamp-correction-v64/);
+  assert.match(index, /20261006-score-stamp-correction-v215/);
 });
 
 test('replay runtime does not revive the retired admin edit bridge', () => {

@@ -133,3 +133,30 @@
   .rp-video-marker-key{align-items:flex-start;flex-direction:column;gap:4px}
   .rp-video-marker-key small{text-align:left}
 }
+
+
+/* Second-pass audit: double-tap a score stamp to correct that exact basket. */
+.rp-audit-stamp-marker[data-rp-audit-score-event]{touch-action:manipulation}
+.rp-audit-score-correction-overlay{position:fixed;inset:0;z-index:1700;display:grid;place-items:center;padding:18px;background:rgba(0,7,12,.76);backdrop-filter:blur(7px)}
+.rp-audit-score-correction-card{width:min(560px,100%);max-height:calc(100vh - 36px);overflow:auto;display:grid;gap:14px;padding:16px;border:1px solid rgba(61,213,240,.28);border-radius:16px;background:#06131c;box-shadow:0 18px 55px rgba(0,0,0,.55)}
+.rp-audit-score-correction-card>header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.rp-audit-score-correction-card>header>div{display:grid;gap:4px}
+.rp-audit-score-correction-card>header small{color:#f1a43c;font:900 8px/1 system-ui,sans-serif;letter-spacing:.12em}
+.rp-audit-score-correction-card>header strong{color:#effbff;font:950 16px/1.1 system-ui,sans-serif;letter-spacing:.03em}
+.rp-audit-score-correction-card>header>button{width:38px;height:38px;border:1px solid rgba(120,174,195,.25);border-radius:10px;background:#0b202b;color:#c9e5ef;font-size:20px;cursor:pointer}
+.rp-audit-score-correction-current{display:grid;gap:5px;padding:12px;border:1px solid rgba(244,157,51,.28);border-radius:12px;background:#171107}
+.rp-audit-score-correction-current small{color:#a98454;font:850 8px/1.2 system-ui,sans-serif;letter-spacing:.09em}
+.rp-audit-score-correction-current strong{color:#ffb646;font:950 18px/1 system-ui,sans-serif}
+.rp-audit-score-correction-current span{color:#e8f4f8;font:750 10px/1.35 system-ui,sans-serif}
+.rp-audit-score-remove{min-height:44px;border:1px solid rgba(255,88,98,.45);border-radius:11px;background:#2a0c12;color:#ffb5bb;font:950 9px/1 system-ui,sans-serif;letter-spacing:.1em;cursor:pointer}
+.rp-audit-score-correction-assign{display:grid;gap:10px}
+.rp-audit-score-correction-assign>div{display:grid;gap:4px}
+.rp-audit-score-correction-assign>div>strong{color:#dff8ff;font:950 10px/1.2 system-ui,sans-serif;letter-spacing:.08em}
+.rp-audit-score-correction-assign>div>small{color:#668c9c;font:650 9px/1.35 system-ui,sans-serif}
+.rp-audit-score-correction-team{display:grid;gap:7px}
+.rp-audit-score-correction-team>small{color:#5bdff7;font:900 8px/1 system-ui,sans-serif;letter-spacing:.11em}
+.rp-audit-score-correction-team>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.rp-audit-score-correction-team button{min-height:42px;padding:9px 10px;border:1px solid rgba(83,151,179,.24);border-radius:10px;background:#0a202b;color:#dff8ff;font:800 9px/1.2 system-ui,sans-serif;text-align:left;cursor:pointer}
+.rp-audit-score-correction-team button:hover,.rp-audit-score-correction-team button:focus-visible{border-color:rgba(45,218,246,.65);background:#0b2b38;outline:none}
+.rp-audit-score-correction-card>p{margin:0;color:#678997;font:650 8px/1.4 system-ui,sans-serif}
+@media(max-width:620px){.rp-audit-score-correction-overlay{place-items:end center;padding:10px}.rp-audit-score-correction-card{max-height:calc(100vh - 20px);border-radius:15px}.rp-audit-score-correction-team>div{grid-template-columns:1fr}}

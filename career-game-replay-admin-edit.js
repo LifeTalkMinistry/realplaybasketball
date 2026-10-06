@@ -28,6 +28,10 @@
   let clockTimer = null;
   let notice = '';
   let noticeError = false;
+  let lastAuditScoreTapId = '';
+  let lastAuditScoreTapAt = 0;
+  let activeAuditScoreCorrectionId = '';
+  const AUDIT_SCORE_DOUBLE_TAP_MS = 430;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -100,6 +104,8 @@
   function normalizeEvent(event, index) {
     return {
       localId: `event-${Number(event?.id || 0)}-${index}`,
+      eventId: Number(event?.id || 0) || null,
+      assistsScoreEventId: Number(event?.assistsScoreEventId ?? event?.assists_score_event_id ?? 0) || null,
       playerId: Number(event?.playerId ?? event?.player_id),
       eventType: String(event?.eventType ?? event?.event_type ?? '').toLowerCase(),
       statKey: event?.statKey ?? event?.stat_key ?? null,
@@ -187,10 +193,44 @@
     return false;
   }
 
+
+  function isMadeShotEvent(event) {
+    return event?.eventType === 'shot' && String(event?.shotResult || '').toLowerCase() === 'make';
+  }
+
+  function isAssistEvent(event) {
+    if (event?.eventType !== 'stat') return false;
+    return ['ast', 'assist', 'assists'].includes(String(event?.statKey || '').toLowerCase());
+  }
+
+  function draftEventIndex(localId) {
+    return draftEvents.findIndex((event) => String(event?.localId || '') === String(localId || ''));
+  }
+
+  function linkedAssistIndexForScore(scoreIndex) {
+    const score = draftEvents[scoreIndex];
+    if (!isMadeShotEvent(score)) return -1;
+
+    const eventId = Number(score.eventId || 0);
+    if (Number.isSafeInteger(eventId) && eventId > 0) {
+      const linked = draftEvents.findIndex((event) => Number(event?.assistsScoreEventId || 0) === eventId);
+      if (linked >= 0) return linked;
+    }
+
+    const next = draftEvents[scoreIndex + 1];
+    if (!next) return -1;
+    return isAssistEvent(next)
+      && Number(next.videoTimestampMs || 0) === Number(score.videoTimestampMs || 0)
+      ? scoreIndex + 1
+      : -1;
+  }
+
   function addShot(playerId, value, result) {
     const timestamp = currentVideoTimestamp();
     draftEvents.push({
       localId: `new-${Date.now()}-${Math.random()}`,
+      eventId: null,
+      assistsScoreEventId: null,
       playerId: Number(playerId),
       eventType: 'shot',
       statKey: null,
@@ -203,6 +243,8 @@
   function addStat(playerId, stat) {
     draftEvents.push({
       localId: `new-${Date.now()}-${Math.random()}`,
+      eventId: null,
+      assistsScoreEventId: null,
       playerId: Number(playerId),
       eventType: 'stat',
       statKey: stat,
@@ -351,8 +393,11 @@
             ? Math.max(0, stamp - 7000)
             : Math.max(0, stamp - 5000)
         ));
-        const title = `${auditMarkerTitle(category)} · Video ${formatTime(stamp)}`;
-        return `<button type="button" class="rp-video-marker rp-audit-stamp-marker" style="left:${left}%" data-rp-audit-category="${category}" data-rp-video-marker="${replayStart}" title="${esc(title)}" aria-label="${esc(title)}">${auditMarkerText(category)}</button>`;
+        const editableScore = category === 'score' && event?.localId;
+        const instruction = editableScore ? ' · Tap to replay; double-tap to correct score' : '';
+        const title = auditMarkerTitle(category) + ' · Video ' + formatTime(stamp) + instruction;
+        const eventAttr = editableScore ? ' data-rp-audit-score-event="' + esc(event.localId) + '"' : '';
+        return '<button type="button" class="rp-video-marker rp-audit-stamp-marker" style="left:' + left + '%" data-rp-audit-category="' + category + '" data-rp-video-marker="' + replayStart + '"' + eventAttr + ' title="' + esc(title) + '" aria-label="' + esc(title) + '">' + auditMarkerText(category) + '</button>';
       }).join('');
   }
 
@@ -375,7 +420,92 @@
       .map(auditMarkerCategory)
       .filter((category) => category && (filter === 'all' || category === filter))
       .length;
-    return `<span>${count} ${labels[filter] || 'ALL STAMPS'} · AUDIT STAMPS</span><small>Tap a stamp to replay from just before the audited event.</small>`;
+    return `<span>${count} ${labels[filter] || 'ALL STAMPS'} · AUDIT STAMPS</span><small>Tap a stamp to replay. Double-tap a 🏀 score stamp to correct it.</small>`;
+  }
+
+
+  function scoreCorrectionPlayerGroup(team, currentPlayerId) {
+    const players = playersForTeam(team).filter((player) => Number(player.playerId) !== Number(currentPlayerId));
+    if (!players.length) return '';
+    const buttons = players.map((player) => (
+      '<button type="button" data-rp-audit-reassign-score="' + Number(player.playerId) + '">' + esc(playerLabel(player)) + '</button>'
+    )).join('');
+    return '<section class="rp-audit-score-correction-team"><small>' + team.toUpperCase() + '</small><div>' + buttons + '</div></section>';
+  }
+
+  function scoreCorrectionHtml(event) {
+    const player = playerById(event?.playerId);
+    const value = Number(event?.shotValue || 0);
+    const timestamp = Number(event?.videoTimestampMs || 0);
+    return '<div class="rp-audit-score-correction-overlay" data-rp-audit-score-correction role="dialog" aria-modal="true" aria-label="Correct score stamp">'
+      + '<section class="rp-audit-score-correction-card">'
+      + '<header><div><small>SECOND-PASS AUDIT</small><strong>CORRECT SCORE STAMP</strong></div><button type="button" data-rp-audit-score-correction-close aria-label="Close score correction">×</button></header>'
+      + '<div class="rp-audit-score-correction-current"><small>SELECTED SCORE · VIDEO ' + formatTime(timestamp) + '</small><strong>' + value + 'PT MAKE</strong><span>Currently assigned to ' + esc(playerLabel(player)) + '</span></div>'
+      + '<button type="button" class="rp-audit-score-remove" data-rp-audit-remove-score>REMOVE THIS SCORE</button>'
+      + '<div class="rp-audit-score-correction-assign"><div><strong>ASSIGN TO ANOTHER PLAYER</strong><small>Choose the player who actually made this basket.</small></div>'
+      + scoreCorrectionPlayerGroup('west', event?.playerId)
+      + scoreCorrectionPlayerGroup('east', event?.playerId)
+      + '</div>'
+      + '<p>Working copy only. The official game changes only after REVIEW RE-AUDIT and final submit.</p>'
+      + '</section></div>';
+  }
+
+  function closeScoreCorrection() {
+    activeAuditScoreCorrectionId = '';
+    adminBody()?.querySelector('[data-rp-audit-score-correction]')?.remove();
+  }
+
+  function openScoreCorrection(localId) {
+    const index = draftEventIndex(localId);
+    const event = index >= 0 ? draftEvents[index] : null;
+    if (!isMadeShotEvent(event)) return false;
+    closeScoreCorrection();
+    const screen = adminBody()?.querySelector('[data-rp-replay-correction-mode]');
+    if (!screen) return false;
+    activeAuditScoreCorrectionId = String(localId);
+    screen.insertAdjacentHTML('beforeend', scoreCorrectionHtml(event));
+    screen.querySelector('[data-rp-audit-score-correction-close]')?.focus({ preventScroll: true });
+    return true;
+  }
+
+  function removeScoreCorrection(localId) {
+    const scoreIndex = draftEventIndex(localId);
+    if (scoreIndex < 0 || !isMadeShotEvent(draftEvents[scoreIndex])) return false;
+    const assistIndex = linkedAssistIndexForScore(scoreIndex);
+    const indexes = [scoreIndex, assistIndex]
+      .filter((value, index, all) => value >= 0 && all.indexOf(value) === index)
+      .sort((a, b) => b - a);
+    indexes.forEach((index) => draftEvents.splice(index, 1));
+    closeScoreCorrection();
+    patchScoringUI();
+    return true;
+  }
+
+  function reassignScoreCorrection(localId, targetPlayerId) {
+    const scoreIndex = draftEventIndex(localId);
+    const score = scoreIndex >= 0 ? draftEvents[scoreIndex] : null;
+    const target = playerById(targetPlayerId);
+    if (!isMadeShotEvent(score) || !target) return false;
+
+    const assistIndex = linkedAssistIndexForScore(scoreIndex);
+    const assist = assistIndex >= 0 ? draftEvents[assistIndex] : null;
+    score.playerId = Number(target.playerId);
+
+    if (assist) {
+      const assister = playerById(assist.playerId);
+      const selfAssist = Number(assist.playerId) === Number(target.playerId);
+      const crossTeamAssist = assister
+        && String(assister.team || '').toLowerCase() !== String(target.team || '').toLowerCase();
+      if (selfAssist || crossTeamAssist) {
+        const currentAssistIndex = draftEvents.indexOf(assist);
+        if (currentAssistIndex >= 0) draftEvents.splice(currentAssistIndex, 1);
+      }
+    }
+
+    selectedPlayerId = Number(target.playerId);
+    closeScoreCorrection();
+    patchScoringUI();
+    return true;
   }
 
   function videoPlayerHtml() {
@@ -731,6 +861,9 @@
     selectedPlayerId = null;
     notice = '';
     noticeError = false;
+    activeAuditScoreCorrectionId = '';
+    lastAuditScoreTapId = '';
+    lastAuditScoreTapAt = 0;
     notifyCorrectionAuditState();
   }
 
@@ -757,11 +890,26 @@
     const back = target.closest('[data-rp-draft-back]');
     const submit = target.closest('[data-rp-draft-submit]');
     const marker = target.closest('[data-rp-video-marker]');
-    if (!(select || closePlayer || shot || stat || minusShot || minusStat || undo || finish || back || submit || marker)) return;
+    const closeScoreCorrectionButton = target.closest('[data-rp-audit-score-correction-close]');
+    const removeScoreCorrectionButton = target.closest('[data-rp-audit-remove-score]');
+    const reassignScoreCorrectionButton = target.closest('[data-rp-audit-reassign-score]');
+    if (!(select || closePlayer || shot || stat || minusShot || minusStat || undo || finish || back || submit || marker || closeScoreCorrectionButton || removeScoreCorrectionButton || reassignScoreCorrectionButton)) return;
 
     event.preventDefault();
     event.stopImmediatePropagation();
 
+    if (closeScoreCorrectionButton) {
+      closeScoreCorrection();
+      return;
+    }
+    if (removeScoreCorrectionButton) {
+      removeScoreCorrection(activeAuditScoreCorrectionId);
+      return;
+    }
+    if (reassignScoreCorrectionButton) {
+      reassignScoreCorrection(activeAuditScoreCorrectionId, Number(reassignScoreCorrectionButton.dataset.rpAuditReassignScore || 0));
+      return;
+    }
     if (select) {
       selectedPlayerId = Number(select.dataset.rpVideoSelectPlayer);
       patchScoringUI();
@@ -773,6 +921,17 @@
       return;
     }
     if (marker) {
+      const localId = String(marker.dataset.rpAuditScoreEvent || '');
+      const now = Date.now();
+      const doubleTap = Boolean(localId) && localId === lastAuditScoreTapId && now - lastAuditScoreTapAt <= AUDIT_SCORE_DOUBLE_TAP_MS;
+      if (doubleTap) {
+        lastAuditScoreTapId = '';
+        lastAuditScoreTapAt = 0;
+        openScoreCorrection(localId);
+        return;
+      }
+      lastAuditScoreTapId = localId;
+      lastAuditScoreTapAt = localId ? now : 0;
       seekPlayback(Number(marker.dataset.rpVideoMarker || 0));
       return;
     }
