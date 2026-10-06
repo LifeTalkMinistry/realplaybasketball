@@ -804,6 +804,7 @@
   function updateScoringDOM() {
     if (!videoMode) return;
     const adminBody = body();
+    if (adminBody?.querySelector('.rp-video-scoring-screen[data-rp-replay-correction-mode]')) return;
     const west = adminBody?.querySelector('[data-rp-video-score-west]');
     const east = adminBody?.querySelector('[data-rp-video-score-east]');
     if (west) west.textContent = Number(control.session?.westScore || 0);
@@ -952,6 +953,7 @@
       syncTabActive();
       return;
     }
+    if (event.target.closest('[data-rp-replay-correction-mode]')) return;
     if (!videoMode) return;
 
     const add = event.target.closest('[data-rp-video-add]');
@@ -1045,6 +1047,7 @@
 
   window.addEventListener('realplay:admin-render', () => {
     ensureTab();
+    if (body()?.querySelector('.rp-video-scoring-screen[data-rp-replay-correction-mode]')) return;
     if (!videoMode) return;
     syncTabActive();
     window.requestAnimationFrame(() => {
