@@ -373,7 +373,7 @@
     return `<div class="rp-video-player-wrap">
       ${media}
       <div class="rp-video-timebar"><span>VIDEO TIME</span><strong data-rp-video-time>${formatTime(playheadMs)}</strong></div>
-      <div class="rp-video-marker-rail"><i></i><div data-rp-video-markers>${markerButtons()}</div></div>
+      <div class="rp-video-marker-rail"><i></i><div data-rp-replay-audit-markers>${markerButtons()}</div></div>
       <div class="rp-video-marker-key" data-rp-replay-audit-marker-key>${markerKeyHtml()}</div>
     </div>`;
   }
@@ -417,7 +417,7 @@
     });
     const panel = body.querySelector('[data-rp-video-selected-panel]');
     if (panel) panel.innerHTML = selectedPanelHtml();
-    const markers = body.querySelector('[data-rp-video-markers]');
+    const markers = body.querySelector('[data-rp-replay-audit-markers]');
     if (markers) markers.innerHTML = markerButtons();
     const markerKey = body.querySelector('[data-rp-replay-audit-marker-key]');
     if (markerKey) markerKey.innerHTML = markerKeyHtml();
