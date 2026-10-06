@@ -180,6 +180,142 @@
     });
   }
 
+  // The official loader is a layer gate, not a whole-page gate. Each route
+  // declares only the shell + above-the-fold data needed for the first usable
+  // frame. Everything below that contract is free to continue hydrating after
+  // the loader disappears.
+  const ROUTE_LAYER_CONTRACTS = {
+    world: {
+      root: '[data-rp-updates]',
+      layer: '[data-updates-feed]',
+      required: ['[data-rp-world-results-controls]'],
+      rootReady: (root) => root.classList.contains('open')
+        && root.classList.contains('rp-world-results-entry')
+        && document.body.classList.contains('rp-updates-open'),
+      dataReady: (layer, detail) => Number(detail?.loaded || 0) <= 0
+        || Boolean(layer.querySelector('.rp-update-result:not([hidden])')),
+    },
+    stats: {
+      root: '[data-rp-competition-hub]',
+      layer: '[data-rp-competition-view="hub"]',
+      required: ['.rp-competition-card-grid'],
+      rootReady: (root) => root.classList.contains('open')
+        && root.getAttribute('aria-hidden') !== 'true',
+      layerReady: (layer) => !layer.hidden,
+    },
+    players: {
+      root: '[data-rp-world]',
+      layer: '[data-world-view="players"]',
+      required: ['[data-world-player-list]'],
+      rootReady: (root) => root.classList.contains('open')
+        && root.getAttribute('aria-hidden') !== 'true',
+      layerReady: (layer) => !layer.hidden,
+      dataReady: (layer, detail) => Number(detail?.count || 0) <= 0
+        || Boolean(layer.querySelector('[data-world-player-id]')),
+    },
+    chats: {
+      root: '[data-rp-world]',
+      layer: '[data-world-view="chats"]',
+      required: ['[data-chat-channels]', '[data-chat-thread]', '[data-chat-form]'],
+      rootReady: (root) => root.classList.contains('open')
+        && root.getAttribute('aria-hidden') !== 'true',
+      layerReady: (layer) => !layer.hidden,
+    },
+    me: {
+      root: '[data-rp-profile]',
+      layer: '[data-rp-profile-content]',
+      required: [],
+      rootReady: (root) => root.classList.contains('open')
+        && root.getAttribute('aria-hidden') !== 'true',
+      dataReady: (layer) => Boolean(
+        layer.querySelector('.rp-profile-hero')
+        || layer.querySelector('.rp-profile-empty')
+      ),
+    },
+  };
+
+  function routeLayerSnapshot(target, detail = {}) {
+    const contract = ROUTE_LAYER_CONTRACTS[target];
+    if (!contract) return { ready: true, root: null, layer: null };
+
+    const root = document.querySelector(contract.root);
+    if (!root || (contract.rootReady && !contract.rootReady(root, detail))) {
+      return { ready: false, root, layer: null };
+    }
+
+    const layer = contract.layer ? root.querySelector(contract.layer) : root;
+    if (!layer || (contract.layerReady && !contract.layerReady(layer, detail))) {
+      return { ready: false, root, layer };
+    }
+
+    if ((contract.required || []).some((selector) => !layer.querySelector(selector) && !root.querySelector(selector))) {
+      return { ready: false, root, layer };
+    }
+
+    if (contract.dataReady && !contract.dataReady(layer, detail, root)) {
+      return { ready: false, root, layer };
+    }
+
+    const rootRect = root.getBoundingClientRect();
+    const layerRect = layer.getBoundingClientRect();
+    if (rootRect.width < 40 || rootRect.height < 40 || layerRect.width < 20 || layerRect.height < 20) {
+      return { ready: false, root, layer };
+    }
+
+    return { ready: true, root, layer };
+  }
+
+  function waitForCriticalImages(layer, timeoutMs = 900) {
+    if (!layer) return Promise.resolve();
+    const viewportHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
+    const images = [...layer.querySelectorAll('img[src]')]
+      .filter((img) => {
+        if (img.complete) return false;
+        const rect = img.getBoundingClientRect();
+        return rect.bottom >= 0 && rect.top <= viewportHeight * 1.15;
+      })
+      .slice(0, 6);
+    if (!images.length) return Promise.resolve();
+
+    return Promise.race([
+      Promise.all(images.map((img) => new Promise((resolve) => {
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener('error', resolve, { once: true });
+      }))),
+      new Promise((resolve) => window.setTimeout(resolve, timeoutMs)),
+    ]);
+  }
+
+  async function waitForRouteLayer(target, detail = {}, timeoutMs = 2200) {
+    const contract = ROUTE_LAYER_CONTRACTS[target];
+    if (!contract) return true;
+
+    const started = performance.now();
+    let snapshot = routeLayerSnapshot(target, detail);
+    while (!snapshot.ready && performance.now() - started < timeoutMs) {
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+      snapshot = routeLayerSnapshot(target, detail);
+    }
+    if (!snapshot.ready) {
+      throw new Error('The first visible layer of this Real Play page did not become ready.');
+    }
+
+    // Only wait for images that can affect the first visible frame. Images and
+    // data farther down the page remain progressive and never hold the loader.
+    await waitForCriticalImages(snapshot.layer);
+
+    // Two committed paints prevent shell/data swaps from flashing half-built UI.
+    await new Promise((resolve) => window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(resolve);
+    }));
+
+    const finalSnapshot = routeLayerSnapshot(target, detail);
+    if (!finalSnapshot.ready) {
+      throw new Error('The first visible layer changed before it could be shown.');
+    }
+    return true;
+  }
+
   async function ensureWorldFeedFeature() {
     // WORLD's real page is not allowed to replace its loading screen until its
     // own visual system is physically attached. Previously the data could win
@@ -511,14 +647,7 @@
       }
 
       window.RealPlayCompetitionHub.open();
-      await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
-
-      const hub = document.querySelector('[data-rp-competition-hub]');
-      if (!hub?.classList.contains('open') || hub.getAttribute('aria-hidden') === 'true') {
-        showRouteError('stats', 'The Stats page did not finish opening.');
-        return;
-      }
-
+      await waitForRouteLayer('stats', {}, 2400);
       hideRouteShell('stats');
     } catch (error) {
       console.error('[Real Play] Stats navigation failed.', error);
@@ -563,7 +692,8 @@
         window.RealPlayWorldResults.open();
 
         try {
-          await readiness;
+          const detail = await readiness;
+          await waitForRouteLayer('world', detail, 2600);
           hideRouteShell('world');
         } catch (routeError) {
           showRouteError('world', routeError?.message || 'The World feed could not finish loading.');
@@ -590,8 +720,9 @@
       window.setTimeout(() => activateWorldTab(tab), 30);
 
       try {
-        await readiness;
+        const detail = await readiness;
         if (statsReadiness) await statsReadiness;
+        await waitForRouteLayer(target, detail, 2400);
         hideRouteShell(shellTarget);
       } catch (routeError) {
         showRouteError(shellTarget, routeError?.message || 'This Real Play page could not finish loading.');
@@ -655,7 +786,8 @@
       window.RealPlayProfile.open();
 
       try {
-        await readiness;
+        const detail = await readiness;
+        await waitForRouteLayer('me', detail, 2400);
         syncMeHeader();
         ensureProfileSettingsButton();
         hideRouteShell('me');
