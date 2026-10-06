@@ -41,6 +41,28 @@
   const adminRoot = () => document.querySelector('.rp-admin-control');
   const adminBody = () => adminRoot()?.querySelector('[data-admin-body]') || null;
 
+  function correctionAuditState() {
+    if (!correctionActive || !context?.session?.id) return null;
+    return {
+      active: true,
+      sessionId: Number(context.session.id),
+      recording: context.recording || null,
+      events: draftEvents,
+      moments: Array.isArray(context.moments) ? context.moments : [],
+      currentVideoMs: currentVideoTimestamp(),
+    };
+  }
+
+  window.__realPlayReplayCorrectionAuditState = correctionAuditState;
+
+  function notifyCorrectionAuditState() {
+    try {
+      window.dispatchEvent(new CustomEvent('realplay:replay-correction-audit-state', {
+        detail: { sessionId: Number(context?.session?.id || 0), active: Boolean(correctionActive) },
+      }));
+    } catch (_) {}
+  }
+
   function formatTime(ms) {
     const total = Math.max(0, Math.floor(Number(ms || 0) / 1000));
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
@@ -306,6 +328,7 @@
     if (undo) undo.disabled = draftEvents.length === 0;
     const banner = body.querySelector('.rp-video-draft-banner span');
     if (banner) banner.textContent = `${draftEvents.length} EVENTS`;
+    notifyCorrectionAuditState();
   }
 
   function reviewPlayerRow(player) {
@@ -490,6 +513,7 @@
       root?.querySelectorAll('.rp-admin-tab').forEach((tab) => tab.classList.remove('active'));
       root?.querySelector('[data-rp-video-tab]')?.classList.add('active');
       renderScoring();
+      notifyCorrectionAuditState();
     } catch (error) {
       correctionActive = false;
       window.alert(error.message || 'Unable to open the recorded scoring editor.');
@@ -557,6 +581,7 @@
     selectedPlayerId = null;
     notice = '';
     noticeError = false;
+    notifyCorrectionAuditState();
   }
 
   document.addEventListener('click', (event) => {
