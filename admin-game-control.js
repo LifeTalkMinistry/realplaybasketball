@@ -134,6 +134,13 @@
     stopPolling();
   }
 
+  function replayCorrectionOwnsWorkspace() {
+    return Boolean(
+      root.classList.contains('open')
+      && body.querySelector('[data-rp-replay-correction-mode]')
+    );
+  }
+
   function roster(team) {
     return control.players.filter((player) => player.checkedIn && player.team === team);
   }
@@ -308,6 +315,14 @@
 
   async function refresh(options = {}) {
     if (!token || busy) return;
+
+    // Replay correction is a dedicated long-lived Admin workspace. The base
+    // Career-control poll must not repaint or close Game Control while that
+    // workspace owns [data-admin-body]. Explicit tab/EXIT clicks still leave
+    // correction mode through its own capture-phase handler, and token removal
+    // is still handled by watchAuth().
+    if (options.silent && replayCorrectionOwnsWorkspace()) return;
+
     try {
       const data = await api('/api/real-play/admin/career/control');
       admin = Boolean(data?.admin);
@@ -357,6 +372,7 @@
   function startPolling() {
     stopPolling();
     pollTimer = window.setInterval(() => {
+      if (replayCorrectionOwnsWorkspace()) return;
       const focused = root.querySelector('input:focus,select:focus,textarea:focus');
       if (!focused) refresh({ silent: true });
     }, POLL_MS);
@@ -477,6 +493,8 @@
 
   window.addEventListener('focus', () => {
     watchAuth();
-    if (admin && root.classList.contains('open')) refresh({ silent: true });
+    if (admin && root.classList.contains('open') && !replayCorrectionOwnsWorkspace()) {
+      refresh({ silent: true });
+    }
   });
 })();

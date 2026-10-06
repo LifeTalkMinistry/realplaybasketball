@@ -275,19 +275,16 @@
     document.head.appendChild(gameSkips);
   }
 
-  // Load the replay-admin bridge after the existing replay editor has installed.
-  // This keeps the pencil responsive even when the heavy Admin/Game Control
-  // bundle has not been opened yet in the current browser session.
-  const loadBridge = () => {
-    if (window.__realPlayReplayAdminEditBridgeInstalled) return;
-    if (!window.__realPlayReplayAdminEditInstalled) {
-      window.setTimeout(loadBridge, 120);
-      return;
-    }
+  // Replay Admin has one preparation owner: career-game-replay-admin-root.js.
+  // Do not revive the retired September bridge here; two capture-phase owners
+  // can bounce the same synthetic edit click between each other. The root is
+  // lightweight and can safely exist before the heavy Admin bundle is loaded.
+  if (!window.__realPlayReplayAdminEditRootInstalled
+      && ![...document.scripts].some((script) => String(script.src || '').includes('career-game-replay-admin-root.js'))) {
     const script = document.createElement('script');
-    script.src = 'career-game-replay-admin-edit-bridge.js?v=20260915-replay-edit-bridge-v1';
+    const version = String(document.documentElement?.dataset?.rpDeploy || 'replay-admin-root');
+    script.src = 'career-game-replay-admin-root.js?v=' + encodeURIComponent(version);
     script.async = false;
     document.head.appendChild(script);
-  };
-  loadBridge();
+  }
 })();
