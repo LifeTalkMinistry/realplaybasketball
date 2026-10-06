@@ -25,5 +25,5 @@ test('replay admin hash re-syncs immediately when admin verification completes',
 });
 
 test('admin hash recovery is cache-busted', () => {
-  assert.match(read('index.html'), /20261006-replay-admin-hash-v217/);
+  assert.match(read('index.html'), /20261006-declared-team-labels-v218/);
 });

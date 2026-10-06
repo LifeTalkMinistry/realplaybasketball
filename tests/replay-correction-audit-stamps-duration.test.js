@@ -27,6 +27,6 @@ test('uploaded-video re-audit also adopts metadata duration when needed', () => 
 });
 
 test('audit-stamp duration repair is cache-busted', () => {
-  assert.match(read('admin-access-bootstrap.js'), /20261006-replay-submit-owner-v65/);
-  assert.match(read('index.html'), /20261006-replay-admin-hash-v217/);
+  assert.match(read('admin-access-bootstrap.js'), /20261006-declared-team-labels-v66/);
+  assert.match(read('index.html'), /20261006-declared-team-labels-v218/);
 });
