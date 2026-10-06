@@ -855,7 +855,10 @@
   function loadWorldView(view, { initial = false } = {}) {
     const nextView = view === 'results' ? 'results' : 'feed';
     const isResults = nextView === 'results';
-    const category = isResults ? 'result' : '';
+    // WORLD FEED currently shows game-result stories only. Query results
+    // directly so hidden schedule/announcement records never consume the
+    // progressive page slots and make the feed look empty.
+    const category = 'result';
     const routeTarget = isResults ? 'world-results' : 'world';
     const pageSize = isResults ? 2 : 3;
     const loadMode = isResults ? 'button' : 'auto';
