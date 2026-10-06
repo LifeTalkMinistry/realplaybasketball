@@ -885,7 +885,6 @@
     }
 
     block.innerHTML = `
-      <small class="rp-world-story-kicker">${esc(story.kind || 'GAME REPORT')} · VERIFIED DATA</small>
       <h3>${esc(story.headline || 'OFFICIAL GAME REPORT')}</h3>
       ${story.summary ? `<p>${esc(story.summary)}</p>` : ''}
       ${story.statLine ? `<div class="rp-world-story-statline">${esc(story.statLine)}</div>` : ''}
