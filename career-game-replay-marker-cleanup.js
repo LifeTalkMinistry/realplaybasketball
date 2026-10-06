@@ -377,6 +377,11 @@
     const root = replayRoot();
     if (!root) return;
 
+    const activeSessionId = Number(root.dataset.rpCareerReplayActiveSession || 0);
+    if (Number.isSafeInteger(activeSessionId) && activeSessionId > 0) {
+      replaySessionId = activeSessionId;
+    }
+
     const topbar = root.querySelector('.rp-career-replay-topbar');
     if (!topbar) return;
 
@@ -436,6 +441,7 @@
 
   observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
   window.setInterval(syncReplayNumberEditor, 700);
+  window.addEventListener('realplay:admin-render', syncReplayNumberEditor);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {

@@ -30,5 +30,5 @@ test('Second-Pass editor remains the owner of correction Back and Submit', () =>
 
 test('re-audit submit ownership repair is cache-busted', () => {
   assert.match(read('admin-access-bootstrap.js'), /20261006-replay-submit-owner-v65/);
-  assert.match(read('index.html'), /20261006-replay-submit-owner-v216/);
+  assert.match(read('index.html'), /20261006-replay-admin-hash-v217/);
 });

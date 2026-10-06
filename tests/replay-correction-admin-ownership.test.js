@@ -43,7 +43,7 @@ test('replay correction Admin assets use the new ownership cache version', () =>
   const index = read('index.html');
 
   assert.match(admin, /20261006-replay-submit-owner-v65/);
-  assert.match(index, /20261006-replay-submit-owner-v216/);
+  assert.match(index, /20261006-replay-admin-hash-v217/);
 });
 
 test('replay runtime does not revive the retired admin edit bridge', () => {
