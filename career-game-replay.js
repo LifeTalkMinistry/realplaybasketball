@@ -304,6 +304,7 @@
     replay = null;
     loadingSessionId = 0;
     const root = ensureViewer();
+    delete root.dataset.rpCareerReplaySession;
     root.classList.remove('open');
     root.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-career-replay-open');
@@ -427,6 +428,7 @@
     const id = Number(sessionId);
     if (!Number.isSafeInteger(id) || id < 1 || loadingSessionId) return;
     loadingSessionId = id;
+    ensureViewer().dataset.rpCareerReplaySession = String(id);
     if (button) {
       button.disabled = true;
       button.textContent = 'LOADING REPLAY…';
