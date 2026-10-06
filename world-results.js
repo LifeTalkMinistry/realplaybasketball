@@ -878,9 +878,9 @@
     const loadingLabel = isResults ? 'LOADING GAME RESULTS...' : 'LOADING LATEST FROM REAL PLAY...';
     const sequence = ++viewLoadSequence;
     const loadingStartedAt = performance.now();
-    // Deliberate branded holding time. The user has explicitly preferred a
-    // stable loader over briefly exposing an assembling destination.
-    const minimumLoadingMs = isResults ? 1500 : 850;
+    // The loader is now readiness-driven. Keep only a tiny anti-flash floor;
+    // never hold a finished first layer just to display the loader longer.
+    const minimumLoadingMs = 120;
 
     // The old view is never allowed to be the transition surface. Show the
     // destination-owned loader first and keep it for a short minimum window so
