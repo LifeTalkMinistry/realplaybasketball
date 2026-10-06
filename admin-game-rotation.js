@@ -117,7 +117,7 @@
     window.setTimeout(() => hash.classList.remove('rp-replay-admin-doubletap-hit'), 180);
 
     const replayRoot = hash.closest('[data-rp-career-replay].open');
-    const sessionId = Number(replayRoot?.dataset?.rpCareerReplaySession || 0);
+    const sessionId = Number(replayRoot?.dataset?.rpCareerReplayActiveSession || 0);
     const openCorrection = window.__realPlayOpenReplayCorrection;
     if (typeof openCorrection === 'function' && Number.isSafeInteger(sessionId) && sessionId > 0) {
       openCorrection(sessionId);

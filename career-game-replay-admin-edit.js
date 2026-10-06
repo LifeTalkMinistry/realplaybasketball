@@ -804,7 +804,7 @@
   function syncPencil() {
     const root = viewer();
     if (!root) return;
-    const replaySessionId = Number(root.dataset.rpCareerReplaySession || 0);
+    const replaySessionId = Number(root.dataset.rpCareerReplayActiveSession || 0);
     if (Number.isSafeInteger(replaySessionId) && replaySessionId > 0) {
       currentSessionId = replaySessionId;
     }

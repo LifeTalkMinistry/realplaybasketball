@@ -304,7 +304,7 @@
     replay = null;
     loadingSessionId = 0;
     const root = ensureViewer();
-    delete root.dataset.rpCareerReplaySession;
+    delete root.dataset.rpCareerReplayActiveSession;
     root.classList.remove('open');
     root.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('rp-career-replay-open');
@@ -428,7 +428,7 @@
     const id = Number(sessionId);
     if (!Number.isSafeInteger(id) || id < 1 || loadingSessionId) return;
     loadingSessionId = id;
-    ensureViewer().dataset.rpCareerReplaySession = String(id);
+    ensureViewer().dataset.rpCareerReplayActiveSession = String(id);
     if (button) {
       button.disabled = true;
       button.textContent = 'LOADING REPLAY…';
@@ -916,7 +916,7 @@
   }
 
   document.addEventListener('click', (event) => {
-    const replayButton = event.target.closest('[data-rp-career-replay-session]');
+    const replayButton = event.target.closest('button[data-rp-career-replay-session]');
     if (replayButton) {
       event.preventDefault();
       event.stopPropagation();
