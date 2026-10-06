@@ -776,6 +776,10 @@
   function syncPencil() {
     const root = viewer();
     if (!root) return;
+    const replaySessionId = Number(root.dataset.rpCareerReplaySession || 0);
+    if (Number.isSafeInteger(replaySessionId) && replaySessionId > 0) {
+      currentSessionId = replaySessionId;
+    }
     const topbar = root.querySelector('.rp-career-replay-topbar');
     if (!topbar) return;
     let button = topbar.querySelector('[data-rp-replay-admin-edit]');
