@@ -43,4 +43,5 @@ test('reassignment drops an assist that becomes self-assist or cross-team', () =
 
 test('score-stamp correction assets are cache-busted', () => {
   assert.match(read('admin-access-bootstrap.js'), /20261006-declared-team-labels-v66/);
-  assert.match(read('index.html'), /20261006-declared-team-lab...[truncated]
+  assert.match(read('index.html'), /20261006-declared-team-labels-v218/);
+});

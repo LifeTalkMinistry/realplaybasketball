@@ -46,4 +46,11 @@ test('replay correction Admin assets use the new ownership cache version', () =>
   assert.match(index, /20261006-declared-team-labels-v218/);
 });
 
-test('replay runtime does not revive the re...[truncated]
+test('replay runtime does not revive the retired admin edit bridge', () => {
+  const mvp = read('career-game-replay-official-mvp.js');
+  const admin = read('admin-access-bootstrap.js');
+
+  assert.doesNotMatch(mvp, /career-game-replay-admin-edit-bridge\.js/);
+  assert.match(mvp, /career-game-replay-admin-root\.js/);
+  assert.match(admin, /20261006-replay-correction-owner-v2/);
+});
