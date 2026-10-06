@@ -86,6 +86,11 @@
     filter = FILTERS.some(([key]) => key === value) ? value : 'all';
     window.__realPlayAuditStampFilter = filter;
     try { localStorage.setItem(FILTER_KEY, filter); } catch (_) {}
+    try {
+      window.dispatchEvent(new CustomEvent('realplay:audit-stamp-filter-change', {
+        detail: { filter },
+      }));
+    } catch (_) {}
   }
 
   function filterLabel(value = filter) {
@@ -164,7 +169,7 @@
       .rp-audit-filter-option{min-height:32px;padding:0 6px;border:1px solid rgba(96,149,171,.2);border-radius:8px;background:#081b27;color:#8fb7c7;font:900 7px/1 system-ui,sans-serif;letter-spacing:.08em;cursor:pointer}
       .rp-audit-filter-option.active{border-color:rgba(42,218,248,.62);background:#0a3040;color:#f0fcff}
       .rp-audit-filter-option:hover,.rp-audit-filter-option:focus-visible{border-color:rgba(42,218,248,.48);outline:none}
-      .rp-video-scoring-screen .rp-video-marker-rail>[data-rp-video-markers]{visibility:hidden!important;pointer-events:none!important}
+      .rp-video-scoring-screen:not([data-rp-replay-correction-mode]) .rp-video-marker-rail>[data-rp-video-markers]{visibility:hidden!important;pointer-events:none!important}
       .rp-audit-stamp-markers{position:absolute;inset:0;z-index:3;pointer-events:none}
       .rp-audit-stamp-marker{position:absolute;top:2px;display:grid;place-items:center;transform:translateX(-50%);width:24px;height:24px;padding:0;border:1px solid rgba(111,174,196,.28);border-radius:50%;background:#071824;color:#dff8ff;font:950 7px/1 system-ui,sans-serif;letter-spacing:-.02em;box-shadow:0 1px 4px rgba(0,0,0,.58);cursor:pointer;pointer-events:auto}
       .rp-audit-stamp-marker[data-rp-audit-category="score"]{border-color:rgba(244,157,51,.56);background:#24170a;font-size:13px}
@@ -310,6 +315,12 @@
   function renderMarkers(screen) {
     const rail = screen?.querySelector('.rp-video-marker-rail');
     if (!rail) return;
+
+    if (correctionAuditState(screen)) {
+      rail.querySelector('[data-rp-audit-stamp-markers]')?.remove();
+      return;
+    }
+
     let overlay = rail.querySelector('[data-rp-audit-stamp-markers]');
     if (!overlay) {
       overlay = document.createElement('div');
