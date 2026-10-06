@@ -414,7 +414,236 @@
       @media(prefers-reduced-motion:reduce){
         .rp-updates-progressive-sentinel.loading span{animation:none;opacity:.8}
       }
+      /* Scoreboard-first WORLD game report. */
+      .rp-updates.rp-world-results-entry.rp-world-feed-view
+      .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"]{
+        padding:14px 14px 13px!important;
+      }
+      .rp-updates.rp-world-results-entry.rp-world-feed-view
+      .rp-update-card.rp-update-result[data-update-id^="career-"][data-update-id$="-result"] > .rp-update-card-head{
+        display:none!important;
+      }
+      .rp-updates.rp-world-results-entry.rp-world-feed-view .rp-world-story-block{
+        display:block!important;
+        margin-top:0!important;
+      }
+      .rp-world-scorecard-head{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        min-height:24px;
+      }
+      .rp-world-scorecard-head strong,
+      .rp-world-scorecard-head span{
+        font-family:var(--rp-display,Arial,sans-serif);
+        font-style:italic;
+        font-weight:950;
+        text-transform:uppercase;
+      }
+      .rp-world-scorecard-head strong{
+        color:#eef8ff;
+        font-size:.66rem;
+        letter-spacing:.04em;
+      }
+      .rp-world-scorecard-head span{
+        color:#58ddff;
+        font-size:.52rem;
+        letter-spacing:.07em;
+        text-align:right;
+      }
+      .rp-world-scorecard-matchup{
+        display:grid;
+        grid-template-columns:minmax(68px,1fr) minmax(112px,1.35fr) minmax(68px,1fr);
+        align-items:center;
+        gap:8px;
+        min-height:108px;
+        padding:13px 2px 11px;
+      }
+      .rp-world-scorecard-team{
+        display:grid;
+        justify-items:center;
+        align-content:center;
+        gap:6px;
+        min-width:0;
+        text-align:center;
+      }
+      .rp-world-scorecard-team-logo,
+      .rp-world-scorecard-team-fallback{
+        width:48px;
+        height:48px;
+        object-fit:contain;
+        display:grid;
+        place-items:center;
+        box-sizing:border-box;
+      }
+      .rp-world-scorecard-team-logo{filter:drop-shadow(0 5px 12px rgba(0,0,0,.32))}
+      .rp-world-scorecard-team-fallback{
+        border:1px solid rgba(255,255,255,.14);
+        border-radius:50%;
+        color:#f6f9ff;
+        background:#0a111b;
+        font-family:var(--rp-display,Arial,sans-serif);
+        font-size:1.12rem;
+        font-style:italic;
+        font-weight:950;
+      }
+      .rp-world-scorecard-team-fallback-west{box-shadow:inset 0 0 0 1px rgba(28,190,255,.14)}
+      .rp-world-scorecard-team-fallback-east{box-shadow:inset 0 0 0 1px rgba(255,53,71,.14)}
+      .rp-world-scorecard-team>span:last-child{
+        width:100%;
+        overflow:hidden;
+        color:#e9f2fb;
+        font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.58rem;
+        font-style:italic;
+        font-weight:950;
+        letter-spacing:.025em;
+        text-overflow:ellipsis;
+        text-transform:uppercase;
+        white-space:nowrap;
+      }
+      .rp-world-scorecard-score{
+        display:grid;
+        grid-template-columns:1fr 22px 1fr;
+        align-items:center;
+        justify-items:center;
+        min-width:0;
+      }
+      .rp-world-scorecard-score b{
+        color:#f8fbff;
+        font-family:var(--rp-display,Impact,'Arial Narrow',Arial,sans-serif);
+        font-size:2.2rem;
+        font-style:italic;
+        font-weight:950;
+        line-height:1;
+        letter-spacing:.015em;
+      }
+      .rp-world-scorecard-score i{
+        color:#778492;
+        font-size:1.05rem;
+        font-style:normal;
+        font-weight:800;
+      }
+      .rp-world-scorecard-divider{
+        height:1px;
+        margin:0;
+        background:rgba(255,255,255,.095);
+      }
+      .rp-world-scorecard-stats-head{
+        display:grid;
+        grid-template-columns:minmax(0,1fr) 116px;
+        align-items:center;
+        gap:10px;
+        padding:10px 2px 7px;
+      }
+      .rp-world-scorecard-stats-head>strong{
+        color:#8594a3;
+        font-size:.48rem;
+        font-weight:900;
+        letter-spacing:.08em;
+        text-transform:uppercase;
+      }
+      .rp-world-scorecard-stats-head>span,
+      .rp-world-scorecard-mvp-stats{
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        align-items:center;
+        text-align:center;
+      }
+      .rp-world-scorecard-stats-head b{
+        color:#7b8895;
+        font-size:.43rem;
+        font-weight:900;
+        letter-spacing:.04em;
+      }
+      .rp-world-scorecard-mvp-list{display:grid}
+      .rp-world-scorecard-mvp-row{
+        display:grid;
+        grid-template-columns:minmax(0,1fr) 116px;
+        align-items:center;
+        gap:10px;
+        min-height:44px;
+        padding:6px 2px;
+        border-top:1px solid rgba(255,255,255,.045);
+      }
+      .rp-world-scorecard-mvp-name{
+        display:grid;
+        gap:2px;
+        min-width:0;
+      }
+      .rp-world-scorecard-mvp-name small{
+        color:#617182;
+        font-size:.39rem;
+        font-weight:900;
+        letter-spacing:.055em;
+        text-transform:uppercase;
+      }
+      .rp-world-scorecard-mvp-name strong{
+        overflow:hidden;
+        color:#eef7ff;
+        font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.60rem;
+        font-style:italic;
+        font-weight:950;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+      .rp-world-scorecard-mvp-stats b{
+        color:#dce8f1;
+        font-size:.58rem;
+        font-weight:900;
+      }
+      .rp-world-scorecard-recap-row{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        min-height:42px;
+        padding:8px 2px 0;
+      }
+      .rp-world-scorecard-recap-row strong{
+        color:#d9e5ef;
+        font-size:.56rem;
+        font-weight:800;
+      }
+      .rp-world-scorecard-recap-row button{
+        padding:0;
+        border:0;
+        color:#58ddff;
+        background:transparent;
+        font-family:inherit;
+        font-size:.48rem;
+        font-weight:850;
+        cursor:pointer;
+      }
+      .rp-world-scorecard-recap-copy{
+        margin-top:8px;
+        padding:10px;
+        border:1px solid rgba(255,255,255,.06);
+        border-radius:10px;
+        background:rgba(255,255,255,.018);
+      }
+      .rp-world-scorecard-recap-copy[hidden]{display:none!important}
+      .rp-world-scorecard-recap-copy strong{
+        display:block;
+        color:#edf6ff;
+        font-size:.61rem;
+        font-weight:900;
+        line-height:1.3;
+      }
+      .rp-world-scorecard-recap-copy p{
+        margin:6px 0 0!important;
+        color:#8fa0b1!important;
+        font-size:.56rem!important;
+        line-height:1.45!important;
+      }
+
       @media(max-width:360px){
+        .rp-world-scorecard-matchup{grid-template-columns:minmax(60px,1fr) minmax(100px,1.2fr) minmax(60px,1fr);gap:5px}
+        .rp-world-scorecard-team-logo,.rp-world-scorecard-team-fallback{width:42px;height:42px}
+        .rp-world-scorecard-score b{font-size:1.95rem}
+        .rp-world-scorecard-stats-head,.rp-world-scorecard-mvp-row{grid-template-columns:minmax(0,1fr) 102px}
         .rp-world-results-filter-row{gap:6px}
         .rp-world-results-filter select{font-size:.53rem;padding-left:9px}
       }
@@ -870,11 +1099,92 @@
     return fallbackStory(update);
   }
 
+  const WORLD_CLUB_ART = {
+    LIONS: 'assets/3v3/clubs/lions-logo.png',
+    VALIANT: 'assets/3v3/clubs/valiant-logo.png',
+    WATCHMEN: 'assets/3v3/clubs/watchmen-logo.png',
+    CONQUERORS: 'assets/3v3/clubs/conquerors-logo.png',
+    CHOSEN: 'assets/3v3/clubs/chosen-logo.png',
+    EAGLES: 'assets/3v3/clubs/eagles-logo.png',
+    STEADFAST: 'assets/3v3/clubs/steadfast-logo.png',
+    WARRIORS: 'assets/3v3/clubs/warriors-logo.png',
+  };
+
+  function worldResultTitle(metadata = {}) {
+    const seasonGame = Number(metadata.seasonGameNumber ?? metadata.season_game_number);
+    const context = String(metadata.competitionContext ?? metadata.competition_context ?? '').trim().toLowerCase();
+    if (Number.isSafeInteger(seasonGame) && seasonGame > 0) {
+      const label = context === 'league' ? 'LEAGUE' : 'TUNE UP';
+      return `${label} #${String(seasonGame).padStart(2, '0')}`;
+    }
+
+    const openRank = Number(metadata.openRankNumber ?? metadata.open_rank_number);
+    if (Number.isSafeInteger(openRank) && openRank > 0) {
+      return `OPEN RANK #${String(openRank).padStart(3, '0')}`;
+    }
+
+    return String(
+      metadata.resultDisplayTitle
+      ?? metadata.result_display_title
+      ?? metadata.sessionTitle
+      ?? metadata.session_title
+      ?? 'GAME RESULT'
+    ).trim().toUpperCase();
+  }
+
+  function worldTeamLogo(name, side) {
+    const cleanName = String(name || '').trim().toUpperCase();
+    const src = WORLD_CLUB_ART[cleanName];
+    if (src) {
+      return `<img class="rp-world-scorecard-team-logo" src="${esc(src)}" alt="${esc(cleanName)} team logo" loading="lazy" decoding="async">`;
+    }
+    const initial = cleanName.charAt(0) || (side === 'east' ? 'E' : 'W');
+    return `<span class="rp-world-scorecard-team-fallback rp-world-scorecard-team-fallback-${side}" aria-hidden="true">${esc(initial)}</span>`;
+  }
+
+  function normalizedTeamMvp(metadata = {}, side) {
+    const gameMvp = metadata.gameMvp ?? metadata.game_mvp ?? null;
+    const teamMvps = gameMvp?.teamMvps ?? gameMvp?.team_mvps ?? metadata.teamMvps ?? metadata.team_mvps ?? {};
+    const direct = teamMvps?.[side] || null;
+    if (direct) return direct;
+
+    const overallTeam = String(gameMvp?.team || '').trim().toLowerCase();
+    return overallTeam === side ? gameMvp : null;
+  }
+
+  function worldMvpRow(teamName, mvp) {
+    const name = String(mvp?.playerName ?? mvp?.player_name ?? mvp?.name ?? '').trim() || '—';
+    const points = Number(mvp?.points || 0);
+    const assists = Number(mvp?.assists || 0);
+    const rebounds = Number(mvp?.rebounds || 0);
+    return `
+      <div class="rp-world-scorecard-mvp-row">
+        <div class="rp-world-scorecard-mvp-name">
+          <small>${esc(teamName)} MVP</small>
+          <strong>${esc(name)}</strong>
+        </div>
+        <div class="rp-world-scorecard-mvp-stats" aria-label="${esc(name)} stats">
+          <b>${points}</b><b>${assists}</b><b>${rebounds}</b>
+        </div>
+      </div>`;
+  }
+
   function decorateStoryCard(card) {
     if (!card) return;
     const update = resultMetadata.get(String(card.dataset.updateId || ''));
     const story = storyForUpdate(update);
-    if (!story) return;
+    const metadata = update?.metadata || {};
+    const west = Number(metadata.westScore ?? metadata.west_score);
+    const east = Number(metadata.eastScore ?? metadata.east_score);
+    if (!story || !Number.isFinite(west) || !Number.isFinite(east)) return;
+
+    const westName = String(metadata.westTeamName ?? metadata.west_team_name ?? 'WEST').trim().toUpperCase() || 'WEST';
+    const eastName = String(metadata.eastTeamName ?? metadata.east_team_name ?? 'EAST').trim().toUpperCase() || 'EAST';
+    const resultLabel = west === east
+      ? 'TIE'
+      : `${west > east ? westName : eastName} WIN`;
+    const westMvp = normalizedTeamMvp(metadata, 'west');
+    const eastMvp = normalizedTeamMvp(metadata, 'east');
 
     let block = card.querySelector('[data-rp-world-story]');
     if (!block) {
@@ -885,10 +1195,58 @@
     }
 
     block.innerHTML = `
-      <h3>${esc(story.headline || 'OFFICIAL GAME REPORT')}</h3>
-      ${story.summary ? `<p>${esc(story.summary)}</p>` : ''}
-      ${story.statLine ? `<div class="rp-world-story-statline">${esc(story.statLine)}</div>` : ''}
-      <span class="rp-world-story-cta">VIEW GAME + STATS →</span>`;
+      <div class="rp-world-scorecard-head">
+        <strong>${esc(worldResultTitle(metadata))}</strong>
+        <span>${esc(resultLabel)}</span>
+      </div>
+
+      <div class="rp-world-scorecard-matchup">
+        <div class="rp-world-scorecard-team">
+          ${worldTeamLogo(westName, 'west')}
+          <span>${esc(westName)}</span>
+        </div>
+        <div class="rp-world-scorecard-score" aria-label="${esc(westName)} ${west}, ${esc(eastName)} ${east}">
+          <b>${west}</b><i>−</i><b>${east}</b>
+        </div>
+        <div class="rp-world-scorecard-team">
+          ${worldTeamLogo(eastName, 'east')}
+          <span>${esc(eastName)}</span>
+        </div>
+      </div>
+
+      <div class="rp-world-scorecard-divider"></div>
+
+      <div class="rp-world-scorecard-stats-head">
+        <strong>STATS</strong>
+        <span><b>PTS</b><b>AST</b><b>REBS</b></span>
+      </div>
+      <div class="rp-world-scorecard-mvp-list">
+        ${worldMvpRow(westName, westMvp)}
+        ${worldMvpRow(eastName, eastMvp)}
+      </div>
+
+      <div class="rp-world-scorecard-divider"></div>
+
+      <div class="rp-world-scorecard-recap-row">
+        <strong>Game Recap</strong>
+        <button type="button" data-rp-world-story-toggle aria-expanded="false">Read the story now</button>
+      </div>
+      <div class="rp-world-scorecard-recap-copy" data-rp-world-story-copy hidden>
+        ${story.headline ? `<strong>${esc(story.headline)}</strong>` : ''}
+        ${story.summary ? `<p>${esc(story.summary)}</p>` : ''}
+      </div>`;
+
+    block.querySelector('[data-rp-world-story-toggle]')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const button = event.currentTarget;
+      const copy = block.querySelector('[data-rp-world-story-copy]');
+      if (!copy) return;
+      const open = copy.hidden;
+      copy.hidden = !open;
+      button.setAttribute('aria-expanded', open ? 'true' : 'false');
+      button.textContent = open ? 'Hide story' : 'Read the story now';
+    });
 
     const label = card.querySelector('.rp-update-kind strong');
     if (label) {
