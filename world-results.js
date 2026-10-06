@@ -16,6 +16,8 @@
   let metadataLoading = false;
   let resultTotal = 0;
   let viewLoadSequence = 0;
+  const teamMvpReplayCache = new Map();
+  const teamMvpReplayRequests = new Map();
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -1168,6 +1170,113 @@
     return overallTeam === side ? gameMvp : null;
   }
 
+  function normalizeReplayMvp(player = {}) {
+    return {
+      playerName: String(player.playerName ?? player.player_name ?? player.name ?? '').trim(),
+      team: String(player.team || '').trim().toLowerCase(),
+      points: Number(player.points ?? player.pts ?? 0),
+      assists: Number(player.assists ?? player.ast ?? 0),
+      rebounds: Number(player.rebounds ?? player.reb ?? 0),
+      turnovers: Number(player.turnovers ?? player.tov ?? 0),
+      steals: Number(player.steals ?? player.stl ?? 0),
+      blocks: Number(player.blocks ?? player.blk ?? 0),
+      fouls: Number(player.fouls ?? player.foul ?? 0),
+      madeShots: Number(
+        player.madeShots
+        ?? player.made_shots
+        ?? (Number(player.onePtMade || 0) + Number(player.twoPtMade || 0))
+      ),
+      missedShots: Number(
+        player.missedShots
+        ?? player.missed_shots
+        ?? (Number(player.onePtMiss || 0) + Number(player.twoPtMiss || 0))
+      ),
+    };
+  }
+
+  function replayMvpImpact(player = {}) {
+    return Number(player.points || 0)
+      + (Number(player.rebounds || 0) * 1.2)
+      + (Number(player.assists || 0) * 1.5)
+      + (Number(player.steals || 0) * 2)
+      + (Number(player.blocks || 0) * 2)
+      - (Number(player.turnovers || 0) * 1.5)
+      - (Number(player.missedShots || 0) * 0.5)
+      - (Number(player.fouls || 0) * 0.25);
+  }
+
+  function replayMvpFgPct(player = {}) {
+    const made = Number(player.madeShots || 0);
+    const missed = Number(player.missedShots || 0);
+    const attempts = made + missed;
+    return attempts > 0 ? made / attempts : 0;
+  }
+
+  function isBetterReplayMvp(candidate, current) {
+    if (!current) return true;
+    const impactDiff = replayMvpImpact(candidate) - replayMvpImpact(current);
+    if (Math.abs(impactDiff) > 0.0001) return impactDiff > 0;
+
+    const fgDiff = replayMvpFgPct(candidate) - replayMvpFgPct(current);
+    if (Math.abs(fgDiff) > 0.000001) return fgDiff > 0;
+
+    if (candidate.points !== current.points) return candidate.points > current.points;
+    if (candidate.turnovers !== current.turnovers) return candidate.turnovers < current.turnovers;
+    return String(candidate.playerName || '').localeCompare(String(current.playerName || '')) < 0;
+  }
+
+  function deriveReplayTeamMvps(playerStats = []) {
+    const winners = { west: null, east: null };
+    (Array.isArray(playerStats) ? playerStats : []).forEach((raw) => {
+      const player = normalizeReplayMvp(raw);
+      if (!['west', 'east'].includes(player.team) || !player.playerName) return;
+      if (isBetterReplayMvp(player, winners[player.team])) winners[player.team] = player;
+    });
+    return winners;
+  }
+
+  async function loadReplayTeamMvps(sessionId) {
+    const id = Number(sessionId);
+    if (!Number.isSafeInteger(id) || id <= 0) return { west: null, east: null };
+    if (teamMvpReplayCache.has(id)) return teamMvpReplayCache.get(id);
+    if (teamMvpReplayRequests.has(id)) return teamMvpReplayRequests.get(id);
+
+    const request = fetch(`https://api.clarapmc.com/api/real-play/public/career/games/${id}/replay`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Replay stats unavailable');
+        const data = await response.json();
+        const mvps = deriveReplayTeamMvps(data?.playerStats);
+        teamMvpReplayCache.set(id, mvps);
+        return mvps;
+      })
+      .catch(() => ({ west: null, east: null }))
+      .finally(() => teamMvpReplayRequests.delete(id));
+
+    teamMvpReplayRequests.set(id, request);
+    return request;
+  }
+
+  function hydrateMissingWorldTeamMvps(card, metadata, westMvp, eastMvp) {
+    if (westMvp && eastMvp) return;
+    const sessionId = Number(metadata.sessionId ?? metadata.session_id);
+    if (!Number.isSafeInteger(sessionId) || sessionId <= 0) return;
+
+    loadReplayTeamMvps(sessionId).then((mvps) => {
+      if (!card?.isConnected) return;
+      const rows = card.querySelectorAll('.rp-world-scorecard-mvp-row');
+      if (rows.length < 2) return;
+
+      const westName = String(metadata.westTeamName ?? metadata.west_team_name ?? 'WEST').trim().toUpperCase() || 'WEST';
+      const eastName = String(metadata.eastTeamName ?? metadata.east_team_name ?? 'EAST').trim().toUpperCase() || 'EAST';
+
+      if (!westMvp && mvps?.west) rows[0].outerHTML = worldMvpRow(westName, mvps.west);
+      if (!eastMvp && mvps?.east) rows[1].outerHTML = worldMvpRow(eastName, mvps.east);
+    }).catch(() => {});
+  }
+
   function worldMvpRow(teamName, mvp) {
     const name = String(mvp?.playerName ?? mvp?.player_name ?? mvp?.name ?? '').trim() || '—';
     const points = Number(mvp?.points || 0);
@@ -1266,6 +1375,8 @@
       button.setAttribute('aria-expanded', open ? 'true' : 'false');
       button.textContent = open ? 'Hide story' : 'Read the story now';
     });
+
+    hydrateMissingWorldTeamMvps(card, metadata, westMvp, eastMvp);
 
     const label = card.querySelector('.rp-update-kind strong');
     if (label) {
