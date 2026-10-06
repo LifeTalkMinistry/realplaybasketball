@@ -305,74 +305,19 @@
       </div>`).join('');
   }
 
-  function routeShellMarkup(target) {
-    if (target === 'world') {
-      return `
-        <div class="rp-route-shell-content rp-route-shell-world-premium rp-route-shell-world-minimal">
-          <section class="rp-route-world-premium-stage">
-            <div class="rp-route-world-premium-logo-wrap" aria-hidden="true">
-              <img src="assets/branding/real-play-official-logo.png" alt="">
-            </div>
-            <div class="rp-route-world-premium-progress" aria-hidden="true">
-              <span></span>
-            </div>
-          </section>
-        </div>`;
-    }
-    if (target === 'world-results') {
-      return `
-        <div class="rp-route-shell-content rp-route-shell-world-premium rp-route-shell-world-results rp-route-shell-world-minimal">
-          <section class="rp-route-world-premium-stage">
-            <div class="rp-route-world-premium-logo-wrap" aria-hidden="true">
-              <img src="assets/branding/real-play-official-logo.png" alt="">
-            </div>
-            <div class="rp-route-world-premium-progress" aria-hidden="true">
-              <span></span>
-            </div>
-          </section>
-        </div>`;
-    }
-    if (target === 'stats') {
-      return `
-        <div class="rp-route-shell-content rp-route-shell-players">
-          <header class="rp-route-shell-heading"><small>REAL PLAY BASKETBALL</small><strong>STATS</strong><span>PREPARING VERIFIED RANKINGS &amp; COMPETITION DATA</span></header>
-          <div class="rp-route-skeleton-search" aria-hidden="true"></div>
-          <div class="rp-route-skeleton-feed">${routeSkeletonRows(6)}</div>
-        </div>`;
-    }
-    if (target === 'players') {
-      return `
-        <div class="rp-route-shell-content rp-route-shell-players">
-          <header class="rp-route-shell-heading"><small>REAL PLAY COMMUNITY</small><strong>PLAYERS</strong><span>LOADING PLAYER DIRECTORY</span></header>
-          <div class="rp-route-skeleton-search" aria-hidden="true"></div>
-          <div class="rp-route-skeleton-feed">${routeSkeletonRows(6)}</div>
-        </div>`;
-    }
-    if (target === 'chats') {
-      return `
-        <div class="rp-route-shell-content rp-route-shell-chats">
-          <header class="rp-route-shell-heading"><small>REAL PLAY CHAT</small><strong>CHATS</strong><span>LOADING CONVERSATIONS</span></header>
-          <div class="rp-route-skeleton-channels" aria-hidden="true"><i></i><i></i><i></i></div>
-          <div class="rp-route-skeleton-thread" aria-hidden="true">
-            <span></span><span></span><span></span><span></span>
-          </div>
-        </div>`;
-    }
-    if (target === 'me') {
-      return `
-        <div class="rp-route-shell-content rp-route-shell-me">
-          <header class="rp-route-shell-heading"><small>REAL PLAY PLAYER</small><strong>ME</strong><span>LOADING YOUR PROFILE</span></header>
-          <div class="rp-route-skeleton-profile" aria-hidden="true">
-            <div class="rp-route-skeleton-profile-id"><span></span><i></i></div>
-            <div class="rp-route-skeleton-stat-grid"><i></i><i></i><i></i><i></i></div>
-            <div class="rp-route-skeleton-history">${routeSkeletonRows(3)}</div>
-          </div>
-        </div>`;
-    }
+  function routeShellMarkup() {
+    // Official Real Play loading screen used by every route. Keep this loader
+    // universal so no section invents its own loading UI.
     return `
-      <div class="rp-route-shell-content">
-        <header class="rp-route-shell-heading"><small>REAL PLAY BASKETBALL</small><strong>LOADING</strong><span>PREPARING THIS PAGE</span></header>
-        <div class="rp-route-skeleton-feed">${routeSkeletonRows(4)}</div>
+      <div class="rp-route-shell-content rp-route-shell-world-premium rp-route-shell-world-minimal rp-route-shell-universal-loader">
+        <section class="rp-route-world-premium-stage">
+          <div class="rp-route-world-premium-logo-wrap" aria-hidden="true">
+            <img src="assets/branding/real-play-official-logo.png" alt="">
+          </div>
+          <div class="rp-route-world-premium-progress" aria-hidden="true">
+            <span></span>
+          </div>
+        </section>
       </div>`;
   }
 
