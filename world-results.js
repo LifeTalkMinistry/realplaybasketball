@@ -120,6 +120,9 @@
         justify-content:space-between;
         gap:12px;
       }
+      .rp-updates.rp-world-results-entry.rp-world-feed-view .rp-update-card.rp-update-schedule{
+        display:none!important;
+      }
       .rp-world-feed-intro strong,
       .rp-world-results-subhead strong{
         color:#f7fbff;
@@ -1520,7 +1523,11 @@
     });
 
     if (selectedView === 'feed') {
-      allCards.forEach((card) => { card.hidden = false; });
+      // Schedules stay out of WORLD / FEED for now. They still exist in the
+      // scheduling system and other schedule-specific surfaces.
+      allCards.forEach((card) => {
+        card.hidden = card.classList.contains('rp-update-schedule');
+      });
       panel.querySelector('[data-rp-world-results-empty]')?.classList.remove('show');
       return;
     }
