@@ -199,8 +199,27 @@
       root: '[data-rp-competition-hub]',
       layer: '[data-rp-competition-view="hub"]',
       required: ['.rp-competition-card-grid'],
-      rootReady: (root) => root.classList.contains('open')
-        && root.getAttribute('aria-hidden') !== 'true',
+      rootReady: (root) => {
+        if (!root.classList.contains('open') || root.getAttribute('aria-hidden') === 'true') return false;
+
+        // The raw Competition Hub is not the final STATS layer. Do not reveal
+        // it until the compact cleanup and top-level nav presentation are both
+        // physically applied. This prevents the temporary X button/header from
+        // leaking before the real STATS screen settles.
+        const topLevelStyle = document.querySelector('[data-rp-competition-top-level-styles]');
+        const cleanupStyle = document.querySelector('[data-rp-competition-hub-cleanup-styles]');
+        const close = root.querySelector('[data-rp-competition-close]');
+        const nav = document.querySelector('[data-rp-simple-nav]');
+        const headingKicker = root.querySelector('.rp-competition-heading small');
+        const intro = root.querySelector('[data-rp-competition-view="hub"] .rp-competition-intro');
+        const footnote = root.querySelector('[data-rp-competition-view="hub"] .rp-competition-footnote');
+
+        if (!topLevelStyle || !cleanupStyle || !nav) return false;
+        if (headingKicker || intro || footnote) return false;
+        if (close && window.getComputedStyle(close).display !== 'none') return false;
+
+        return true;
+      },
       layerReady: (layer) => !layer.hidden,
     },
     players: {
@@ -391,13 +410,21 @@
     );
     if (!hubReady) return false;
 
-    // Keep the established compact Stats presentation, but navigation authority
-    // remains in this core file so PLAYERS can never flash before STATS.
-    await loadFeatureScript(
-      'competition-hub-cleanup.js',
-      () => Boolean(window.__realPlayCompetitionHubCleanupInstalled)
-    );
-    return true;
+    // STATS has two presentation layers on top of the raw hub. Both must be
+    // installed before the universal loader is allowed to hand off:
+    // 1) compact content cleanup, 2) top-level navigation authority.
+    const [cleanupReady, topLevelReady] = await Promise.all([
+      loadFeatureScript(
+        'competition-hub-cleanup.js',
+        () => Boolean(window.__realPlayCompetitionHubCleanupInstalled)
+      ),
+      loadFeatureScript(
+        'competition-hub-top-level.js',
+        () => Boolean(window.__realPlayCompetitionHubTopLevelInstalled)
+      ),
+    ]);
+
+    return Boolean(cleanupReady && topLevelReady);
   }
 
   async function ensureProfileFeature() {
