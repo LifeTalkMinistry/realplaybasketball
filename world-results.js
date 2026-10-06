@@ -1412,10 +1412,6 @@
           <button type="button" class="rp-world-tab active" data-rp-world-tab="feed" role="tab" aria-selected="true">FEED</button>
           <button type="button" class="rp-world-tab" data-rp-world-tab="results" role="tab" aria-selected="false">RESULTS</button>
         </nav>
-        <div class="rp-world-feed-intro">
-          <strong>LATEST FROM REAL PLAY</strong>
-          <span>STORIES FROM VERIFIED DATA</span>
-        </div>
         <div class="rp-world-results-only">
           <div class="rp-world-results-subhead">
             <strong>GAME RESULTS</strong>
