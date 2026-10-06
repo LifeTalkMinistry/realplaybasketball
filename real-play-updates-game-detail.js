@@ -21,13 +21,44 @@
     return Number.isSafeInteger(sessionId) && sessionId > 0 ? sessionId : 0;
   }
 
-  function openReplay(sessionId) {
+  function setReplayDestinationMode(mode = 'watch') {
+    let attempts = 0;
+    const apply = () => {
+      attempts += 1;
+      const viewer = document.querySelector('[data-rp-career-replay].open');
+      if (!viewer) {
+        if (attempts < 40) window.setTimeout(apply, 60);
+        return;
+      }
+
+      const kicker = viewer.querySelector('.rp-career-replay-title small');
+      if (kicker) kicker.textContent = mode === 'recap' ? 'GAME RECAP' : 'FULL GAME REPLAY';
+
+      if (mode !== 'recap') {
+        viewer.scrollTop = 0;
+        return;
+      }
+
+      const stats = viewer.querySelector('[data-rp-career-replay-stats]');
+      if (!stats) {
+        if (attempts < 55) window.setTimeout(apply, 80);
+        return;
+      }
+
+      stats.scrollIntoView({ block: 'start', behavior: 'instant' });
+    };
+    window.requestAnimationFrame(apply);
+  }
+
+  function openReplay(sessionId, mode = 'watch') {
     const bridge = document.createElement('button');
     bridge.type = 'button';
     bridge.hidden = true;
     bridge.dataset.rpCareerReplaySession = String(sessionId);
+    bridge.dataset.rpCareerReplayMode = mode === 'recap' ? 'recap' : 'watch';
     document.body.appendChild(bridge);
     bridge.click();
+    setReplayDestinationMode(mode);
     setTimeout(() => bridge.remove(), 0);
   }
 
@@ -444,12 +475,32 @@
     }
 
     if (event.target.closest('[data-update-delete]')) return;
+
+    const recapButton = event.target.closest?.('[data-rp-world-game-recap]');
+    const watchButton = event.target.closest?.('[data-rp-world-watch]');
+    const explicitAction = recapButton || watchButton;
+    if (explicitAction) {
+      const card = explicitAction.closest('.rp-update-card.rp-update-result');
+      const sessionId = sessionIdFromCard(card);
+      if (!sessionId) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      openReplay(sessionId, recapButton ? 'recap' : 'watch');
+      return;
+    }
+
     const card = event.target.closest('.rp-update-card.rp-update-result');
     if (!card) return;
+
+    // WORLD cards are informational surfaces now. Only their explicit footer
+    // controls navigate; tapping score, logos, MVP rows or empty card space
+    // must do nothing.
+    if (card.closest('[data-rp-updates].rp-world-results-entry')) return;
+
     const sessionId = sessionIdFromCard(card);
     if (!sessionId) return;
     event.preventDefault();
-    openReplay(sessionId);
+    openReplay(sessionId, 'watch');
   });
 
   window.addEventListener('keydown', (event) => {
