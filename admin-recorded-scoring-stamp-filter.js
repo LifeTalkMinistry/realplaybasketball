@@ -59,6 +59,16 @@
     return root()?.querySelector('.rp-video-scoring-screen') || null;
   }
 
+  function correctionAuditState(screen = scoringScreen()) {
+    if (!screen?.matches?.('[data-rp-replay-correction-mode]')) return null;
+    try {
+      const state = window.__realPlayReplayCorrectionAuditState?.();
+      return state?.active ? state : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   function token() {
     return localStorage.getItem(TOKEN_KEY) || '';
   }
@@ -222,7 +232,19 @@
     return draftKey;
   }
 
-  function loadEvents() {
+  function loadEvents(screen = scoringScreen()) {
+    const correction = correctionAuditState(screen);
+    if (correction) {
+      const scoreEvents = Array.isArray(correction.events) ? correction.events : [];
+      const moments = Array.isArray(correction.moments)
+        ? correction.moments.map((moment) => ({
+            ...moment,
+            eventType: moment?.eventType || moment?.momentKind || 'highlight',
+          }))
+        : [];
+      return [...scoreEvents, ...moments];
+    }
+
     const key = draftKey;
     if (!key) return [];
     try {
@@ -269,6 +291,11 @@
   }
 
   function durationMs(screen) {
+    const correctionDuration = Number(correctionAuditState(screen)?.recording?.durationMs || 0);
+    if (Number.isFinite(correctionDuration) && correctionDuration > 0) {
+      return Math.round(correctionDuration);
+    }
+
     const media = screen?.querySelector('[data-rp-recorded-video]');
     const seconds = Number(media?.duration || 0);
     return Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds * 1000) : 0;
@@ -341,11 +368,13 @@
       resolvingKey = null;
       draftEvents = [];
       menuOpen = false;
-      resolveDraftKey().then(() => scheduleRefresh(0));
+      if (!correctionAuditState(screen)) {
+        resolveDraftKey().then(() => scheduleRefresh(0));
+      }
     }
 
     ensureFilterUi(screen);
-    draftEvents = loadEvents();
+    draftEvents = loadEvents(screen);
     renderMarkers(screen);
   }
 
@@ -405,6 +434,7 @@
   });
 
   window.addEventListener('realplay:admin-render', () => scheduleRefresh(0));
+  window.addEventListener('realplay:replay-correction-audit-state', () => scheduleRefresh(0));
   window.addEventListener('realplay:recorded-scoring-cancelled', () => {
     draftKey = '';
     draftEvents = [];
