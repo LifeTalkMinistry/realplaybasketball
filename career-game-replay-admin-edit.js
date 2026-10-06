@@ -588,36 +588,64 @@
     return body;
   }
 
-  async function openExistingScorer() {
-    if (!currentSessionId || busy || !adminVerified()) return;
+  async function openExistingScorer(requestedSessionId = null) {
+    const requested = Number(requestedSessionId || 0);
+    if (Number.isSafeInteger(requested) && requested > 0) currentSessionId = requested;
+    if (!currentSessionId || busy || !adminVerified()) return false;
+
     const sessionId = currentSessionId;
     playheadMs = replayClockMs();
     busy = true;
+    let openedAdmin = false;
+
     try {
       const body = await openAdminDashboard();
-      const closeReplay = viewer()?.querySelector('[data-rp-career-replay-close]');
-      closeReplay?.click();
-      correctionActive = true;
-      reviewMode = false;
+      openedAdmin = true;
+
       body.innerHTML = '<div class="rp-video-screen"><div class="rp-video-loading">LOADING OFFICIAL SCORE SHEET…</div></div>';
-      context = await api(`/api/real-play/admin/replay-corrections/${encodeURIComponent(sessionId)}`);
-      draftEvents = (Array.isArray(context.events) ? context.events : []).map(normalizeEvent);
+
+      const nextContext = await api(`/api/real-play/admin/replay-corrections/${encodeURIComponent(sessionId)}`);
+      const nextDraftEvents = (Array.isArray(nextContext.events) ? nextContext.events : []).map(normalizeEvent);
+
+      context = nextContext;
+      draftEvents = nextDraftEvents;
       selectedPlayerId = context.players?.[0]?.playerId ?? null;
       notice = '';
       noticeError = false;
+      correctionActive = true;
+      reviewMode = false;
+
       await prepareMedia();
+
       const root = adminRoot();
       root?.querySelectorAll('.rp-admin-tab').forEach((tab) => tab.classList.remove('active'));
       root?.querySelector('[data-rp-video-tab]')?.classList.add('active');
+
       renderScoring();
       notifyCorrectionAuditState();
+
+      const scoring = body.querySelector('[data-rp-replay-correction-mode]');
+      if (!scoring) throw new Error('Second-Pass Audit could not mount.');
+
+      const closeReplay = viewer()?.querySelector('[data-rp-career-replay-close]');
+      closeReplay?.click();
+      return true;
     } catch (error) {
+      console.error('[Real Play Replay Edit] Unable to open Second-Pass Audit.', error);
       correctionActive = false;
-      window.alert(error.message || 'Unable to open the recorded scoring editor.');
+      reviewMode = false;
+      context = null;
+      draftEvents = [];
+      selectedPlayerId = null;
+      if (openedAdmin) adminRoot()?.querySelector('[data-admin-exit]')?.click();
+      window.alert(error?.message || 'Unable to open the recorded scoring editor.');
+      return false;
     } finally {
       busy = false;
     }
   }
+
+  window.__realPlayOpenReplayCorrection = (sessionId) => openExistingScorer(sessionId);
 
   async function saveCorrection() {
     if (busy || !context?.session?.id) return;
