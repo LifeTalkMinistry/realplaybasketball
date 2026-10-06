@@ -225,14 +225,19 @@
         : Boolean(layer.querySelector('.rp-chat-empty')),
     },
     me: {
-      root: '[data-rp-profile]',
+      // Match the active profile only. A dormant/legacy profile node elsewhere
+      // in the DOM must never be mistaken for the ME destination.
+      root: '[data-rp-profile].open',
       layer: '[data-rp-profile-content]',
       required: [],
-      rootReady: (root) => root.classList.contains('open')
-        && root.getAttribute('aria-hidden') !== 'true',
-      dataReady: (layer) => Boolean(
-        layer.querySelector('.rp-profile-hero')
-        || layer.querySelector('.rp-profile-empty')
+      skipGeometry: true,
+      rootReady: (root) => root.getAttribute('aria-hidden') !== 'true',
+      dataReady: (layer, detail) => Boolean(
+        detail?.state
+        && (
+          layer.querySelector('.rp-profile-hero')
+          || layer.querySelector('.rp-profile-empty')
+        )
       ),
     },
   };
@@ -259,10 +264,21 @@
       return { ready: false, root, layer };
     }
 
-    const rootRect = root.getBoundingClientRect();
-    const layerRect = layer.getBoundingClientRect();
-    if (rootRect.width < 40 || rootRect.height < 40 || layerRect.width < 20 || layerRect.height < 20) {
-      return { ready: false, root, layer };
+    // Some destinations are deliberately visibility:hidden underneath the
+    // universal route shell. For those routes, structural/data readiness is
+    // authoritative; geometry is checked only where it is meaningful before
+    // reveal.
+    if (!contract.skipGeometry) {
+      const rootStyle = window.getComputedStyle(root);
+      const layerStyle = window.getComputedStyle(layer);
+      if (rootStyle.display === 'none' || layerStyle.display === 'none') {
+        return { ready: false, root, layer };
+      }
+      const rootRect = root.getBoundingClientRect();
+      const layerRect = layer.getBoundingClientRect();
+      if (rootRect.width < 40 || rootRect.height < 40 || layerRect.width < 20 || layerRect.height < 20) {
+        return { ready: false, root, layer };
+      }
     }
 
     return { ready: true, root, layer };
