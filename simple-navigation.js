@@ -300,9 +300,12 @@
       throw new Error('The first visible layer of this Real Play page did not become ready.');
     }
 
-    // Only wait for images that can affect the first visible frame. Images and
-    // data farther down the page remain progressive and never hold the loader.
-    await waitForCriticalImages(snapshot.layer);
+    // Only wait for images that can affect the first visible frame. WORLD is
+    // narrowed to its first result card so later cards can keep hydrating.
+    const imageLayer = target === 'world'
+      ? (snapshot.layer.querySelector('.rp-update-result:not([hidden])') || snapshot.layer)
+      : snapshot.layer;
+    await waitForCriticalImages(imageLayer);
 
     // Two committed paints prevent shell/data swaps from flashing half-built UI.
     await new Promise((resolve) => window.requestAnimationFrame(() => {
