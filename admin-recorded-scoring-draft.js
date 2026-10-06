@@ -766,6 +766,11 @@
     const adminRoot = root();
     if (!adminRoot || !adminRoot.contains(event.target)) return;
 
+    // Second-Pass Audit owns its own working-copy Back/Submit controls.
+    // Never let the first-pass draft controller consume those shared selectors
+    // before career-game-replay-admin-edit.js can handle them.
+    if (event.target.closest('[data-rp-replay-correction-mode]')) return;
+
     if (event.target.closest('[data-rp-draft-back]')) {
       event.preventDefault();
       event.stopImmediatePropagation();

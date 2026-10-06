@@ -7,7 +7,7 @@
   const HEAD_ADMIN_EMAILS = new Set([
     'jeromemirabuenos62@gmail.com',
   ]);
-  const ADMIN_ASSET_VERSION = '20261006-score-stamp-correction-v64';
+  const ADMIN_ASSET_VERSION = '20261006-replay-submit-owner-v65';
   const REPLAY_ADMIN_ROOT_VERSION = '20261006-replay-correction-owner-v2';
   const ADMIN_CSS = [
     'admin-game-control.css',
