@@ -347,6 +347,8 @@
 
   function handleOpenRankDoubleTap(event, button) {
     if (!button || renumberBusy) return;
+    const title = String(replayRoot()?.querySelector('[data-rp-career-replay-title]')?.textContent || '');
+    if (!/OPEN\s+RANK/i.test(title)) return;
     event?.preventDefault?.();
     event?.stopPropagation?.();
 
