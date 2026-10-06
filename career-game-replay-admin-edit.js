@@ -256,17 +256,112 @@
     return `<section class="rp-video-score-team"><div class="rp-video-score-team-head"><strong>${team.toUpperCase()}</strong><span>${players.length}</span></div>${players.map((player) => `<button type="button" class="rp-video-score-player ${Number(selectedPlayerId) === Number(player.playerId) ? 'active' : ''}" data-rp-video-select-player="${Number(player.playerId)}">${esc(playerLabel(player))}</button>`).join('')}</section>`;
   }
 
+  function auditMarkerCategory(event) {
+    const type = String(event?.eventType || event?.momentKind || '').toLowerCase();
+    if (type === 'highlight') return 'highlight';
+    if (type === 'incident') return 'incident';
+    if (type === 'shot') {
+      return String(event?.shotResult || '').toLowerCase() === 'make' ? 'score' : 'miss';
+    }
+    if (type !== 'stat') return null;
+    const key = String(event?.statKey || '').toLowerCase();
+    if (['ast', 'assist', 'assists'].includes(key)) return 'ast';
+    if (['reb', 'rebound', 'rebounds'].includes(key)) return 'reb';
+    if (['to', 'tov', 'turnover', 'turnovers'].includes(key)) return 'to';
+    if (['stl', 'steal', 'steals'].includes(key)) return 'stl';
+    if (['blk', 'block', 'blocks'].includes(key)) return 'blk';
+    if (['foul', 'fouls'].includes(key)) return 'foul';
+    return null;
+  }
+
+  function auditMarkerText(category) {
+    return {
+      score: '🏀',
+      miss: '×',
+      ast: 'A',
+      reb: 'R',
+      to: 'TO',
+      stl: 'S',
+      blk: 'B',
+      foul: 'F',
+      highlight: '★',
+      incident: '!',
+    }[category] || '•';
+  }
+
+  function auditMarkerTitle(category) {
+    return {
+      score: 'Score',
+      miss: 'Miss',
+      ast: 'Assist',
+      reb: 'Rebound',
+      to: 'Turnover',
+      stl: 'Steal',
+      blk: 'Block',
+      foul: 'Foul',
+      highlight: 'Highlight',
+      incident: 'Game Incident',
+    }[category] || 'Audit event';
+  }
+
+  function auditFilter() {
+    const value = String(window.__realPlayAuditStampFilter || 'all').toLowerCase();
+    return ['all', 'score', 'miss', 'ast', 'reb', 'to', 'stl', 'blk', 'foul', 'highlight', 'incident'].includes(value)
+      ? value
+      : 'all';
+  }
+
+  function correctionTimelineEvents() {
+    const moments = Array.isArray(context?.moments)
+      ? context.moments.map((moment) => ({
+          ...moment,
+          eventType: moment?.eventType || moment?.momentKind || 'highlight',
+        }))
+      : [];
+    return [...draftEvents, ...moments];
+  }
+
   function markerButtons() {
     const duration = Number(context?.recording?.durationMs || 0);
     if (!duration) return '';
-    return draftEvents
-      .filter((event) => event.eventType === 'shot' && String(event.shotResult) === 'make')
-      .map((event) => {
-        const stamp = Number(event.videoTimestampMs || 0);
+    const filter = auditFilter();
+
+    return correctionTimelineEvents()
+      .map((event) => ({ event, category: auditMarkerCategory(event) }))
+      .filter(({ category }) => category && (filter === 'all' || category === filter))
+      .map(({ event, category }) => {
+        const stamp = Math.max(0, Number(event?.videoTimestampMs || 0));
         const left = Math.max(0, Math.min(100, stamp / duration * 100));
-        const replayStart = Math.max(0, stamp - 7000);
-        return `<button type="button" class="rp-video-marker" style="left:${left}%" data-rp-video-marker="${replayStart}" title="${Number(event.shotValue)}PT make at ${formatTime(stamp)}">🏀</button>`;
+        const replayStart = Number(event?.replayStartMs ?? (
+          category === 'score' || category === 'highlight' || category === 'incident'
+            ? Math.max(0, stamp - 7000)
+            : Math.max(0, stamp - 5000)
+        ));
+        const title = `${auditMarkerTitle(category)} · Video ${formatTime(stamp)}`;
+        return `<button type="button" class="rp-video-marker rp-audit-stamp-marker" style="left:${left}%" data-rp-audit-category="${category}" data-rp-video-marker="${replayStart}" title="${esc(title)}" aria-label="${esc(title)}">${auditMarkerText(category)}</button>`;
       }).join('');
+  }
+
+  function markerKeyHtml() {
+    const filter = auditFilter();
+    const labels = {
+      all: 'ALL STAMPS',
+      score: 'SCORE',
+      miss: 'MISS',
+      ast: 'ASSIST',
+      reb: 'REBOUND',
+      to: 'TURNOVER',
+      stl: 'STEAL',
+      blk: 'BLOCK',
+      foul: 'FOUL',
+      highlight: 'HIGHLIGHT',
+      incident: 'INCIDENT',
+    };
+    const count = correctionTimelineEvents()
+      .map(auditMarkerCategory)
+      .filter((category) => category && (filter === 'all' || category === filter))
+      .length;
+    return `<span>${count} ${labels[filter] || 'ALL STAMPS'} · AUDIT STAMPS</span><small>Tap a stamp to replay from just before the audited event.</small>`;
   }
 
   function videoPlayerHtml() {
@@ -279,7 +374,7 @@
       ${media}
       <div class="rp-video-timebar"><span>VIDEO TIME</span><strong data-rp-video-time>${formatTime(playheadMs)}</strong></div>
       <div class="rp-video-marker-rail"><i></i><div data-rp-video-markers>${markerButtons()}</div></div>
-      <div class="rp-video-marker-key"><span>🏀 MADE BASKET</span><small>Tap a ball to replay from 7 seconds before the make.</small></div>
+      <div class="rp-video-marker-key" data-rp-replay-audit-marker-key>${markerKeyHtml()}</div>
     </div>`;
   }
 
@@ -324,6 +419,8 @@
     if (panel) panel.innerHTML = selectedPanelHtml();
     const markers = body.querySelector('[data-rp-video-markers]');
     if (markers) markers.innerHTML = markerButtons();
+    const markerKey = body.querySelector('[data-rp-replay-audit-marker-key]');
+    if (markerKey) markerKey.innerHTML = markerKeyHtml();
     const undo = body.querySelector('[data-rp-video-undo]');
     if (undo) undo.disabled = draftEvents.length === 0;
     const banner = body.querySelector('.rp-video-draft-banner span');
@@ -726,6 +823,10 @@
   });
   observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   setInterval(syncPencil, 700);
+
+  window.addEventListener('realplay:audit-stamp-filter-change', () => {
+    if (correctionActive && !reviewMode) patchScoringUI();
+  });
 
   window.addEventListener('storage', (event) => {
     if (event.key !== TOKEN_KEY) return;
