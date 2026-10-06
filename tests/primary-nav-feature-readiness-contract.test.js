@@ -68,3 +68,12 @@ test('route readiness waits only for visible critical images, not the whole page
   assert.match(nav, /rect\.top <= viewportHeight \* 1\.15/);
   assert.match(nav, /Images and data farther down the page remain progressive/);
 });
+
+
+test('ME readiness binds to the active profile and does not fail on hidden-shell geometry', () => {
+  const nav = read('simple-navigation.js');
+
+  assert.match(nav, /root: '\[data-rp-profile\]\.open'/);
+  assert.match(nav, /skipGeometry: true/);
+  assert.match(nav, /detail\?\.state/);
+});
