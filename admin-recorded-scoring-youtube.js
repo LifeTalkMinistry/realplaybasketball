@@ -537,8 +537,10 @@
 
   function patchDraftMarkers() {
     if (!lastDurationMs) return;
-    const markers = adminBody()?.querySelector('[data-rp-video-markers]');
-    if (!markers || !adminBody()?.querySelector('.rp-video-scoring-screen')) return;
+    const screen = adminBody()?.querySelector('.rp-video-scoring-screen') || null;
+    if (!screen || screen.matches('[data-rp-replay-correction-mode]')) return;
+    const markers = screen.querySelector('[data-rp-video-markers]');
+    if (!markers) return;
     const events = latestDraftEvents();
     if (!events.length && window.__realPlayRecordedScoringDraftActive) {
       if (markers.childElementCount || markers.textContent) markers.replaceChildren();
@@ -584,6 +586,7 @@
     if (enhancing) return;
     const body = adminBody();
     if (!body || !root()?.classList.contains('open')) return;
+    if (body.querySelector('.rp-video-scoring-screen[data-rp-replay-correction-mode]')) return;
 
     const videoTab = root()?.querySelector('[data-rp-video-tab].active');
     if (!videoTab) return;
@@ -645,7 +648,7 @@
     }
 
     const marker = event.target.closest('[data-rp-video-marker]');
-    if (marker && player && playerShell?.classList.contains('scoring')) {
+    if (marker && !marker.closest('[data-rp-replay-correction-mode]') && player && playerShell?.classList.contains('scoring')) {
       event.preventDefault();
       event.stopImmediatePropagation();
       const seekMs = Math.max(0, Number(marker.dataset.rpVideoMarker || 0));
