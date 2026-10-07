@@ -1544,6 +1544,74 @@
     panel.querySelectorAll('[data-updates-feed] .rp-update-result[data-update-id]').forEach(decorateStoryCard);
   }
 
+  function installTeamFilterSwipe(teamFilter) {
+    if (!teamFilter || teamFilter.__rpTeamSwipeInstalled) return;
+    teamFilter.__rpTeamSwipeInstalled = true;
+
+    // Touch devices keep the browser's native horizontal swipe behavior.
+    // Desktop users can drag the same row left/right with the mouse.
+    let pointerId = null;
+    let startX = 0;
+    let startScrollLeft = 0;
+    let dragging = false;
+    let moved = false;
+    let suppressClickUntil = 0;
+
+    teamFilter.addEventListener('pointerdown', (event) => {
+      if (event.pointerType !== 'mouse' || event.button !== 0) return;
+      pointerId = event.pointerId;
+      startX = event.clientX;
+      startScrollLeft = teamFilter.scrollLeft;
+      dragging = true;
+      moved = false;
+      teamFilter.setPointerCapture?.(pointerId);
+    });
+
+    teamFilter.addEventListener('pointermove', (event) => {
+      if (!dragging || event.pointerId !== pointerId) return;
+      const deltaX = event.clientX - startX;
+      if (!moved && Math.abs(deltaX) < 5) return;
+      moved = true;
+      event.preventDefault();
+      teamFilter.scrollLeft = startScrollLeft - deltaX;
+    });
+
+    const finishDrag = (event) => {
+      if (!dragging || (pointerId !== null && event.pointerId !== pointerId)) return;
+      if (moved) suppressClickUntil = performance.now() + 180;
+      try { teamFilter.releasePointerCapture?.(pointerId); } catch (_error) {}
+      pointerId = null;
+      dragging = false;
+      moved = false;
+    };
+
+    teamFilter.addEventListener('pointerup', finishDrag);
+    teamFilter.addEventListener('pointercancel', finishDrag);
+
+    // Prevent a drag-release over a team chip from accidentally selecting it.
+    teamFilter.addEventListener('click', (event) => {
+      if (performance.now() >= suppressClickUntil) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, true);
+
+    // Mouse-wheel / trackpad fallback: vertical wheel motion becomes horizontal
+    // only while this row still has room to scroll in that direction.
+    teamFilter.addEventListener('wheel', (event) => {
+      if (teamFilter.scrollWidth <= teamFilter.clientWidth + 1) return;
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      if (!delta) return;
+
+      const maxScroll = Math.max(0, teamFilter.scrollWidth - teamFilter.clientWidth);
+      const atStart = teamFilter.scrollLeft <= 1;
+      const atEnd = teamFilter.scrollLeft >= maxScroll - 1;
+      if ((delta < 0 && atStart) || (delta > 0 && atEnd)) return;
+
+      event.preventDefault();
+      teamFilter.scrollLeft = Math.max(0, Math.min(maxScroll, teamFilter.scrollLeft + delta));
+    }, { passive: false });
+  }
+
   function ensureWorldControls() {
     const panel = updatesPanel();
     const feed = panel?.querySelector('[data-updates-feed]');
@@ -1584,7 +1652,9 @@
         rebuildContextOptions();
         applyWorldFilters();
       });
-      controls.querySelector('[data-rp-world-team-filter]')?.addEventListener('click', (event) => {
+      const teamFilter = controls.querySelector('[data-rp-world-team-filter]');
+      installTeamFilterSwipe(teamFilter);
+      teamFilter?.addEventListener('click', (event) => {
         const button = event.target.closest?.('[data-rp-world-team]');
         if (!button) return;
         selectedTeam = button.dataset.rpWorldTeam || 'all';
