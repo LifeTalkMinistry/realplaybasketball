@@ -595,3 +595,70 @@
 @media(prefers-reduced-motion:reduce){
   .rp-premium-profile-art{transition:none}
 }
+
+
+/* PROFILE HERO GEOMETRY LOCK v223
+   Dynamic profile content may change values/artwork, but it must never change
+   the vertical geometry of the hero. Recognition badges are an overlay and do
+   not own a grid row. This permanently removes the ~80-100px immature state. */
+.rp-profile .rp-profile-hero{
+  --rp-profile-hero-band:0px!important;
+  grid-template-rows:auto auto auto!important;
+}
+
+.rp-profile .rp-profile-hero > .rp-profile-identity-line{
+  grid-row:1!important;
+}
+
+.rp-profile .rp-profile-hero > .rp-profile-player,
+.rp-profile.has-rp-profile-badges .rp-profile-hero > .rp-profile-player,
+.rp-profile.rp-profile-recognition-none-authoritative .rp-profile-hero > .rp-profile-player{
+  grid-row:2!important;
+  margin-top:4px!important;
+  padding-top:0!important;
+}
+
+.rp-profile .rp-profile-hero > .rp-profile-rating-row{
+  grid-row:3!important;
+}
+
+/* Recognition can appear over the artwork, but it is forbidden from
+   participating in normal layout or increasing the hero height. */
+.rp-profile .rp-profile-hero > .rp-profile-badges{
+  position:absolute!important;
+  z-index:8!important;
+  top:58px!important;
+  left:18px!important;
+  grid-row:auto!important;
+  width:58%!important;
+  max-width:58%!important;
+  min-height:0!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+}
+
+/* The premium art layer is always clipped by the hero; intrinsic image
+   dimensions can never become layout dimensions. */
+.rp-profile .rp-profile-hero > .rp-premium-profile-art,
+.rp-profile .rp-profile-hero > .rp-premium-profile-art > img{
+  max-height:none!important;
+}
+
+@media(max-width:420px){
+  .rp-profile .rp-profile-hero{
+    --rp-profile-hero-band:0px!important;
+  }
+  .rp-profile .rp-profile-hero > .rp-profile-badges{
+    top:56px!important;
+    left:14px!important;
+  }
+}
+
+@media(max-width:355px){
+  .rp-profile .rp-profile-hero{
+    --rp-profile-hero-band:0px!important;
+  }
+}
