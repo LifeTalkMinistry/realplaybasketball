@@ -131,6 +131,16 @@
   }
 
   window.__realPlayRecordedParticipationPayload = participationPayload;
+  window.__realPlayRecordedParticipationClear = (requestedSessionId = null) => {
+    const requested = Number(requestedSessionId || 0);
+    const targetSessionId = requested || Number(sessionId || 0);
+    if (!Number.isSafeInteger(targetSessionId) || targetSessionId < 1) return false;
+    try {
+      localStorage.removeItem(`${STORAGE_PREFIX}${targetSessionId}`);
+    } catch (_) {}
+    if (targetSessionId === Number(sessionId)) state = {};
+    return true;
+  };
 
   function recordFor(playerId) {
     const id = String(Number(playerId));
