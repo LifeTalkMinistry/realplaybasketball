@@ -484,6 +484,14 @@
       ${videoPlayerHtml()}
       <div class="rp-video-auto-note"><strong>5-SECOND LEAD-IN IS AUTOMATIC</strong><span>When a MAKE is stamped at 7:32, Real Play stores the replay start at 7:27.</span></div>
       <div class="rp-video-scoreboard"><div><small>WEST</small><strong data-rp-video-score-west>${Number(session?.westScore || 0)}</strong></div><span>—</span><div><small>EAST</small><strong data-rp-video-score-east>${Number(session?.eastScore || 0)}</strong></div></div>
+      <section class="rp-score-edit" data-rp-score-edit>
+        <div class="rp-score-edit-head"><div><strong>SCORE EDIT</strong><small>UNATTRIBUTED TEAM SCORE</small></div><span>NO PLAYER PTS</span></div>
+        <div class="rp-score-edit-grid">
+          <div class="rp-score-edit-team"><span>WEST</span><div><button type="button" data-rp-score-edit-remove="west" disabled>−</button><strong data-rp-score-edit-count="west">+0</strong><button type="button" data-rp-score-edit-add="west">+</button></div></div>
+          <div class="rp-score-edit-team"><span>EAST</span><div><button type="button" data-rp-score-edit-remove="east" disabled>−</button><strong data-rp-score-edit-count="east">+0</strong><button type="button" data-rp-score-edit-add="east">+</button></div></div>
+        </div>
+        <p>Use when points happened but the scorer is unknown. Team score only; no player stats.</p>
+      </section>
       <div class="rp-video-score-rosters">${scoringRoster('west')}${scoringRoster('east')}</div>
       <div data-rp-video-selected-panel>${selectedPanel()}</div>
       <div class="rp-video-review-actions">
