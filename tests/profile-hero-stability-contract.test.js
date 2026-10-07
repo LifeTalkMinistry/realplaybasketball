@@ -28,20 +28,24 @@ test('profile structural styles are boot-gated before the shell is revealed', ()
   ]) assert.ok(block.includes(`'${href}'`), `${href} must be critical`);
 });
 
-test('ME profile scripts are part of initial interaction readiness', () => {
+test('ME base route is ready before the global app loader releases', () => {
   const start = app.indexOf('const initialInteractionScripts = new Set([');
   const end = app.indexOf(']);', start);
   assert.ok(start >= 0 && end > start);
   const block = app.slice(start, end);
+
   for (const href of [
     'profile-load-guard.js',
     'real-play-profile.js',
+  ]) assert.ok(block.includes(`'${href}'`), `${href} must be initial-interaction ready`);
+
+  for (const href of [
     'real-play-profile-recognition-authority.js',
     'profile-art-owner-access.js',
     'real-play-profile-intro.js',
     'profile-metrics-stability.js',
     'real-play-profile-metrics.js',
-  ]) assert.ok(block.includes(`'${href}'`), `${href} must be initial-interaction ready`);
+  ]) assert.ok(!block.includes(`'${href}'`), `${href} must stay progressive and must not hold the global loader`);
 });
 
 
@@ -57,4 +61,21 @@ test('recognition authority cannot expand the player row', () => {
   const authority = fs.readFileSync(path.join(root, 'real-play-profile-recognition-authority.js'), 'utf8');
   assert.ok(authority.includes('Hero geometry is owned by CSS only'));
   assert.ok(!authority.includes('margin-top:24px!important'));
+});
+
+
+test('own ME profile warms in the background without becoming a global boot dependency', () => {
+  const profile = fs.readFileSync(path.join(root, 'real-play-profile.js'), 'utf8');
+  assert.ok(profile.includes('function warmProfile()'));
+  assert.ok(profile.includes('refresh({ background: true })'));
+  assert.ok(profile.includes('function renderPendingProfile()'));
+});
+
+test('profile artwork and metrics use warm progressive readiness', () => {
+  const art = fs.readFileSync(path.join(root, 'real-play-profile-intro.js'), 'utf8');
+  const metrics = fs.readFileSync(path.join(root, 'real-play-profile-metrics.js'), 'utf8');
+  assert.ok(art.includes('refreshRelevantProfiles'));
+  assert.ok(art.includes("typeof image.decode === 'function'"));
+  assert.ok(metrics.includes('OWN_CACHE_TTL_MS = 30_000'));
+  assert.ok(metrics.includes("window.addEventListener('realplay:profile-loaded'"));
 });
