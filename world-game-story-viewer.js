@@ -31,13 +31,9 @@
       .rp-story-kicker{display:block;width:100%;margin-bottom:10px;color:#53dcff;font:950 .56rem/1 Arial,sans-serif;letter-spacing:.15em;text-transform:uppercase;text-align:center}
       .rp-story-headline{margin:0 auto;max-width:470px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:clamp(2rem,10vw,3.45rem);font-style:italic;font-weight:950;line-height:.94;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance;text-align:center}
       .rp-story-body{margin:15px auto 0;max-width:430px;color:#bbc8d4;font:650 .86rem/1.55 Arial,sans-serif;text-align:center}
-      .rp-story-game-versus{position:absolute;z-index:1;top:92px;left:50%;transform:translateX(-50%);width:min(74vw,310px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none}
-      .rp-story-game-team-logo{display:block;width:min(30vw,116px);height:min(30vw,116px);object-fit:contain;filter:drop-shadow(0 12px 24px rgba(0,0,0,.4))}
-      .rp-story-game-team-logo.loser{width:min(24vw,92px);height:min(24vw,92px);opacity:.68}
-      .rp-story-game-vs{color:rgba(255,255,255,.72);font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.05rem;font-style:italic;letter-spacing:.08em;text-transform:uppercase}
-      .rp-story-game-team-fallback{display:grid;place-items:center;border:1px solid rgba(80,220,255,.16);border-radius:50%;background:radial-gradient(circle,rgba(34,136,184,.18),rgba(2,6,11,0) 68%);color:rgba(255,255,255,.16);font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:3.4rem;font-style:italic}
-      .rp-story-game-team-fallback.winner{width:min(30vw,116px);height:min(30vw,116px)}
-      .rp-story-game-team-fallback.loser{width:min(24vw,92px);height:min(24vw,92px);opacity:.68}
+      .rp-story-game-winner{position:absolute;z-index:1;top:104px;left:50%;transform:translateX(-50%);width:min(42vw,158px);height:min(42vw,158px);display:grid;place-items:center;pointer-events:none}
+      .rp-story-game-winner img{display:block;max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 14px 28px rgba(0,0,0,.42))}
+      .rp-story-game-winner-fallback{width:100%;height:100%;display:grid;place-items:center;border:1px solid rgba(80,220,255,.16);border-radius:50%;background:radial-gradient(circle,rgba(34,136,184,.18),rgba(2,6,11,0) 68%);color:rgba(255,255,255,.16);font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:4.8rem;font-style:italic}
       .rp-story-score{display:flex;justify-content:center;align-items:center;gap:12px;margin:18px auto 2px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-style:italic;text-align:center}.rp-story-score b{font-size:2.8rem}.rp-story-score span{color:#718293;font-size:.9rem}
       .rp-story-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:18px auto 0;width:100%;max-width:430px}.rp-story-stat{padding:10px 7px;border:1px solid rgba(80,220,255,.10);border-radius:11px;background:rgba(7,20,32,.7);text-align:center}.rp-story-stat b{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.45rem;font-style:italic}.rp-story-stat small{display:block;margin-top:2px;color:#6edfff;font:900 .44rem/1 Arial,sans-serif;letter-spacing:.08em}
       .rp-story-player-art{position:absolute;z-index:0;top:105px;right:-10px;width:68%;height:48%;object-fit:contain;object-position:right bottom;filter:drop-shadow(0 16px 28px rgba(0,0,0,.42));opacity:.95}
@@ -182,18 +178,12 @@
     const score = slide.type === 'game' ? `<div class="rp-story-score"><b>${game.westScore}</b><span>${esc(game.westName)} · ${esc(game.eastName)}</span><b>${game.eastScore}</b></div>` : '';
     const kicker = slide.type === 'player' ? '' : `<span class="rp-story-kicker">${esc(slide.kicker)}</span>`;
     const winnerSide = game.westScore === game.eastScore ? null : (game.westScore > game.eastScore ? 'west' : 'east');
-    const loserSide = winnerSide === 'west' ? 'east' : winnerSide === 'east' ? 'west' : null;
     const winnerLogo = winnerSide === 'west' ? game.westLogo : winnerSide === 'east' ? game.eastLogo : '';
-    const loserLogo = loserSide === 'west' ? game.westLogo : loserSide === 'east' ? game.eastLogo : '';
     const winnerName = winnerSide === 'west' ? game.westName : winnerSide === 'east' ? game.eastName : '';
-    const loserName = loserSide === 'west' ? game.westName : loserSide === 'east' ? game.eastName : '';
-    const teamVisual = (name, logo, role) => logo
-      ? `<img class="rp-story-game-team-logo ${role}" src="${esc(logo)}" alt="${esc(name)} team logo">`
-      : `<div class="rp-story-game-team-fallback ${role}" aria-hidden="true">${esc(name.charAt(0) || 'T')}</div>`;
-    const gameVersus = slide.type === 'game' && winnerSide
-      ? `<div class="rp-story-game-versus" aria-label="${esc(winnerName)} versus ${esc(loserName)}">${teamVisual(winnerName,winnerLogo,'winner')}<div class="rp-story-game-vs">VS</div>${teamVisual(loserName,loserLogo,'loser')}</div>`
+    const gameWinner = slide.type === 'game' && winnerSide
+      ? `<div class="rp-story-game-winner" aria-label="${esc(winnerName)} winner logo">${winnerLogo ? `<img src="${esc(winnerLogo)}" alt="${esc(winnerName)} team logo">` : `<div class="rp-story-game-winner-fallback" aria-hidden="true">${esc(winnerName.charAt(0) || 'W')}</div>`}</div>`
       : '';
-    return `<article class="rp-story-slide" data-rp-story-slide>${art}${gameVersus}<div class="rp-story-content">${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
+    return `<article class="rp-story-slide" data-rp-story-slide>${art}${gameWinner}<div class="rp-story-content">${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
   }
 
   function buildDeck(game, rawPlayers) {
