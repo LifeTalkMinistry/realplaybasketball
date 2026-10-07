@@ -362,6 +362,24 @@
     patchScoringUI();
   }
 
+  function recordTeamCorrection(team) {
+    const side = String(team || '').toLowerCase();
+    if (!['west', 'east'].includes(side)) return;
+    const timestamp = videoTimestamp();
+    draftEvents.push({
+      localId: makeId(),
+      playerId: null,
+      eventType: 'score_adjustment',
+      team: side,
+      points: 1,
+      reason: 'unrecorded_score',
+      videoTimestampMs: timestamp,
+      replayStartMs: null,
+    });
+    saveDraft();
+    patchScoringUI();
+  }
+
   function addMoment(playerId, momentKind, tags, timestamp) {
     const kind = String(momentKind || '').toLowerCase();
     const cleanTags = [...new Set((Array.isArray(tags) ? tags : [])
