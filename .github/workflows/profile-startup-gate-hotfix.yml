@@ -17,68 +17,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Hold boot screen until ME stack is ready
+      - name: Patch startup gate
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
+          python -c 'from pathlib import Path; p=Path("app.js"); s=p.read_text(); old="if (!bootResourcesReady || !initialHomeReady || !hasNewShell() || !homeVisualReady()) return false;"; new="if (!bootResourcesReady || !initialHomeReady || !initialInteractionReady || !hasNewShell() || !homeVisualReady()) return false;"; assert s.count(old)==1, s.count(old); p.write_text(s.replace(old,new,1))'
+          python -c 'from pathlib import Path; p=Path("app.js"); s=p.read_text(); old="    initialInteractionReady = true;\n    revealNewShell();"; new="    // Let the first-tap stack settle for a full two-frame paint before the loader releases.\n    await nextPaint();\n    initialInteractionReady = true;\n    revealNewShell();"; assert s.count(old)==1, s.count(old); p.write_text(s.replace(old,new,1))'
+          python -c 'from pathlib import Path; p=Path("index.html"); s=p.read_text(); old="20261007-profile-hero-stability-v221"; new="20261007-profile-interaction-gate-v222"; assert old in s; p.write_text(s.replace(old,new))'
+          rm .github/workflows/profile-startup-gate-hotfix.yml
 
-          app_path = Path('app.js')
-          app = app_path.read_text(encoding='utf-8')
-
-          old_gate = "if (!bootResourcesReady || !initialHomeReady || !hasNewShell() || !homeVisualReady()) return false;"
-          new_gate = "if (!bootResourcesReady || !initialHomeReady || !initialInteractionReady || !hasNewShell() || !homeVisualReady()) return false;"
-          if app.count(old_gate) != 1:
-              raise SystemExit(f'Expected exactly one old reveal gate, found {app.count(old_gate)}')
-          app = app.replace(old_gate, new_gate, 1)
-
-          old_ready = "    initialInteractionReady = true;\n    revealNewShell();"
-          new_ready = "    // Give the just-loaded first-tap stack one full two-frame settle before\n    // the boot screen releases. This prevents ME from visually catching up\n    // after the user can already interact with the app.\n    await nextPaint();\n    initialInteractionReady = true;\n    revealNewShell();"
-          if app.count(old_ready) != 1:
-              raise SystemExit(f'Expected exactly one interaction-ready block, found {app.count(old_ready)}')
-          app = app.replace(old_ready, new_ready, 1)
-          app_path.write_text(app, encoding='utf-8')
-
-          test_path = Path('tests/profile-hero-stability-contract.test.js')
-          test = test_path.read_text(encoding='utf-8')
-          marker = "test('boot loader waits for initial interaction readiness before revealing the shell'"
-          if marker not in test:
-              test += """
-
-test('boot loader waits for initial interaction readiness before revealing the shell', () => {
-  const revealStart = app.indexOf('function revealNewShell()');
-  const revealEnd = app.indexOf('shellReadyObserver = new MutationObserver', revealStart);
-  assert.ok(revealStart >= 0 && revealEnd > revealStart);
-  const revealBlock = app.slice(revealStart, revealEnd);
-  assert.ok(revealBlock.includes('!initialInteractionReady'), 'loading screen must wait for first-tap scripts');
-
-  const readyLine = app.indexOf('initialInteractionReady = true;');
-  const settleLine = app.lastIndexOf('await nextPaint();', readyLine);
-  assert.ok(settleLine >= 0 && settleLine < readyLine, 'first-tap stack must settle before loader release');
-});
-"""
-              test_path.write_text(test, encoding='utf-8')
-
-          index_path = Path('index.html')
-          index = index_path.read_text(encoding='utf-8')
-          old_deploy = '20261007-profile-hero-stability-v221'
-          new_deploy = '20261007-profile-interaction-gate-v222'
-          if old_deploy not in index:
-              raise SystemExit('Expected v221 deploy marker in index.html')
-          index = index.replace(old_deploy, new_deploy)
-          index_path.write_text(index, encoding='utf-8')
-
-          Path('.github/workflows/profile-startup-gate-hotfix.yml').unlink()
-          PY
-
-      - name: Run profile stability contract
-        run: node --test tests/profile-hero-stability-contract.test.js
+      - name: Verify startup gate
+        shell: bash
+        run: |
+          grep -F "!initialInteractionReady" app.js
+          node --check app.js
+          node --test tests/profile-hero-stability-contract.test.js
 
       - name: Commit hotfix
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app.js index.html tests/profile-hero-stability-contract.test.js .github/workflows/profile-startup-gate-hotfix.yml
+          git add app.js index.html .github/workflows/profile-startup-gate-hotfix.yml
           git commit -m "Hold boot screen until ME profile stack is ready"
           git push origin HEAD:main
