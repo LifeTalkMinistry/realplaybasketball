@@ -321,10 +321,19 @@
     if (image && image.dataset.src !== src) {
       image.dataset.src = src;
       layer.classList.remove('is-ready');
-      image.onload = () => {
+      image.onload = async () => {
+        if (image.dataset.src !== src) return;
+        try {
+          if (typeof image.decode === 'function') await image.decode();
+        } catch (_error) {}
         if (image.dataset.src !== src) return;
         layer.classList.add('is-ready');
         panel.classList.add('has-rp-premium-profile-art');
+        try {
+          window.dispatchEvent(new CustomEvent('realplay:profile-art-ready', {
+            detail: { playerId: stateFor(panel).playerId || null },
+          }));
+        } catch (_eventError) {}
       };
       image.onerror = () => {
         if (image.dataset.src !== src) return;
@@ -779,13 +788,16 @@
     requestAnimationFrame(renderAll);
   }
 
-  function refreshOpenProfiles() {
-    document.querySelectorAll('.rp-profile.open').forEach((panel) => loadPanelArt(panel, true));
+  function refreshRelevantProfiles() {
+    // Warm the hidden signed-in ME profile too. Public profiles remain demand-
+    // driven unless they are actually open.
+    document.querySelectorAll('[data-rp-profile], .rp-profile.open')
+      .forEach((panel) => loadPanelArt(panel, true));
     scheduleRender();
   }
 
-  window.addEventListener('realplay:profile-loaded', refreshOpenProfiles);
-  window.addEventListener('realplay:public-profile-loaded', refreshOpenProfiles);
+  window.addEventListener('realplay:profile-loaded', refreshRelevantProfiles);
+  window.addEventListener('realplay:public-profile-loaded', refreshRelevantProfiles);
   window.addEventListener('realplay:app-ready', () => {
     loadRegistry().finally(scheduleRender);
     checkAdminAccess().finally(scheduleRender);
@@ -817,11 +829,11 @@
   });
 
   window.RealPlayPremiumProfileArt = {
-    refresh: refreshOpenProfiles,
+    refresh: refreshRelevantProfiles,
     reloadRegistry: async () => {
       registry = [];
       await loadRegistry(true);
-      refreshOpenProfiles();
+      refreshRelevantProfiles();
     },
     editOpenProfile: () => {
       const panel = document.querySelector('.rp-profile.open');
