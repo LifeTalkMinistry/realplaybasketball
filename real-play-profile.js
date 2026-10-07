@@ -9,6 +9,7 @@
   let teamState = null;
   let membershipState = null;
   let loading = false;
+  let warmStarted = false;
   let officialRankRequestId = 0;
   let officialRankState = { status: 'idle', rank: null };
 
@@ -403,6 +404,34 @@
     return panel;
   }
 
+  function renderPendingProfile() {
+    const root = panel?.querySelector('[data-rp-profile-content]');
+    if (!root || state?.profile) return;
+    root.innerHTML = `
+      <section class="rp-profile-hero rp-profile-pending-shell" aria-hidden="true">
+        <div class="rp-profile-hero-glow"></div>
+        <div class="rp-profile-identity-line">
+          <span>REAL PLAY PLAYER</span>
+          <b>PLAYER PROFILE</b>
+        </div>
+        <div class="rp-profile-player">
+          <div class="rp-profile-number"><small>PLAYER</small><strong>#—</strong></div>
+          <div class="rp-profile-name"><small>MY REAL PLAY PROFILE</small><h1>REAL PLAY PLAYER</h1><p>LESS SCREEN. REAL POINTS.</p></div>
+        </div>
+        <div class="rp-profile-rating-row">
+          <div class="rp-profile-ovr"><span>OVR</span><strong>—</strong><small>PLAYER DATA</small></div>
+          <div class="rp-profile-rank"><span>RANK</span><strong>—</strong><small>PLAYER DATA</small></div>
+          <div class="rp-profile-record"><span>RECORD</span><strong>—</strong><small>PLAYER DATA</small></div>
+        </div>
+      </section>
+      <section class="rp-profile-section rp-profile-pending-section" aria-hidden="true">
+        <div class="rp-profile-section-head"><div><small>CAREER METRICS</small><h2>PLAYER DATA</h2></div></div>
+        <div class="rp-profile-pending-metrics">
+          <i></i><i></i><i></i>
+        </div>
+      </section>`;
+  }
+
   function renderEmpty() {
     const root = panel?.querySelector('[data-rp-profile-content]');
     if (!root) return;
@@ -562,10 +591,14 @@
     node.classList.toggle('error', type === 'error');
   }
 
-  async function refresh() {
+  async function refresh(options = {}) {
     if (loading) return;
+    const background = Boolean(options.background);
     loading = true;
-    setStatus('LOADING PLAYER PROFILE...');
+    if (!background) {
+      if (!state?.profile) renderPendingProfile();
+      setStatus('LOADING PLAYER PROFILE...');
+    }
     try {
       const [profileResult, teamResult, membershipResult] = await Promise.allSettled([
         api('/api/real-play/me'),
@@ -577,14 +610,16 @@
       teamState = teamResult.status === 'fulfilled' ? teamResult.value : null;
       membershipState = membershipResult.status === 'fulfilled' ? membershipResult.value : null;
       renderProfile();
-      setStatus('');
+      if (!background) setStatus('');
     } catch (error) {
       if (error.status === 401) {
-        closeProfile();
-        document.querySelector('[data-auth-open]')?.click();
+        if (!background) {
+          closeProfile();
+          document.querySelector('[data-auth-open]')?.click();
+        }
         return;
       }
-      setStatus(error.message || 'Could not load your profile.', 'error');
+      if (!background) setStatus(error.message || 'Could not load your profile.', 'error');
       try {
         window.dispatchEvent(new CustomEvent('realplay:profile-load-error', {
           detail: { message: error.message || 'Could not load your profile.' },
@@ -597,13 +632,18 @@
 
   function openProfile() {
     createPanel();
+    if (!state?.profile) renderPendingProfile();
     const rankRequestId = beginOfficialRankResolution();
     resolveOfficialRank(rankRequestId);
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rp-profile-open');
     panel.scrollTop = 0;
-    refresh();
+
+    // If background warming already assembled the profile, show that mature
+    // geometry immediately and refresh silently. Otherwise the fixed placeholder
+    // stays in the exact same geometry until the data replaces it.
+    refresh({ background: Boolean(state?.profile) });
   }
 
   function closeProfile() {
@@ -647,6 +687,16 @@
     if (panel?.classList.contains('open')) refresh();
   });
 
+  function warmProfile() {
+    if (warmStarted || !token()) return;
+    warmStarted = true;
+    refresh({ background: true });
+  }
+
   createPanel();
-  window.RealPlayProfile = { open: openProfile, close: closeProfile, refresh };
+  // Build the user's own profile while Home is being used. This does not block
+  // the global loading screen and means ME is usually mature before the tap.
+  window.setTimeout(warmProfile, 0);
+  window.addEventListener('realplay:app-ready', warmProfile, { once: true });
+  window.RealPlayProfile = { open: openProfile, close: closeProfile, refresh, warm: warmProfile };
 })();
