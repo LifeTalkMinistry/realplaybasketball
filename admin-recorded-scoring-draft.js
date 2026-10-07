@@ -148,12 +148,16 @@
 
   function normalizeLocalDraftEvent(event) {
     if (!event || typeof event !== 'object') return event;
-    const type = String(event.eventType || '').toLowerCase();
-    if (!['highlight', 'incident'].includes(type)) return event;
-    const kind = String(event.momentKind || type).toLowerCase();
+    const rawType = String(event.eventType || event.type || '').trim().toLowerCase();
+    const rawKind = String(event.momentKind || event.moment_kind || '').trim().toLowerCase();
+    const type = rawType === 'moment' && ['highlight', 'incident'].includes(rawKind)
+      ? rawKind
+      : rawType;
+    if (!['highlight', 'incident'].includes(type)) return { ...event, eventType: type || rawType };
+    const kind = String(rawKind || type).toLowerCase();
     const tags = Array.isArray(event.tags) && event.tags.length
       ? event.tags.map((tag) => String(tag || '').toLowerCase()).filter(Boolean)
-      : [String(event.highlightType || (kind === 'incident' ? 'other_incident' : 'honorable_play')).toLowerCase()];
+      : [String(event.highlightType || event.highlight_type || (kind === 'incident' ? 'other_incident' : 'honorable_play')).toLowerCase()];
     return {
       ...event,
       eventType: kind,
@@ -623,7 +627,9 @@
         json: {
           session_id: Number(control.session.id),
           duration_ms: recording?.durationMs ?? null,
-          events: draftEvents.map((event) => ({
+          events: draftEvents.map((rawEvent) => {
+            const event = normalizeLocalDraftEvent(rawEvent);
+            return {
             playerId: Number(event.playerId),
             eventType: event.eventType,
             statKey: event.statKey,
@@ -636,7 +642,8 @@
             replayStartMs: event.replayStartMs === null || event.replayStartMs === undefined
               ? null
               : Number(event.replayStartMs),
-          })),
+            };
+          }),
         },
       });
       clearDraft();
