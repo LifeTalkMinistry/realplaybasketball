@@ -172,7 +172,29 @@
         ? `${winner} survives a tight battle and edges ${loser}.`
         : `${winner} controls the result and finishes ahead of ${loser}.`;
     const body = tie
-      ? `Neither side created enough separation, wi  function slideMarkup(slide, game) {
+      ? `Neither side created enough separation, with the game ending ${game.westScore}-${game.eastScore}. Swipe through the team and player reports to see where each side made its impact.`
+      : `${winner} finished the game ${Math.max(game.westScore,game.eastScore)}-${Math.min(game.westScore,game.eastScore)}. The following reports break down the team performance first, then each player's individual contribution.`;
+    return { headline: clampWords(headline,18), body: clampWords(body,58) };
+  }
+
+  function statGrid(p) {
+    return [['PTS',p.pts],['REB',p.reb],['AST',p.ast],['STL',p.stl],['BLK',p.blk],['TO',p.to],['FG%',p.fg === null ? '—' : `${p.fg}%`],['IMPACT',Math.round(p.impact*10)/10]];
+  }
+
+  function clubAccentRgb(name) {
+    const key = String(name || '').trim().toLowerCase();
+    if (key.includes('watchmen')) return '255,201,74';
+    if (key.includes('chosen')) return '45,212,191';
+    if (key.includes('eagles')) return '71,183,255';
+    if (key.includes('warriors')) return '255,139,53';
+    if (key.includes('steadfast')) return '95,209,111';
+    if (key.includes('lions')) return '28,168,255';
+    if (key.includes('valiant')) return '255,57,72';
+    if (key.includes('conquerors')) return '180,92,255';
+    return '80,221,255';
+  }
+
+  function slideMarkup(slide, game) {
     const winnerSide = game.westScore === game.eastScore ? null : (game.westScore > game.eastScore ? 'west' : 'east');
     const brandSide = slide.type === 'game' ? winnerSide : slide.teamSide;
     const brandLogo = brandSide === 'west' ? game.westLogo : brandSide === 'east' ? game.eastLogo : '';
@@ -205,19 +227,6 @@
     const brandStyle = brandLogo ? ` style="--rp-story-club-rgb:${clubRgb}"` : '';
 
     return `<article class="rp-story-slide${gameClass}${brandedClass}" data-rp-story-slide${brandStyle}>${brandBackground}${art}${gameWinner}${teamHero}<div class="rp-story-content">${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
-  }
-
-.westScore === game.eastScore ? null : (game.westScore > game.eastScore ? 'west' : 'east');
-    const winnerLogo = winnerSide === 'west' ? game.westLogo : winnerSide === 'east' ? game.eastLogo : '';
-    const winnerName = winnerSide === 'west' ? game.westName : winnerSide === 'east' ? game.eastName : '';
-    const gameWinner = slide.type === 'game' && winnerSide
-      ? `<div class="rp-story-game-winner" aria-label="${esc(winnerName)} winner logo">${winnerLogo ? `<img src="${esc(winnerLogo)}" alt="${esc(winnerName)} team logo">` : `<div class="rp-story-game-winner-fallback" aria-hidden="true">${esc(winnerName.charAt(0) || 'W')}</div>`}</div>`
-      : '';
-    const gameBackground = slide.type === 'game' && winnerLogo
-      ? `<div class="rp-story-game-bg" aria-hidden="true"><img src="${esc(winnerLogo)}" alt=""></div>`
-      : '';
-    const gameClass = slide.type === 'game' ? ' rp-story-game-slide' : '';
-    return `<article class="rp-story-slide${gameClass}" data-rp-story-slide>${gameBackground}${art}${gameWinner}<div class="rp-story-content">${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
   }
 
   function buildDeck(game, rawPlayers) {
