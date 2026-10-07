@@ -52,8 +52,10 @@
       active: true,
       sessionId: Number(context.session.id),
       recording: context.recording ? { ...context.recording, durationMs: effectiveMediaDurationMs() || context.recording.durationMs || null } : null,
+      players: Array.isArray(context.players) ? context.players : [],
       events: draftEvents,
       moments: Array.isArray(context.moments) ? context.moments : [],
+      participation: Array.isArray(context.participation) ? context.participation : [],
       currentVideoMs: currentVideoTimestamp(),
     };
   }
@@ -896,14 +898,19 @@
         .sort((a, b) => Number(a.videoTimestampMs || 0) - Number(b.videoTimestampMs || 0) || a.submitOrder - b.submitOrder);
       const result = await api(`/api/real-play/admin/replay-corrections/${encodeURIComponent(context.session.id)}`, {
         method: 'POST',
-        json: { events: ordered.map((event) => ({
-          playerId: Number(event.playerId),
-          eventType: event.eventType,
-          statKey: event.statKey,
-          shotValue: event.shotValue,
-          shotResult: event.shotResult,
-          videoTimestampMs: Number(event.videoTimestampMs || 0),
-        })) },
+        json: {
+          events: ordered.map((event) => ({
+            playerId: Number(event.playerId),
+            eventType: event.eventType,
+            statKey: event.statKey,
+            shotValue: event.shotValue,
+            shotResult: event.shotResult,
+            videoTimestampMs: Number(event.videoTimestampMs || 0),
+          })),
+          participation: typeof window.__realPlayRecordedParticipationPayload === 'function'
+            ? window.__realPlayRecordedParticipationPayload(context.session.id)
+            : null,
+        },
       });
       const id = Number(context.session.id);
       notice = `Official score sheet saved. ${teamDisplayName('west')} ${Number(result.westScore || 0)} – ${Number(result.eastScore || 0)} ${teamDisplayName('east')}.`;
