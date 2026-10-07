@@ -27,12 +27,15 @@
       .rp-story-track{display:flex;height:100%;transition:transform .3s cubic-bezier(.2,.72,.24,1);touch-action:pan-y}
       .rp-story-slide{position:relative;flex:0 0 100%;min-width:0;height:100%;padding:92px 22px calc(30px + env(safe-area-inset-bottom));display:flex;flex-direction:column;justify-content:flex-end;box-sizing:border-box;overflow:hidden}
       .rp-story-slide::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 12%,rgba(2,6,11,.10) 42%,rgba(2,6,11,.96) 79%);pointer-events:none}
+      .rp-story-slide.rp-story-game-slide{--rp-story-club-rgb:255,190,62;background:radial-gradient(circle at 50% 30%,rgba(var(--rp-story-club-rgb),.11),transparent 38%),linear-gradient(155deg,#090b0d,#020304 62%,#090603)}
+      .rp-story-slide.rp-story-game-slide::after{content:'';position:absolute;z-index:0;left:50%;top:33%;width:min(154vw,760px);aspect-ratio:1/1;transform:translate(-50%,-50%) scale(1.03);background:var(--rp-story-winner-art) center/contain no-repeat;opacity:.28;filter:blur(2px) brightness(.42) contrast(1.1) saturate(.9);-webkit-mask-image:radial-gradient(ellipse 78% 72% at 50% 48%,#000 0 58%,rgba(0,0,0,.88) 72%,transparent 98%);mask-image:radial-gradient(ellipse 78% 72% at 50% 48%,#000 0 58%,rgba(0,0,0,.88) 72%,transparent 98%);pointer-events:none}
+      .rp-story-slide.rp-story-game-slide::before{z-index:1;background:linear-gradient(180deg,rgba(2,3,4,.12) 0%,rgba(2,3,4,.04) 36%,rgba(2,4,6,.60) 58%,rgba(2,5,8,.96) 76%,#02060b 100%)}
       .rp-story-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center;margin:0 auto;width:100%}
       .rp-story-kicker{display:block;width:100%;margin-bottom:10px;color:#53dcff;font:950 .56rem/1 Arial,sans-serif;letter-spacing:.15em;text-transform:uppercase;text-align:center}
       .rp-story-headline{margin:0 auto;max-width:470px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:clamp(2rem,10vw,3.45rem);font-style:italic;font-weight:950;line-height:.94;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance;text-align:center}
       .rp-story-body{margin:15px auto 0;max-width:430px;color:#bbc8d4;font:650 .86rem/1.55 Arial,sans-serif;text-align:center}
-      .rp-story-game-winner{position:absolute;z-index:1;top:104px;left:50%;transform:translateX(-50%);width:min(42vw,158px);height:min(42vw,158px);display:grid;place-items:center;pointer-events:none}
-      .rp-story-game-winner img{display:block;max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 14px 28px rgba(0,0,0,.42))}
+      .rp-story-game-winner{position:absolute;z-index:2;top:clamp(90px,13vh,124px);left:50%;transform:translateX(-50%);width:min(72vw,300px);height:min(34vh,300px);display:grid;place-items:center;pointer-events:none}
+      .rp-story-game-winner img{display:block;max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 22px 38px rgba(0,0,0,.58)) drop-shadow(0 0 30px rgba(var(--rp-story-club-rgb),.16))}
       .rp-story-game-winner-fallback{width:100%;height:100%;display:grid;place-items:center;border:1px solid rgba(80,220,255,.16);border-radius:50%;background:radial-gradient(circle,rgba(34,136,184,.18),rgba(2,6,11,0) 68%);color:rgba(255,255,255,.16);font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:4.8rem;font-style:italic}
       .rp-story-score{display:flex;justify-content:center;align-items:center;gap:12px;margin:18px auto 2px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-style:italic;text-align:center}.rp-story-score b{font-size:2.8rem}.rp-story-score span{color:#718293;font-size:.9rem}
       .rp-story-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:18px auto 0;width:100%;max-width:430px}.rp-story-stat{padding:10px 7px;border:1px solid rgba(80,220,255,.10);border-radius:11px;background:rgba(7,20,32,.7);text-align:center}.rp-story-stat b{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.45rem;font-style:italic}.rp-story-stat small{display:block;margin-top:2px;color:#6edfff;font:900 .44rem/1 Arial,sans-serif;letter-spacing:.08em}
@@ -41,7 +44,8 @@
       .rp-story-team-mark{position:absolute;z-index:0;top:135px;right:18px;color:rgba(255,255,255,.055);font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:7rem;font-style:italic;line-height:.8;text-transform:uppercase;writing-mode:vertical-rl}
       .rp-story-arrows{position:absolute;z-index:6;inset:0;pointer-events:none}.rp-story-arrows button{position:absolute;top:50%;transform:translateY(-50%);pointer-events:auto;width:42px;height:42px;border:1px solid rgba(255,255,255,.11);border-radius:50%;background:rgba(2,7,12,.72);color:#dff8ff;font-size:1.1rem;opacity:.5;transition:opacity .16s ease}.rp-story-arrows button:first-child{left:8px}.rp-story-arrows button:last-child{right:8px}.rp-story-arrows button:hover,.rp-story-arrows button:focus-visible{opacity:1}.rp-story-arrows button:disabled{opacity:.18}
       .rp-story-loading{margin:auto;color:#63ddff;font:950 .66rem/1.6 Arial,sans-serif;letter-spacing:.15em;text-align:center}
-      @media(max-width:380px){.rp-story-slide{padding-left:18px;padding-right:18px}.rp-story-body{font-size:.78rem}.rp-story-stats{gap:5px}.rp-story-stat{padding:8px 4px}}
+      @media(max-width:380px){.rp-story-slide{padding-left:18px;padding-right:18px}.rp-story-body{font-size:.78rem}.rp-story-stats{gap:5px}.rp-story-stat{padding:8px 4px}.rp-story-game-winner{width:min(68vw,250px);height:min(31vh,250px)}}
+      @media(max-height:700px){.rp-story-game-winner{top:84px;width:min(58vw,220px);height:min(27vh,220px)}.rp-story-slide.rp-story-game-slide::after{top:30%;width:min(132vw,620px)}}
       @media(prefers-reduced-motion:reduce){.rp-story-track{transition:none}}
     `;
     document.head.appendChild(style);
@@ -183,7 +187,9 @@
     const gameWinner = slide.type === 'game' && winnerSide
       ? `<div class="rp-story-game-winner" aria-label="${esc(winnerName)} winner logo">${winnerLogo ? `<img src="${esc(winnerLogo)}" alt="${esc(winnerName)} team logo">` : `<div class="rp-story-game-winner-fallback" aria-hidden="true">${esc(winnerName.charAt(0) || 'W')}</div>`}</div>`
       : '';
-    return `<article class="rp-story-slide" data-rp-story-slide>${art}${gameWinner}<div class="rp-story-content">${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
+    const gameStyle = slide.type === 'game' && winnerLogo ? ` style="--rp-story-winner-art:url('&quot;${esc(winnerLogo)}&quot;')"` : '';
+    const gameClass = slide.type === 'game' ? ' rp-story-game-slide' : '';
+    return `<article class="rp-story-slide${gameClass}" data-rp-story-slide${gameStyle}>${art}${gameWinner}<div class="rp-story-content">${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
   }
 
   function buildDeck(game, rawPlayers) {
