@@ -8,6 +8,7 @@
 
   let sessionId = 0;
   let players = new Map();
+  let knownPlayerIds = new Set();
   let state = {};
   let menu = null;
   let menuPlayerId = 0;
@@ -59,17 +60,36 @@
     return sessionId ? `${STORAGE_PREFIX}${sessionId}` : '';
   }
 
-  function loadState() {
+  function loadState(serverParticipation = null) {
     if (!key()) {
       state = {};
       return;
     }
     try {
-      const parsed = JSON.parse(localStorage.getItem(key()) || '{}');
-      state = parsed && typeof parsed === 'object' ? parsed : {};
-    } catch (_) {
-      state = {};
+      const raw = localStorage.getItem(key());
+      if (raw !== null) {
+        const parsed = JSON.parse(raw || '{}');
+        state = parsed && typeof parsed === 'object' ? parsed : {};
+        return;
+      }
+    } catch (_) {}
+
+    state = {};
+    for (const row of Array.isArray(serverParticipation) ? serverParticipation : []) {
+      const playerId = Number(row?.playerId ?? row?.player_id ?? 0);
+      if (!Number.isSafeInteger(playerId) || playerId === 0) continue;
+      state[String(playerId)] = {
+        startsActive: row?.startsActive ?? row?.starts_active ?? true,
+        dnp: Boolean(row?.didNotPlay ?? row?.did_not_play),
+        events: Array.isArray(row?.events)
+          ? row.events.map((item) => ({
+              kind: String(item?.kind || '').toLowerCase(),
+              atMs: Math.max(0, Number(item?.atMs ?? item?.at_ms ?? 0)),
+            })).filter((item) => ['in', 'out', 'injured'].includes(item.kind))
+          : [],
+      };
     }
+    if (Object.keys(state).length) saveState();
   }
 
   function saveState() {
@@ -78,6 +98,39 @@
       localStorage.setItem(key(), JSON.stringify(state));
     } catch (_) {}
   }
+
+  function participationPayload(requestedSessionId = null) {
+    const requested = Number(requestedSessionId || 0);
+    if (requested && requested !== Number(sessionId)) return [];
+
+    const ids = new Set(knownPlayerIds);
+    for (const id of players.keys()) ids.add(Number(id));
+    for (const id of Object.keys(state)) {
+      const numericId = Number(id);
+      if (Number.isSafeInteger(numericId) && numericId !== 0) ids.add(numericId);
+    }
+
+    return [...ids]
+      .filter((id) => Number.isSafeInteger(id) && id !== 0)
+      .sort((a, b) => a - b)
+      .map((playerId) => {
+        const rec = recordFor(playerId);
+        return {
+          playerId,
+          startsActive: Boolean(rec.startsActive),
+          didNotPlay: Boolean(rec.dnp),
+          events: rec.dnp ? [] : [...rec.events]
+            .map((item) => ({
+              kind: String(item?.kind || '').toLowerCase(),
+              atMs: Math.max(0, Math.round(Number(item?.atMs || 0))),
+            }))
+            .filter((item) => ['in', 'out', 'injured'].includes(item.kind))
+            .sort((a, b) => a.atMs - b.atMs),
+        };
+      });
+  }
+
+  window.__realPlayRecordedParticipationPayload = participationPayload;
 
   function recordFor(playerId) {
     const id = String(Number(playerId));
@@ -228,6 +281,7 @@
     sc.querySelectorAll('[data-rp-video-select-player]').forEach((button) => {
       const playerId = Number(button.dataset.rpVideoSelectPlayer || 0);
       if (!playerId) return;
+      knownPlayerIds.add(playerId);
       const status = statusAt(playerId, atMs);
       button.dataset.rpParticipationStatus = status.label;
       button.classList.toggle('rp-participation-inactive', !status.active);
@@ -250,7 +304,18 @@
       if (correctionSessionId !== sessionId) {
         sessionId = correctionSessionId;
         players = new Map();
-        loadState();
+        knownPlayerIds = new Set();
+        (Array.isArray(correction?.players) ? correction.players : []).forEach((player) => {
+          const id = Number(player?.playerId ?? player?.userId ?? 0);
+          if (!Number.isSafeInteger(id) || id === 0) return;
+          players.set(id, {
+            ...player,
+            userId: id,
+            playerName: player?.playerName || 'REAL PLAY PLAYER',
+          });
+          knownPlayerIds.add(id);
+        });
+        loadState(correction?.participation);
       }
       queueSync();
       return true;
@@ -269,9 +334,13 @@
       if (nextSessionId !== sessionId) {
         sessionId = nextSessionId;
         players = new Map();
+        knownPlayerIds = new Set();
         (Array.isArray(control.players) ? control.players : []).forEach((player) => {
           const id = Number(player?.userId || 0);
-          if (id) players.set(id, player);
+          if (id) {
+            players.set(id, player);
+            knownPlayerIds.add(id);
+          }
         });
         loadState();
       }
@@ -297,7 +366,12 @@
     if (!sessionId) return { ok: true };
 
     const correction = correctionState();
-    let events = Array.isArray(correction?.events) ? correction.events : null;
+    let events = correction
+      ? [
+          ...(Array.isArray(correction.events) ? correction.events : []),
+          ...(Array.isArray(correction.moments) ? correction.moments : []),
+        ]
+      : null;
 
     if (!events) {
       let draft = null;
