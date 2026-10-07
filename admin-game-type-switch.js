@@ -29,15 +29,33 @@
     window.setTimeout(syncWorldPlayerAdmin, 500);
   }
 
+  function ensureParticipationTimeline() {
+    if (window.__realPlayRecordedParticipationTimelineInstalled) return;
+    if ([...document.scripts].some((script) => String(script.src || '').includes('admin-recorded-participation-timeline.js'))) return;
+    const script = document.createElement('script');
+    script.src = 'admin-recorded-participation-timeline.js?v=20261007-participation-v1';
+    script.async = false;
+    script.onerror = () => console.error('[Real Play] Recorded participation timeline failed to load.');
+    document.head.appendChild(script);
+  }
+
   cleanup();
+  ensureParticipationTimeline();
   queueWorldPlayerAdminSync();
-  window.addEventListener('realplay:admin-render', queueWorldPlayerAdminSync);
+  window.addEventListener('realplay:admin-render', () => {
+    ensureParticipationTimeline();
+    queueWorldPlayerAdminSync();
+  });
   window.addEventListener('realplay:admin-control-render', () => {
     cleanup();
+    ensureParticipationTimeline();
     queueWorldPlayerAdminSync();
   });
   window.addEventListener('realplay:entry-mode-state', cleanup);
-  window.addEventListener('focus', queueWorldPlayerAdminSync);
+  window.addEventListener('focus', () => {
+    ensureParticipationTimeline();
+    queueWorldPlayerAdminSync();
+  });
 
   const observer = new MutationObserver(cleanup);
   observer.observe(document.documentElement, { childList: true, subtree: true });
