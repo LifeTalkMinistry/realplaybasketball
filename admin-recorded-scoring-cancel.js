@@ -160,6 +160,10 @@
   }
 
   document.addEventListener('click', (event) => {
+    // Second-Pass Audit deliberately reuses the same top-row UI, but it must
+    // never call the first-pass "cancel recorded audit" backend endpoint.
+    if (event.target.closest('[data-rp-replay-correction-mode]')) return;
+
     const exitButton = event.target.closest('[data-rp-exit-scoring]');
     if (exitButton && root()?.contains(exitButton)) {
       event.preventDefault();
