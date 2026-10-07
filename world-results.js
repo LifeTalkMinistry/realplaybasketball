@@ -11,6 +11,9 @@
   let resultMetadata = new Map();
   let selectedWeek = 'all';
   let selectedType = 'all';
+  let selectedCompetition = 'league';
+  let selectedSeason = 'tune-up-s1';
+  let selectedTeam = 'all';
   let selectedView = 'feed';
   let feedObserver = null;
   let metadataLoading = false;
@@ -109,6 +112,95 @@
           inset 0 0 0 1px rgba(65,214,255,.16),
           0 5px 16px rgba(0,0,0,.18);
       }
+      .rp-world-context-picker{
+        width:min(100%,360px);
+        margin:0 auto;
+        padding:4px;
+        border:1px solid rgba(255,255,255,.075);
+        border-radius:13px;
+        background:rgba(4,9,16,.86);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.02);
+      }
+      .rp-world-context-main{
+        min-height:44px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:7px;
+        border-radius:9px;
+        background:
+          linear-gradient(100deg,rgba(14,145,205,.20),rgba(6,13,22,.88) 54%,rgba(164,30,48,.16));
+        box-shadow:inset 0 0 0 1px rgba(65,214,255,.16),0 5px 16px rgba(0,0,0,.18);
+      }
+      .rp-world-context-main .rp-world-context-dot{
+        color:#718096;
+        font-size:.68rem;
+        font-weight:950;
+      }
+      .rp-world-context-select{
+        max-width:145px;
+        border:0;
+        outline:0;
+        appearance:none;
+        -webkit-appearance:none;
+        color:#f7fbff;
+        background:transparent;
+        font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.62rem;
+        font-style:italic;
+        font-weight:950;
+        letter-spacing:.075em;
+        text-align:center;
+        text-transform:uppercase;
+        cursor:pointer;
+      }
+      .rp-world-context-select option{
+        color:#f7fbff;
+        background:#07101a;
+      }
+      .rp-world-context-chevron{
+        color:#7e91a8;
+        font-size:.78rem;
+        line-height:1;
+        transform:translateY(-1px);
+        pointer-events:none;
+      }
+      .rp-world-team-filter{
+        width:min(100%,360px);
+        margin:8px auto 0;
+        padding:3px;
+        display:flex;
+        gap:4px;
+        overflow-x:auto;
+        scrollbar-width:none;
+        border:1px solid rgba(255,255,255,.065);
+        border-radius:12px;
+        background:rgba(4,9,16,.76);
+      }
+      .rp-world-team-filter::-webkit-scrollbar{display:none}
+      .rp-world-team-chip{
+        min-width:max-content;
+        min-height:34px;
+        flex:1 0 auto;
+        padding:0 12px;
+        border:0;
+        border-radius:9px;
+        color:#65758a;
+        background:transparent;
+        font-family:var(--rp-display,Arial,sans-serif);
+        font-size:.48rem;
+        font-style:italic;
+        font-weight:950;
+        letter-spacing:.075em;
+        text-transform:uppercase;
+        cursor:pointer;
+      }
+      .rp-world-team-chip.active{
+        color:#f7fbff;
+        background:rgba(10,160,211,.18);
+        box-shadow:inset 0 0 0 1px rgba(65,214,255,.14);
+      }
+
       .rp-world-feed-intro{
         display:none;
         margin-top:15px;
@@ -1101,7 +1193,7 @@
       .filter((item) => item?.category === 'result')
       .forEach((item) => next.set(String(item.id), item));
     resultMetadata = next;
-    rebuildWeekOptions();
+    rebuildContextOptions();
     decorateStoryCards();
     applyWorldFilters();
   }
@@ -1456,44 +1548,40 @@
       controls.className = 'rp-world-results-controls';
       controls.dataset.rpWorldResultsControls = 'true';
       controls.innerHTML = `
-        <nav class="rp-world-tabs" role="tablist" aria-label="World views">
-          <button type="button" class="rp-world-tab active" data-rp-world-tab="feed" role="tab" aria-selected="true">FEED</button>
-          <button type="button" class="rp-world-tab" data-rp-world-tab="results" role="tab" aria-selected="false">RESULTS</button>
-        </nav>
-        <div class="rp-world-results-only">
-          <div class="rp-world-results-subhead">
-            <strong>GAME RESULTS</strong>
-            <span data-rp-world-results-count>OFFICIAL GAMES</span>
+        <div class="rp-world-context-picker" aria-label="Competition filters">
+          <div class="rp-world-context-main">
+            <select class="rp-world-context-select" data-rp-world-competition aria-label="Competition">
+              <option value="league">LEAGUE</option>
+              <option value="open-rank">OPEN RANKING</option>
+            </select>
+            <span class="rp-world-context-dot" aria-hidden="true">·</span>
+            <select class="rp-world-context-select" data-rp-world-season aria-label="Season">
+              <option value="tune-up-s1">TUNE UP S1</option>
+            </select>
+            <span class="rp-world-context-chevron" aria-hidden="true">⌄</span>
           </div>
-          <div class="rp-world-results-filter-row">
-            <div class="rp-world-results-filter">
-              <label for="rp-world-results-week">WEEK</label>
-              <select id="rp-world-results-week" data-rp-world-results-week>
-                <option value="all">ALL WEEKS</option>
-              </select>
-            </div>
-            <div class="rp-world-results-filter">
-              <label for="rp-world-results-type">GAME TYPE</label>
-              <select id="rp-world-results-type" data-rp-world-results-type>
-                <option value="all">ALL GAMES</option>
-                <option value="open-rank">OPEN RANK</option>
-                <option value="3v3">3V3</option>
-                <option value="5v5">5V5</option>
-              </select>
-            </div>
-          </div>
-        </div>`;
+        </div>
+        <div class="rp-world-team-filter" data-rp-world-team-filter aria-label="Team filter"></div>`;
       feed.parentElement?.insertBefore(controls, feed);
 
-      controls.querySelectorAll('[data-rp-world-tab]').forEach((button) => {
-        button.addEventListener('click', () => setWorldView(button.dataset.rpWorldTab));
-      });
-      controls.querySelector('[data-rp-world-results-week]')?.addEventListener('change', (event) => {
-        selectedWeek = event.currentTarget.value || 'all';
+      controls.querySelector('[data-rp-world-competition]')?.addEventListener('change', (event) => {
+        selectedCompetition = event.currentTarget.value || 'league';
+        selectedSeason = '';
+        selectedTeam = 'all';
+        rebuildContextOptions();
         applyWorldFilters();
       });
-      controls.querySelector('[data-rp-world-results-type]')?.addEventListener('change', (event) => {
-        selectedType = event.currentTarget.value || 'all';
+      controls.querySelector('[data-rp-world-season]')?.addEventListener('change', (event) => {
+        selectedSeason = event.currentTarget.value || '';
+        selectedTeam = 'all';
+        rebuildContextOptions();
+        applyWorldFilters();
+      });
+      controls.querySelector('[data-rp-world-team-filter]')?.addEventListener('click', (event) => {
+        const button = event.target.closest?.('[data-rp-world-team]');
+        if (!button) return;
+        selectedTeam = button.dataset.rpWorldTeam || 'all';
+        rebuildContextOptions();
         applyWorldFilters();
       });
     }
@@ -1514,13 +1602,157 @@
       feedObserver.observe(feed, { childList: true });
     }
 
-    rebuildWeekOptions();
-    controls.querySelectorAll('[data-rp-world-tab]').forEach((button) => {
-      const active = button.dataset.rpWorldTab === selectedView;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-selected', active ? 'true' : 'false');
-    });
+    rebuildContextOptions();
     return true;
+  }
+
+  function competitionInfo(update, card) {
+    const metadata = update?.metadata || {};
+    const context = String(
+      metadata.competitionContext
+      ?? metadata.competition_context
+      ?? metadata.mode
+      ?? ''
+    ).trim().toLowerCase();
+    const title = String(worldResultTitle(metadata) || '').toLowerCase();
+    const text = [
+      context,
+      title,
+      update?.title,
+      update?.body,
+      metadata.sessionTitle,
+      metadata.session_title,
+      card?.textContent,
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    if (/open[\s-]?rank(?:ing)?|east\s+vs\s+west/.test(text)) {
+      return { key: 'open-rank', label: 'OPEN RANKING' };
+    }
+    if (/league|tune[\s-]?up|beta\s+season|season\s*\d+/.test(text)) {
+      return { key: 'league', label: 'LEAGUE' };
+    }
+
+    const west = String(metadata.westTeamName || metadata.west_team_name || '').trim().toUpperCase();
+    const east = String(metadata.eastTeamName || metadata.east_team_name || '').trim().toUpperCase();
+    if (WORLD_CLUB_ART[west] || WORLD_CLUB_ART[east]) return { key: 'league', label: 'LEAGUE' };
+    return { key: 'league', label: 'LEAGUE' };
+  }
+
+  function seasonInfo(update, card) {
+    const metadata = update?.metadata || {};
+    const competition = competitionInfo(update, card);
+    if (competition.key === 'open-rank') return { key: 'open-ranking', label: 'OPEN RANKING' };
+
+    const explicit = String(
+      metadata.seasonLabel
+      ?? metadata.season_label
+      ?? metadata.seasonName
+      ?? metadata.season_name
+      ?? metadata.leagueSeasonName
+      ?? metadata.league_season_name
+      ?? ''
+    ).trim();
+    const title = String(worldResultTitle(metadata) || '');
+    const text = [explicit, title, update?.title, update?.body, card?.textContent]
+      .filter(Boolean).join(' ').toUpperCase();
+
+    const tuneNumber = Number(
+      metadata.tuneUpSeasonNumber
+      ?? metadata.tune_up_season_number
+      ?? metadata.seasonNumber
+      ?? metadata.season_number
+    );
+    const tuneMatch = text.match(/TUNE[\s-]*UP(?:\s*S(?:EASON)?\s*)?(\d+)?/i);
+    if (tuneMatch) {
+      const number = Number.isSafeInteger(tuneNumber) && tuneNumber > 0
+        ? tuneNumber
+        : Math.max(1, Number(tuneMatch[1] || 1));
+      return { key: `tune-up-s${number}`, label: `TUNE UP S${number}` };
+    }
+
+    if (/\bBETA\b/.test(text)) return { key: 'beta-season', label: 'BETA SEASON' };
+
+    const seasonMatch = text.match(/\bSEASON\s*#?\s*(\d+)\b/i);
+    if (seasonMatch) {
+      return { key: `season-${seasonMatch[1]}`, label: `SEASON ${seasonMatch[1]}` };
+    }
+
+    if (explicit) {
+      const label = explicit.toUpperCase();
+      const key = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'season';
+      return { key, label };
+    }
+
+    return { key: 'season', label: 'SEASON' };
+  }
+
+  function resultTeams(update = {}) {
+    const metadata = update?.metadata || {};
+    return [
+      metadata.westTeamName ?? metadata.west_team_name,
+      metadata.eastTeamName ?? metadata.east_team_name,
+    ]
+      .map((name) => String(name || '').trim().toUpperCase())
+      .filter(Boolean);
+  }
+
+  function rebuildContextOptions() {
+    const panel = updatesPanel();
+    const competitionSelect = panel?.querySelector('[data-rp-world-competition]');
+    const seasonSelect = panel?.querySelector('[data-rp-world-season]');
+    const teamFilter = panel?.querySelector('[data-rp-world-team-filter]');
+    if (!panel || !competitionSelect || !seasonSelect || !teamFilter) return;
+
+    const cards = [...panel.querySelectorAll('[data-updates-feed] .rp-update-result[data-update-id]')];
+    const rows = cards.map((card) => {
+      const update = resultMetadata.get(String(card.dataset.updateId || ''));
+      return {
+        card,
+        update,
+        competition: competitionInfo(update, card),
+        season: seasonInfo(update, card),
+        teams: resultTeams(update),
+      };
+    });
+
+    const competitions = new Map();
+    rows.forEach((row) => competitions.set(row.competition.key, row.competition.label));
+    if (!competitions.size) {
+      competitions.set('league', 'LEAGUE');
+      competitions.set('open-rank', 'OPEN RANKING');
+    }
+    if (!competitions.has(selectedCompetition)) {
+      selectedCompetition = competitions.has('league') ? 'league' : [...competitions.keys()][0];
+    }
+    competitionSelect.innerHTML = [...competitions]
+      .map(([key, label]) => `<option value="${esc(key)}">${esc(label)}</option>`)
+      .join('');
+    competitionSelect.value = selectedCompetition;
+
+    const scoped = rows.filter((row) => row.competition.key === selectedCompetition);
+    const seasons = new Map();
+    scoped.forEach((row) => seasons.set(row.season.key, row.season.label));
+    if (!seasons.size) seasons.set('season', 'SEASON');
+    if (!selectedSeason || !seasons.has(selectedSeason)) {
+      selectedSeason = seasons.has('tune-up-s1') ? 'tune-up-s1' : [...seasons.keys()][0];
+    }
+    seasonSelect.innerHTML = [...seasons]
+      .map(([key, label]) => `<option value="${esc(key)}">${esc(label)}</option>`)
+      .join('');
+    seasonSelect.value = selectedSeason;
+
+    const teams = new Set();
+    scoped
+      .filter((row) => row.season.key === selectedSeason)
+      .forEach((row) => row.teams.forEach((team) => teams.add(team)));
+    if (selectedTeam !== 'all' && !teams.has(selectedTeam)) selectedTeam = 'all';
+
+    teamFilter.innerHTML = [
+      `<button type="button" class="rp-world-team-chip${selectedTeam === 'all' ? ' active' : ''}" data-rp-world-team="all">ALL</button>`,
+      ...[...teams].sort().map((team) =>
+        `<button type="button" class="rp-world-team-chip${selectedTeam === team ? ' active' : ''}" data-rp-world-team="${esc(team)}">${esc(team)}</button>`
+      ),
+    ].join('');
   }
 
   function rebuildWeekOptions() {
@@ -1554,31 +1786,11 @@
 
     setWorldResultsMode(true);
     decorateStoryCards();
+    rebuildContextOptions();
 
     const allCards = [...panel.querySelectorAll('[data-updates-feed] .rp-update-card')];
     const resultCards = allCards.filter((card) => card.classList.contains('rp-update-result'));
 
-    resultCards.forEach((card) => {
-      const label = card.querySelector('.rp-update-kind strong');
-      if (label?.dataset.rpWorldDefaultLabel) {
-        label.textContent = selectedView === 'feed'
-          ? 'GAME REPORT'
-          : label.dataset.rpWorldDefaultLabel;
-      }
-    });
-
-    if (selectedView === 'feed') {
-      // Schedules stay out of WORLD / FEED for now. They still exist in the
-      // scheduling system and other schedule-specific surfaces.
-      allCards.forEach((card) => {
-        card.hidden = card.classList.contains('rp-update-schedule');
-      });
-      panel.querySelector('[data-rp-world-results-empty]')?.classList.remove('show');
-      return;
-    }
-
-    // RESULTS is a hard content boundary. Even if an older API response
-    // contains schedules/announcements, those cards must never be exposed.
     allCards
       .filter((card) => !card.classList.contains('rp-update-result'))
       .forEach((card) => { card.hidden = true; });
@@ -1586,21 +1798,21 @@
     let visibleCount = 0;
     resultCards.forEach((card) => {
       const update = resultMetadata.get(String(card.dataset.updateId || ''));
-      const type = classifyGameType(update, card);
-      const week = manilaWeekStart(update?.published_at || update?.publishedAt);
-      const typeMatch = selectedType === 'all' || type === selectedType;
-      const weekMatch = selectedWeek === 'all' || week === selectedWeek;
-      const visible = typeMatch && weekMatch;
+      const competition = competitionInfo(update, card).key;
+      const season = seasonInfo(update, card).key;
+      const teams = resultTeams(update);
+      const visible = competition === selectedCompetition
+        && season === selectedSeason
+        && (selectedTeam === 'all' || teams.includes(selectedTeam));
+
       card.hidden = !visible;
       if (visible) visibleCount += 1;
-    });
 
-    const count = panel.querySelector('[data-rp-world-results-count]');
-    if (count) {
-      const unfiltered = selectedType === 'all' && selectedWeek === 'all';
-      const countValue = unfiltered && resultTotal > 0 ? resultTotal : visibleCount;
-      count.textContent = `${countValue} GAME${countValue === 1 ? '' : 'S'}`;
-    }
+      const label = card.querySelector('.rp-update-kind strong');
+      if (label?.dataset.rpWorldDefaultLabel) {
+        label.textContent = 'GAME REPORT';
+      }
+    });
 
     const empty = panel.querySelector('[data-rp-world-results-empty]');
     empty?.classList.toggle('show', resultCards.length > 0 && visibleCount === 0);
