@@ -387,6 +387,13 @@
     // an early tap never opens an unstyled off-screen panel.
     'real-play-world.css',
     'real-play-profile.css',
+    // ME/Profile is a first-tap surface. Hold the existing boot/loading screen
+    // until the complete structural profile skin is present so the hero never
+    // paints once in the legacy geometry and then jumps 80-100px.
+    'profile-identity-cleanup.css',
+    'real-play-profile-intro.css',
+    'profile-metrics-stability.css',
+    'real-play-profile-metrics.css',
   ]);
 
   (async () => {
@@ -480,6 +487,10 @@
       'real-play-world-chat-cleanup.js',
       'profile-load-guard.js',
       'real-play-profile.js',
+      // Stable badge/recognition authority must install before the premium
+      // profile renderer. It blocks the older mutation-heavy authority from
+      // fighting over badge state and changing the hero height.
+      'real-play-profile-recognition-authority.js',
       'settings-panel.js',
       'profile-art-owner-access.js',
       'real-play-profile-intro.js',
@@ -531,6 +542,15 @@
       'career-game-replay-loader.js',
       'real-play-updates.js',
       'real-play-world.js',
+      // The loading screen now also gates the complete ME/Profile stack. A user
+      // cannot tap ME while only the base profile renderer is installed.
+      'profile-load-guard.js',
+      'real-play-profile.js',
+      'real-play-profile-recognition-authority.js',
+      'profile-art-owner-access.js',
+      'real-play-profile-intro.js',
+      'profile-metrics-stability.js',
+      'real-play-profile-metrics.js',
       'real-play-world-players.js',
       'visitor-world-players.js',
       'ranking-games.js',
