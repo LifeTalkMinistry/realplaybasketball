@@ -50,10 +50,23 @@
       .rp-story-branded-slide .rp-story-player-art,.rp-story-branded-slide .rp-story-player-fallback,.rp-story-branded-slide .rp-story-team-mark{z-index:2}
       .rp-story-team-hero{position:absolute;z-index:2;top:clamp(96px,14vh,132px);left:50%;transform:translateX(-50%);width:min(62vw,250px);height:min(29vh,250px);display:grid;place-items:center;pointer-events:none}
       .rp-story-team-hero img{display:block;max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 18px 34px rgba(0,0,0,.58)) drop-shadow(0 0 26px rgba(var(--rp-story-club-rgb),.14))}
+      .rp-story-slide.rp-story-game-slide{background:#020304}
+      .rp-story-slide.rp-story-game-slide::before{z-index:1;background:linear-gradient(180deg,rgba(2,3,4,.03) 0%,rgba(2,3,4,.07) 44%,rgba(2,4,6,.60) 58%,rgba(2,5,8,.95) 76%,#02060b 100%)}
+      .rp-story-game-matchup{position:absolute;z-index:0;top:64px;left:0;right:0;height:min(56vh,470px);display:grid;grid-template-rows:1fr 1fr;overflow:hidden;pointer-events:none}
+      .rp-story-matchup-team{position:relative;overflow:hidden;isolation:isolate;background:radial-gradient(circle at 50% 50%,rgba(var(--rp-matchup-rgb),.13),transparent 47%),linear-gradient(180deg,#07090b,#020304)}
+      .rp-story-matchup-team:first-child{border-bottom:1px solid rgba(255,255,255,.07)}
+      .rp-story-matchup-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
+      .rp-story-matchup-bg img{position:absolute;left:50%;top:50%;width:min(145vw,760px);max-width:none;height:auto;transform:translate(-50%,-50%) scale(1.05);opacity:.82;filter:blur(2px) brightness(.36) contrast(1.10) saturate(.95);-webkit-mask-image:radial-gradient(ellipse 82% 78% at 50% 50%,#000 0 60%,rgba(0,0,0,.84) 76%,transparent 99%);mask-image:radial-gradient(ellipse 82% 78% at 50% 50%,#000 0 60%,rgba(0,0,0,.84) 76%,transparent 99%)}
+      .rp-story-matchup-team::after{content:'';position:absolute;z-index:1;inset:0;background:linear-gradient(180deg,rgba(1,2,3,.05),rgba(1,2,3,.20) 78%,rgba(1,2,3,.46));pointer-events:none}
+      .rp-story-matchup-team:last-child::after{background:linear-gradient(180deg,rgba(1,2,3,.32),rgba(1,2,3,.16) 28%,rgba(1,2,3,.42) 100%)}
+      .rp-story-matchup-hero{position:absolute;z-index:2;inset:0;display:grid;place-items:center}
+      .rp-story-matchup-hero img{display:block;width:min(54vw,220px);max-width:86%;max-height:88%;object-fit:contain;filter:drop-shadow(0 15px 28px rgba(0,0,0,.58)) drop-shadow(0 0 22px rgba(var(--rp-matchup-rgb),.16))}
+      .rp-story-matchup-team.is-winner .rp-story-matchup-hero img{width:min(59vw,238px);max-height:92%}
+      .rp-story-game-matchup::after{content:'';position:absolute;z-index:3;left:0;right:0;top:50%;height:28px;transform:translateY(-50%);background:linear-gradient(180deg,transparent,rgba(1,3,5,.74) 46%,rgba(1,3,5,.86) 54%,transparent);pointer-events:none}
       .rp-story-arrows{position:absolute;z-index:6;inset:0;pointer-events:none}.rp-story-arrows button{position:absolute;top:50%;transform:translateY(-50%);pointer-events:auto;width:42px;height:42px;border:1px solid rgba(255,255,255,.11);border-radius:50%;background:rgba(2,7,12,.72);color:#dff8ff;font-size:1.1rem;opacity:.5;transition:opacity .16s ease}.rp-story-arrows button:first-child{left:8px}.rp-story-arrows button:last-child{right:8px}.rp-story-arrows button:hover,.rp-story-arrows button:focus-visible{opacity:1}.rp-story-arrows button:disabled{opacity:.18}
       .rp-story-loading{margin:auto;color:#63ddff;font:950 .66rem/1.6 Arial,sans-serif;letter-spacing:.15em;text-align:center}
       @media(max-width:380px){.rp-story-slide{padding-left:18px;padding-right:18px}.rp-story-body{font-size:.78rem}.rp-story-stats{gap:5px}.rp-story-stat{padding:8px 4px}.rp-story-game-winner{width:min(68vw,250px);height:min(31vh,250px)}}
-      @media(max-height:700px){.rp-story-game-winner{top:84px;width:min(58vw,220px);height:min(27vh,220px)}.rp-story-team-hero{top:88px;width:min(52vw,205px);height:min(24vh,205px)}.rp-story-game-bg img{top:47%;width:min(154vw,760px);opacity:.90;filter:blur(2px) brightness(.46) contrast(1.08) saturate(.92)}.rp-story-slide.rp-story-branded-slide::after{top:48%;width:min(118vw,580px);height:min(76vw,360px);filter:blur(64px)}}
+      @media(max-height:700px){.rp-story-game-winner{top:84px;width:min(58vw,220px);height:min(27vh,220px)}.rp-story-team-hero{top:88px;width:min(52vw,205px);height:min(24vh,205px)}.rp-story-game-bg img{top:47%;width:min(154vw,760px);opacity:.90;filter:blur(2px) brightness(.46) contrast(1.08) saturate(.92)}.rp-story-slide.rp-story-branded-slide::after{top:48%;width:min(118vw,580px);height:min(76vw,360px);filter:blur(64px)}.rp-story-game-matchup{top:60px;height:min(53vh,360px)}.rp-story-matchup-hero img{width:min(47vw,188px);max-height:84%}.rp-story-matchup-team.is-winner .rp-story-matchup-hero img{width:min(51vw,202px);max-height:88%}}
       @media(prefers-reduced-motion:reduce){.rp-story-track{transition:none}}
     `;
     document.head.appendChild(style);
@@ -196,7 +209,14 @@
 
   function slideMarkup(slide, game) {
     const winnerSide = game.westScore === game.eastScore ? null : (game.westScore > game.eastScore ? 'west' : 'east');
-    const brandSide = slide.type === 'game' ? winnerSide : slide.teamSide;
+    const topSide = winnerSide || 'west';
+    const bottomSide = winnerSide ? (winnerSide === 'west' ? 'east' : 'west') : 'east';
+
+    const sideName = (side) => side === 'west' ? game.westName : game.eastName;
+    const sideLogo = (side) => side === 'west' ? game.westLogo : game.eastLogo;
+    const sideRgb = (side) => clubAccentRgb(sideName(side));
+
+    const brandSide = slide.type === 'game' ? topSide : slide.teamSide;
     const brandLogo = brandSide === 'west' ? game.westLogo : brandSide === 'east' ? game.eastLogo : '';
     const brandName = brandSide === 'west' ? game.westName : brandSide === 'east' ? game.eastName : '';
     const clubRgb = clubAccentRgb(brandName);
@@ -206,6 +226,7 @@
       ? `<img class="rp-story-player-art" src="${esc(slide.player.art)}" alt="${esc(slide.player.name)}">`
       : slide.player ? `<div class="rp-story-player-fallback" aria-hidden="true">${esc(slide.player.name.charAt(0) || 'R')}</div>`
       : slide.type === 'team' && !brandLogo ? `<div class="rp-story-team-mark" aria-hidden="true">${esc(slide.teamName)}</div>` : '';
+
     const score = slide.type === 'game' ? `<div class="rp-story-score"><b>${game.westScore}</b><span>${esc(game.westName)} · ${esc(game.eastName)}</span><b>${game.eastScore}</b></div>` : '';
     const kicker = slide.type === 'player'
       ? ''
@@ -213,20 +234,38 @@
         ? `<div class="rp-story-game-title"><span>${esc(slide.kicker)}</span></div>`
         : `<span class="rp-story-kicker">${esc(slide.kicker)}</span>`;
 
-    const gameWinner = slide.type === 'game' && winnerSide
-      ? `<div class="rp-story-game-winner" aria-label="${esc(brandName)} winner logo">${brandLogo ? `<img src="${esc(brandLogo)}" alt="${esc(brandName)} team logo">` : `<div class="rp-story-game-winner-fallback" aria-hidden="true">${esc(brandName.charAt(0) || 'W')}</div>`}</div>`
+    const topName = sideName(topSide);
+    const bottomName = sideName(bottomSide);
+    const topLogo = sideLogo(topSide);
+    const bottomLogo = sideLogo(bottomSide);
+    const topRgb = sideRgb(topSide);
+    const bottomRgb = sideRgb(bottomSide);
+
+    const matchupTeam = (sideClass, name, logo, rgb) => `
+      <div class="rp-story-matchup-team ${sideClass}" style="--rp-matchup-rgb:${rgb}">
+        ${logo ? `<div class="rp-story-matchup-bg" aria-hidden="true"><img src="${esc(logo)}" alt=""></div>` : ''}
+        <div class="rp-story-matchup-hero">
+          ${logo ? `<img src="${esc(logo)}" alt="${esc(name)} team logo">` : `<div class="rp-story-game-winner-fallback" aria-hidden="true">${esc(name.charAt(0) || 'T')}</div>`}
+        </div>
+      </div>`;
+
+    const gameMatchup = slide.type === 'game'
+      ? `<div class="rp-story-game-matchup" aria-label="${esc(topName)} versus ${esc(bottomName)}">${matchupTeam(winnerSide ? 'is-winner' : '',topName,topLogo,topRgb)}${matchupTeam('',bottomName,bottomLogo,bottomRgb)}</div>`
       : '';
+
     const teamHero = slide.type === 'team' && brandLogo
       ? `<div class="rp-story-team-hero" aria-label="${esc(brandName)} team logo"><img src="${esc(brandLogo)}" alt="${esc(brandName)} team logo"></div>`
       : '';
-    const brandBackground = brandLogo
+    const brandBackground = slide.type !== 'game' && brandLogo
       ? `<div class="rp-story-game-bg" aria-hidden="true"><img src="${esc(brandLogo)}" alt=""></div>`
       : '';
-    const brandedClass = brandLogo ? ' rp-story-branded-slide' : '';
-    const gameClass = slide.type === 'game' ? ' rp-story-game-slide' : '';
-    const brandStyle = brandLogo ? ` style="--rp-story-club-rgb:${clubRgb}"` : '';
 
-    return `<article class="rp-story-slide${gameClass}${brandedClass}" data-rp-story-slide${brandStyle}>${brandBackground}${art}${gameWinner}${teamHero}<div class="rp-story-content">${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
+    const brandedClass = slide.type !== 'game' && brandLogo ? ' rp-story-branded-slide' : '';
+    const gameClass = slide.type === 'game' ? ' rp-story-game-slide rp-story-matchup-slide' : '';
+    const slideRgb = slide.type === 'game' ? topRgb : clubRgb;
+    const brandStyle = (slide.type === 'game' || brandLogo) ? ` style="--rp-story-club-rgb:${slideRgb}"` : '';
+
+    return `<article class="rp-story-slide${gameClass}${brandedClass}" data-rp-story-slide${brandStyle}>${gameMatchup}${brandBackground}${art}${teamHero}<div class="rp-story-content">${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
   }
 
   function buildDeck(game, rawPlayers) {
