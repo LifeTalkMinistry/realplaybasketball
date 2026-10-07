@@ -294,3 +294,35 @@
 .rp-profile .rp-profile-hero[data-rp-profile-share-capture-target] [data-rp-rank-info]{
   display:none!important;
 }
+
+
+/* ME PROGRESSIVE PLACEHOLDER v224
+   This is not a loading screen. It reserves the mature ME geometry locally
+   while first-use data is still arriving, so there is never an immature layout. */
+.rp-profile .rp-profile-pending-shell,
+.rp-profile .rp-profile-pending-section{
+  pointer-events:none!important;
+}
+.rp-profile .rp-profile-pending-shell .rp-profile-number strong,
+.rp-profile .rp-profile-pending-shell .rp-profile-name h1,
+.rp-profile .rp-profile-pending-shell .rp-profile-rating-row strong{
+  opacity:.18!important;
+}
+.rp-profile .rp-profile-pending-shell .rp-profile-identity-line b,
+.rp-profile .rp-profile-pending-shell .rp-profile-rating-row small{
+  opacity:.24!important;
+}
+.rp-profile .rp-profile-pending-metrics{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-top:14px;
+}
+.rp-profile .rp-profile-pending-metrics i{
+  display:block;
+  min-height:94px;
+  border:1px solid rgba(255,255,255,.065);
+  border-radius:14px;
+  background:#070c14;
+  opacity:.58;
+}
