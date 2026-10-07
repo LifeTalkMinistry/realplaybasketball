@@ -43,3 +43,18 @@ test('ME profile scripts are part of initial interaction readiness', () => {
     'real-play-profile-metrics.js',
   ]) assert.ok(block.includes(`'${href}'`), `${href} must be initial-interaction ready`);
 });
+
+
+test('profile badge content cannot own a hero layout row', () => {
+  const css = fs.readFileSync(path.join(root, 'real-play-profile-intro.css'), 'utf8');
+  assert.ok(css.includes('PROFILE HERO GEOMETRY LOCK v223'));
+  assert.ok(css.includes('grid-template-rows:auto auto auto!important'));
+  assert.ok(css.includes('position:absolute!important'));
+  assert.ok(css.includes('--rp-profile-hero-band:0px!important'));
+});
+
+test('recognition authority cannot expand the player row', () => {
+  const authority = fs.readFileSync(path.join(root, 'real-play-profile-recognition-authority.js'), 'utf8');
+  assert.ok(authority.includes('Hero geometry is owned by CSS only'));
+  assert.ok(!authority.includes('margin-top:24px!important'));
+});
