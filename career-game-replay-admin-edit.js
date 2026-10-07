@@ -291,7 +291,7 @@
     if (!player) return '<div class="rp-video-select-prompt">SELECT A PLAYER TO SCORE AN EVENT</div>';
     const stats = summaryForPlayer(player.playerId);
     return `<section class="rp-video-player-panel rp-video-draft-panel" data-rp-draft-player-id="${Number(player.playerId)}">
-      <div class="rp-video-player-panel-head"><div><small>${esc(teamDisplayName(player.team))} · WORKING AUDIT COPY</small><strong>${esc(playerLabel(player))}</strong></div><button type="button" data-rp-video-close-player>×</button></div>
+      <div class="rp-video-player-panel-head"><div><small>${esc(teamDisplayName(player.team))} · LOCAL SCORE SHEET</small><strong>${esc(playerLabel(player))}</strong></div><button type="button" data-rp-video-close-player>×</button></div>
       <div class="rp-video-player-line">${playerSummaryLine(stats)}</div>
       <div class="rp-video-shot-grid rp-video-draft-shot-grid">
         ${shotCell(player.playerId, 1, 'miss', '1PT MISS')}
@@ -333,7 +333,7 @@
 
     const headSmall = current.querySelector('.rp-video-player-panel-head small');
     const headName = current.querySelector('.rp-video-player-panel-head strong');
-    if (headSmall && player) headSmall.textContent = `${teamDisplayName(player.team)} · WORKING AUDIT COPY`;
+    if (headSmall && player) headSmall.textContent = `${teamDisplayName(player.team)} · LOCAL SCORE SHEET`;
     if (headName && player) headName.textContent = playerLabel(player);
 
     current.querySelectorAll('[data-rp-video-shot]').forEach((button) => {
@@ -602,16 +602,16 @@
     const body = adminBody();
     if (!body) return;
     body.innerHTML = `<div class="rp-video-screen rp-video-scoring-screen" data-rp-replay-correction-mode>
-      <div class="rp-admin-title"><span class="rp-admin-kicker">RECORDED SCORING</span><h1>WATCH &amp; SCORE</h1><p>Use the same scorer controls to correct this official game.</p></div>
+      <div class="rp-admin-title"><span class="rp-admin-kicker">RECORDED SCORING</span><h1>WATCH &amp; SCORE</h1><p>Watch the full game continuously. Tap the event at the exact moment it happens.</p></div>
       ${noticeHtml()}
       ${videoPlayerHtml()}
-      <div class="rp-video-auto-note"><strong>7-SECOND LEAD-IN IS AUTOMATIC</strong><span>A made basket keeps its replay marker 7 seconds before the score.</span></div>
+      <div class="rp-video-auto-note"><strong>REVIEW LEAD-IN IS AUTOMATIC</strong><span>Every audited event has an exact video timestamp. Filter the stamps above, then tap one to replay the moment from just before it happens.</span></div>
       <div class="rp-video-scoreboard"><div><small>${esc(teamDisplayName('west'))}</small><strong data-rp-video-score-west>${teamScore('west')}</strong></div><span>—</span><div><small>${esc(teamDisplayName('east'))}</small><strong data-rp-video-score-east>${teamScore('east')}</strong></div></div>
       <div class="rp-video-score-rosters">${rosterHtml('west')}${rosterHtml('east')}</div>
       <div data-rp-video-selected-panel>${selectedPanelHtml()}</div>
-      <div class="rp-video-draft-banner"><div><strong>OFFICIAL SCORE SHEET</strong><span>${draftEvents.length} EVENTS</span></div><small>Changes stay local until VERIFY &amp; SUBMIT.</small></div>
+      <div class="rp-video-draft-banner" data-rp-draft-banner="1"><div><strong>DRAFT SCORE SHEET</strong><span>${draftEvents.length} EVENTS</span></div><small>Nothing changes until VERIFY &amp; SUBMIT.</small></div>
       <div class="rp-video-review-actions">
-        <button type="button" class="rp-video-undo" data-rp-video-undo ${draftEvents.length ? '' : 'disabled'}>UNDO LAST EVENT</button>
+        <button type="button" class="rp-video-undo" data-rp-video-undo ${draftEvents.length ? '' : 'disabled'}>UNDO LAST DRAFT EVENT</button>
         <button type="button" class="rp-video-finish" data-rp-video-finish>REVIEW SCORE SHEET</button>
       </div>
     </div>`;
@@ -659,11 +659,14 @@
     const body = adminBody();
     if (!body) return;
     const made = draftEvents.filter((event) => event.eventType === 'shot' && event.shotResult === 'make').length;
+    const moments = Array.isArray(context?.moments) ? context.moments : [];
+    const highlights = moments.filter((event) => String(event?.momentKind || event?.eventType || '').toLowerCase() === 'highlight').length;
+    const incidents = moments.filter((event) => String(event?.momentKind || event?.eventType || '').toLowerCase() === 'incident').length;
     body.innerHTML = `<div class="rp-video-screen rp-video-sheet-review" data-rp-replay-correction-mode>
-      <div class="rp-admin-title"><span class="rp-admin-kicker">OFFICIAL SCORE SHEET</span><h1>REVIEW BEFORE SUBMIT</h1><p>Verify the same score sheet before replacing the official game stats.</p></div>
+      <div class="rp-admin-title"><span class="rp-admin-kicker">DRAFT SCORE SHEET</span><h1>REVIEW BEFORE SUBMIT</h1><p>Verify the corrected score sheet before it replaces the current official game stats.</p></div>
       ${noticeHtml()}
       <div class="rp-video-scoreboard"><div><small>${esc(teamDisplayName('west'))}</small><strong>${teamScore('west')}</strong></div><span>—</span><div><small>${esc(teamDisplayName('east'))}</small><strong>${teamScore('east')}</strong></div></div>
-      <div class="rp-video-sheet-meta"><span>${draftEvents.length}<small>TOTAL EVENTS</small></span><span>${made}<small>SCORING MARKERS</small></span><span>${draftEvents.filter((event) => event.eventType === 'stat').length}<small>STAT EVENTS</small></span></div>
+      <div class="rp-video-sheet-meta"><span>${draftEvents.length + moments.length}<small>TOTAL EVENTS</small></span><span>${made}<small>SCORING MARKERS</small></span><span>${draftEvents.filter((event) => event.eventType === 'stat').length}<small>STAT EVENTS</small></span><span>${highlights}<small>HIGHLIGHTS</small></span><span>${incidents}<small>INCIDENTS</small></span></div>
       <div class="rp-video-sheet-teams">${reviewTeam('west')}${reviewTeam('east')}</div>
       <div class="rp-video-auto-note"><strong>ONE OFFICIAL WRITE</strong><span>VERIFY &amp; SUBMIT replaces this game's official recorded score sheet in one transaction.</span></div>
       <div class="rp-video-sheet-actions"><button type="button" data-rp-draft-back ${busy ? 'disabled' : ''}>BACK TO SCORING</button><button type="button" data-rp-draft-submit ${busy ? 'disabled' : ''}>${busy ? 'SUBMITTING…' : 'VERIFY & SUBMIT'}</button></div>
@@ -923,6 +926,24 @@
     }
   }
 
+  function returnToReplay({ confirmDiscard = false } = {}) {
+    if (!correctionActive) return false;
+    const sessionId = Number(context?.session?.id || currentSessionId || 0);
+    if (confirmDiscard && !window.confirm(
+      'Cancel this re-audit?\n\nThe working changes will be discarded and the existing certified game record will stay unchanged.'
+    )) return false;
+
+    deactivateCorrection();
+    adminRoot()?.querySelector('[data-admin-exit]')?.click();
+
+    window.setTimeout(() => {
+      const trigger = document.querySelector(`[data-rp-career-replay-session="${sessionId}"]`);
+      if (trigger) trigger.click();
+      else window.location.reload();
+    }, 80);
+    return true;
+  }
+
   function deactivateCorrection() {
     if (!correctionActive) return;
     rememberPlayhead();
@@ -953,6 +974,8 @@
     const root = adminRoot();
     if (!root?.contains(target)) return;
 
+    const exitScoring = target.closest('[data-rp-exit-scoring]');
+    const cancelAudit = target.closest('[data-rp-cancel-audit]');
     const select = target.closest('[data-rp-video-select-player]');
     const closePlayer = target.closest('[data-rp-video-close-player]');
     const shot = target.closest('[data-rp-video-shot]');
@@ -967,11 +990,19 @@
     const closeScoreCorrectionButton = target.closest('[data-rp-audit-score-correction-close]');
     const removeScoreCorrectionButton = target.closest('[data-rp-audit-remove-score]');
     const reassignScoreCorrectionButton = target.closest('[data-rp-audit-reassign-score]');
-    if (!(select || closePlayer || shot || stat || minusShot || minusStat || undo || finish || back || submit || marker || closeScoreCorrectionButton || removeScoreCorrectionButton || reassignScoreCorrectionButton)) return;
+    if (!(exitScoring || cancelAudit || select || closePlayer || shot || stat || minusShot || minusStat || undo || finish || back || submit || marker || closeScoreCorrectionButton || removeScoreCorrectionButton || reassignScoreCorrectionButton)) return;
 
     event.preventDefault();
     event.stopImmediatePropagation();
 
+    if (cancelAudit) {
+      returnToReplay({ confirmDiscard: true });
+      return;
+    }
+    if (exitScoring) {
+      returnToReplay();
+      return;
+    }
     if (closeScoreCorrectionButton) {
       closeScoreCorrection();
       return;
