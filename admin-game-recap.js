@@ -458,9 +458,10 @@
   function finalizedPlayerHtml(player) {
     const stats = player.gameStats || {};
     const shots = `${num(stats.onePtMade)}/${num(stats.onePtAttempts)} 1PT · ${num(stats.twoPtMade)}/${num(stats.twoPtAttempts)} 2PT`;
+    const participation = player?.didNotPlay ? 'DNP · DID NOT PLAY' : shots;
     const jersey = player.jerseyNumber === null || player.jerseyNumber === undefined ? '#—' : `#${Number(player.jerseyNumber)}`;
-    return `<article class="rp-video-sheet-player rp-recap-final-player">
-      <div><strong>${esc(`${jersey} ${player.playerName || 'REAL PLAY PLAYER'}`)}</strong><small>${esc(shots)}</small></div>
+    return `<article class="rp-video-sheet-player rp-recap-final-player ${player?.didNotPlay ? 'rp-recap-dnp-player' : ''}">
+      <div><strong>${esc(`${jersey} ${player.playerName || 'REAL PLAY PLAYER'}`)}</strong><small>${esc(participation)}</small></div>
       <div class="rp-video-sheet-line"><span>${num(stats.points)}<small>PTS</small></span><span>${num(stats.assists)}<small>AST</small></span><span>${num(stats.rebounds)}<small>REB</small></span><span>${num(stats.turnovers)}<small>TO</small></span><span>${num(stats.steals)}<small>STL</small></span><span>${num(stats.blocks)}<small>BLK</small></span><span>${num(stats.fouls)}<small>FOUL</small></span></div>
     </article>`;
   }
