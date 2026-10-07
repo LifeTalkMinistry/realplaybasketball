@@ -647,7 +647,13 @@
   function reviewPlayerRow(player) {
     const stats = summaryForPlayer(player.playerId);
     const shots = `${stats.onePtMade}/${stats.onePtMade + stats.onePtMiss} 1PT · ${stats.twoPtMade}/${stats.twoPtMade + stats.twoPtMiss} 2PT`;
-    return `<article class="rp-video-sheet-player"><div><strong>${esc(playerLabel(player))}</strong><small>${shots}</small></div><div class="rp-video-sheet-line"><span>${stats.pts}<small>PTS</small></span><span>${stats.ast}<small>AST</small></span><span>${stats.reb}<small>REB</small></span><span>${stats.tov}<small>TO</small></span><span>${stats.stl}<small>STL</small></span><span>${stats.blk}<small>BLK</small></span><span>${stats.foul}<small>FOUL</small></span></div></article>`;
+    const participation = typeof window.__realPlayRecordedParticipationPayload === 'function'
+      ? window.__realPlayRecordedParticipationPayload(context?.session?.id)
+      : [];
+    const didNotPlay = Array.isArray(participation)
+      && participation.some((row) => Number(row?.playerId) === Number(player.playerId) && row?.didNotPlay === true);
+    const status = didNotPlay ? 'DNP · DID NOT PLAY' : shots;
+    return `<article class="rp-video-sheet-player ${didNotPlay ? 'rp-recap-dnp-player' : ''}"><div><strong>${esc(playerLabel(player))}</strong><small>${esc(status)}</small></div><div class="rp-video-sheet-line"><span>${stats.pts}<small>PTS</small></span><span>${stats.ast}<small>AST</small></span><span>${stats.reb}<small>REB</small></span><span>${stats.tov}<small>TO</small></span><span>${stats.stl}<small>STL</small></span><span>${stats.blk}<small>BLK</small></span><span>${stats.foul}<small>FOUL</small></span></div></article>`;
   }
 
   function reviewTeam(team) {
