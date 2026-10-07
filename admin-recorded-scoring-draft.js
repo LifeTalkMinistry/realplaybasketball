@@ -119,8 +119,22 @@
   function normalizeServerEvent(event) {
     const rawType = String(event?.eventType || event?.momentKind || '').toLowerCase();
     const eventType = rawType === 'moment' ? String(event?.momentKind || 'highlight').toLowerCase() : rawType;
-    if (!['shot', 'stat', 'highlight', 'incident'].includes(eventType)) return null;
     const timestamp = Number(event.videoTimestampMs || 0);
+    if (eventType === 'score_adjustment') {
+      const team = String(event?.team || '').toLowerCase();
+      if (!['west', 'east'].includes(team)) return null;
+      return {
+        localId: `server-score-adjustment-${Number(event.id || 0)}-${makeId()}`,
+        playerId: null,
+        eventType: 'score_adjustment',
+        team,
+        points: Math.max(1, Number(event.points || 1)),
+        reason: String(event.reason || 'unrecorded_score'),
+        videoTimestampMs: timestamp,
+        replayStartMs: null,
+      };
+    }
+    if (!['shot', 'stat', 'highlight', 'incident'].includes(eventType)) return null;
     const momentKind = ['highlight', 'incident'].includes(eventType)
       ? String(event?.momentKind || eventType).toLowerCase()
       : null;
