@@ -645,6 +645,9 @@
         json: {
           session_id: Number(control.session.id),
           duration_ms: recording?.durationMs ?? null,
+          participation: typeof window.__realPlayRecordedParticipationPayload === 'function'
+            ? window.__realPlayRecordedParticipationPayload(control.session.id)
+            : null,
           events: normalizedDraftEvents.map((event) => {
             return {
             playerId: Number(event.playerId),
