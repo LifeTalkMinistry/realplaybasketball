@@ -609,6 +609,14 @@
     if (west) west.textContent = String(teamScore('west'));
     if (east) east.textContent = String(teamScore('east'));
 
+    ['west', 'east'].forEach((team) => {
+      const adjustment = scoreAdjustmentTotal(team);
+      const count = screen.querySelector(`[data-rp-score-edit-count="${team}"]`);
+      const remove = screen.querySelector(`[data-rp-score-edit-remove="${team}"]`);
+      if (count) count.textContent = `+${adjustment}`;
+      if (remove) remove.disabled = adjustment === 0;
+    });
+
     const markers = screen.querySelector('[data-rp-video-markers]');
     if (markers) {
       const nextMarkers = markerHtml();
