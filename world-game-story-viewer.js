@@ -28,7 +28,7 @@
       .rp-story-slide{position:relative;flex:0 0 100%;min-width:0;height:100%;padding:92px 22px calc(30px + env(safe-area-inset-bottom));display:flex;flex-direction:column;justify-content:flex-end;box-sizing:border-box;overflow:hidden}
       .rp-story-slide::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 12%,rgba(2,6,11,.10) 42%,rgba(2,6,11,.96) 79%);pointer-events:none}
       .rp-story-slide.rp-story-game-slide{--rp-story-club-rgb:255,190,62;background:radial-gradient(circle at 50% 30%,rgba(var(--rp-story-club-rgb),.11),transparent 38%),linear-gradient(155deg,#090b0d,#020304 62%,#090603)}
-      .rp-story-slide.rp-story-game-slide::after{content:'';position:absolute;z-index:0;left:50%;top:48%;width:min(166vw,860px);aspect-ratio:1/1;background:var(--rp-story-winner-art) center/contain no-repeat;opacity:.90;filter:blur(2px) brightness(.48) contrast(1.10) saturate(.94);transform:translate(-50%,-50%) scale(1.06);pointer-events:none;-webkit-mask-image:radial-gradient(ellipse 80% 76% at 50% 49%,#000 0 62%,rgba(0,0,0,.97) 72%,rgba(0,0,0,.70) 85%,transparent 99%);mask-image:radial-gradient(ellipse 80% 76% at 50% 49%,#000 0 62%,rgba(0,0,0,.97) 72%,rgba(0,0,0,.70) 85%,transparent 99%)}
+      .rp-story-game-bg{position:absolute;z-index:0;inset:0;overflow:hidden;pointer-events:none}.rp-story-game-bg img{position:absolute;left:50%;top:48%;width:min(166vw,860px);max-width:none;height:auto;opacity:.90;filter:blur(2px) brightness(.48) contrast(1.10) saturate(.94);transform:translate(-50%,-50%) scale(1.06);-webkit-mask-image:radial-gradient(ellipse 80% 76% at 50% 49%,#000 0 62%,rgba(0,0,0,.97) 72%,rgba(0,0,0,.70) 85%,transparent 99%);mask-image:radial-gradient(ellipse 80% 76% at 50% 49%,#000 0 62%,rgba(0,0,0,.97) 72%,rgba(0,0,0,.70) 85%,transparent 99%)}.rp-story-slide.rp-story-game-slide::after{content:'';position:absolute;z-index:0;left:50%;top:49%;width:min(122vw,630px);height:min(82vw,430px);border-radius:50%;background:rgba(var(--rp-story-club-rgb),.08);filter:blur(72px);mix-blend-mode:screen;transform:translate(-50%,-50%);pointer-events:none}
       .rp-story-slide.rp-story-game-slide::before{z-index:1;background:linear-gradient(180deg,rgba(2,3,4,.06) 0%,rgba(2,3,4,.10) 38%,rgba(2,4,6,.52) 58%,rgba(2,5,8,.94) 77%,#02060b 100%)}
       .rp-story-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center;margin:0 auto;width:100%}
       .rp-story-kicker{display:block;width:100%;margin-bottom:10px;color:#53dcff;font:950 .56rem/1 Arial,sans-serif;letter-spacing:.15em;text-transform:uppercase;text-align:center}
@@ -45,7 +45,7 @@
       .rp-story-arrows{position:absolute;z-index:6;inset:0;pointer-events:none}.rp-story-arrows button{position:absolute;top:50%;transform:translateY(-50%);pointer-events:auto;width:42px;height:42px;border:1px solid rgba(255,255,255,.11);border-radius:50%;background:rgba(2,7,12,.72);color:#dff8ff;font-size:1.1rem;opacity:.5;transition:opacity .16s ease}.rp-story-arrows button:first-child{left:8px}.rp-story-arrows button:last-child{right:8px}.rp-story-arrows button:hover,.rp-story-arrows button:focus-visible{opacity:1}.rp-story-arrows button:disabled{opacity:.18}
       .rp-story-loading{margin:auto;color:#63ddff;font:950 .66rem/1.6 Arial,sans-serif;letter-spacing:.15em;text-align:center}
       @media(max-width:380px){.rp-story-slide{padding-left:18px;padding-right:18px}.rp-story-body{font-size:.78rem}.rp-story-stats{gap:5px}.rp-story-stat{padding:8px 4px}.rp-story-game-winner{width:min(68vw,250px);height:min(31vh,250px)}}
-      @media(max-height:700px){.rp-story-game-winner{top:84px;width:min(58vw,220px);height:min(27vh,220px)}.rp-story-slide.rp-story-game-slide::after{top:47%;width:min(154vw,760px);opacity:.90;filter:blur(2px) brightness(.46) contrast(1.08) saturate(.92)}}
+      @media(max-height:700px){.rp-story-game-winner{top:84px;width:min(58vw,220px);height:min(27vh,220px)}.rp-story-game-bg img{top:47%;width:min(154vw,760px);opacity:.90;filter:blur(2px) brightness(.46) contrast(1.08) saturate(.92)}.rp-story-slide.rp-story-game-slide::after{top:48%;width:min(118vw,580px);height:min(76vw,360px);filter:blur(64px)}}
       @media(prefers-reduced-motion:reduce){.rp-story-track{transition:none}}
     `;
     document.head.appendChild(style);
@@ -187,9 +187,11 @@
     const gameWinner = slide.type === 'game' && winnerSide
       ? `<div class="rp-story-game-winner" aria-label="${esc(winnerName)} winner logo">${winnerLogo ? `<img src="${esc(winnerLogo)}" alt="${esc(winnerName)} team logo">` : `<div class="rp-story-game-winner-fallback" aria-hidden="true">${esc(winnerName.charAt(0) || 'W')}</div>`}</div>`
       : '';
-    const gameStyle = slide.type === 'game' && winnerLogo ? ` style="--rp-story-winner-art:url('&quot;${esc(winnerLogo)}&quot;')"` : '';
+    const gameBackground = slide.type === 'game' && winnerLogo
+      ? `<div class="rp-story-game-bg" aria-hidden="true"><img src="${esc(winnerLogo)}" alt=""></div>`
+      : '';
     const gameClass = slide.type === 'game' ? ' rp-story-game-slide' : '';
-    return `<article class="rp-story-slide${gameClass}" data-rp-story-slide${gameStyle}>${art}${gameWinner}<div class="rp-story-content">${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
+    return `<article class="rp-story-slide${gameClass}" data-rp-story-slide>${gameBackground}${art}${gameWinner}<div class="rp-story-content">${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
   }
 
   function buildDeck(game, rawPlayers) {
