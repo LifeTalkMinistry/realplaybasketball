@@ -4,6 +4,7 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const TOKEN_KEY = 'real_play_access_token';
+  const OWN_CACHE_TTL_MS = 30_000;
 
   let ownProfileCache = null;
   let ownGameCache = null;
@@ -81,7 +82,7 @@
 
   async function fetchOwnData() {
     const now = Date.now();
-    if (ownProfileCache && ownGameCache && now - ownCacheAt < 5000) {
+    if (ownProfileCache && ownGameCache && now - ownCacheAt < OWN_CACHE_TTL_MS) {
       return { profile: ownProfileCache, metricGames: ownGameCache };
     }
     if (ownLoading) return ownLoading;
@@ -502,10 +503,18 @@
 
   document.addEventListener('click', (event) => {
     if (event.target.closest('[data-rp-main-action="profile"], [data-rp-open-profile]')) {
-      resetOwnCache();
+      // Use the warm cache first. fetchOwnData() owns TTL freshness, so opening
+      // ME never deliberately throws away data and paints a temporary metric state.
       setTimeout(schedule, 0);
     }
   }, true);
+
+  window.addEventListener('realplay:profile-loaded', () => {
+    // The own profile can be assembled while hidden. Warm career metrics at the
+    // same time so the first visible ME frame does not need a second fetch.
+    fetchOwnData().catch(() => undefined);
+    setTimeout(schedule, 0);
+  });
 
   window.addEventListener('realplay:public-profile-loaded', () => {
     openMetricKey = null;
@@ -528,7 +537,8 @@
   window.addEventListener('focus', () => {
     const profile = activeProfile();
     if (!profile) return;
-    if (!isPublicProfile(profile)) resetOwnCache();
+    // Do not force a visual reload on focus. The normal TTL refreshes stale
+    // metrics without replacing a perfectly good warm first frame.
     schedule();
   });
 
