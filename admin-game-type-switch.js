@@ -39,21 +39,35 @@
     document.head.appendChild(script);
   }
 
+  function ensureAuditBoundaries() {
+    if (window.__realPlayRecordedAuditBoundariesInstalled) return;
+    if ([...document.scripts].some((script) => String(script.src || '').includes('admin-recorded-audit-boundaries.js'))) return;
+    const script = document.createElement('script');
+    script.src = 'admin-recorded-audit-boundaries.js?v=20261007-audit-boundaries-v1';
+    script.async = false;
+    script.onerror = () => console.error('[Real Play] Audit boundary markers failed to load.');
+    document.head.appendChild(script);
+  }
+
   cleanup();
   ensureParticipationTimeline();
+  ensureAuditBoundaries();
   queueWorldPlayerAdminSync();
   window.addEventListener('realplay:admin-render', () => {
     ensureParticipationTimeline();
+    ensureAuditBoundaries();
     queueWorldPlayerAdminSync();
   });
   window.addEventListener('realplay:admin-control-render', () => {
     cleanup();
     ensureParticipationTimeline();
+    ensureAuditBoundaries();
     queueWorldPlayerAdminSync();
   });
   window.addEventListener('realplay:entry-mode-state', cleanup);
   window.addEventListener('focus', () => {
     ensureParticipationTimeline();
+    ensureAuditBoundaries();
     queueWorldPlayerAdminSync();
   });
 
