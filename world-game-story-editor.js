@@ -36,10 +36,28 @@
     try { return normalizeView(JSON.parse(localStorage.getItem(storageKey(ownPlayerId)) || '{}')); }
     catch (_error) { return normalizeView(); }
   }
-  function saveView(view) {
-    if (!ownPlayerId) return;
-    try { localStorage.setItem(storageKey(ownPlayerId), JSON.stringify(normalizeView(view))); }
-    catch (_error) {}
+  async function saveView(view) {
+    if (!ownPlayerId) throw new Error('Player identity is unavailable.');
+    const token = localStorage.getItem(TOKEN_KEY) || '';
+    if (!token) throw new Error('Log in again to save Story View.');
+
+    const response = await fetch(`${API_BASE_URL}/api/real-play/story-view`, {
+      method:'PUT',
+      headers:{
+        Accept:'application/json',
+        'Content-Type':'application/json',
+        Authorization:`Bearer ${token}`,
+      },
+      body:JSON.stringify({ playerId:ownPlayerId, ...normalizeView(view) }),
+      cache:'no-store',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data?.view) {
+      throw new Error(data?.message || data?.error || 'Story View could not be saved.');
+    }
+    const saved = normalizeView(data.view);
+    try { localStorage.setItem(storageKey(ownPlayerId), JSON.stringify(saved)); } catch (_error) {}
+    return saved;
   }
   function resolveSrc(src) {
     const value = String(src || '').trim();
@@ -62,33 +80,10 @@
         if (!accessResponse.ok) return null;
         const access = await accessResponse.json().catch(() => ({}));
         ownPlayerId = positiveId(access?.userId ?? access?.adminUserId);
-        if (!ownPlayerId) return null;
-        try {
-          const artResponse = await fetch(`${API_BASE_URL}/api/real-play/profile-art?playerId=${encodeURIComponent(ownPlayerId)}`, {
-            headers: { Accept:'application/json' }, cache:'no-store',
-          });
-          if (artResponse.ok) {
-            const data = await artResponse.json().catch(() => ({}));
-            if (data?.art && data.art.enabled !== false && data.art.src) {
-              ownArtSrc = resolveSrc(data.art.src);
-              return { playerId:ownPlayerId, src:ownArtSrc };
-            }
-          }
-        } catch (_error) {}
-        try {
-          const registryResponse = await fetch(`${REGISTRY_URL}?v=20261007-story-view-editor-v1`, {
-            headers: { Accept:'application/json' }, cache:'no-store',
-          });
-          if (registryResponse.ok) {
-            const registry = await registryResponse.json().catch(() => ({}));
-            const entry = (Array.isArray(registry?.players) ? registry.players : []).find((item) =>
-              positiveId(item?.playerId ?? item?.player_id ?? item?.userId ?? item?.user_id) === ownPlayerId
-            );
-            if (entry?.src) ownArtSrc = resolveSrc(entry.src);
-          }
-        } catch (_error) {}
-        return { playerId:ownPlayerId, src:ownArtSrc };
-      } catch (_error) { return null; }
+        return ownPlayerId ? { playerId:ownPlayerId } : null;
+      } catch (_error) {
+        return null;
+      }
     })();
     return identityPromise;
   }
@@ -108,7 +103,7 @@
     image?.style.setProperty('--rp-story-player-art-scale', String(next.scale));
   }
   function editorMarkup() {
-    return `<span class="rp-story-player-edit-hint" aria-hidden="true">DOUBLE TAP TO ADJUST</span><div class="rp-story-player-edit-tools" data-rp-story-edit-tools><span>STORY VIEW</span><div><button type="button" data-rp-story-edit-action="zoom-out" aria-label="Zoom out">−</button><button type="button" data-rp-story-edit-action="zoom-in" aria-label="Zoom in">+</button><button type="button" data-rp-story-edit-action="reset">RESET</button><button type="button" data-rp-story-edit-action="cancel">CANCEL</button><button type="button" data-rp-story-edit-action="save">SAVE</button></div></div>`;
+    return `<span class="rp-story-player-edit-hint" aria-hidden="true">DOUBLE TAP TO ADJUST</span><div class="rp-story-player-edit-tools" data-rp-story-edit-tools><span data-rp-story-edit-status>STORY VIEW</span><div><button type="button" data-rp-story-edit-action="zoom-out" aria-label="Zoom out">−</button><button type="button" data-rp-story-edit-action="zoom-in" aria-label="Zoom in">+</button><button type="button" data-rp-story-edit-action="reset">RESET</button><button type="button" data-rp-story-edit-action="cancel">CANCEL</button><button type="button" data-rp-story-edit-action="save">SAVE</button></div></div>`;
   }
   function sameSource(image) {
     if (!ownArtSrc || !image) return false;
@@ -119,14 +114,13 @@
   }
   async function decorate(root = document) {
     const identity = await resolveIdentity();
-    if (!identity?.playerId || !identity?.src) return;
+    if (!identity?.playerId) return;
     root.querySelectorAll?.('.rp-story-player-art-frame').forEach((frame) => {
       if (frame.classList.contains('rp-story-view-editor-ready')) return;
-      const image = frame.querySelector('.rp-story-player-art');
-      if (!sameSource(image)) return;
+      const framePlayerId = positiveId(frame.dataset.rpStoryPlayerId);
+      if (!framePlayerId || framePlayerId !== identity.playerId) return;
       frame.classList.add('rp-story-view-editor-ready','is-own');
-      frame.dataset.rpStoryPlayerId = String(identity.playerId);
-      applyView(frame, loadView());
+      applyView(frame, frameView(frame));
       if (!frame.querySelector('[data-rp-story-edit-tools]')) frame.insertAdjacentHTML('beforeend', editorMarkup());
     });
   }
@@ -139,12 +133,30 @@
     frame.closest('[data-rp-game-story-viewer]')?.classList.add('rp-story-view-editing');
     activeFrame = frame; pointers.clear(); drag = null; pinch = null;
   }
-  function finishEdit(save) {
+  async function finishEdit(save) {
     const frame = activeFrame; if (!frame) return;
-    if (save) saveView(frameView(frame));
-    else { try { applyView(frame, JSON.parse(frame.dataset.rpStoryOriginalView || '{}')); } catch (_error) {} }
+    const status = frame.querySelector('[data-rp-story-edit-status]');
+    const saveButton = frame.querySelector('[data-rp-story-edit-action="save"]');
+
+    if (save) {
+      if (status) status.textContent = 'SAVING…';
+      if (saveButton) saveButton.disabled = true;
+      try {
+        const saved = await saveView(frameView(frame));
+        document.querySelectorAll(`.rp-story-player-art-frame[data-rp-story-player-id="${ownPlayerId}"]`).forEach((target) => applyView(target, saved));
+        if (status) status.textContent = 'SAVED';
+      } catch (error) {
+        if (status) status.textContent = 'SAVE FAILED · TRY AGAIN';
+        if (saveButton) saveButton.disabled = false;
+        return;
+      }
+    } else {
+      try { applyView(frame, JSON.parse(frame.dataset.rpStoryOriginalView || '{}')); } catch (_error) {}
+    }
+
     frame.classList.remove('is-editing'); delete frame.dataset.rpStoryOriginalView;
     frame.closest('[data-rp-game-story-viewer]')?.classList.remove('rp-story-view-editing');
+    if (saveButton) saveButton.disabled = false;
     pointers.clear(); drag = null; pinch = null; activeFrame = null;
   }
   function zoom(frame, delta) { const current = frameView(frame); applyView(frame,{...current,scale:current.scale+delta}); }
@@ -160,7 +172,7 @@
       .rp-story-player-edit-hint{position:absolute;z-index:6;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;min-height:24px;padding:0 10px;border:1px solid rgba(255,255,255,.13);border-radius:999px;background:rgba(2,7,12,.78);color:#d9edf5;font:900 .42rem/1 Arial,sans-serif;letter-spacing:.10em;white-space:nowrap;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none}
       .rp-story-player-edit-tools{position:absolute;z-index:8;left:8px;right:8px;bottom:8px;display:none;padding:7px;border:1px solid rgba(255,255,255,.11);border-radius:13px;background:rgba(2,7,12,.91);box-shadow:0 12px 30px rgba(0,0,0,.42);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
       .rp-story-player-edit-tools>span{display:block;margin-bottom:6px;color:#7f92a5;font:900 .40rem/1 Arial,sans-serif;letter-spacing:.12em;text-align:center}.rp-story-player-edit-tools>div{display:grid;grid-template-columns:34px 34px 1fr 1fr 1fr;gap:5px}
-      .rp-story-player-edit-tools button{min-width:0;height:31px;padding:0 5px;border:1px solid rgba(255,255,255,.10);border-radius:8px;background:#09121c;color:#eef8ff;font:950 .46rem/1 Arial,sans-serif;letter-spacing:.035em;cursor:pointer}.rp-story-player-edit-tools button[data-rp-story-edit-action="save"]{color:#031018;border-color:#61dcff;background:#61dcff}
+      .rp-story-player-edit-tools button{min-width:0;height:31px;padding:0 5px;border:1px solid rgba(255,255,255,.10);border-radius:8px;background:#09121c;color:#eef8ff;font:950 .46rem/1 Arial,sans-serif;letter-spacing:.035em;cursor:pointer}.rp-story-player-edit-tools button[data-rp-story-edit-action="save"]{color:#031018;border-color:#61dcff;background:#61dcff}.rp-story-player-edit-tools button:disabled{opacity:.55;cursor:wait}
       .rp-story-player-art-frame.is-editing{z-index:12!important;touch-action:none!important;cursor:grab;border-color:rgba(var(--rp-story-club-rgb),.72)!important;box-shadow:0 24px 58px rgba(0,0,0,.60),0 0 0 2px rgba(var(--rp-story-club-rgb),.20)!important}.rp-story-player-art-frame.is-editing:active{cursor:grabbing}.rp-story-player-art-frame.is-editing .rp-story-player-edit-hint{display:none}.rp-story-player-art-frame.is-editing .rp-story-player-edit-tools{display:block}.rp-story-player-art-frame.is-editing .rp-story-player-art-shade{opacity:.34}
       @media(max-width:380px){.rp-story-player-edit-tools{left:6px;right:6px;bottom:6px;padding:6px}.rp-story-player-edit-tools>span{display:none}.rp-story-player-edit-tools>div{grid-template-columns:30px 30px 1fr 1fr 1fr;gap:4px}.rp-story-player-edit-tools button{height:29px;font-size:.42rem}}
     `;
