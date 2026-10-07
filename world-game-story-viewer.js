@@ -169,7 +169,8 @@
       : slide.player ? `<div class="rp-story-player-fallback" aria-hidden="true">${esc(slide.player.name.charAt(0) || 'R')}</div>`
       : slide.type === 'team' ? `<div class="rp-story-team-mark" aria-hidden="true">${esc(slide.teamName)}</div>` : '';
     const score = slide.type === 'game' ? `<div class="rp-story-score"><b>${game.westScore}</b><span>${esc(game.westName)} · ${esc(game.eastName)}</span><b>${game.eastScore}</b></div>` : '';
-    return `<article class="rp-story-slide" data-rp-story-slide>${art}<div class="rp-story-content"><span class="rp-story-kicker">${esc(slide.kicker)}</span><h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
+    const kicker = slide.type === 'player' ? '' : `<span class="rp-story-kicker">${esc(slide.kicker)}</span>`;
+    return `<article class="rp-story-slide" data-rp-story-slide>${art}<div class="rp-story-content">${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
   }
 
   function buildDeck(game, rawPlayers) {
