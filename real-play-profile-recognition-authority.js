@@ -215,9 +215,11 @@
         padding:0!important;
         overflow:hidden!important;
       }
+      /* Recognition authority may hide/show badge content, but it must never
+         change player-row geometry. Hero geometry is owned by CSS only. */
       .rp-profile.rp-profile-recognition-none-authoritative .rp-profile-hero .rp-profile-player,
       .rp-profile.rp-profile-recognition-none-authoritative.has-rp-profile-badges .rp-profile-hero .rp-profile-player{
-        margin-top:24px!important;
+        margin-top:4px!important;
         padding-top:0!important;
       }
     `;
