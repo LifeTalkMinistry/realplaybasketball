@@ -588,6 +588,17 @@
     return banner;
   }
 
+  function scoreEditMarkup() {
+    const west = scoreAdjustmentTotal('west');
+    const east = scoreAdjustmentTotal('east');
+    return `<div class="rp-score-edit-head"><div><strong>SCORE EDIT</strong><small>UNATTRIBUTED TEAM SCORE</small></div><span>NO PLAYER PTS</span></div>
+      <div class="rp-score-edit-grid">
+        <div class="rp-score-edit-team"><span>WEST</span><div><button type="button" data-rp-score-edit-remove="west" ${west ? '' : 'disabled'}>−</button><strong data-rp-score-edit-count="west">+${west}</strong><button type="button" data-rp-score-edit-add="west">+</button></div></div>
+        <div class="rp-score-edit-team"><span>EAST</span><div><button type="button" data-rp-score-edit-remove="east" ${east ? '' : 'disabled'}>−</button><strong data-rp-score-edit-count="east">+${east}</strong><button type="button" data-rp-score-edit-add="east">+</button></div></div>
+      </div>
+      <p>Use when points happened but the scorer is unknown. Team score only; no player stats.</p>`;
+  }
+
   function patchScoringUI() {
     if (!active || reviewMode) return;
     const screen = scoringScreen();
