@@ -100,3 +100,12 @@
     },
   };
 })();
+
+(() => {
+  if (document.querySelector('script[data-rp-game-story-viewer-loader]')) return;
+  const script = document.createElement('script');
+  script.src = 'world-game-story-viewer.js?v=20261007-story-carousel-v1';
+  script.defer = true;
+  script.dataset.rpGameStoryViewerLoader = 'true';
+  document.head.appendChild(script);
+})();
