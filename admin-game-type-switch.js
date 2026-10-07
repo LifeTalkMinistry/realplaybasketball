@@ -43,7 +43,7 @@
     if (window.__realPlayRecordedAuditBoundariesInstalled) return;
     if ([...document.scripts].some((script) => String(script.src || '').includes('admin-recorded-audit-boundaries.js'))) return;
     const script = document.createElement('script');
-    script.src = 'admin-recorded-audit-boundaries.js?v=20261007-audit-boundaries-v1';
+    script.src = 'admin-recorded-audit-boundaries.js?v=20261007-audit-boundaries-v2';
     script.async = false;
     script.onerror = () => console.error('[Real Play] Audit boundary markers failed to load.');
     document.head.appendChild(script);
