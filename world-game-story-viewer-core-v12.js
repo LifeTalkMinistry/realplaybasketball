@@ -41,7 +41,7 @@
       .rp-story-game-title::before,.rp-story-game-title::after{content:'';flex:0 1 46px;height:1px;opacity:.85;box-shadow:0 0 12px rgba(var(--rp-story-club-rgb),.18)}
       .rp-story-game-title::before{background:linear-gradient(90deg,transparent,rgba(var(--rp-story-club-rgb),.82))}
       .rp-story-game-title::after{background:linear-gradient(90deg,rgba(var(--rp-story-club-rgb),.82),transparent)}
-      .rp-story-game-title span{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:31px;padding:0 17px 0 19px;background:linear-gradient(180deg,rgba(22,20,14,.92),rgba(5,6,7,.96));border-top:1px solid rgba(var(--rp-story-club-rgb),.70);border-bottom:1px solid rgba(var(--rp-story-club-rgb),.34);clip-path:polygon(7px 0,calc(100% - 7px) 0,100% 50%,calc(100% - 7px) 100%,7px 100%,0 50%);color:#f7d77d;font:950 .68rem/1 Arial,sans-serif;letter-spacing:.20em;text-transform:uppercase;text-align:center;text-shadow:0 0 14px rgba(var(--rp-story-club-rgb),.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+      .rp-story-game-title span{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:31px;padding:0 17px 0 19px;background:linear-gradient(180deg,rgba(22,20,14,.92),rgba(5,6,7,.96));border-top:1px solid rgba(var(--rp-story-club-rgb),.70);border-bottom:1px solid rgba(var(--rp-story-club-rgb),.34);clip-path:polygon(7px 0,calc(100% - 7px) 0,100% 50%,calc(100% - 7px) 100%,7px 100%,0 50%);color:#f7d77d;font:950 .68rem/1 Arial,sans-serif;letter-spacing:.20em;text-transform:uppercase;text-align:center;text-shadow:0 0 14px rgba(var(--rp-story-club-rgb),.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}.rp-story-game-matchup-title{position:absolute;z-index:4;left:18px;right:18px;top:50%;width:auto;margin:0;transform:translateY(-50%);pointer-events:none}.rp-story-game-matchup-title span{box-shadow:0 0 22px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.05)}
       .rp-story-headline{position:relative;z-index:1;margin:0 auto;max-width:470px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:clamp(2rem,10vw,3.45rem);font-style:italic;font-weight:950;line-height:.94;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance;text-align:center;text-shadow:0 3px 12px rgba(0,0,0,.88),0 1px 2px rgba(0,0,0,.96)}
       .rp-story-body{margin:15px auto 0;max-width:430px;color:#bbc8d4;font:650 .86rem/1.55 Arial,sans-serif;text-align:center}
       .rp-story-game-winner{position:absolute;z-index:2;top:clamp(90px,13vh,124px);left:50%;transform:translateX(-50%);width:min(72vw,300px);height:min(34vh,300px);display:grid;place-items:center;pointer-events:none}
@@ -413,11 +413,9 @@
       : slide.type === 'team' && !brandLogo ? `<div class="rp-story-team-mark" aria-hidden="true">${esc(slide.teamName)}</div>` : '';
 
     const score = slide.type === 'game' ? `<div class="rp-story-score"><b>${game.westScore}</b><span>${esc(game.westName)} · ${esc(game.eastName)}</span><b>${game.eastScore}</b></div>` : '';
-    const kicker = slide.type === 'player'
+    const kicker = slide.type === 'player' || slide.type === 'game'
       ? ''
-      : slide.type === 'game'
-        ? `<div class="rp-story-game-title"><span>${esc(slide.kicker)}</span></div>`
-        : `<span class="rp-story-kicker">${esc(slide.kicker)}</span>`;
+      : `<span class="rp-story-kicker">${esc(slide.kicker)}</span>`;
 
     const topName = sideName(topSide);
     const bottomName = sideName(bottomSide);
@@ -435,7 +433,7 @@
       </div>`;
 
     const gameMatchup = slide.type === 'game'
-      ? `<div class="rp-story-game-matchup" aria-label="${esc(topName)} versus ${esc(bottomName)}">${matchupTeam(winnerSide ? 'is-winner' : '',topName,topLogo,topRgb)}${matchupTeam('',bottomName,bottomLogo,bottomRgb)}</div>`
+      ? `<div class="rp-story-game-matchup" aria-label="${esc(topName)} versus ${esc(bottomName)}">${matchupTeam(winnerSide ? 'is-winner' : '',topName,topLogo,topRgb)}${matchupTeam('',bottomName,bottomLogo,bottomRgb)}<div class="rp-story-game-title rp-story-game-matchup-title"><span>${esc(slide.kicker)}</span></div></div>`
       : '';
 
     const teamHero = slide.type === 'team' && brandLogo
