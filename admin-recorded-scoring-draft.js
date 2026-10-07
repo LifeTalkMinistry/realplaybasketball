@@ -925,6 +925,14 @@
 
     if (!active || reviewMode || !scoringScreen()) return;
 
+    const correctionUp = event.target.closest('[data-rp-score-edit-add]');
+    if (correctionUp) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      recordTeamCorrection(correctionUp.dataset.rpScoreEditAdd);
+      return;
+    }
+
     const moment = event.target.closest('[data-rp-video-moment]');
     if (moment) {
       event.preventDefault();
