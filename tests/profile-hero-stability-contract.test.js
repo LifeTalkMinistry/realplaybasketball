@@ -79,3 +79,14 @@ test('profile artwork and metrics use warm progressive readiness', () => {
   assert.ok(metrics.includes('OWN_CACHE_TTL_MS = 30_000'));
   assert.ok(metrics.includes("window.addEventListener('realplay:profile-loaded'"));
 });
+
+
+test('ME geometry lock is scoped away from public profiles', () => {
+  const css = fs.readFileSync(path.join(root, 'real-play-profile-intro.css'), 'utf8');
+  const lockStart = css.indexOf('PROFILE HERO GEOMETRY LOCK v223');
+  assert.ok(lockStart >= 0);
+  const lock = css.slice(lockStart);
+  assert.ok(lock.includes('.rp-profile[data-rp-profile] .rp-profile-hero'));
+  assert.ok(!lock.includes('\n.rp-profile .rp-profile-hero{'));
+  assert.ok(lock.includes('.rp-profile[data-rp-profile] .rp-profile-hero > .rp-profile-badges'));
+});
