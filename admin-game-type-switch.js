@@ -33,7 +33,7 @@
     if (window.__realPlayRecordedParticipationTimelineInstalled) return;
     if ([...document.scripts].some((script) => String(script.src || '').includes('admin-recorded-participation-timeline.js'))) return;
     const script = document.createElement('script');
-    script.src = 'admin-recorded-participation-timeline.js?v=20261007-participation-authority-v3';
+    script.src = 'admin-recorded-participation-timeline.js?v=20261007-participation-authority-v4';
     script.async = false;
     script.onerror = () => console.error('[Real Play] Recorded participation timeline failed to load.');
     document.head.appendChild(script);
