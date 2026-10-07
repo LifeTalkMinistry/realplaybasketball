@@ -102,16 +102,15 @@
     style.dataset.rpAuditBoundaryStyles = '1';
     style.textContent = `
       .rp-video-marker-rail [data-rp-audit-boundaries]{position:absolute;inset:0;z-index:8;pointer-events:none}
-      .rp-audit-boundary-stamp{position:absolute;top:0;height:28px;min-width:28px;padding:0 7px;border:1px solid rgba(126,231,255,.62);border-radius:999px;background:#06131e;color:#bff6ff;box-shadow:0 0 0 2px rgba(2,9,15,.8),0 0 15px rgba(30,211,244,.16);font:950 7px/1 system-ui,sans-serif;letter-spacing:.08em;display:flex;align-items:center;gap:4px;white-space:nowrap;pointer-events:auto;cursor:pointer;z-index:9}
-      .rp-audit-boundary-stamp::after{content:'';position:absolute;top:25px;width:2px;height:8px;background:#44daf7;opacity:.95}
-      .rp-audit-boundary-stamp.start{transform:translateX(-2px)}
-      .rp-audit-boundary-stamp.start::after{left:4px}
-      .rp-audit-boundary-stamp.end{transform:translateX(calc(-100% + 2px));border-color:rgba(255,110,121,.68);color:#ffd8dc;box-shadow:0 0 0 2px rgba(2,9,15,.8),0 0 15px rgba(255,64,83,.14)}
-      .rp-audit-boundary-stamp.end::after{right:4px;background:#ff6575}
-      .rp-audit-boundary-stamp b{font-size:9px;line-height:1}
-      .rp-audit-boundary-stamp small{font:900 6px/1 system-ui,sans-serif;letter-spacing:.04em;opacity:.72}
+      .rp-audit-boundary-stamp{position:absolute;top:4px;width:20px;height:20px;min-width:20px;padding:0;border:1px solid rgba(126,231,255,.62);border-radius:50%;background:#06131e;color:#bff6ff;box-shadow:0 0 0 2px rgba(2,9,15,.8),0 0 12px rgba(30,211,244,.15);display:grid;place-items:center;pointer-events:auto;cursor:pointer;z-index:9}
+      .rp-audit-boundary-stamp::after{content:'';position:absolute;top:18px;width:2px;height:9px;background:#44daf7;opacity:.95}
+      .rp-audit-boundary-stamp.start{transform:translateX(-3px)}
+      .rp-audit-boundary-stamp.start::after{left:3px}
+      .rp-audit-boundary-stamp.end{transform:translateX(calc(-100% + 3px));border-color:rgba(255,110,121,.68);color:#ffd8dc;box-shadow:0 0 0 2px rgba(2,9,15,.8),0 0 12px rgba(255,64,83,.13)}
+      .rp-audit-boundary-stamp.end::after{right:3px;background:#ff6575}
+      .rp-audit-boundary-stamp b{display:block;font:950 9px/1 system-ui,sans-serif;transform:translateY(-.5px)}
       .rp-video-marker-key.rp-audit-boundary-key{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-      .rp-video-marker-key.rp-audit-boundary-key [data-rp-boundary-key]{display:inline-flex;align-items:center;gap:8px;color:#84b8c8;font:800 7px/1.25 system-ui,sans-serif;letter-spacing:.07em}
+      .rp-video-marker-key.rp-audit-boundary-key [data-rp-boundary-key]{display:inline-flex;align-items:center;gap:7px;color:#84b8c8;font:800 7px/1.25 system-ui,sans-serif;letter-spacing:.05em}
       .rp-video-marker-key.rp-audit-boundary-key [data-rp-boundary-key] b{color:#6ee5fb;font-weight:950}.rp-video-marker-key.rp-audit-boundary-key [data-rp-boundary-key] em{color:#ff8995;font-style:normal;font-weight:950}
     `;
     document.head.appendChild(style);
@@ -157,8 +156,8 @@
     if (signature !== lastSignature || !layer?.querySelector('[data-rp-audit-boundary="start"]')) {
       lastSignature = signature;
       layer.innerHTML = `
-        <button type="button" class="rp-audit-boundary-stamp start" data-rp-audit-boundary="start" data-ms="${state.startMs}" style="left:${startPct}%" title="Game start · video ${formatTime(state.startMs)}"><b>▶</b><span>START</span><small>${formatTime(state.startMs)}</small></button>
-        <button type="button" class="rp-audit-boundary-stamp end" data-rp-audit-boundary="end" data-ms="${state.endMs}" style="left:${endPct}%" title="Game end · video ${formatTime(state.endMs)}"><b>■</b><span>END</span><small>${formatTime(state.endMs)}</small></button>`;
+        <button type="button" class="rp-audit-boundary-stamp start" data-rp-audit-boundary="start" data-ms="${state.startMs}" style="left:${startPct}%" title="Game start · video ${formatTime(state.startMs)}" aria-label="Game start at video ${formatTime(state.startMs)}"><b aria-hidden="true">▶</b></button>
+        <button type="button" class="rp-audit-boundary-stamp end" data-rp-audit-boundary="end" data-ms="${state.endMs}" style="left:${endPct}%" title="Game end · video ${formatTime(state.endMs)}" aria-label="Game end at video ${formatTime(state.endMs)}"><b aria-hidden="true">■</b></button>`;
     }
 
     const key = scoring.querySelector('.rp-video-marker-key');
@@ -170,7 +169,7 @@
         info.dataset.rpBoundaryKey = '1';
         key.appendChild(info);
       }
-      info.innerHTML = `<b>▶ START ${formatTime(state.startMs)}</b><span>·</span><em>■ END ${formatTime(state.endMs)}</em>`;
+      info.innerHTML = `<b>▶ ${formatTime(state.startMs)}</b><span>·</span><em>■ ${formatTime(state.endMs)}</em>`;
     }
   }
 
