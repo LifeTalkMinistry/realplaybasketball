@@ -32,6 +32,11 @@
       .rp-story-slide.rp-story-game-slide::before{z-index:1;background:linear-gradient(180deg,rgba(2,3,4,.06) 0%,rgba(2,3,4,.10) 38%,rgba(2,4,6,.52) 58%,rgba(2,5,8,.94) 77%,#02060b 100%)}
       .rp-story-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center;margin:0 auto;width:100%}
       .rp-story-kicker{display:block;width:100%;margin-bottom:10px;color:#53dcff;font:950 .56rem/1 Arial,sans-serif;letter-spacing:.15em;text-transform:uppercase;text-align:center}
+      .rp-story-game-title{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:0 auto 15px}
+      .rp-story-game-title::before,.rp-story-game-title::after{content:'';flex:0 1 46px;height:1px;opacity:.85;box-shadow:0 0 12px rgba(var(--rp-story-club-rgb),.18)}
+      .rp-story-game-title::before{background:linear-gradient(90deg,transparent,rgba(var(--rp-story-club-rgb),.82))}
+      .rp-story-game-title::after{background:linear-gradient(90deg,rgba(var(--rp-story-club-rgb),.82),transparent)}
+      .rp-story-game-title span{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:31px;padding:0 17px 0 19px;background:linear-gradient(180deg,rgba(22,20,14,.92),rgba(5,6,7,.96));border-top:1px solid rgba(var(--rp-story-club-rgb),.70);border-bottom:1px solid rgba(var(--rp-story-club-rgb),.34);clip-path:polygon(7px 0,calc(100% - 7px) 0,100% 50%,calc(100% - 7px) 100%,7px 100%,0 50%);color:#f7d77d;font:950 .68rem/1 Arial,sans-serif;letter-spacing:.20em;text-transform:uppercase;text-align:center;text-shadow:0 0 14px rgba(var(--rp-story-club-rgb),.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
       .rp-story-headline{margin:0 auto;max-width:470px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:clamp(2rem,10vw,3.45rem);font-style:italic;font-weight:950;line-height:.94;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance;text-align:center}
       .rp-story-body{margin:15px auto 0;max-width:430px;color:#bbc8d4;font:650 .86rem/1.55 Arial,sans-serif;text-align:center}
       .rp-story-game-winner{position:absolute;z-index:2;top:clamp(90px,13vh,124px);left:50%;transform:translateX(-50%);width:min(72vw,300px);height:min(34vh,300px);display:grid;place-items:center;pointer-events:none}
@@ -180,7 +185,11 @@
       : slide.player ? `<div class="rp-story-player-fallback" aria-hidden="true">${esc(slide.player.name.charAt(0) || 'R')}</div>`
       : slide.type === 'team' ? `<div class="rp-story-team-mark" aria-hidden="true">${esc(slide.teamName)}</div>` : '';
     const score = slide.type === 'game' ? `<div class="rp-story-score"><b>${game.westScore}</b><span>${esc(game.westName)} · ${esc(game.eastName)}</span><b>${game.eastScore}</b></div>` : '';
-    const kicker = slide.type === 'player' ? '' : `<span class="rp-story-kicker">${esc(slide.kicker)}</span>`;
+    const kicker = slide.type === 'player'
+      ? ''
+      : slide.type === 'game'
+        ? `<div class="rp-story-game-title"><span>${esc(slide.kicker)}</span></div>`
+        : `<span class="rp-story-kicker">${esc(slide.kicker)}</span>`;
     const winnerSide = game.westScore === game.eastScore ? null : (game.westScore > game.eastScore ? 'west' : 'east');
     const winnerLogo = winnerSide === 'west' ? game.westLogo : winnerSide === 'east' ? game.eastLogo : '';
     const winnerName = winnerSide === 'west' ? game.westName : winnerSide === 'east' ? game.eastName : '';
