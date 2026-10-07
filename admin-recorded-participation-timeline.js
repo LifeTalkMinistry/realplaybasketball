@@ -25,8 +25,17 @@
   }
 
   function screen() {
-    const node = document.querySelector('.rp-admin-control .rp-video-scoring-screen');
-    return node?.matches?.('[data-rp-replay-correction-mode]') ? null : node;
+    return document.querySelector('.rp-admin-control .rp-video-scoring-screen') || null;
+  }
+
+  function correctionState(sc = screen()) {
+    if (!sc?.matches?.('[data-rp-replay-correction-mode]')) return null;
+    try {
+      const value = window.__realPlayReplayCorrectionAuditState?.();
+      return value?.active ? value : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   function video() {
@@ -34,6 +43,10 @@
   }
 
   function currentMs() {
+    const correction = correctionState();
+    if (correction) {
+      return Math.max(0, Math.round(Number(correction.currentVideoMs || 0)));
+    }
     return Math.max(0, Math.round(Number(video()?.currentTime || 0) * 1000));
   }
 
@@ -230,6 +243,19 @@
 
   async function loadSession() {
     if (window.__realPlayAdminVerified !== true || !token()) return false;
+
+    const correction = correctionState();
+    const correctionSessionId = Number(correction?.sessionId || 0);
+    if (Number.isSafeInteger(correctionSessionId) && correctionSessionId > 0) {
+      if (correctionSessionId !== sessionId) {
+        sessionId = correctionSessionId;
+        players = new Map();
+        loadState();
+      }
+      queueSync();
+      return true;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/real-play/admin/career/control`, {
         headers: { Accept: 'application/json', Authorization: `Bearer ${token()}` },
@@ -269,17 +295,24 @@
 
   function validateDraftAgainstParticipation() {
     if (!sessionId) return { ok: true };
-    let draft = null;
-    for (let index = 0; index < localStorage.length; index += 1) {
-      const storageKey = localStorage.key(index) || '';
-      if (!storageKey.startsWith('rp-recorded-score-sheet:v2:')) continue;
-      try {
-        const parsed = JSON.parse(localStorage.getItem(storageKey) || 'null');
-        if (Number(parsed?.sessionId || 0) !== sessionId) continue;
-        if (!draft || String(parsed.updatedAt || '') > String(draft.updatedAt || '')) draft = parsed;
-      } catch (_) {}
+
+    const correction = correctionState();
+    let events = Array.isArray(correction?.events) ? correction.events : null;
+
+    if (!events) {
+      let draft = null;
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const storageKey = localStorage.key(index) || '';
+        if (!storageKey.startsWith('rp-recorded-score-sheet:v2:')) continue;
+        try {
+          const parsed = JSON.parse(localStorage.getItem(storageKey) || 'null');
+          if (Number(parsed?.sessionId || 0) !== sessionId) continue;
+          if (!draft || String(parsed.updatedAt || '') > String(draft.updatedAt || '')) draft = parsed;
+        } catch (_) {}
+      }
+      events = Array.isArray(draft?.events) ? draft.events : [];
     }
-    const events = Array.isArray(draft?.events) ? draft.events : [];
+
     for (const item of events) {
       const playerId = Number(item?.playerId || 0);
       if (!playerId) continue;
@@ -369,14 +402,17 @@
   }, true);
 
   const observer = new MutationObserver(() => {
-    if (!screen()) return;
-    if (!sessionId) loadSession();
+    const sc = screen();
+    if (!sc) return;
+    const correctionSessionId = Number(correctionState(sc)?.sessionId || 0);
+    if (!sessionId || (correctionSessionId > 0 && correctionSessionId !== sessionId)) loadSession();
     queueSync();
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.addEventListener('realplay:admin-render', loadSession);
   window.addEventListener('realplay:admin-control-render', loadSession);
+  window.addEventListener('realplay:replay-correction-audit-state', loadSession);
   window.addEventListener('focus', loadSession);
   loadSession();
 })();
