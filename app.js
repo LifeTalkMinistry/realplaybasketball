@@ -141,7 +141,7 @@
     if (shellReady) return true;
     // HOME follows the same contract as every other destination: the loading
     // UI stays in control until the actual Home page is fully assembled.
-    if (!bootResourcesReady || !initialHomeReady || !hasNewShell() || !homeVisualReady()) return false;
+    if (!bootResourcesReady || !initialHomeReady || !initialInteractionReady || !hasNewShell() || !homeVisualReady()) return false;
     shellReady = true;
     clearStaticBootFallback();
     html.classList.remove('rp-shell-booting', 'rp-shell-failed', 'rp-shell-static-failed');
@@ -564,6 +564,8 @@
       if (!loaded) console.warn(`[Real Play] Initial interaction layer failed to load: ${href}`);
     }
 
+    // Let the first-tap stack settle for a full two-frame paint before the loader releases.
+    await nextPaint();
     initialInteractionReady = true;
     revealNewShell();
 
