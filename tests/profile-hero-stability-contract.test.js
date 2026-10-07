@@ -85,8 +85,12 @@ test('ME geometry lock is scoped away from public profiles', () => {
   const css = fs.readFileSync(path.join(root, 'real-play-profile-intro.css'), 'utf8');
   const lockStart = css.indexOf('PROFILE HERO GEOMETRY LOCK v223');
   assert.ok(lockStart >= 0);
+  const shared = css.slice(0, lockStart);
   const lock = css.slice(lockStart);
+
+  assert.ok(shared.includes('.rp-profile .rp-profile-hero > .rp-profile-badges{'));
+  assert.ok(shared.includes('grid-row:2!important'));
   assert.ok(lock.includes('.rp-profile[data-rp-profile] .rp-profile-hero'));
-  assert.ok(!lock.includes('\n.rp-profile .rp-profile-hero{'));
   assert.ok(lock.includes('.rp-profile[data-rp-profile] .rp-profile-hero > .rp-profile-badges'));
+  assert.ok(!lock.includes('\n.rp-profile .rp-profile-hero > .rp-profile-badges{'));
 });
