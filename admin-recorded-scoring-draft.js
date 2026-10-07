@@ -737,6 +737,7 @@
           }),
         },
       });
+      window.__realPlayRecordedParticipationClear?.(Number(control.session.id));
       clearDraft();
       active = false;
       activeScreen = null;
