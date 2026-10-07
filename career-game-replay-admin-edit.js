@@ -913,6 +913,7 @@
         },
       });
       const id = Number(context.session.id);
+      window.__realPlayRecordedParticipationClear?.(id);
       notice = `Official score sheet saved. ${teamDisplayName('west')} ${Number(result.westScore || 0)} – ${Number(result.eastScore || 0)} ${teamDisplayName('east')}.`;
       noticeError = false;
       busy = false;
@@ -940,6 +941,7 @@
       'Cancel this re-audit?\n\nThe working changes will be discarded and the existing certified game record will stay unchanged.'
     )) return false;
 
+    if (confirmDiscard) window.__realPlayRecordedParticipationClear?.(sessionId);
     deactivateCorrection();
     adminRoot()?.querySelector('[data-admin-exit]')?.click();
 
