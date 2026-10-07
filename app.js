@@ -542,15 +542,11 @@
       'career-game-replay-loader.js',
       'real-play-updates.js',
       'real-play-world.js',
-      // The loading screen now also gates the complete ME/Profile stack. A user
-      // cannot tap ME while only the base profile renderer is installed.
+      // The global boot screen only guarantees that the ME route itself exists.
+      // Artwork, recognition and metrics are progressive profile content and
+      // must never hold the whole application hostage.
       'profile-load-guard.js',
       'real-play-profile.js',
-      'real-play-profile-recognition-authority.js',
-      'profile-art-owner-access.js',
-      'real-play-profile-intro.js',
-      'profile-metrics-stability.js',
-      'real-play-profile-metrics.js',
       'real-play-world-players.js',
       'visitor-world-players.js',
       'ranking-games.js',
@@ -564,7 +560,9 @@
       if (!loaded) console.warn(`[Real Play] Initial interaction layer failed to load: ${href}`);
     }
 
-    // Let the first-tap stack settle for a full two-frame paint before the loader releases.
+    // Let route handlers settle before releasing the application shell. This is
+    // APP readiness only; individual profile data/artwork has its own stable,
+    // progressive rendering contract.
     await nextPaint();
     initialInteractionReady = true;
     revealNewShell();
