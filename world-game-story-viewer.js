@@ -3,6 +3,10 @@
   window.__realPlayGameStoryViewerInstalled = true;
 
   const API = 'https://api.clarapmc.com/api/real-play/public/career/games';
+  const API_BASE_URL = 'https://api.clarapmc.com';
+  const PROFILE_ART_REGISTRY_URL = 'assets/profile-art/registry.json';
+  const profileArtCache = new Map();
+  let profileArtRegistryPromise = null;
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
@@ -44,7 +48,8 @@
       .rp-story-game-winner-fallback{width:100%;height:100%;display:grid;place-items:center;border:1px solid rgba(80,220,255,.16);border-radius:50%;background:radial-gradient(circle,rgba(34,136,184,.18),rgba(2,6,11,0) 68%);color:rgba(255,255,255,.16);font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:4.8rem;font-style:italic}
       .rp-story-score{display:flex;justify-content:center;align-items:center;gap:12px;margin:18px auto 2px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-style:italic;text-align:center}.rp-story-score b{font-size:2.8rem}.rp-story-score span{color:#718293;font-size:.9rem}
       .rp-story-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:18px auto 0;width:100%;max-width:430px}.rp-story-stat{padding:10px 7px;border:1px solid rgba(80,220,255,.10);border-radius:11px;background:rgba(7,20,32,.7);text-align:center}.rp-story-stat b{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.45rem;font-style:italic}.rp-story-stat small{display:block;margin-top:2px;color:#6edfff;font:900 .44rem/1 Arial,sans-serif;letter-spacing:.08em}
-      .rp-story-player-art{position:absolute;z-index:0;top:105px;right:-10px;width:68%;height:48%;object-fit:contain;object-position:right bottom;filter:drop-shadow(0 16px 28px rgba(0,0,0,.42));opacity:.95}
+      .rp-story-player-art{position:absolute;z-index:0;top:88px;left:50%;right:auto;width:min(82vw,360px);height:min(44vh,370px);object-fit:contain;object-position:center bottom;transform:translateX(-50%) scale(var(--rp-story-player-art-scale,1));transform-origin:center bottom;filter:drop-shadow(0 18px 34px rgba(0,0,0,.50));opacity:var(--rp-story-player-art-opacity,.98);-webkit-mask-image:linear-gradient(180deg,#000 0 76%,rgba(0,0,0,.86) 87%,transparent 100%);mask-image:linear-gradient(180deg,#000 0 76%,rgba(0,0,0,.86) 87%,transparent 100%)}
+      .rp-story-player-art.rp-story-profile-art{width:min(88vw,390px);height:min(47vh,395px);object-position:center bottom;filter:drop-shadow(0 20px 38px rgba(0,0,0,.56)) saturate(.99) contrast(1.02)}
       .rp-story-player-fallback{position:absolute;z-index:0;top:125px;right:22px;width:210px;height:210px;border:1px solid rgba(80,220,255,.12);border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,rgba(34,136,184,.18),rgba(2,6,11,0) 66%);color:rgba(255,255,255,.11);font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:6rem;font-style:italic}
       .rp-story-team-mark{position:absolute;z-index:0;top:135px;right:18px;color:rgba(255,255,255,.055);font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:7rem;font-style:italic;line-height:.8;text-transform:uppercase;writing-mode:vertical-rl}
       .rp-story-branded-slide .rp-story-player-art,.rp-story-branded-slide .rp-story-player-fallback,.rp-story-branded-slide .rp-story-team-mark{z-index:2}
@@ -66,7 +71,7 @@
       .rp-story-arrows{position:absolute;z-index:6;inset:0;pointer-events:none}.rp-story-arrows button{position:absolute;top:50%;transform:translateY(-50%);pointer-events:auto;width:42px;height:42px;border:1px solid rgba(255,255,255,.11);border-radius:50%;background:rgba(2,7,12,.72);color:#dff8ff;font-size:1.1rem;opacity:.5;transition:opacity .16s ease}.rp-story-arrows button:first-child{left:8px}.rp-story-arrows button:last-child{right:8px}.rp-story-arrows button:hover,.rp-story-arrows button:focus-visible{opacity:1}.rp-story-arrows button:disabled{opacity:.18}
       .rp-story-loading{margin:auto;color:#63ddff;font:950 .66rem/1.6 Arial,sans-serif;letter-spacing:.15em;text-align:center}
       @media(max-width:380px){.rp-story-slide{padding-left:18px;padding-right:18px}.rp-story-body{font-size:.78rem}.rp-story-stats{gap:5px}.rp-story-stat{padding:8px 4px}.rp-story-game-winner{width:min(68vw,250px);height:min(31vh,250px)}}
-      @media(max-height:700px){.rp-story-game-winner{top:84px;width:min(58vw,220px);height:min(27vh,220px)}.rp-story-team-hero{top:88px;width:min(52vw,205px);height:min(24vh,205px)}.rp-story-game-bg img{top:47%;width:min(154vw,760px);opacity:.90;filter:blur(2px) brightness(.46) contrast(1.08) saturate(.92)}.rp-story-slide.rp-story-branded-slide::after{top:48%;width:min(118vw,580px);height:min(76vw,360px);filter:blur(64px)}.rp-story-game-matchup{top:60px;height:min(53vh,360px)}.rp-story-matchup-hero img{width:min(47vw,188px);max-height:84%}.rp-story-matchup-team.is-winner .rp-story-matchup-hero img{width:min(51vw,202px);max-height:88%}}
+      @media(max-height:700px){.rp-story-game-winner{top:84px;width:min(58vw,220px);height:min(27vh,220px)}.rp-story-team-hero{top:88px;width:min(52vw,205px);height:min(24vh,205px)}.rp-story-player-art{top:76px;width:min(70vw,285px);height:min(37vh,285px)}.rp-story-player-art.rp-story-profile-art{width:min(76vw,310px);height:min(39vh,305px)}.rp-story-game-bg img{top:47%;width:min(154vw,760px);opacity:.90;filter:blur(2px) brightness(.46) contrast(1.08) saturate(.92)}.rp-story-slide.rp-story-branded-slide::after{top:48%;width:min(118vw,580px);height:min(76vw,360px);filter:blur(64px)}.rp-story-game-matchup{top:60px;height:min(53vh,360px)}.rp-story-matchup-hero img{width:min(47vw,188px);max-height:84%}.rp-story-matchup-team.is-winner .rp-story-matchup-hero img{width:min(51vw,202px);max-height:88%}}
       @media(prefers-reduced-motion:reduce){.rp-story-track{transition:none}}
     `;
     document.head.appendChild(style);
@@ -91,6 +96,113 @@
     };
   }
 
+  function firstPositiveInteger(...values) {
+    for (const value of values) {
+      const parsed = Number(value);
+      if (Number.isSafeInteger(parsed) && parsed > 0) return parsed;
+    }
+    return null;
+  }
+
+  function resolveProfileArtSrc(value) {
+    const src = String(value || '').trim();
+    if (!src) return '';
+    if (/^https?:\/\//i.test(src) || /^data:|^blob:/i.test(src)) return src;
+    if (src.startsWith('/api/')) return `${API_BASE_URL}${src}`;
+    return src;
+  }
+
+  async function loadProfileArtRegistry() {
+    if (profileArtRegistryPromise) return profileArtRegistryPromise;
+    profileArtRegistryPromise = (async () => {
+      try {
+        const response = await fetch(`${PROFILE_ART_REGISTRY_URL}?v=20261007-story-profile-art-v1`, {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        });
+        if (!response.ok) return [];
+        const data = await response.json().catch(() => ({}));
+        return Array.isArray(data?.players) ? data.players : [];
+      } catch (_error) {
+        return [];
+      }
+    })();
+    return profileArtRegistryPromise;
+  }
+
+  function normalizeStoryArt(raw, playerId, source = 'profile') {
+    if (!raw || raw.enabled === false || !String(raw.src || '').trim()) return null;
+    return {
+      playerId,
+      src: resolveProfileArtSrc(raw.src),
+      source,
+      positionX: Number.isFinite(Number(raw.positionX ?? raw.position_x)) ? Number(raw.positionX ?? raw.position_x) : 72,
+      positionY: Number.isFinite(Number(raw.positionY ?? raw.position_y)) ? Number(raw.positionY ?? raw.position_y) : 44,
+      scale: Number.isFinite(Number(raw.scale)) ? Number(raw.scale) : 1.15,
+      opacity: Number.isFinite(Number(raw.opacity)) ? Number(raw.opacity) : 1,
+    };
+  }
+
+  async function resolvePlayerProfileArt(raw = {}, registry = []) {
+    const existing = String(
+      raw.cutoutUrl ?? raw.cutout_url ?? raw.playerImageUrl ?? raw.player_image_url ??
+      raw.profilePhotoUrl ?? raw.profile_photo_url ?? raw.avatarUrl ?? raw.avatar_url ?? ''
+    ).trim();
+    if (existing) return { src: existing, source: 'game' };
+
+    const playerId = firstPositiveInteger(
+      raw.accountUserId, raw.account_user_id, raw.userId, raw.user_id, raw.playerId, raw.player_id
+    );
+    if (!playerId) return null;
+    if (profileArtCache.has(playerId)) return profileArtCache.get(playerId);
+
+    const task = (async () => {
+      let backendAuthoritative = false;
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/real-play/profile-art?playerId=${encodeURIComponent(playerId)}`, {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        });
+        if (response.ok) {
+          const data = await response.json().catch(() => ({}));
+          if (Object.prototype.hasOwnProperty.call(data || {}, 'art') && data.art !== null) {
+            backendAuthoritative = true;
+            return normalizeStoryArt(data.art, playerId, 'profile-api');
+          }
+        }
+      } catch (_error) {}
+
+      if (!backendAuthoritative) {
+        const fallback = registry.find((entry) => firstPositiveInteger(
+          entry?.playerId, entry?.player_id, entry?.userId, entry?.user_id
+        ) === playerId);
+        return normalizeStoryArt(fallback, playerId, 'profile-registry');
+      }
+      return null;
+    })();
+
+    profileArtCache.set(playerId, task);
+    return task;
+  }
+
+  async function attachPlayerProfileArt(rawPlayers = []) {
+    const players = Array.isArray(rawPlayers) ? rawPlayers : [];
+    const registry = await loadProfileArtRegistry();
+    return Promise.all(players.map(async (raw) => {
+      const art = await resolvePlayerProfileArt(raw, registry);
+      if (!art?.src) return raw;
+      return {
+        ...raw,
+        storyArtUrl: art.src,
+        storyArtSource: art.source,
+        storyArtPositionX: art.positionX,
+        storyArtPositionY: art.positionY,
+        storyArtScale: art.scale,
+        storyArtOpacity: art.opacity,
+      };
+    }));
+  }
+
   function normalizePlayer(raw = {}) {
     const made = n(raw.madeShots ?? raw.made_shots ?? (n(raw.onePtMade) + n(raw.twoPtMade)));
     const missed = n(raw.missedShots ?? raw.missed_shots ?? (n(raw.onePtMiss) + n(raw.twoPtMiss)));
@@ -104,7 +216,12 @@
       stl: n(raw.steals ?? raw.stl), blk: n(raw.blocks ?? raw.blk), to: n(raw.turnovers ?? raw.tov), fouls: n(raw.fouls ?? raw.foul),
       made, missed, attempts, fg: attempts ? Math.round((made / attempts) * 100) : null,
       impact: n(raw.impactScore ?? raw.impact_score) || (n(raw.points ?? raw.pts) + n(raw.rebounds ?? raw.reb) * 1.2 + n(raw.assists ?? raw.ast) * 1.5 + n(raw.steals ?? raw.stl) * 2 + n(raw.blocks ?? raw.blk) * 2 - n(raw.turnovers ?? raw.tov) * 1.5 - missed * .5 - n(raw.fouls ?? raw.foul) * .25),
-      art: String(raw.cutoutUrl ?? raw.cutout_url ?? raw.playerImageUrl ?? raw.player_image_url ?? raw.profilePhotoUrl ?? raw.profile_photo_url ?? raw.avatarUrl ?? raw.avatar_url ?? '').trim(),
+      art: String(raw.storyArtUrl ?? raw.story_art_url ?? raw.cutoutUrl ?? raw.cutout_url ?? raw.playerImageUrl ?? raw.player_image_url ?? raw.profilePhotoUrl ?? raw.profile_photo_url ?? raw.avatarUrl ?? raw.avatar_url ?? '').trim(),
+      artSource: String(raw.storyArtSource ?? raw.story_art_source ?? '').trim(),
+      artPositionX: Number.isFinite(Number(raw.storyArtPositionX ?? raw.story_art_position_x)) ? Number(raw.storyArtPositionX ?? raw.story_art_position_x) : 72,
+      artPositionY: Number.isFinite(Number(raw.storyArtPositionY ?? raw.story_art_position_y)) ? Number(raw.storyArtPositionY ?? raw.story_art_position_y) : 44,
+      artScale: Number.isFinite(Number(raw.storyArtScale ?? raw.story_art_scale)) ? Number(raw.storyArtScale ?? raw.story_art_scale) : 1.15,
+      artOpacity: Number.isFinite(Number(raw.storyArtOpacity ?? raw.story_art_opacity)) ? Number(raw.storyArtOpacity ?? raw.story_art_opacity) : 1,
     };
   }
 
@@ -222,8 +339,11 @@
     const clubRgb = clubAccentRgb(brandName);
 
     const stats = slide.player ? `<div class="rp-story-stats">${statGrid(slide.player).map(([k,v])=>`<div class="rp-story-stat"><b>${esc(v)}</b><small>${esc(k)}</small></div>`).join('')}</div>` : '';
+    const artClass = slide.player?.artSource && slide.player.artSource !== 'game' ? ' rp-story-profile-art' : '';
+    const artScale = Math.max(.72, Math.min(1.5, Number(slide.player?.artScale || 1.15)));
+    const artOpacity = Math.max(.35, Math.min(1, Number(slide.player?.artOpacity || 1)));
     const art = slide.player?.art
-      ? `<img class="rp-story-player-art" src="${esc(slide.player.art)}" alt="${esc(slide.player.name)}">`
+      ? `<img class="rp-story-player-art${artClass}" style="--rp-story-player-art-scale:${artScale};--rp-story-player-art-opacity:${artOpacity}" src="${esc(slide.player.art)}" alt="${esc(slide.player.name)}">`
       : slide.player ? `<div class="rp-story-player-fallback" aria-hidden="true">${esc(slide.player.name.charAt(0) || 'R')}</div>`
       : slide.type === 'team' && !brandLogo ? `<div class="rp-story-team-mark" aria-hidden="true">${esc(slide.teamName)}</div>` : '';
 
@@ -334,7 +454,8 @@
       if (!response.ok) throw new Error('Story stats unavailable');
       const data = await response.json();
       const rawPlayers = data?.playerStats || data?.players || [];
-      active.slides = buildDeck(game,rawPlayers);
+      const playersWithProfileArt = await attachPlayerProfileArt(rawPlayers);
+      active.slides = buildDeck(game,playersWithProfileArt);
       track.innerHTML = active.slides.map(s=>slideMarkup(s,game)).join('');
       viewer.querySelector('[data-rp-story-progress]').innerHTML = active.slides.map(()=>'<i></i>').join('');
       renderIndex(0);
