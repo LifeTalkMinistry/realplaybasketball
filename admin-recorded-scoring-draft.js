@@ -622,13 +622,30 @@
     submitting = true;
     showReview();
     try {
+      // Preflight the recovered/local draft before sending it to the backend.
+      // This keeps the full audit untouched and exposes the exact legacy/bad
+      // record instead of the generic "invalid event type" message.
+      const normalizedDraftEvents = draftEvents.map((rawEvent, index) => {
+        const event = normalizeLocalDraftEvent(rawEvent);
+        const type = String(event?.eventType || '').trim().toLowerCase();
+        if (!['shot', 'stat', 'highlight', 'incident'].includes(type)) {
+          const rawType = String(rawEvent?.eventType ?? rawEvent?.event_type ?? rawEvent?.type ?? '').trim();
+          const rawKind = String(rawEvent?.momentKind ?? rawEvent?.moment_kind ?? '').trim();
+          const details = [
+            rawType ? `type="${rawType}"` : 'type=(missing)',
+            rawKind ? `momentKind="${rawKind}"` : null,
+            rawEvent?.localId ? `id="${String(rawEvent.localId)}"` : null,
+          ].filter(Boolean).join(', ');
+          throw new Error(`Draft event ${index + 1} has an invalid event type: ${details}. Your draft was not changed.`);
+        }
+        return event;
+      });
       const result = await api('/api/real-play/admin/recorded-scoring/submit-draft', {
         method: 'POST',
         json: {
           session_id: Number(control.session.id),
           duration_ms: recording?.durationMs ?? null,
-          events: draftEvents.map((rawEvent) => {
-            const event = normalizeLocalDraftEvent(rawEvent);
+          events: normalizedDraftEvents.map((event) => {
             return {
             playerId: Number(event.playerId),
             eventType: event.eventType,
