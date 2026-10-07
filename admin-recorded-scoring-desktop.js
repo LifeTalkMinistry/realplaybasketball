@@ -10,9 +10,27 @@
   const DESKTOP_MEDIA = '(min-width:700px)';
 
   let layoutTimer = null;
+  let revealFallbackTimer = null;
   let rulesTimer = null;
   let rulesLoadPromise = null;
   let savedRaceRules = null;
+
+  function installDesktopBootStyle() {
+    if (document.querySelector('[data-rp-recorded-desktop-boot-style]')) return;
+    const style = document.createElement('style');
+    style.dataset.rpRecordedDesktopBootStyle = '1';
+    style.textContent = `
+      @media (min-width:700px){
+        .rp-admin-control.rp-recorded-desktop-pending .rp-video-scoring-screen{
+          visibility:hidden!important;
+        }
+        .rp-admin-control.rp-recorded-desktop-pending .rp-video-scoring-screen.rp-video-desktop-ready{
+          visibility:visible!important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   function root() {
     return document.querySelector('.rp-admin-control');
@@ -24,6 +42,22 @@
 
   function raceForm() {
     return root()?.querySelector('[data-rp-video-race-form]') || null;
+  }
+
+  function setDesktopPending(adminRoot, pending) {
+    if (!adminRoot) return;
+    adminRoot.classList.toggle('rp-recorded-desktop-pending', Boolean(pending));
+    if (revealFallbackTimer) {
+      clearTimeout(revealFallbackTimer);
+      revealFallbackTimer = null;
+    }
+    if (pending) {
+      // Never allow a failed enhancement to leave the scoring screen hidden.
+      revealFallbackTimer = setTimeout(() => {
+        adminRoot.classList.remove('rp-recorded-desktop-pending');
+        revealFallbackTimer = null;
+      }, 700);
+    }
   }
 
   function syncScoringChrome(adminRoot, scoring) {
@@ -130,6 +164,7 @@
   }
 
   function restoreMobileLayout(adminRoot, scoring) {
+    setDesktopPending(adminRoot, false);
     adminRoot?.classList.remove('rp-recorded-desktop-mode');
     scoring?.classList.remove('rp-video-desktop-ready');
     scoring?.removeAttribute('data-rp-desktop-ownership-stable');
@@ -178,8 +213,9 @@
   }
 
   function settleDesktopOwnership(scoring, grid) {
+    const adminRoot = root();
     const columns = syncDesktopColumns(scoring, grid);
-    if (!columns) return;
+    if (!columns) return false;
 
     // There must only ever be one desktop workspace. If a stale duplicate grid
     // exists, move the known scoring nodes into the active grid first, then remove it.
@@ -187,17 +223,33 @@
       .filter((candidate) => candidate !== grid)
       .forEach((candidate) => candidate.remove());
 
+    const playerWrap = scoring.querySelector('.rp-video-player-wrap');
     const scoreboard = scoring.querySelector('.rp-video-scoreboard');
-    const stable = !scoreboard || scoreboard.parentElement === columns.right;
+    const stable = Boolean(
+      playerWrap
+      && scoreboard
+      && playerWrap.parentElement === columns.left
+      && scoreboard.parentElement === columns.right
+    );
     scoring.dataset.rpDesktopOwnershipStable = stable ? '1' : '0';
 
-    // Regression safeguard: desktop owns the scoreboard parent. This is normally
-    // a no-op because syncDesktopColumns is idempotent, but it reclaims ownership
-    // immediately if another renderer ever moves the node unexpectedly.
-    if (!stable && scoreboard) {
-      columns.right.appendChild(scoreboard);
-      scoring.dataset.rpDesktopOwnershipStable = '1';
+    if (!stable) {
+      if (playerWrap && playerWrap.parentElement !== columns.left) columns.left.appendChild(playerWrap);
+      if (scoreboard && scoreboard.parentElement !== columns.right) columns.right.appendChild(scoreboard);
     }
+
+    const finalStable = Boolean(
+      playerWrap
+      && scoreboard
+      && playerWrap.parentElement === columns.left
+      && scoreboard.parentElement === columns.right
+    );
+    scoring.dataset.rpDesktopOwnershipStable = finalStable ? '1' : '0';
+    if (finalStable) {
+      scoring.classList.add('rp-video-desktop-ready');
+      setDesktopPending(adminRoot, false);
+    }
+    return finalStable;
   }
 
   function applyDesktopLayout() {
@@ -207,6 +259,7 @@
     syncScoringChrome(adminRoot, scoring);
 
     if (!adminRoot || !scoring) {
+      setDesktopPending(adminRoot, false);
       adminRoot?.classList.remove('rp-recorded-desktop-mode');
       return;
     }
@@ -217,17 +270,22 @@
     }
 
     adminRoot.classList.add('rp-recorded-desktop-mode');
-    scoring.classList.add('rp-video-desktop-ready');
 
     let grid = scoring.querySelector(':scope > [data-rp-video-desktop-grid]');
     if (grid) {
-      settleDesktopOwnership(scoring, grid);
+      if (!settleDesktopOwnership(scoring, grid)) setDesktopPending(adminRoot, true);
       return;
     }
 
     const playerWrap = scoring.querySelector('.rp-video-player-wrap');
     const scoreboard = scoring.querySelector('.rp-video-scoreboard');
-    if (!playerWrap || !scoreboard) return;
+    if (!playerWrap || !scoreboard) {
+      scoring.classList.remove('rp-video-desktop-ready');
+      setDesktopPending(adminRoot, true);
+      return;
+    }
+
+    setDesktopPending(adminRoot, true);
 
     grid = document.createElement('div');
     grid.className = 'rp-video-desktop-grid';
@@ -247,8 +305,16 @@
   }
 
   function scheduleLayout() {
+    // First pass is synchronous so wide screens never sit in the temporary
+    // stacked/mobile structure while waiting for a debounce timer.
+    applyDesktopLayout();
+
     if (layoutTimer) clearTimeout(layoutTimer);
-    layoutTimer = setTimeout(applyDesktopLayout, 35);
+    window.requestAnimationFrame(applyDesktopLayout);
+    layoutTimer = setTimeout(() => {
+      layoutTimer = null;
+      applyDesktopLayout();
+    }, 45);
     scheduleRulesSync(false);
   }
 
@@ -280,7 +346,20 @@
     }
   });
 
-  const observer = new MutationObserver(scheduleLayout);
+  installDesktopBootStyle();
+
+  const observer = new MutationObserver((mutations) => {
+    const relevant = mutations.some((mutation) => {
+      if (mutation.type !== 'childList') return false;
+      return [...mutation.addedNodes, ...mutation.removedNodes].some((node) => (
+        node.nodeType === 1 && (
+          node.matches?.('.rp-video-scoring-screen,.rp-video-player-wrap,.rp-video-scoreboard,.rp-video-score-rosters,[data-rp-video-selected-panel],.rp-video-review-actions,[data-rp-draft-banner]')
+          || node.querySelector?.('.rp-video-scoring-screen,.rp-video-player-wrap,.rp-video-scoreboard,.rp-video-score-rosters,[data-rp-video-selected-panel],.rp-video-review-actions,[data-rp-draft-banner]')
+        )
+      ));
+    });
+    if (relevant) scheduleLayout();
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.addEventListener('realplay:admin-render', () => {
@@ -288,7 +367,10 @@
     scheduleRulesSync(true);
   });
   window.addEventListener('resize', scheduleLayout);
-  window.addEventListener('focus', () => scheduleRulesSync(true));
+  window.addEventListener('focus', () => {
+    scheduleLayout();
+    scheduleRulesSync(true);
+  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
