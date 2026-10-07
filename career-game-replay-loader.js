@@ -17,6 +17,7 @@
 
   let runtimePromise = null;
   let runtimeReady = false;
+  let loadingOverlay = null;
 
   function version() {
     return String(document.documentElement?.dataset?.rpDeploy || 'replay-runtime');
@@ -41,6 +42,79 @@
       script.onerror = () => reject(new Error(`Unable to load replay runtime: ${src}`));
       document.head.appendChild(script);
     });
+  }
+
+  function ensureLoadingOverlay() {
+    if (loadingOverlay?.isConnected) return loadingOverlay;
+
+    if (!document.getElementById('rp-replay-runtime-loading-style')) {
+      const style = document.createElement('style');
+      style.id = 'rp-replay-runtime-loading-style';
+      style.textContent = `
+        .rp-replay-runtime-loading{
+          position:fixed;
+          inset:0;
+          z-index:2147483000;
+          display:grid;
+          place-items:center;
+          background:rgba(1,8,15,.88);
+          backdrop-filter:blur(7px);
+          -webkit-backdrop-filter:blur(7px);
+        }
+        .rp-replay-runtime-loading[hidden]{display:none!important}
+        .rp-replay-runtime-loading-card{
+          min-width:190px;
+          padding:22px 24px;
+          border:1px solid rgba(66,211,255,.28);
+          border-radius:18px;
+          background:rgba(3,16,27,.96);
+          box-shadow:0 18px 55px rgba(0,0,0,.45);
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          gap:12px;
+          color:#f4fbff;
+          font:800 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+          letter-spacing:.12em;
+          text-transform:uppercase;
+        }
+        .rp-replay-runtime-loading-spinner{
+          width:28px;
+          height:28px;
+          border-radius:50%;
+          border:3px solid rgba(85,220,255,.2);
+          border-top-color:#55dcff;
+          animation:rpReplayRuntimeSpin .72s linear infinite;
+        }
+        @keyframes rpReplayRuntimeSpin{to{transform:rotate(360deg)}}
+        @media (prefers-reduced-motion:reduce){
+          .rp-replay-runtime-loading-spinner{animation:none;border-top-color:#55dcff}
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    loadingOverlay = document.createElement('div');
+    loadingOverlay.className = 'rp-replay-runtime-loading';
+    loadingOverlay.hidden = true;
+    loadingOverlay.setAttribute('role', 'status');
+    loadingOverlay.setAttribute('aria-live', 'polite');
+    loadingOverlay.innerHTML = `
+      <div class="rp-replay-runtime-loading-card">
+        <span class="rp-replay-runtime-loading-spinner" aria-hidden="true"></span>
+        <span>Loading Replay…</span>
+      </div>
+    `;
+    document.body.appendChild(loadingOverlay);
+    return loadingOverlay;
+  }
+
+  function showLoadingOverlay() {
+    ensureLoadingOverlay().hidden = false;
+  }
+
+  function hideLoadingOverlay() {
+    if (loadingOverlay?.isConnected) loadingOverlay.hidden = true;
   }
 
   async function ensureReplayRuntime() {
@@ -74,7 +148,10 @@
 
   function reopenSession(sessionId) {
     const id = validSessionId(sessionId);
-    if (!id) return;
+    if (!id) {
+      hideLoadingOverlay();
+      return;
+    }
 
     const proxy = document.createElement('button');
     proxy.type = 'button';
@@ -84,9 +161,15 @@
     document.body.appendChild(proxy);
 
     window.requestAnimationFrame(() => {
-      if (!proxy.isConnected) return;
+      if (!proxy.isConnected) {
+        hideLoadingOverlay();
+        return;
+      }
       proxy.click();
-      window.setTimeout(() => proxy.remove(), 0);
+      window.setTimeout(() => {
+        proxy.remove();
+        hideLoadingOverlay();
+      }, 80);
     });
   }
 
@@ -95,7 +178,8 @@
     if (!target.closest(
       '[data-rp-select-mode="Career Mode"], [data-rp-nav="career"], '
       + '.rp-profile-history .rp-profile-game, [data-rp-public-history-more], '
-      + '[data-rp-public-history-list] .rp-profile-game'
+      + '[data-rp-public-history-list] .rp-profile-game, '
+      + '[data-rp-world-watch], [data-rp-world-game-recap]'
     )) return;
 
     ensureReplayRuntime().catch((error) => {
@@ -118,6 +202,7 @@
     event.preventDefault();
     event.stopImmediatePropagation();
     button.setAttribute('aria-busy', 'true');
+    showLoadingOverlay();
 
     ensureReplayRuntime()
       .then(() => {
@@ -125,6 +210,7 @@
         reopenSession(sessionId);
       })
       .catch((error) => {
+        hideLoadingOverlay();
         console.error('[Real Play] Replay runtime failed to load.', error);
         if (button.isConnected) {
           button.removeAttribute('aria-busy');
