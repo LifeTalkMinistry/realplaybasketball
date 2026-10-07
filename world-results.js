@@ -168,11 +168,16 @@
       .rp-world-team-filter{
         width:min(100%,360px);
         margin:8px auto 0;
-        padding:3px;
+        padding:3px 22px 3px 3px;
         display:flex;
         gap:4px;
         overflow-x:auto;
+        overflow-y:hidden;
         scrollbar-width:none;
+        -webkit-overflow-scrolling:touch;
+        touch-action:pan-x;
+        overscroll-behavior-x:contain;
+        scroll-snap-type:x proximity;
         border:1px solid rgba(255,255,255,.065);
         border-radius:12px;
         background:rgba(4,9,16,.76);
@@ -181,7 +186,8 @@
       .rp-world-team-chip{
         min-width:max-content;
         min-height:34px;
-        flex:1 0 auto;
+        flex:0 0 auto;
+        scroll-snap-align:start;
         padding:0 12px;
         border:0;
         border-radius:9px;
@@ -1266,6 +1272,7 @@
     STEADFAST: 'assets/3v3/clubs/steadfast-logo.png',
     WARRIORS: 'assets/3v3/clubs/warriors-logo.png',
   };
+  const CURRENT_WORLD_TEAMS = Object.freeze(Object.keys(WORLD_CLUB_ART));
 
   function worldResultTitle(metadata = {}) {
     const seasonGame = Number(metadata.seasonGameNumber ?? metadata.season_game_number);
@@ -1741,7 +1748,7 @@
       .join('');
     seasonSelect.value = selectedSeason;
 
-    const teams = new Set();
+    const teams = new Set(CURRENT_WORLD_TEAMS);
     scoped
       .filter((row) => row.season.key === selectedSeason)
       .forEach((row) => row.teams.forEach((team) => teams.add(team)));
@@ -1753,6 +1760,11 @@
         `<button type="button" class="rp-world-team-chip${selectedTeam === team ? ' active' : ''}" data-rp-world-team="${esc(team)}">${esc(team)}</button>`
       ),
     ].join('');
+
+    const activeChip = teamFilter.querySelector('.rp-world-team-chip.active');
+    if (activeChip && selectedTeam !== 'all') {
+      activeChip.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
   }
 
   function rebuildWeekOptions() {
