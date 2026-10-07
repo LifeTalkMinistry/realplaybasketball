@@ -136,6 +136,7 @@
     if (activeFrame && activeFrame !== frame) finishEdit(false);
     frame.dataset.rpStoryOriginalView = JSON.stringify(frameView(frame));
     frame.classList.add('is-editing');
+    frame.closest('[data-rp-game-story-viewer]')?.classList.add('rp-story-view-editing');
     activeFrame = frame; pointers.clear(); drag = null; pinch = null;
   }
   function finishEdit(save) {
@@ -143,6 +144,7 @@
     if (save) saveView(frameView(frame));
     else { try { applyView(frame, JSON.parse(frame.dataset.rpStoryOriginalView || '{}')); } catch (_error) {} }
     frame.classList.remove('is-editing'); delete frame.dataset.rpStoryOriginalView;
+    frame.closest('[data-rp-game-story-viewer]')?.classList.remove('rp-story-view-editing');
     pointers.clear(); drag = null; pinch = null; activeFrame = null;
   }
   function zoom(frame, delta) { const current = frameView(frame); applyView(frame,{...current,scale:current.scale+delta}); }
@@ -154,6 +156,7 @@
     style.textContent = `
       .rp-story-player-art-frame.is-own .rp-story-player-art{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:contain!important;object-position:center center!important;transform:translate(var(--rp-story-player-pan-x,0%),var(--rp-story-player-pan-y,0%)) scale(var(--rp-story-player-art-scale,1))!important;transform-origin:center center!important;user-select:none!important;-webkit-user-drag:none!important}
       .rp-story-player-art-frame.is-own{pointer-events:auto!important;touch-action:pan-y;cursor:zoom-in}
+      .rp-story-viewer.rp-story-view-editing .rp-story-arrows{display:none!important}
       .rp-story-player-edit-hint{position:absolute;z-index:6;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;min-height:24px;padding:0 10px;border:1px solid rgba(255,255,255,.13);border-radius:999px;background:rgba(2,7,12,.78);color:#d9edf5;font:900 .42rem/1 Arial,sans-serif;letter-spacing:.10em;white-space:nowrap;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none}
       .rp-story-player-edit-tools{position:absolute;z-index:8;left:8px;right:8px;bottom:8px;display:none;padding:7px;border:1px solid rgba(255,255,255,.11);border-radius:13px;background:rgba(2,7,12,.91);box-shadow:0 12px 30px rgba(0,0,0,.42);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
       .rp-story-player-edit-tools>span{display:block;margin-bottom:6px;color:#7f92a5;font:900 .40rem/1 Arial,sans-serif;letter-spacing:.12em;text-align:center}.rp-story-player-edit-tools>div{display:grid;grid-template-columns:34px 34px 1fr 1fr 1fr;gap:5px}
@@ -164,6 +167,7 @@
     document.head.appendChild(style);
   }
 
+  document.addEventListener('keydown',(event)=>{ if(!activeFrame)return; if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();} },true);
   document.addEventListener('dblclick',(event)=>{ const frame=event.target.closest?.('.rp-story-player-art-frame.is-own'); if(!frame||frame.classList.contains('is-editing'))return; event.preventDefault();event.stopPropagation();beginEdit(frame); },true);
   document.addEventListener('pointerup',(event)=>{ const frame=event.target.closest?.('.rp-story-player-art-frame.is-own'); if(!frame||frame.classList.contains('is-editing'))return; const state=tapState.get(frame)||{time:0,x:0,y:0}; const now=Date.now(); const closeEnough=Math.hypot(event.clientX-state.x,event.clientY-state.y)<24; if(now-state.time<=330&&closeEnough){tapState.set(frame,{time:0,x:0,y:0});event.preventDefault();event.stopPropagation();beginEdit(frame);}else tapState.set(frame,{time:now,x:event.clientX,y:event.clientY}); },true);
   document.addEventListener('click',(event)=>{ const button=event.target.closest?.('[data-rp-story-edit-action]'); if(!button||!activeFrame||!button.closest('.rp-story-player-art-frame.is-editing'))return; event.preventDefault();event.stopPropagation(); const action=button.dataset.rpStoryEditAction; if(action==='zoom-out')zoom(activeFrame,-.08); else if(action==='zoom-in')zoom(activeFrame,.08); else if(action==='reset')applyView(activeFrame,{panX:0,panY:0,scale:1}); else if(action==='cancel')finishEdit(false); else if(action==='save')finishEdit(true); },true);
@@ -174,7 +178,7 @@
   document.addEventListener('wheel',(event)=>{ const frame=event.target.closest?.('.rp-story-player-art-frame.is-editing'); if(!frame||frame!==activeFrame)return; event.preventDefault();zoom(frame,event.deltaY>0?-.05:.05); },{passive:false,capture:true});
   document.addEventListener('click',(event)=>{ if(activeFrame&&event.target.closest?.('[data-rp-story-prev],[data-rp-story-next],[data-rp-story-close]'))finishEdit(false); },true);
 
-  const observer=new MutationObserver((mutations)=>{ const relevant=mutations.some((mutation)=>[...mutation.addedNodes].some((node)=>node instanceof HTMLElement&&(node.matches?.('.rp-story-player-art-frame,.rp-story-track')||node.querySelector?.('.rp-story-player-art-frame')))); if(relevant)setTimeout(()=>decorate(document),30); if(activeFrame&&!activeFrame.isConnected){activeFrame=null;pointers.clear();drag=null;pinch=null;} });
+  const observer=new MutationObserver((mutations)=>{ const relevant=mutations.some((mutation)=>[...mutation.addedNodes].some((node)=>node instanceof HTMLElement&&(node.matches?.('.rp-story-player-art-frame,.rp-story-track')||node.querySelector?.('.rp-story-player-art-frame')))); if(relevant)setTimeout(()=>decorate(document),30); if(activeFrame&&!activeFrame.isConnected){document.querySelector('[data-rp-game-story-viewer]')?.classList.remove('rp-story-view-editing');activeFrame=null;pointers.clear();drag=null;pinch=null;} });
   injectStyles(); observer.observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener('storage',(event)=>{ if(event.key===TOKEN_KEY){ownPlayerId=null;ownArtSrc='';identityPromise=null;setTimeout(()=>decorate(document),20)} });
   setTimeout(()=>decorate(document),40);
