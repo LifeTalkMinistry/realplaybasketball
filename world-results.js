@@ -184,11 +184,13 @@
       }
       .rp-world-team-filter::-webkit-scrollbar{display:none}
       .rp-world-team-chip{
-        min-width:max-content;
+        width:64px;
+        min-width:64px;
         min-height:34px;
-        flex:0 0 auto;
+        flex:0 0 64px;
         scroll-snap-align:start;
-        padding:0 12px;
+        padding:0 6px;
+        white-space:nowrap;
         border:0;
         border-radius:9px;
         color:#65758a;
