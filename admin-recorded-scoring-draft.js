@@ -652,7 +652,11 @@
 
   function reviewTeam(team) {
     const players = playingPlayers(team);
-    return `<section class="rp-video-sheet-team"><header><strong>${team.toUpperCase()}</strong><b>${teamScore(team)}</b></header>${players.map(reviewPlayerRow).join('')}</section>`;
+    const adjustment = scoreAdjustmentTotal(team);
+    const correction = adjustment
+      ? `<div class="rp-video-sheet-unattributed"><div><strong>UNATTRIBUTED SCORE</strong><small>TEAM SCORE ONLY · NO PLAYER PTS</small></div><b>+${adjustment}</b></div>`
+      : '';
+    return `<section class="rp-video-sheet-team"><header><strong>${team.toUpperCase()}</strong><b>${teamScore(team)}</b></header>${correction}${players.map(reviewPlayerRow).join('')}</section>`;
   }
 
   function showReview(message = '', error = false) {
@@ -664,12 +668,14 @@
     const made = draftEvents.filter((event) => event.eventType === 'shot' && event.shotResult === 'make').length;
     const highlights = draftEvents.filter((event) => event.eventType === 'highlight').length;
     const incidents = draftEvents.filter((event) => event.eventType === 'incident').length;
+    const scoreEdits = scoreAdjustmentTotal('west') + scoreAdjustmentTotal('east');
     adminBody.innerHTML = `<div class="rp-video-screen rp-video-sheet-review">
       <div class="rp-admin-title"><span class="rp-admin-kicker">DRAFT SCORE SHEET</span><h1>REVIEW BEFORE SUBMIT</h1><p>Verify the stats and stamped moments before they become part of this game's permanent record.</p></div>
       ${message ? `<div class="rp-video-notice ${error ? 'error' : 'success'}">${esc(message)}</div>` : ''}
       <div class="rp-video-scoreboard"><div><small>WEST</small><strong>${teamScore('west')}</strong></div><span>—</span><div><small>EAST</small><strong>${teamScore('east')}</strong></div></div>
       <div class="rp-video-sheet-meta"><span>${draftEvents.length}<small>TOTAL EVENTS</small></span><span>${made}<small>SCORING MARKERS</small></span><span>${draftEvents.filter((event) => event.eventType === 'stat').length}<small>STAT EVENTS</small></span><span>${highlights}<small>HIGHLIGHTS</small></span><span>${incidents}<small>INCIDENTS</small></span></div>
       <div class="rp-video-sheet-teams">${reviewTeam('west')}${reviewTeam('east')}</div>
+      ${scoreEdits ? `<div class="rp-video-score-edit-review-note"><strong>SCORE EDIT INCLUDED</strong><span>${scoreEdits} unattributed point${scoreEdits === 1 ? '' : 's'} will count toward the official team score without changing any player's PTS or shooting stats.</span></div>` : ''}
       <div class="rp-video-auto-note"><strong>ONE OFFICIAL WRITE</strong><span>VERIFY &amp; SUBMIT sends this complete sheet to Real Play in one transaction. Until then, you can go back and change anything.</span></div>
       <div class="rp-video-sheet-actions">
         <button type="button" data-rp-draft-back ${submitting ? 'disabled' : ''}>BACK TO SCORING</button>
@@ -690,7 +696,7 @@
       const normalizedDraftEvents = draftEvents.map((rawEvent, index) => {
         const event = normalizeLocalDraftEvent(rawEvent);
         const type = String(event?.eventType || '').trim().toLowerCase();
-        if (!['shot', 'stat', 'highlight', 'incident'].includes(type)) {
+        if (!['shot', 'stat', 'highlight', 'incident', 'score_adjustment'].includes(type)) {
           const rawType = String(rawEvent?.eventType ?? rawEvent?.event_type ?? rawEvent?.type ?? '').trim();
           const rawKind = String(rawEvent?.momentKind ?? rawEvent?.moment_kind ?? '').trim();
           const details = [
@@ -712,8 +718,11 @@
             : null,
           events: normalizedDraftEvents.map((event) => {
             return {
-            playerId: Number(event.playerId),
+            playerId: event.playerId === null || event.playerId === undefined ? null : Number(event.playerId),
             eventType: event.eventType,
+            team: event.team || null,
+            points: event.eventType === 'score_adjustment' ? Number(event.points || 0) : null,
+            reason: event.eventType === 'score_adjustment' ? String(event.reason || 'unrecorded_score') : null,
             statKey: event.statKey,
             shotValue: event.shotValue,
             shotResult: event.shotResult,
@@ -930,6 +939,15 @@
       event.preventDefault();
       event.stopImmediatePropagation();
       recordTeamCorrection(correctionUp.dataset.rpScoreEditAdd);
+      return;
+    }
+
+    const correctionDown = event.target.closest('[data-rp-score-edit-remove]');
+    if (correctionDown) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const team = String(correctionDown.dataset.rpScoreEditRemove || '').toLowerCase();
+      removeLatest((item) => item.eventType === 'score_adjustment' && String(item.team || '').toLowerCase() === team);
       return;
     }
 
