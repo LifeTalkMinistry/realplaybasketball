@@ -276,8 +276,19 @@
     return summary;
   }
 
-  function teamScore(team) {
+  function attributedTeamScore(team) {
     return playingPlayers(team).reduce((total, player) => total + summaryForPlayer(player.userId).pts, 0);
+  }
+
+  function scoreAdjustmentTotal(team) {
+    const side = String(team || '').toLowerCase();
+    return draftEvents
+      .filter((event) => event.eventType === 'score_adjustment' && String(event.team || '').toLowerCase() === side)
+      .reduce((total, event) => total + Number(event.points || 0), 0);
+  }
+
+  function teamScore(team) {
+    return attributedTeamScore(team) + scoreAdjustmentTotal(team);
   }
 
   function statCount(playerId, stat) {
