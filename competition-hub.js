@@ -632,11 +632,26 @@
       return;
     }
 
+    // Shared Stats observers call applyScopedRanking on clicks, window focus,
+    // and World refreshes. Replacing the entire list on each of those events
+    // destroys badge images, resets scroll anchoring, and visibly flickers.
+    // Keep the same row nodes until new scoped evidence actually arrives or
+    // another directory has replaced them.
+    const existingRows = [...list.querySelectorAll('[data-rp-competition-scope-row]')];
+    const stillOwned = config.renderedRowsList === list
+      && config.renderedRowsPlayers === players
+      && existingRows.length === players.length
+      && list.children.length === players.length
+      && existingRows.every((row) => row.__rpCompetitionScopedPlayer != null);
+    if (stillOwned) return;
+
     list.innerHTML = players.map(scopedPlayerRow).join('');
     const rows = [...list.querySelectorAll('[data-rp-competition-scope-row]')];
     rows.forEach((row, index) => {
       row.__rpCompetitionScopedPlayer = players[index] || null;
     });
+    config.renderedRowsList = list;
+    config.renderedRowsPlayers = players;
   }
 
   async function loadScopedCompetition(config) {
@@ -712,16 +727,16 @@
 
     const topTitle = header.querySelector('[data-rp-competition-scope-top-title]');
     const playerCount = header.querySelector('[data-rp-competition-scope-player-count]');
-    if (topTitle) topTitle.textContent = config.title;
+    if (topTitle && topTitle.textContent !== config.title) topTitle.textContent = config.title;
     if (playerCount) {
-      if (config.loading) {
-        playerCount.textContent = 'LOADING';
-      } else {
+      let countText = 'LOADING';
+      if (!config.loading) {
         const count = Number.isFinite(Number(config.playerCount))
           ? Math.max(0, Math.trunc(Number(config.playerCount)))
           : (Array.isArray(config.players) ? config.players.length : 0);
-        playerCount.textContent = count + ' PLAYER' + (count === 1 ? '' : 'S');
+        countText = count + ' PLAYER' + (count === 1 ? '' : 'S');
       }
+      if (playerCount.textContent !== countText) playerCount.textContent = countText;
     }
 
     renderScopedCompetitionRows(list, config);
@@ -744,7 +759,12 @@
       }, 0);
     }
 
-    world.scrollTop = 0;
+    // Set the initial position only when entering a new scope. A subsequent
+    // filter tap or focus refresh must not jump the player's scrolling list.
+    if (!config.initialScrollApplied) {
+      config.initialScrollApplied = true;
+      world.scrollTop = 0;
+    }
 
     if (!config.loading && !config.readyAnnounced) {
       config.readyAnnounced = true;
