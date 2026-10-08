@@ -367,9 +367,12 @@
   }
 
   function matchesFilter(meta) {
-    if (filterMode === 'ranked') return !rankAuthorityReady || meta.ranked;
-    if (filterMode === 'unranked') return !rankAuthorityReady || !meta.ranked;
-    if (sortKey === 'winrate') return rankAuthorityReady && meta.ranked;
+    const competitionScoped = panel?.dataset?.rpCompetitionPresentation === 'scoped';
+    // Tune-Up and League rank their verified participants independently of
+    // global Open Ranking eligibility and global ranking API readiness.
+    if (filterMode === 'ranked') return competitionScoped ? meta.ranked : (!rankAuthorityReady || meta.ranked);
+    if (filterMode === 'unranked') return competitionScoped ? !meta.ranked : (!rankAuthorityReady || !meta.ranked);
+    if (sortKey === 'winrate') return competitionScoped ? meta.ranked : (rankAuthorityReady && meta.ranked);
     if (sortKey === 'shooting') return meta.shootingQualified;
     if (sortKey === 'rebounding') return meta.reboundQualified;
     if (GAME_STAT_KEYS.has(sortKey)) return Number(meta.games || 0) > 0;
@@ -480,11 +483,13 @@
     panel?.classList.toggle('rp-world-stat-mode', statMode);
   }
 
-  function selectControl(key) {
+  function selectControl(key, { initialize = false } = {}) {
     if (!FILTERS.some(([filterKey]) => filterKey === key)) return false;
 
     if (key === 'ranked') {
-      if (filterMode === key) directions.rank = directions.rank === 'asc' ? 'desc' : 'asc';
+      // Opening a scoped competition starts at #1; a user click may reverse it.
+      if (initialize) directions.rank = 'asc';
+      else if (filterMode === key) directions.rank = directions.rank === 'asc' ? 'desc' : 'asc';
       else directions.rank = 'asc';
       filterMode = key;
       sortKey = 'ovr';
@@ -574,7 +579,7 @@
   window.addEventListener('realplay:player-filter-select', (event) => {
     const key = String(event?.detail?.key || '').trim().toLowerCase();
     if (!key) return;
-    selectControl(key);
+    selectControl(key, { initialize: event?.detail?.source === 'competition-scope' });
   });
 
   installStyles();

@@ -32,6 +32,10 @@
       .rp-world-inactive-mode .rp-world-player-row[data-ranking-status="inactive"]{
         border-color:rgba(135,158,183,.16)
       }
+      /* Global category invariant applies only to Overall Player Rankings.
+         A verified Tune-Up / League game still earns a competition rank. */
+      .rp-world.rp-competition-scoped-ranking [data-rp-inactive-sort]{display:none!important}
+      .rp-world.rp-competition-scoped-ranking [data-rp-competition-scope-row][data-ranking-status="inactive"]{display:grid!important}
       /* Global category invariant: inactive players may only appear in INACTIVE OVR. */
       .rp-world:not(.rp-world-inactive-mode) .rp-world-player-row[data-ranking-status="inactive"]{
         display:none!important
@@ -226,6 +230,23 @@
     const panel = worldPanel();
     const list = panel?.querySelector('[data-world-player-list]');
     if (!panel || !list) return;
+
+    // Overall inactivity belongs to the global Player Rankings view, never to
+    // Tune-Up or a League season. The shared player list must not reclassify
+    // scoped contestants using the global canonical ranking state.
+    if (panel.dataset.rpCompetitionPresentation === 'scoped') {
+      inactiveMode = false;
+      panel.classList.remove('rp-world-inactive-mode');
+      list.querySelectorAll('[data-rp-competition-scope-row]').forEach((row) => {
+        const wasHiddenByGlobalInactivity = row.dataset.rankingStatus === 'inactive' && row.hidden;
+        row.removeAttribute('data-ranking-status');
+        row.removeAttribute('data-inactive-rank');
+        row.querySelector('.rp-inactive-rank-badge')?.remove();
+        row.style.removeProperty('order');
+        if (wasHiddenByGlobalInactivity) setRowVisible(row, true);
+      });
+      return;
+    }
 
     panel.classList.toggle('rp-world-inactive-mode', inactiveMode);
     const rows = [...list.querySelectorAll('.rp-world-player-row')];
