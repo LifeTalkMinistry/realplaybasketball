@@ -63,3 +63,52 @@ test('DNP detection uses explicit participation, never zero stats', () => {
   assert.match(script, /!isDnp\(player\) && \['west', 'east'\]/);
   assert.match(script, /if \(isDnp\(player\)\) \{/);
 });
+
+const resultsSource = fs.readFileSync(path.join(__dirname, '../world-results.js'), 'utf8');
+const recapSource = fs.readFileSync(path.join(__dirname, '../admin-game-recap-recognitions.js'), 'utf8');
+
+function extractFrom(file, start, end) {
+  const first = file.indexOf(start);
+  const last = file.indexOf(end, first);
+  assert.ok(first >= 0 && last > first, `Missing source section: ${start}`);
+  return file.slice(first, last);
+}
+
+const worldMvp = vm.runInNewContext(
+  extractFrom(resultsSource, 'function normalizeReplayMvp(', 'async function loadReplayTeamMvps(')
+    + '\n({ deriveReplayTeamMvps, replayMvpImpact })'
+);
+
+test('Game Results fallback never recognizes DNP, even above a low-impact active player', () => {
+  const mvps = worldMvp.deriveReplayTeamMvps([
+    { playerId: 31, playerName: 'DNP Player', team: 'west', didNotPlay: true, points: 9 },
+    { playerId: 32, playerName: 'Played Player', team: 'west', missedShots: 8, turnovers: 3 },
+    { playerId: 33, playerName: 'DNP Alias', team: 'east', participationStatus: 'DNP', points: 5 },
+  ]);
+  assert.equal(mvps.west.playerName, 'Played Player');
+  assert.equal(mvps.east, null);
+});
+
+test('Game Results fallback resolves identical-name exact ties independent of row order', () => {
+  const alpha = { playerId: 18, playerName: 'SAME NAME', team: 'west', points: 2 };
+  const beta = { playerId: 37, playerName: 'SAME NAME', team: 'west', points: 2 };
+  const first = worldMvp.deriveReplayTeamMvps([alpha, beta]).west;
+  const second = worldMvp.deriveReplayTeamMvps([beta, alpha]).west;
+  assert.equal(first.identityKey, second.identityKey);
+  assert.equal(first.identityKey, 'user:18');
+});
+
+test('MVP bug fixes preserve the existing Jack and Jaff Impact totals', () => {
+  const jack = worldMvp.replayMvpImpact({ points: 3, rebounds: 6, missedShots: 6 });
+  const jaff = worldMvp.replayMvpImpact({
+    points: 6, rebounds: 4, steals: 2, turnovers: 2, missedShots: 11,
+  });
+  assert.equal(Math.round(jack * 10) / 10, 7.2);
+  assert.equal(Math.round(jaff * 10) / 10, 6.3);
+});
+
+test('Admin awards exclude explicit DNP and official replay owns the MVP crown', () => {
+  assert.match(recapSource, /eligible = players\.filter\(\(player\) => !player\.didNotPlay\)/);
+  assert.match(recapSource, /rp-recap-dnp-player/);
+  assert.match(script, /overall && !window\.__realPlayReplayOfficialMvpInstalled/);
+});
