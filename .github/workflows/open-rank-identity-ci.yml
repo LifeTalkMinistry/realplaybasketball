@@ -49,3 +49,12 @@ jobs:
 
       - name: Run Game MVP regression tests
         run: node --test tests/replay-player-stats-dnp-contract.test.js
+
+      - name: Check Tune-Up scoped player renderer syntax
+        run: |
+          node --check real-play-world-players.js
+          node --check visitor-world-players.js
+          node --check tests/tune-up-scoped-player-render-contract.test.js
+
+      - name: Test Tune-Up ranking rows survive shared directory refresh
+        run: node --test tests/tune-up-scoped-player-render-contract.test.js
