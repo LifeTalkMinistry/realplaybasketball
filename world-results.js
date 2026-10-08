@@ -1319,7 +1319,16 @@
   }
 
   function normalizeReplayMvp(player = {}) {
+    const rawId = Number(player.playerId ?? player.player_id ?? player.userId ?? player.user_id);
+    const identityKey = String(player.identityKey ?? player.identity_key ?? (
+      Number.isSafeInteger(rawId) && rawId !== 0
+        ? (rawId < 0 ? `manual:${Math.abs(rawId)}` : `user:${rawId}`)
+        : ''
+    )).trim();
     return {
+      identityKey,
+      didNotPlay: player.didNotPlay === true || player.did_not_play === true
+        || String(player.participationStatus ?? player.participation_status ?? '').toUpperCase() === 'DNP',
       playerName: String(player.playerName ?? player.player_name ?? player.name ?? '').trim(),
       team: String(player.team || '').trim().toLowerCase(),
       points: Number(player.points ?? player.pts ?? 0),
@@ -1370,14 +1379,18 @@
 
     if (candidate.points !== current.points) return candidate.points > current.points;
     if (candidate.turnovers !== current.turnovers) return candidate.turnovers < current.turnovers;
-    return String(candidate.playerName || '').localeCompare(String(current.playerName || '')) < 0;
+    const nameDiff = String(candidate.playerName || '').localeCompare(String(current.playerName || ''));
+    if (nameDiff !== 0) return nameDiff < 0;
+    const candidateKey = String(candidate.identityKey || '').trim();
+    const currentKey = String(current.identityKey || '').trim();
+    return Boolean(candidateKey && currentKey && candidateKey < currentKey);
   }
 
   function deriveReplayTeamMvps(playerStats = []) {
     const winners = { west: null, east: null };
     (Array.isArray(playerStats) ? playerStats : []).forEach((raw) => {
       const player = normalizeReplayMvp(raw);
-      if (!['west', 'east'].includes(player.team) || !player.playerName) return;
+      if (!['west', 'east'].includes(player.team) || !player.playerName || player.didNotPlay) return;
       if (isBetterReplayMvp(player, winners[player.team])) winners[player.team] = player;
     });
     return winners;
