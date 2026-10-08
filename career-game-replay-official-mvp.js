@@ -83,14 +83,21 @@
     if (!targetName) return null;
 
     const rows = [...root.querySelectorAll('[data-rp-career-stat-player]')];
-    return rows.find((row) => {
+    // Match official awards by the canonical identity before considering names.
+    const key = canonicalPlayerKey(mvp);
+    if (key) {
+      const exact = rows.find((row) => row.dataset.rpCareerStatIdentity === key);
+      if (exact) return exact;
+    }
+
+    // Legacy no-ID responses can fall back to a unique same-team name match;
+    // ambiguous duplicate names must never receive an arbitrary MVP crown.
+    const matching = rows.filter((row) => {
       const rowName = normalizeName(row.querySelector('.rp-career-replay-stat-player-name')?.textContent);
-      if (!rowName || rowName !== targetName) return false;
-      if (!targetTeam) return true;
-      return String(row.closest('[data-rp-career-stat-panel]')?.dataset?.rpCareerStatPanel || '').toLowerCase() === targetTeam;
-    }) || rows.find((row) => (
-      normalizeName(row.querySelector('.rp-career-replay-stat-player-name')?.textContent) === targetName
-    )) || null;
+      if (rowName !== targetName) return false;
+      return !targetTeam || String(row.closest('[data-rp-career-stat-panel]')?.dataset?.rpCareerStatPanel || '').toLowerCase() === targetTeam;
+    });
+    return matching.length === 1 ? matching[0] : null;
   }
 
   function renderOfficialBadge(row, mvp) {
