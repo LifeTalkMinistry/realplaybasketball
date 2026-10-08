@@ -17,6 +17,7 @@ function section(start, end) {
 const ui = vm.runInNewContext(
   [
     section('function isDnp(', 'function formatTime('),
+    section('function playerKey(', 'function shotSummary('),
     section('function statIdentityHtml(', 'function statHeaderRow('),
     section('function teamBlock(', 'function setActiveTeam('),
     '({ isDnp, statIdentityHtml, statRow, teamBlock })',
@@ -25,6 +26,7 @@ const ui = vm.runInNewContext(
     esc: (value) => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;'),
     recognitionBadgesHtml: () => '',
     playerLabel: (player) => player.playerName,
+    normalizeName: (value) => String(value || '').trim().toLowerCase().replace(/\\s+/g, ' '),
     num: (value) => Number(value || 0),
     statHeaderRow: () => '<div class="test-heading"></div>',
   }
