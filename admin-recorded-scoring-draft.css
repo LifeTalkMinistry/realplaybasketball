@@ -68,13 +68,33 @@
 
 /* SCORE EDIT — team score correction without assigning points to a player */
 .rp-score-edit{
-  display:grid;
-  gap:9px;
-  padding:12px 13px;
+  display:block;
   border:1px solid rgba(91,157,184,.24);
   border-radius:13px;
   background:rgba(4,16,26,.9);
 }
+.rp-score-edit[open]{
+  display:grid;
+  gap:9px;
+  padding:12px 13px;
+}
+.rp-score-edit:not([open]) > :not(summary){display:none!important}
+.rp-score-edit-head{
+  list-style:none;
+  cursor:pointer;
+  min-height:42px;
+  padding:11px 13px;
+  border-radius:12px;
+}
+.rp-score-edit[open] > .rp-score-edit-head{padding:0 0 3px}
+.rp-score-edit-head::-webkit-details-marker{display:none}
+.rp-score-edit-head::marker{content:""}
+.rp-score-edit-head:focus-visible{outline:2px solid #49d3ec;outline-offset:-2px}
+.rp-score-edit-toggle{display:inline-flex;align-items:center;gap:7px}
+.rp-score-edit-toggle::after{content:"⌄";font-size:15px;line-height:8px}
+.rp-score-edit[open] .rp-score-edit-toggle::after{content:"⌃"}
+.rp-score-edit-toggle-hide,.rp-score-edit[open] .rp-score-edit-toggle-show{display:none}
+.rp-score-edit[open] .rp-score-edit-toggle-hide{display:inline}
 .rp-score-edit-head{
   display:flex;
   align-items:center;
