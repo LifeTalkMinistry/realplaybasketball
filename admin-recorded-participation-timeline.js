@@ -99,19 +99,49 @@
     } catch (_) {}
   }
 
+  // Only actual checked-in game roster members may be sent to the Audit API.
+  // Session-wide player lists and locally saved timeline keys can also contain
+  // former/standby players; they are deliberately NOT participation authority.
+  function currentAuditRosterIds() {
+    const correction = correctionState();
+    if (correction) {
+      return new Set((Array.isArray(correction.players) ? correction.players : [])
+        .filter((player) => player.checkedIn !== false
+          && ['west', 'east'].includes(String(player.team || '').toLowerCase()))
+        .map((player) => Number(player.playerId ?? player.userId))
+        .filter((id) => Number.isSafeInteger(id) && id !== 0));
+    }
+
+    const rosterButtons = [...(screen()?.querySelectorAll(
+      '.rp-video-score-rosters [data-rp-video-select-player]'
+    ) || [])];
+    if (rosterButtons.length) {
+      return new Set(rosterButtons
+        .map((button) => Number(button.dataset.rpVideoSelectPlayer))
+        .filter((id) => Number.isSafeInteger(id) && id !== 0));
+    }
+
+    // The scoring roster disappears in REVIEW, so remember the last rendered
+    // roster. Unlike the previous union, do not add stale local storage IDs.
+    if (knownPlayerIds.size) return new Set(knownPlayerIds);
+    return new Set([...players.entries()]
+      .filter(([, player]) => player.checkedIn === true
+        && ['west', 'east'].includes(String(player.team || '').toLowerCase()))
+      .map(([id]) => Number(id)));
+  }
+
   function participationPayload(requestedSessionId = null) {
     const requested = Number(requestedSessionId || 0);
-    if (requested && requested !== Number(sessionId)) return [];
+    if (requested && requested !== Number(sessionId)) {
+      throw new Error('The Audit participation data belongs to a different game. Reopen this Audit before submitting.');
+    }
 
-    const ids = new Set(knownPlayerIds);
-    for (const id of players.keys()) ids.add(Number(id));
-    for (const id of Object.keys(state)) {
-      const numericId = Number(id);
-      if (Number.isSafeInteger(numericId) && numericId !== 0) ids.add(numericId);
+    const ids = currentAuditRosterIds();
+    if (!ids.size) {
+      throw new Error('Unable to confirm the current Audit lineup. Return to scoring and reopen Review before submitting.');
     }
 
     return [...ids]
-      .filter((id) => Number.isSafeInteger(id) && id !== 0)
       .sort((a, b) => a - b)
       .map((playerId) => {
         const rec = recordFor(playerId);
@@ -316,10 +346,16 @@
     const sc = screen();
     if (!sc) return;
     const atMs = currentMs();
-    sc.querySelectorAll('[data-rp-video-select-player]').forEach((button) => {
+    const rosterButtons = [...sc.querySelectorAll('.rp-video-score-rosters [data-rp-video-select-player]')];
+    // Replace, do not union: a changed roster must evict removed players.
+    if (rosterButtons.length) {
+      knownPlayerIds = new Set(rosterButtons
+        .map((button) => Number(button.dataset.rpVideoSelectPlayer))
+        .filter((id) => Number.isSafeInteger(id) && id !== 0));
+    }
+    rosterButtons.forEach((button) => {
       const playerId = Number(button.dataset.rpVideoSelectPlayer || 0);
       if (!playerId) return;
-      knownPlayerIds.add(playerId);
       const status = statusAt(playerId, atMs);
       button.dataset.rpParticipationStatus = status.label;
       button.classList.toggle('rp-participation-inactive', !status.active);
@@ -378,7 +414,10 @@
           const id = Number(player?.userId || 0);
           if (id) {
             players.set(id, player);
-            knownPlayerIds.add(id);
+            if (player.checkedIn === true
+              && ['west', 'east'].includes(String(player.team || '').toLowerCase())) {
+              knownPlayerIds.add(id);
+            }
           }
         });
         loadState();
