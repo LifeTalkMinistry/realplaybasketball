@@ -30,6 +30,7 @@
   let raceTargets = [8, 16, 21];
   let gameSetEditing = false;
   let gameSetSessionId = 0;
+  let scoreEditExpanded = false;
 
   function hasCompetitionSupport() {
     return Array.isArray(control.competitionSeasons);
@@ -480,18 +481,17 @@
     return `<div class="rp-video-screen rp-video-scoring-screen">
       <div class="rp-admin-title"><span class="rp-admin-kicker">RECORDED SCORING</span><h1>WATCH & SCORE</h1><p>Watch the full game continuously. Tap the event at the exact moment it happens.</p></div>
       ${noticeHtml()}
-      ${competitionSummaryHtml()}
       ${videoPlayerHtml()}
       <div class="rp-video-auto-note"><strong>5-SECOND LEAD-IN IS AUTOMATIC</strong><span>When a MAKE is stamped at 7:32, Real Play stores the replay start at 7:27.</span></div>
       <div class="rp-video-scoreboard"><div><small>WEST</small><strong data-rp-video-score-west>${Number(session?.westScore || 0)}</strong></div><span>—</span><div><small>EAST</small><strong data-rp-video-score-east>${Number(session?.eastScore || 0)}</strong></div></div>
-      <section class="rp-score-edit" data-rp-score-edit>
-        <div class="rp-score-edit-head"><div><strong>SCORE EDIT</strong><small>UNATTRIBUTED TEAM SCORE</small></div><span>NO PLAYER PTS</span></div>
+      <details class="rp-score-edit" data-rp-score-edit ${scoreEditExpanded ? 'open' : ''}>
+        <summary class="rp-score-edit-head"><div><strong>SCORE EDIT</strong><small>UNATTRIBUTED TEAM SCORE</small></div><span class="rp-score-edit-toggle"><span class="rp-score-edit-toggle-show">SHOW</span><span class="rp-score-edit-toggle-hide">HIDE</span></span></summary>
         <div class="rp-score-edit-grid">
           <div class="rp-score-edit-team"><span>WEST</span><div><button type="button" data-rp-score-edit-remove="west" disabled>−</button><strong data-rp-score-edit-count="west">+0</strong><button type="button" data-rp-score-edit-add="west">+</button></div></div>
           <div class="rp-score-edit-team"><span>EAST</span><div><button type="button" data-rp-score-edit-remove="east" disabled>−</button><strong data-rp-score-edit-count="east">+0</strong><button type="button" data-rp-score-edit-add="east">+</button></div></div>
         </div>
         <p>Use when points happened but the scorer is unknown. Team score only; no player stats.</p>
-      </section>
+      </details>
       <div class="rp-video-score-rosters">${scoringRoster('west')}${scoringRoster('east')}</div>
       <div data-rp-video-selected-panel>${selectedPanel()}</div>
       <div class="rp-video-review-actions">
@@ -963,6 +963,13 @@
     }
     if (event.target.closest('[data-rp-replay-correction-mode]')) return;
     if (!videoMode) return;
+
+    // Native <details> handles the interaction; keep its preference across scorer renders.
+    const scoreEditSummary = event.target.closest('[data-rp-score-edit] > summary');
+    if (scoreEditSummary) {
+      scoreEditExpanded = !scoreEditSummary.parentElement.open;
+      return;
+    }
 
     const add = event.target.closest('[data-rp-video-add]');
     if (add) {
