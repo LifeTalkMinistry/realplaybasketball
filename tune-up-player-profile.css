@@ -1,0 +1,81 @@
+
+/* Real Play — dedicated Tune-Up player journey. No .rp-profile selectors:
+   avoids old career profile badge/hero layout observer conflicts. */
+.rp-tuneup-profile{
+  position:fixed;inset:0;z-index:575;display:none;overflow-y:auto;
+  overscroll-behavior:contain;scrollbar-width:thin;
+  background:#02060d;color:#f1f8ff;
+  font-family:Arial,sans-serif;
+}
+.rp-tuneup-profile.open{display:block}
+.rp-tuneup-profile,.rp-tuneup-profile *{box-sizing:border-box}
+.rp-tuneup-shell{
+  position:relative;width:min(100%,620px);min-height:100%;
+  margin:0 auto;
+  padding:0 15px calc(var(--rp-simple-nav-height,68px) + 27px + env(safe-area-inset-bottom));
+  background:radial-gradient(ellipse 80% 200px at 12% 3%,rgba(16,105,196,.15),transparent),
+    radial-gradient(ellipse 60% 250px at 91% 35%,rgba(183,26,48,.065),transparent),#02060d;
+}
+.rp-tuneup-topbar{
+  position:sticky;top:0;z-index:6;display:grid;
+  grid-template-columns:40px 1fr 40px;align-items:center;
+  min-height:68px;margin:0 -15px 15px;padding:10px 15px;
+  border-bottom:1px solid rgba(105,150,195,.14);
+  background:rgba(2,6,13,.97);backdrop-filter:blur(13px);
+}
+.rp-tuneup-topbar button{width:39px;height:39px;display:grid;place-items:center;border:1px solid rgba(58,185,243,.22);background:#06121d;border-radius:12px;color:#dff6ff;font-size:20px;cursor:pointer}
+.rp-tuneup-topbar>div{text-align:center;min-width:0}
+.rp-tuneup-topbar strong{display:block;font:italic 900 1.15rem/1 Impact,'Arial Narrow',Arial,sans-serif;letter-spacing:.05em}
+.rp-tuneup-topbar small{display:block;margin-top:5px;color:#7c9cb3;font-size:.56rem;font-weight:900;letter-spacing:.13em}
+.rp-tuneup-hero{
+  overflow:hidden;position:relative;isolation:isolate;
+  border-radius:23px;border:1px solid rgba(58,180,246,.25);
+  padding:19px 15px 17px;
+  background:linear-gradient(130deg,rgba(7,23,38,.96),rgba(3,8,15,.99) 62%,rgba(23,8,15,.94));
+  box-shadow:inset 0 0 25px rgba(37,130,200,.04);
+}
+.rp-tuneup-hero:before{content:'';position:absolute;right:-65px;top:-55px;width:230px;height:290px;border-radius:50%;background:radial-gradient(circle,rgba(190,28,48,.17),transparent 70%);pointer-events:none;z-index:-1}
+.rp-tuneup-eyebrow{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#5fd5ff;font-size:.58rem;font-weight:900;letter-spacing:.12em}
+.rp-tuneup-eyebrow span:last-child{color:#71899d}
+.rp-tuneup-identity{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;padding:30px 2px 22px;min-height:120px}
+.rp-tuneup-identity h1{font:italic 950 clamp(1.65rem,7.2vw,2.4rem)/1 Impact,'Arial Narrow',Arial,sans-serif;margin:5px 0 0;letter-spacing:.02em;overflow-wrap:anywhere;text-transform:uppercase}
+.rp-tuneup-identity small{color:#86a0b4;font-size:.62rem;font-weight:850;letter-spacing:.09em}
+.rp-tuneup-jersey{font:italic 900 2.1rem/1 Impact,'Arial Narrow',Arial,sans-serif;color:#55d7ff;opacity:.9;white-space:nowrap}
+.rp-tuneup-core{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.rp-tuneup-tile{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:9px;min-width:0;min-height:81px;padding:10px 3px;border:1px solid rgba(113,158,190,.18);border-radius:15px;background:rgba(2,9,17,.82)}
+.rp-tuneup-tile:first-child{border-color:rgba(71,211,255,.45)}
+.rp-tuneup-tile:last-child{border-color:rgba(242,70,90,.3)}
+.rp-tuneup-tile small{color:#92a5b7;font-size:.47rem;font-weight:950;letter-spacing:.08em;text-align:center}
+.rp-tuneup-tile strong{color:#effaff;font:900 clamp(1.05rem,5vw,1.55rem)/1 Impact,'Arial Narrow',Arial,sans-serif}
+.rp-tuneup-tile:first-child strong,.rp-tuneup-tile:last-child strong{color:#51d7ff}
+.rp-tuneup-block{margin-top:14px;padding:16px;border:1px solid rgba(99,150,192,.18);border-radius:19px;background:linear-gradient(145deg,rgba(6,14,24,.95),rgba(3,8,15,.98))}
+.rp-tuneup-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 13px}
+.rp-tuneup-section-title h2{margin:0;font:italic 950 1rem/1.05 Impact,'Arial Narrow',Arial,sans-serif;letter-spacing:.04em}
+.rp-tuneup-section-title small{color:#7290a5;font-size:.55rem;letter-spacing:.045em;font-weight:850;text-align:right}
+.rp-tuneup-team{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rp-tuneup-team article,.rp-tuneup-stats article{min-width:0;border:1px solid rgba(104,145,173,.15);border-radius:13px;background:#050b14;padding:14px 12px}
+.rp-tuneup-team small,.rp-tuneup-stats small{display:block;margin-bottom:10px;color:#748ba1;font-size:.53rem;font-weight:850;letter-spacing:.07em}
+.rp-tuneup-team strong{display:block;overflow-wrap:anywhere;font-size:.83rem;font-weight:950}
+.rp-tuneup-team span{display:block;margin-top:6px;color:#698399;font-size:.55rem;line-height:1.45}
+.rp-tuneup-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.rp-tuneup-stats article{min-height:82px}
+.rp-tuneup-stats strong{font:950 1.48rem/1 Impact,'Arial Narrow',Arial,sans-serif}
+.rp-tuneup-stat-legend{margin-top:12px;color:#668198;font-size:.58rem;line-height:1.5}
+.rp-tuneup-awards{display:flex;flex-wrap:wrap;gap:8px}
+.rp-tuneup-award{display:flex;align-items:center;gap:9px;padding:12px 14px;border-radius:11px;background:rgba(10,38,56,.58);border:1px solid rgba(74,211,246,.23);font-size:.69rem;font-weight:850}
+.rp-tuneup-award b{font-size:1rem;color:#5ad8f5}
+.rp-tuneup-note{margin:0;color:#8aa0b3;font-size:.67rem;line-height:1.6}
+.rp-tuneup-game-list{display:grid;gap:8px}
+.rp-tuneup-game{display:block;width:100%;padding:13px 12px;border:1px solid rgba(113,147,177,.18);border-radius:12px;background:rgba(3,9,16,.92);color:#eef8ff;text-align:left;cursor:pointer}
+.rp-tuneup-game-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.rp-tuneup-game-row strong{font-size:.72rem;letter-spacing:.04em}
+.rp-tuneup-result{font-size:.57rem;font-weight:950;color:#52dca5}
+.rp-tuneup-result.loss{color:#ff778d}.rp-tuneup-result.draw{color:#a9b4be}
+.rp-tuneup-game-meta{color:#8ba3b7;margin-top:10px;font-size:.6rem;font-weight:850}
+.rp-tuneup-game-foot{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid rgba(92,129,158,.13)}
+.rp-tuneup-game-foot small{color:#7d9cb1;font-size:.57rem}
+.rp-tuneup-game-foot b{color:#4ed5ff;font-size:.55rem;letter-spacing:.08em}
+.rp-tuneup-status{margin-top:11px;min-height:0;font-size:.6rem;color:#82a4bb;line-height:1.6}
+.rp-tuneup-status.error{color:#fb8899}
+.rp-tuneup-game:focus-visible,.rp-tuneup-topbar button:focus-visible{outline:2px solid #50d8ff;outline-offset:2px}
+@media(max-width:360px){.rp-tuneup-shell{padding-inline:11px}.rp-tuneup-topbar{margin-inline:-11px;padding-inline:11px}.rp-tuneup-block{padding:12px}.rp-tuneup-team article{padding:11px 9px}.rp-tuneup-tile{min-height:75px}.rp-tuneup-tile strong{font-size:1.13rem}}
