@@ -38,3 +38,14 @@ jobs:
           node --test tests/open-rank-recording-authority.test.js
           node --test tests/inactive-player-identity-lookup.test.js
           node --test tests/world-team-identity-contract.test.js
+
+      - name: Check Game MVP scripts and regression tests
+        run: |
+          node --check career-game-replay-stats.js
+          node --check career-game-replay-official-mvp.js
+          node --check admin-game-recap-recognitions.js
+          node --check world-results.js
+          node --check tests/replay-player-stats-dnp-contract.test.js
+
+      - name: Run Game MVP regression tests
+        run: node --test tests/replay-player-stats-dnp-contract.test.js
