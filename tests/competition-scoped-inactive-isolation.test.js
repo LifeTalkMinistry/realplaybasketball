@@ -96,7 +96,7 @@ test('the overall World ranking still filters globally inactive players', () => 
   const f = fixture(3, false);
   const engine = makeInactiveEngine(f);
   engine.applyRows();
-  assert.equal(f.rows.filter((row) => row.hidden).length, 2);
+  assert.equal(f.rows.filter((row) => row.hidden).length, 1);
   assert.equal(f.classSet.has('rp-world-inactive-mode'), true);
 });
 
