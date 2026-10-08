@@ -175,7 +175,7 @@
         '" aria-label="View verified game ', sessionId, '">',
         '<span class="rp-tuneup-game-row"><strong>GAME #', sessionId,
         '</strong><b class="rp-tuneup-result ', esc(resultClass), '">', esc(result), '</b></span>',
-        '<div class="rp-tuneup-game-meta">EAST ', esc(score),' WEST',
+        '<div class="rp-tuneup-game-meta">WEST ', esc(score),' EAST',
         date ? ' · ' + esc(date) : '', '</div>',
         '<div class="rp-tuneup-game-foot"><small>', esc(side), ' · ',esc(stats),
         '</small><b>VIEW GAME →</b></div>',
