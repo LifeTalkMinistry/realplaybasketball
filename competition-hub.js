@@ -675,6 +675,14 @@
       const data = await fetchScopedCompetitionStats(config);
       if (requestId !== scopedRequestId || scopedRanking !== config || playerPresentation !== 'scoped') return;
       config.players = normalizeAutomaticCompetitionRanks(data?.players);
+      // Backend resolves the active Tune-Up season when no season was chosen.
+      // Pass the same scope to the player journey/game-history drill-down.
+      if (config.competitionContext === 'open_ranking') {
+        const resolvedSeasonId = Number(data?.competitionSeasonId);
+        if (Number.isSafeInteger(resolvedSeasonId) && resolvedSeasonId > 0) {
+          config.competitionSeasonId = resolvedSeasonId;
+        }
+      }
       config.playerCount = Number.isFinite(Number(data?.playerCount))
         ? Math.max(0, Math.trunc(Number(data.playerCount)))
         : config.players.length;
