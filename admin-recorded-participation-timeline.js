@@ -283,6 +283,34 @@
     window.setTimeout(() => node.remove(), 2600);
   }
 
+  // Presentation-only ordering: on court first, bench/injured next, DNP last.
+  // Never change a player's roster membership or saved participation history.
+  function sortLineupsByParticipation(sc) {
+    sc.querySelectorAll('.rp-video-score-rosters .rp-video-score-team').forEach((team) => {
+      const buttons = [...team.children].filter((child) =>
+        child.matches?.('[data-rp-video-select-player]')
+      );
+      buttons.forEach((button, index) => {
+        if (!button.hasAttribute('data-rp-participation-base-order')) {
+          button.dataset.rpParticipationBaseOrder = String(index);
+        }
+      });
+      const priority = (button) => button.classList.contains('rp-participation-dnp')
+        ? 2
+        : button.classList.contains('rp-participation-inactive') ? 1 : 0;
+      const sorted = [...buttons].sort((a, b) =>
+        priority(a) - priority(b)
+        || Number(a.dataset.rpParticipationBaseOrder) - Number(b.dataset.rpParticipationBaseOrder)
+      );
+
+      // Don't touch the DOM if already sorted: the existing mutation observer
+      // only needs one additional pass after a real status-based reorder.
+      if (sorted.some((button, index) => button !== buttons[index])) {
+        sorted.forEach((button) => team.appendChild(button));
+      }
+    });
+  }
+
   function syncRows() {
     syncTimer = 0;
     const sc = screen();
@@ -298,6 +326,7 @@
       button.classList.toggle('rp-participation-dnp', status.reason === 'did_not_play');
       button.setAttribute('aria-description', status.active ? 'On court at current video time' : `${status.label} at current video time`);
     });
+    sortLineupsByParticipation(sc);
   }
 
   function queueSync() {
