@@ -319,9 +319,13 @@
     }
     const numericRank = Number(meta.rank);
     const hasOfficialRank = Number.isSafeInteger(numericRank) && numericRank > 0;
-    badge.textContent = hasOfficialRank ? `#${numericRank}` : '';
+    const nextBadge = hasOfficialRank ? `#${numericRank}` : '';
+    if (badge.textContent !== nextBadge) badge.textContent = nextBadge;
     badge.classList.toggle('is-visible', filterMode === 'ranked' && hasOfficialRank);
-    meta.row.dataset.officialRank = hasOfficialRank ? String(numericRank) : '';
+    // data-official-rank is watched by the recognition renderer. Unchanged
+    // assignments still fire mutation records and needlessly redraw badges.
+    const nextRank = hasOfficialRank ? String(numericRank) : '';
+    if (meta.row.dataset.officialRank !== nextRank) meta.row.dataset.officialRank = nextRank;
   }
 
   function metricPresentation(meta) {
@@ -348,7 +352,11 @@
       metrics.appendChild(node);
     }
     const [value, label] = metricPresentation(meta);
-    node.innerHTML = `<strong>${value}</strong>${label ? `<small>${label}</small>` : ''}`;
+    const signature = `${sortKey}:${value}:${label}`;
+    if (node.dataset.metricSignature !== signature) {
+      node.dataset.metricSignature = signature;
+      node.innerHTML = `<strong>${value}</strong>${label ? `<small>${label}</small>` : ''}`;
+    }
   }
 
   function compareName(a, b) {
@@ -409,10 +417,15 @@
       renderRowRank(meta);
       renderRowMetric(meta);
       const visible = matchesFilter(meta);
-      row.hidden = !visible;
-      row.setAttribute('aria-hidden', String(!visible));
-      if (visible) row.style.removeProperty('display');
-      else row.style.setProperty('display', 'none', 'important');
+      if (row.hidden !== !visible) row.hidden = !visible;
+      const ariaHidden = String(!visible);
+      if (row.getAttribute('aria-hidden') !== ariaHidden) row.setAttribute('aria-hidden', ariaHidden);
+      if (visible) {
+        if (row.style.getPropertyValue('display')) row.style.removeProperty('display');
+      } else if (row.style.getPropertyValue('display') !== 'none'
+        || row.style.getPropertyPriority('display') !== 'important') {
+        row.style.setProperty('display', 'none', 'important');
+      }
     });
   }
 
