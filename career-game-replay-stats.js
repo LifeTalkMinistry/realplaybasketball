@@ -511,7 +511,7 @@
   function statRow(player, index, dnpStart = false) {
     const dnp = isDnp(player);
     const statCell = (value) => `<span class="rp-career-replay-stat-value"><b>${dnp ? '—' : num(value)}</b></span>`;
-    return `<button type="button" class="rp-career-replay-stat-player${dnp ? ' rp-career-replay-stat-dnp' : ''}${dnpStart ? ' rp-career-replay-stat-dnp-start' : ''}" data-rp-career-stat-player="${index}" aria-label="View detailed stats for ${esc(playerLabel(player))}${dnp ? ' (did not play)' : ''}">
+    return `<button type="button" class="rp-career-replay-stat-player${dnp ? ' rp-career-replay-stat-dnp' : ''}${dnpStart ? ' rp-career-replay-stat-dnp-start' : ''}" data-rp-career-stat-player="${index}" data-rp-career-stat-identity="${esc(playerKey(player))}" aria-label="View detailed stats for ${esc(playerLabel(player))}${dnp ? ' (did not play)' : ''}">
       <span class="rp-career-replay-stat-identity">${statIdentityHtml(player)}</span>
       ${['pts', 'ast', 'reb', 'tov', 'stl', 'blk', 'foul'].map((key) => statCell(player[key])).join('')}
     </button>`;
