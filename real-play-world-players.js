@@ -566,6 +566,21 @@
   function handlePlayerClick(event) {
     const row = event.target.closest('[data-world-player-id]');
     if (!row) return;
+
+    // Season rankings are NOT the permanent ME or career profile.
+    // Read the scoped row's own verified player object, not its displayed
+    // numeric ID: manually entered competitors can use manual:* identities.
+    const world = document.querySelector('[data-rp-world]');
+    if (world?.dataset?.rpCompetitionScope === 'tune-up'
+        && row.dataset.rpCompetitionScopeRow === 'true') {
+      event.preventDefault();
+      const scopedPlayer = row.__rpCompetitionScopedPlayer || null;
+      window.RealPlayTuneUpProfile?.open?.(scopedPlayer, {
+        seasonId: world.dataset.rpCompetitionSeasonId || null
+      });
+      return;
+    }
+
     const playerId = Number(row.dataset.worldPlayerId);
     if (!Number.isSafeInteger(playerId) || playerId <= 0) return;
 
