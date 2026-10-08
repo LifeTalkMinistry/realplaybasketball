@@ -662,3 +662,65 @@
     --rp-profile-hero-band:0px!important;
   }
 }
+
+
+/* PUBLIC PROFILE HERO GEOMETRY LOCK v236
+   World / Tune-Up player taps use .rp-public-player-profile, not the ME
+   [data-rp-profile] panel protected by the earlier v223 lock.
+   A live recognition renderer inserts/removes the badge strip while another
+   authority may hide it. The strip must NEVER become a new grid row or move
+   the player name/stat deck; keep its 86px visual band reserved even when empty.
+*/
+.rp-profile.rp-public-player-profile{
+  overflow-anchor:none;
+}
+.rp-profile.rp-public-player-profile .rp-profile-hero{
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:50px var(--rp-profile-hero-band,86px) 46px 120px!important;
+  grid-auto-rows:0!important;
+  align-content:start!important;
+}
+.rp-profile.rp-public-player-profile .rp-profile-hero > .rp-profile-identity-line{
+  grid-column:1!important;
+  grid-row:1!important;
+}
+.rp-profile.rp-public-player-profile .rp-profile-hero > .rp-profile-badges{
+  position:absolute!important;
+  top:50px!important;
+  left:18px!important;
+  grid-column:auto!important;
+  grid-row:auto!important;
+  height:var(--rp-profile-hero-band,86px)!important;
+  min-height:0!important;
+  max-height:var(--rp-profile-hero-band,86px)!important;
+  margin:0!important;
+  padding:0!important;
+}
+.rp-profile.rp-public-player-profile .rp-profile-hero > .rp-profile-player,
+.rp-profile.rp-public-player-profile.has-rp-profile-badges .rp-profile-hero > .rp-profile-player,
+.rp-profile.rp-public-player-profile.rp-profile-recognition-none-authoritative .rp-profile-hero > .rp-profile-player{
+  grid-column:1!important;
+  grid-row:3!important;
+  height:46px!important;
+  min-height:46px!important;
+  align-self:center!important;
+  margin:0!important;
+  padding:0 18px!important;
+}
+.rp-profile.rp-public-player-profile .rp-profile-hero > .rp-profile-rating-row{
+  grid-column:1!important;
+  grid-row:4!important;
+  align-self:stretch!important;
+  min-height:0!important;
+  margin:10px 18px 18px!important;
+}
+@media(max-width:420px){
+  .rp-profile.rp-public-player-profile .rp-profile-hero > .rp-profile-badges{left:14px!important}
+  .rp-profile.rp-public-player-profile .rp-profile-hero > .rp-profile-player{padding-inline:14px!important}
+  .rp-profile.rp-public-player-profile .rp-profile-hero > .rp-profile-rating-row{margin-inline:14px!important}
+}
+@media(min-width:520px){
+  .rp-profile.rp-public-player-profile .rp-profile-hero{
+    grid-template-rows:50px var(--rp-profile-hero-band,90px) 46px 142px!important;
+  }
+}
