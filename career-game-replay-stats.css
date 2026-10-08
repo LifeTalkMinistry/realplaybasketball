@@ -679,3 +679,66 @@
   background:#060b12!important;
   box-shadow:none!important;
 }
+
+
+/* Replay participation: explicitly marked DNP players follow everyone who played. */
+.rp-career-replay-stat-player.rp-career-replay-stat-dnp-start{
+  margin-top:10px;
+}
+.rp-career-replay-stat-dnp-start::before{
+  content:"";
+  position:absolute;
+  top:-6px;
+  left:0;
+  right:0;
+  height:1px;
+  background:rgba(178,192,207,.19);
+  pointer-events:none;
+}
+.rp-career-replay-stat-dnp .rp-career-replay-stat-number,
+.rp-career-replay-stat-dnp .rp-career-replay-stat-player-name{
+  color:#a0abb9!important;
+}
+.rp-career-replay-stat-dnp .rp-career-replay-stat-value b{
+  color:#778797!important;
+  font-weight:700;
+}
+.rp-career-replay-stat-dnp-badge{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:2px 4px;
+  border:1px solid rgba(172,184,198,.18);
+  border-radius:4px;
+  background:rgba(148,163,184,.10);
+  color:#aab6c2;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.42rem;
+  font-style:normal;
+  font-weight:800;
+  line-height:1;
+  letter-spacing:.035em;
+}
+.rp-career-player-detail-dnp{
+  margin:18px 14px;
+  padding:20px 16px;
+  border:1px solid rgba(172,184,198,.16);
+  border-radius:12px;
+  background:rgba(148,163,184,.045);
+  text-align:center;
+}
+.rp-career-player-detail-dnp strong{
+  color:#d5dee7;
+  font-family:var(--rp-display,Arial,sans-serif);
+  font-size:.85rem;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.rp-career-player-detail-dnp p{
+  max-width:290px;
+  margin:10px auto 0;
+  color:#91a0af;
+  font-size:.77rem;
+  line-height:1.55;
+}
