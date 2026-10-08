@@ -107,6 +107,10 @@
   }
 
   function renderPlayers() {
+    // Tune-Up / League scope owns the shared player list until that scope closes.
+    // In particular, refreshPlayers() renders in its finally block after the
+    // realplay:players-loaded event, which would erase scoped rows otherwise.
+    if (worldPanel?.dataset?.rpCompetitionPresentation === 'scoped') return;
     const root = worldPanel?.querySelector('[data-world-player-list]');
     const count = worldPanel?.querySelector('[data-world-player-count]');
     if (!root) return;
