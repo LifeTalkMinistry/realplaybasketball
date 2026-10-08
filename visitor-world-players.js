@@ -79,7 +79,7 @@
   function setStatus(message = '', type = '') {
     const node = world()?.querySelector('[data-world-player-status]');
     if (!node) return;
-    node.textContent = message;
+    if (node.textContent !== message) node.textContent = message;
     node.classList.toggle('error', type === 'error');
   }
 
@@ -92,27 +92,69 @@
     return [...byId.values()];
   }
 
+  function reconcileVisitorRows(root, entries) {
+    // Visitor and authenticated Overall Rankings share the decorated player
+    // list; keep badge/art nodes intact when the same page is refreshed.
+    const existing = new Map([...root.querySelectorAll('.rp-world-player-row')]
+      .map((row) => [String(row.dataset.worldPlayerId || ''), row]));
+    const retained = new Set();
+    let template = null;
+    for (const entry of entries) {
+      let row = existing.get(entry.id) || null;
+      if (retained.has(row)) row = null;
+      if (!row || row.__rpDirectoryMarkup !== entry.markup) {
+        if (!template) template = document.createElement('template');
+        template.innerHTML = entry.markup.trim();
+        const fresh = template.content.firstElementChild;
+        if (!fresh) continue;
+        fresh.__rpDirectoryMarkup = entry.markup;
+        if (row) row.replaceWith(fresh);
+        else root.appendChild(fresh);
+        row = fresh;
+      }
+      retained.add(row);
+    }
+    [...root.children].forEach((node) => {
+      if (!retained.has(node)) node.remove();
+    });
+  }
+
   function renderVisitorPlayers() {
     // Do not repaint the shared list while a competition-specific leaderboard owns it.
     if (world()?.dataset?.rpCompetitionPresentation === 'scoped') return;
     const root = world()?.querySelector('[data-world-player-list]');
     const count = world()?.querySelector('[data-world-player-count]');
     const more = world()?.querySelector('[data-world-player-more]');
-    if (count) count.textContent = `${visitorPlayers.length}${visitorHasMore ? '+' : ''} PLAYER${visitorPlayers.length === 1 && !visitorHasMore ? '' : 'S'}`;
+    if (count) {
+      const nextCount = `${visitorPlayers.length}${visitorHasMore ? '+' : ''} PLAYER${visitorPlayers.length === 1 && !visitorHasMore ? '' : 'S'}`;
+      if (count.textContent !== nextCount) count.textContent = nextCount;
+    }
     if (more) {
       more.hidden = !visitorHasMore;
       more.disabled = loadingPlayers;
-      more.textContent = loadingPlayers && visitorHasMore ? 'LOADING...' : 'LOAD MORE PLAYERS';
+      const moreLabel = loadingPlayers && visitorHasMore ? 'LOADING...' : 'LOAD MORE PLAYERS';
+      if (more.textContent !== moreLabel) more.textContent = moreLabel;
     }
     if (!root) return;
 
-    root.innerHTML = visitorPlayers.length ? visitorPlayers.map((player) => {
+    if (!visitorPlayers.length) {
+      if (root.children.length !== 1 || !root.firstElementChild?.classList.contains('rp-world-player-empty')) {
+        root.innerHTML = '<div class="rp-world-player-empty">NO REAL PLAY PLAYER PROFILES YET.</div>';
+      }
+      return;
+    }
+
+    const entries = visitorPlayers.map((player) => ({
+      id: String(player.playerId || player.userId || ''),
+      markup: (() => {
       const jersey = player.playerNumber === null || player.playerNumber === undefined ? '#—' : `#${Number(player.playerNumber)}`;
       const rating = player.ovr === null || player.ovr === undefined
         ? '<span class="rp-world-player-ovr unranked">UNRANKED</span>'
         : `<span class="rp-world-player-ovr">${esc(player.ovr)} <small>OVR</small></span>`;
       return `<button type="button" class="rp-world-player-row" data-world-player-id="${esc(player.playerId || player.userId)}"><span class="rp-world-player-name"><strong>${esc(player.playerName || 'REAL PLAY PLAYER')}</strong><b>${esc(jersey)}</b></span>${rating}</button>`;
-    }).join('') : '<div class="rp-world-player-empty">NO REAL PLAY PLAYER PROFILES YET.</div>';
+      })(),
+    }));
+    reconcileVisitorRows(root, entries);
   }
 
   async function loadPlayers({ append = false } = {}) {
