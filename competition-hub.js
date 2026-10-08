@@ -540,7 +540,11 @@
   }
 
   function normalizeAutomaticCompetitionRanks(players) {
-    const source = (Array.isArray(players) ? players : []).map((player) => ({ ...player }));
+    // Only actual competition participation qualifies: the backend excludes
+    // recorded DNP and provides the verified games count per competitor.
+    const source = (Array.isArray(players) ? players : [])
+      .filter((player) => Number(player?.record?.games ?? player?.leaderboardStats?.games ?? 0) > 0)
+      .map((player) => ({ ...player }));
     source.sort((left, right) => {
       const leftRank = Number(left?.rank);
       const rightRank = Number(right?.rank);
@@ -593,7 +597,7 @@
       : `#${Number(rawNumber)}`;
     const rating = player?.ranked && player?.ovr !== null && player?.ovr !== undefined
       ? `<span class="rp-world-player-ovr">${esc(player.ovr)} <small>OVR</small></span>`
-      : '<span class="rp-world-player-ovr unranked">UNRANKED</span>';
+      : '<span class="rp-world-player-ovr unranked">— <small>OVR</small></span>';
     const winRateValue = Number(player?.winRate ?? player?.record?.winRate);
     const winRate = Number.isFinite(winRateValue)
       ? `<span class="rp-world-player-winrate">${Math.round(winRateValue)}% <small>WR</small></span>`
