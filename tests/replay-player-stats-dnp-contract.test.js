@@ -112,3 +112,24 @@ test('Admin awards exclude explicit DNP and official replay owns the MVP crown',
   assert.match(recapSource, /rp-recap-dnp-player/);
   assert.match(script, /overall && !window\.__realPlayReplayOfficialMvpInstalled/);
 });
+
+test('Official replay MVP badge resolves duplicate teammates using identity before name', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../career-game-replay-official-mvp.js'), 'utf8');
+  const source = extractFrom(src, 'function canonicalPlayerKey(', 'async function loadOfficialGameMvp(')
+    + '\n' + extractFrom(src, 'function findOfficialMvpRow(', 'function renderOfficialBadge(')
+    + '\n({ findOfficialMvpRow })';
+  const { findOfficialMvpRow } = vm.runInNewContext(source, {
+    normalizeName: (v) => String(v || '').trim().toLowerCase(),
+  });
+  const row = (key) => ({
+    dataset: { rpCareerStatIdentity: key },
+    querySelector: () => ({ textContent: 'Same Name' }),
+    closest: () => ({ dataset: { rpCareerStatPanel: 'west' } }),
+  });
+  const wrong = row('id:10');
+  const right = row('id:20');
+  const root = { querySelectorAll: () => [wrong, right] };
+  assert.equal(findOfficialMvpRow(root, { identityKey: 'user:20', playerName: 'Same Name', team: 'west' }), right);
+  assert.equal(findOfficialMvpRow(root, { playerName: 'Same Name', team: 'west' }), null);
+  assert.match(script, /data-rp-career-stat-identity/);
+});
