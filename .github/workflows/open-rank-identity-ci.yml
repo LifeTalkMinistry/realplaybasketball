@@ -78,3 +78,11 @@ jobs:
           node --check real-play-world-player-filters.js
           node --check tests/scoped-ranking-render-stability.test.js
           node --test tests/scoped-ranking-render-stability.test.js
+
+      - name: Test Overall Player Rankings display stability
+        run: |
+          node --check real-play-world-players.js
+          node --check visitor-world-players.js
+          node --check competition-hub.js
+          node --check tests/overall-ranking-render-stability.test.js
+          node --test tests/overall-ranking-render-stability.test.js

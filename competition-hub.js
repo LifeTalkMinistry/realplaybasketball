@@ -436,9 +436,14 @@
       return;
     }
 
-    removeScopedArtifacts();
+    // A normal overall refresh must not remove/recreate its own Back button.
+    // The scoped cleanup is only needed when a scoped view still owns World.
+    if (world.dataset.rpCompetitionPresentation === 'scoped'
+      || world.classList.contains('rp-competition-scoped-ranking')) removeScopedArtifacts();
     hideStatsLoading();
-    world.dataset.rpCompetitionPresentation = 'overall';
+    if (world.dataset.rpCompetitionPresentation !== 'overall') {
+      world.dataset.rpCompetitionPresentation = 'overall';
+    }
 
     const topTitle = world.querySelector('.rp-world-title strong');
     const topSubtitle = world.querySelector('.rp-world-title span');
@@ -446,14 +451,16 @@
     const kicker = playersView.querySelector('.rp-world-player-directory-head small');
     const heading = playersView.querySelector('.rp-world-player-directory-head strong');
 
-    if (topTitle) topTitle.textContent = 'PLAYER RANKINGS';
-    if (topSubtitle) topSubtitle.textContent = 'REAL PLAY BASKETBALL';
-    if (topBadge) {
-      topBadge.style.removeProperty('visibility');
-      topBadge.textContent = 'OVERALL';
+    if (topTitle && topTitle.textContent !== 'PLAYER RANKINGS') topTitle.textContent = 'PLAYER RANKINGS';
+    if (topSubtitle && topSubtitle.textContent !== 'REAL PLAY BASKETBALL') {
+      topSubtitle.textContent = 'REAL PLAY BASKETBALL';
     }
-    if (kicker) kicker.textContent = 'OVERALL REAL PLAY';
-    if (heading) heading.textContent = 'PLAYER RANKINGS';
+    if (topBadge) {
+      if (topBadge.style.getPropertyValue('visibility')) topBadge.style.removeProperty('visibility');
+      if (topBadge.textContent !== 'OVERALL') topBadge.textContent = 'OVERALL';
+    }
+    if (kicker && kicker.textContent !== 'OVERALL REAL PLAY') kicker.textContent = 'OVERALL REAL PLAY';
+    if (heading && heading.textContent !== 'PLAYER RANKINGS') heading.textContent = 'PLAYER RANKINGS';
 
     const directoryHead = playersView.querySelector('.rp-world-player-directory-head');
     if (directoryHead && !directoryHead.querySelector('[data-rp-competition-overall-back]')) {
