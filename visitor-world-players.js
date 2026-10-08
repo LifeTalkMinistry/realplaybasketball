@@ -93,6 +93,8 @@
   }
 
   function renderVisitorPlayers() {
+    // Do not repaint the shared list while a competition-specific leaderboard owns it.
+    if (world()?.dataset?.rpCompetitionPresentation === 'scoped') return;
     const root = world()?.querySelector('[data-world-player-list]');
     const count = world()?.querySelector('[data-world-player-count]');
     const more = world()?.querySelector('[data-world-player-more]');
