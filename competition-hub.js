@@ -142,7 +142,11 @@
       @keyframes rp-stats-loading-spin{to{transform:rotate(360deg)}}
       @media(prefers-reduced-motion:reduce){.rp-stats-loading-mark{animation:none;border-top-color:rgba(83,218,255,.16);box-shadow:0 0 0 2px #55ddff inset}}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row:not([data-rp-competition-scope-row]){display:none!important}
-      body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row[data-rp-competition-scope-row]{display:grid}
+      /* Scope-owned player rows can be legitimately UNRANKED overall. Global rules
+         must not override the competition's verified participation list. Respect
+         explicit [hidden] for active competition metric filters. */
+      body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row[data-rp-competition-scope-row]:not([hidden]){display:grid!important}
+      body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking [data-world-player-list] .rp-world-player-row[data-rp-competition-scope-row][hidden]{display:none!important}
       body.rp-simple-navigation-active .rp-world.rp-competition-scoped-ranking .rp-world-topbar{display:none!important}
       .rp-competition-world-scope-header{display:block;padding:2px 2px 4px;margin:0}
       .rp-competition-scope-topbar{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:10px;margin:0 0 8px}
