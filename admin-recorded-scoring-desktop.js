@@ -178,12 +178,13 @@
     const draftBanner = scoring.querySelector('[data-rp-draft-banner]');
     const cancelCard = scoring.querySelector('[data-rp-cancel-video-card]');
     const scoreboard = scoring.querySelector('.rp-video-scoreboard');
+    const scoreEdit = scoring.querySelector('[data-rp-score-edit]');
     const rosters = scoring.querySelector('.rp-video-score-rosters');
     const selectedPanel = scoring.querySelector('[data-rp-video-selected-panel]');
     const reviewActions = scoring.querySelector('.rp-video-review-actions');
 
     const anchor = grids[0];
-    [playerWrap, autoNote, draftBanner, cancelCard, scoreboard, rosters, selectedPanel, reviewActions]
+    [playerWrap, autoNote, draftBanner, cancelCard, scoreEdit, scoreboard, rosters, selectedPanel, reviewActions]
       .filter(Boolean)
       .forEach((node) => scoring.insertBefore(node, anchor));
 
@@ -204,6 +205,10 @@
     moveIfNeeded(scoring.querySelector('[data-rp-draft-banner]'), left);
     moveIfNeeded(scoring.querySelector('[data-rp-cancel-video-card]'), left);
 
+    // Keep SCORE EDIT inside the visible right-hand scoring workspace. It is
+    // deliberately placed above the scoreboard so an unattributed opening
+    // score can be entered before normal player-event scoring begins.
+    moveIfNeeded(scoring.querySelector('[data-rp-score-edit]'), right);
     moveIfNeeded(scoring.querySelector('.rp-video-scoreboard'), right);
     moveIfNeeded(scoring.querySelector('.rp-video-score-rosters'), right);
     moveIfNeeded(scoring.querySelector('[data-rp-video-selected-panel]'), right);
@@ -353,8 +358,8 @@
       if (mutation.type !== 'childList') return false;
       return [...mutation.addedNodes, ...mutation.removedNodes].some((node) => (
         node.nodeType === 1 && (
-          node.matches?.('.rp-video-scoring-screen,.rp-video-player-wrap,.rp-video-scoreboard,.rp-video-score-rosters,[data-rp-video-selected-panel],.rp-video-review-actions,[data-rp-draft-banner]')
-          || node.querySelector?.('.rp-video-scoring-screen,.rp-video-player-wrap,.rp-video-scoreboard,.rp-video-score-rosters,[data-rp-video-selected-panel],.rp-video-review-actions,[data-rp-draft-banner]')
+          node.matches?.('.rp-video-scoring-screen,.rp-video-player-wrap,.rp-video-scoreboard,[data-rp-score-edit],.rp-video-score-rosters,[data-rp-video-selected-panel],.rp-video-review-actions,[data-rp-draft-banner]')
+          || node.querySelector?.('.rp-video-scoring-screen,.rp-video-player-wrap,.rp-video-scoreboard,[data-rp-score-edit],.rp-video-score-rosters,[data-rp-video-selected-panel],.rp-video-review-actions,[data-rp-draft-banner]')
         )
       ));
     });
