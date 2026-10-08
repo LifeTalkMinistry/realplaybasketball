@@ -79,6 +79,84 @@
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
+  function reAuditReviewState(review) {
+    if (!review?.matches?.('[data-rp-replay-correction-mode]')) return null;
+    try {
+      const state = window.__realPlayReplayCorrectionAuditState?.();
+      return state?.active ? state : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function reAuditStatsForPlayer(playerId, events = []) {
+    const stats = {
+      points: 0,
+      assists: 0,
+      rebounds: 0,
+      turnovers: 0,
+      steals: 0,
+      blocks: 0,
+      fouls: 0,
+      onePtMade: 0,
+      onePtAttempts: 0,
+      twoPtMade: 0,
+      twoPtAttempts: 0,
+      madeShots: 0,
+      shotAttempts: 0,
+    };
+    const id = Number(playerId);
+    (Array.isArray(events) ? events : []).forEach((event) => {
+      if (Number(event?.playerId) !== id) return;
+      const type = String(event?.eventType || '').toLowerCase();
+      if (type === 'shot') {
+        const value = Number(event?.shotValue || 0);
+        const result = String(event?.shotResult || '').toLowerCase();
+        if (value === 1) {
+          stats.onePtAttempts += 1;
+          if (result === 'make') {
+            stats.onePtMade += 1;
+            stats.points += 1;
+          }
+        } else if (value === 2) {
+          stats.twoPtAttempts += 1;
+          if (result === 'make') {
+            stats.twoPtMade += 1;
+            stats.points += 2;
+          }
+        }
+        return;
+      }
+      if (type !== 'stat') return;
+      const key = String(event?.statKey || '').toLowerCase();
+      if (['ast', 'assist', 'assists'].includes(key)) stats.assists += 1;
+      else if (['reb', 'rebound', 'rebounds'].includes(key)) stats.rebounds += 1;
+      else if (['to', 'tov', 'turnover', 'turnovers'].includes(key)) stats.turnovers += 1;
+      else if (['stl', 'steal', 'steals'].includes(key)) stats.steals += 1;
+      else if (['blk', 'block', 'blocks'].includes(key)) stats.blocks += 1;
+      else if (['foul', 'fouls'].includes(key)) stats.fouls += 1;
+    });
+    stats.madeShots = stats.onePtMade + stats.twoPtMade;
+    stats.shotAttempts = stats.onePtAttempts + stats.twoPtAttempts;
+    return stats;
+  }
+
+  function reAuditPlayersForReview(state) {
+    const participation = Array.isArray(state?.participation) ? state.participation : [];
+    return (Array.isArray(state?.players) ? state.players : []).map((player) => {
+      const playerId = Number(player?.playerId ?? player?.userId);
+      const status = participation.find((row) => Number(row?.playerId) === playerId) || null;
+      return {
+        playerId,
+        playerName: player?.playerName || 'REAL PLAY PLAYER',
+        jerseyNumber: player?.playerNumber ?? null,
+        team: normalizeTeam(player?.team),
+        didNotPlay: Boolean(status?.didNotPlay),
+        gameStats: reAuditStatsForPlayer(playerId, state?.events),
+      };
+    }).filter((player) => player.playerId && player.team);
+  }
+
   function statsFromReviewRow(row) {
     const stats = {
       points: 0,
@@ -390,7 +468,7 @@
         ${rows.map(([label, key]) => `<div><b>${totals.west[key]}</b><span>${label}</span><b>${totals.east[key]}</b></div>`).join('')}
         <div><b>${fg('west')}</b><span>FG</span><b>${fg('east')}</b></div>
       </div>
-      ${mismatch ? '<div class="rp-recap-warning">SCORE CHECK: player PTS totals do not reconcile with the displayed team score. Review the official score sheet before continuing.</div>' : ''}
+      ${mismatch ? '<div class="rp-recap-warning">DO NOT SUBMIT YET: player PTS totals do not reconcile with the displayed team score. Review the score sheet before continuing.</div>' : ''}
     </section>`;
   }
 
@@ -420,6 +498,27 @@
     if (!review) return;
     review.querySelector('[data-rp-review-enrichment]')?.remove();
     const requestId = ++reviewRequestId;
+
+    // A Second-Pass Audit may be reviewing an older finalized game while Admin
+    // Control points at another session. Its summary must come from the exact
+    // working events that VERIFY & SUBMIT will write.
+    const reAuditState = reAuditReviewState(review);
+    if (reAuditState) {
+      const players = reAuditPlayersForReview(reAuditState).map((player) => ({
+        ...player,
+        career: null,
+      }));
+      const scores = reviewScores(review);
+      const teamsNode = review.querySelector('.rp-video-sheet-teams');
+      if (!teamsNode) return;
+      teamsNode.insertAdjacentHTML('beforebegin', reviewEnrichmentHtml({
+        session: reAuditState.session || { title: 'RE-AUDIT' },
+        players,
+        scores,
+        careerAvailable: false,
+      }));
+      return;
+    }
 
     const [controlResult, playersResult] = await Promise.allSettled([
       request('/api/real-play/admin/career/control'),
