@@ -17,7 +17,11 @@ function sourceSection(source, start, end) {
 }
 
 function fixture(scoped) {
-  const list = { innerHTML: '<button data-rp-competition-scope-row="true">TUNE-UP PLAYER</button>' };
+  const list = {
+    innerHTML: '<button data-rp-competition-scope-row="true">TUNE-UP PLAYER</button>',
+    children: [{ classList: { contains: () => false } }],
+    get firstElementChild() { return this.children[0] || null; },
+  };
   const count = { textContent: '' };
   const more = { hidden: false, disabled: false, textContent: '' };
   const panel = {
