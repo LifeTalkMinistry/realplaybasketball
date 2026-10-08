@@ -111,7 +111,11 @@
     if (bShot.fgPct !== aShot.fgPct) return bShot.fgPct - aShot.fgPct;
     if (num(b?.pts) !== num(a?.pts)) return num(b?.pts) - num(a?.pts);
     if (num(a?.tov) !== num(b?.tov)) return num(a?.tov) - num(b?.tov);
-    return playerLabel(a).localeCompare(playerLabel(b));
+    const nameDiff = String(a?.playerName || '').localeCompare(String(b?.playerName || ''));
+    if (nameDiff !== 0) return nameDiff;
+    const aKey = playerKey(a);
+    const bKey = playerKey(b);
+    return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
   }
 
   function leaders(players, valueFn, eligibleFn = () => true) {
@@ -136,7 +140,8 @@
     if (!valid.length) return map;
 
     const overall = [...valid].sort(compareMvp)[0];
-    if (overall) {
+    if (overall && !window.__realPlayReplayOfficialMvpInstalled) {
+      // Legacy fallback only when the official award layer is absent.
       const s = shotSummary(overall);
       addRecognition(map, overall, 'overall_mvp', {
         headline: `Great job for being the Overall MVP, ${overall.playerName || 'player'}.`,
