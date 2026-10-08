@@ -27,6 +27,13 @@
     return Number.isFinite(parsed) ? parsed : 0;
   };
 
+  // Participation is explicit scorer/facilitator data, never inferred from zero stats.
+  function isDnp(player) {
+    return player?.didNotPlay === true
+      || player?.did_not_play === true
+      || player?.participationStatus === 'DNP';
+  }
+
   function formatTime(ms) {
     const total = Math.max(0, Math.floor(num(ms) / 1000));
     const minutes = Math.floor(total / 60);
@@ -125,7 +132,7 @@
 
   function buildRecognitions(players) {
     const map = new Map();
-    const valid = players.filter((player) => ['west', 'east'].includes(String(player?.team || '').toLowerCase()));
+    const valid = players.filter((player) => !isDnp(player) && ['west', 'east'].includes(String(player?.team || '').toLowerCase()));
     if (!valid.length) return map;
 
     const overall = [...valid].sort(compareMvp)[0];
@@ -493,19 +500,15 @@
     const rawNumber = player?.playerNumber ?? player?.player_number;
     const number = rawNumber === null || rawNumber === undefined || rawNumber === '' ? '#--' : `#${Number(rawNumber)}`;
     const name = String(player?.playerName ?? player?.player_name ?? 'REAL PLAY PLAYER');
-    return `<span class="rp-career-replay-stat-number">${esc(number)}</span><span class="rp-career-replay-stat-player-name" title="${esc(name)}">${esc(name)}</span>${recognitionBadgesHtml(player)}`;
+    return `<span class="rp-career-replay-stat-number">${esc(number)}</span><span class="rp-career-replay-stat-player-name" title="${esc(name)}">${esc(name)}</span>${isDnp(player) ? '<span class="rp-career-replay-stat-dnp-badge">DNP</span>' : recognitionBadgesHtml(player)}`;
   }
 
-  function statRow(player, index) {
-    return `<button type="button" class="rp-career-replay-stat-player" data-rp-career-stat-player="${index}" aria-label="View detailed stats for ${esc(playerLabel(player))}">
+  function statRow(player, index, dnpStart = false) {
+    const dnp = isDnp(player);
+    const statCell = (value) => `<span class="rp-career-replay-stat-value"><b>${dnp ? '—' : num(value)}</b></span>`;
+    return `<button type="button" class="rp-career-replay-stat-player${dnp ? ' rp-career-replay-stat-dnp' : ''}${dnpStart ? ' rp-career-replay-stat-dnp-start' : ''}" data-rp-career-stat-player="${index}" aria-label="View detailed stats for ${esc(playerLabel(player))}${dnp ? ' (did not play)' : ''}">
       <span class="rp-career-replay-stat-identity">${statIdentityHtml(player)}</span>
-      <span class="rp-career-replay-stat-value"><b>${num(player.pts)}</b></span>
-      <span class="rp-career-replay-stat-value"><b>${num(player.ast)}</b></span>
-      <span class="rp-career-replay-stat-value"><b>${num(player.reb)}</b></span>
-      <span class="rp-career-replay-stat-value"><b>${num(player.tov)}</b></span>
-      <span class="rp-career-replay-stat-value"><b>${num(player.stl)}</b></span>
-      <span class="rp-career-replay-stat-value"><b>${num(player.blk)}</b></span>
-      <span class="rp-career-replay-stat-value"><b>${num(player.foul)}</b></span>
+      ${['pts', 'ast', 'reb', 'tov', 'stl', 'blk', 'foul'].map((key) => statCell(player[key])).join('')}
     </button>`;
   }
 
@@ -525,12 +528,13 @@
   function teamBlock(team, players, active = false) {
     const rows = players
       .map((player, index) => ({ player, index }))
-      .filter(({ player }) => String(player.team || '').toLowerCase() === team);
+      .filter(({ player }) => String(player.team || '').toLowerCase() === team)
+      .sort((a, b) => Number(isDnp(a.player)) - Number(isDnp(b.player)) || a.index - b.index);
     return `<section class="rp-career-replay-stat-team" data-rp-career-stat-panel="${team}"${active ? '' : ' hidden'}>
       <div class="rp-career-replay-stat-scroll" tabindex="0" aria-label="${team.toUpperCase()} player statistics. Swipe horizontally for more categories.">
         <div class="rp-career-replay-stat-grid">
           ${statHeaderRow()}
-          ${rows.length ? rows.map(({ player, index }) => statRow(player, index)).join('') : '<p class="rp-career-replay-stat-empty">No verified player stats.</p>'}
+          ${rows.length ? rows.map(({ player, index }, order) => statRow(player, index, isDnp(player) && (order === 0 || !isDnp(rows[order - 1].player)))).join('') : '<p class="rp-career-replay-stat-empty">No verified player stats.</p>'}
         </div>
       </div>
     </section>`;
@@ -799,6 +803,33 @@
     lastPlayerTrigger = trigger || null;
     const viewer = document.querySelector('[data-rp-career-replay].open');
     if (!viewer) return;
+
+    if (isDnp(player)) {
+      const detail = document.createElement('div');
+      detail.className = 'rp-career-player-detail';
+      detail.dataset.rpCareerPlayerDetail = '1';
+      detail._rpPlayer = player;
+      detail.setAttribute('role', 'dialog');
+      detail.setAttribute('aria-modal', 'true');
+      detail.setAttribute('aria-label', `${playerLabel(player)} did not play`);
+      detail.innerHTML = `
+        <div class="rp-career-player-detail-backdrop" data-rp-career-player-detail-close></div>
+        <section class="rp-career-player-detail-sheet">
+          <header class="rp-career-player-detail-head">
+            <div><small>${esc(String(player.team || '').toUpperCase())} · GAME BREAKDOWN</small><strong>${esc(playerLabel(player))}</strong></div>
+            <button type="button" class="rp-career-player-detail-profile" data-rp-career-player-profile aria-label="View ${esc(player?.playerName || 'player')} profile">VIEW PROFILE</button>
+            <button type="button" data-rp-career-player-detail-close aria-label="Close player breakdown">×</button>
+          </header>
+          <div class="rp-career-player-detail-dnp" role="status">
+            <strong>DNP · DID NOT PLAY</strong>
+            <p>This player was recorded as not participating in this game. No game statistics apply.</p>
+          </div>
+        </section>`;
+      viewer.appendChild(detail);
+      requestAnimationFrame(() => detail.classList.add('open'));
+      detail.querySelector('button[data-rp-career-player-detail-close]')?.focus({ preventScroll: true });
+      return;
+    }
 
     const oneMade = num(player.onePtMade);
     const oneMiss = num(player.onePtMiss);
