@@ -382,6 +382,7 @@
     if (!world) return;
     world.classList.remove('rp-competition-scoped-ranking');
     delete world.dataset.rpCompetitionScope;
+    delete world.dataset.rpCompetitionSeasonId;
     delete world.dataset.rpCompetitionPresentation;
     world.querySelector('[data-rp-competition-world-scope-header]')?.remove();
     world.querySelector('[data-rp-competition-world-scope-back]')?.remove();
@@ -707,6 +708,8 @@
 
     world.classList.add('rp-competition-scoped-ranking');
     world.dataset.rpCompetitionScope = config.id;
+    if (config.competitionSeasonId) world.dataset.rpCompetitionSeasonId = String(config.competitionSeasonId);
+    else delete world.dataset.rpCompetitionSeasonId;
     world.dataset.rpCompetitionPresentation = 'scoped';
 
     let header = directory.querySelector('[data-rp-competition-world-scope-header]');
