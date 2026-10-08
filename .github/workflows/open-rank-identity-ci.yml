@@ -58,3 +58,11 @@ jobs:
 
       - name: Test Tune-Up ranking rows survive shared directory refresh
         run: node --test tests/tune-up-scoped-player-render-contract.test.js
+
+      - name: Test competition player eligibility isolation
+        run: |
+          node --check real-play-inactive-player-state.js
+          node --check real-play-world-player-filters.js
+          node --check competition-hub.js
+          node --check tests/competition-scoped-inactive-isolation.test.js
+          node --test tests/competition-scoped-inactive-isolation.test.js
