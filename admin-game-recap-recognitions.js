@@ -73,7 +73,9 @@
       else if (key === 'BLK') stats.blk = value;
       else if (key === 'FOUL' || key === 'FOULS') stats.foul = value;
     });
-    return { name, team, stats, shooting: parseShooting(row) };
+    const didNotPlay = row.classList.contains('rp-recap-dnp-player')
+      || /^DNP\b/i.test(String(row.children?.[0]?.querySelector('small')?.textContent || '').trim());
+    return { name, team, stats, shooting: parseShooting(row), didNotPlay };
   }
 
   function parsePlayers(screen) {
@@ -146,10 +148,11 @@
   }
 
   function buildAwards(screen, players) {
-    if (!players.length) return [];
+    const eligible = players.filter((player) => !player.didNotPlay);
+    if (!eligible.length) return [];
     const final = screen.matches('[data-rp-official-recap]');
-    const localOverall = [...players].sort(compareMvp)[0] || null;
-    const officialOverall = final ? officialMvpPlayer(screen, players) : null;
+    const localOverall = [...eligible].sort(compareMvp)[0] || null;
+    const officialOverall = final ? officialMvpPlayer(screen, eligible) : null;
     const overallForSuppression = officialOverall || localOverall;
     const awards = [];
 
@@ -175,7 +178,7 @@
     }
 
     for (const team of ['west', 'east']) {
-      const teamPlayers = players.filter((player) => player.team === team);
+      const teamPlayers = eligible.filter((player) => player.team === team);
       const winner = [...teamPlayers].sort(compareMvp)[0] || null;
       if (!winner || samePlayer(winner, overallForSuppression)) continue;
       awards.push(makeAward(
@@ -187,7 +190,7 @@
       ));
     }
 
-    const lethal = leaders(players, (player) => player.shooting.fgPct, (player) => player.shooting.attempts >= 3);
+    const lethal = leaders(eligible, (player) => player.shooting.fgPct, (player) => player.shooting.attempts >= 3);
     if (lethal.length) {
       const first = lethal[0];
       awards.push(makeAward(
@@ -199,7 +202,7 @@
       ));
     }
 
-    const buckets = leaders(players, (player) => player.stats.pts);
+    const buckets = leaders(eligible, (player) => player.stats.pts);
     if (buckets.length) {
       const first = buckets[0];
       awards.push(makeAward(
@@ -211,7 +214,7 @@
       ));
     }
 
-    const floor = leaders(players, (player) => player.stats.ast);
+    const floor = leaders(eligible, (player) => player.stats.ast);
     if (floor.length) {
       const first = floor[0];
       awards.push(makeAward(
@@ -223,19 +226,19 @@
       ));
     }
 
-    const glass = leaders(players, (player) => player.stats.reb);
+    const glass = leaders(eligible, (player) => player.stats.reb);
     if (glass.length) {
       const first = glass[0];
       awards.push(makeAward('glass_cleaner', 'GLASS CLEANER', '🧹', glass, `${first.stats.reb} REB`));
     }
 
-    const steals = leaders(players, (player) => player.stats.stl);
+    const steals = leaders(eligible, (player) => player.stats.stl);
     if (steals.length) {
       const first = steals[0];
       awards.push(makeAward('pickpocket', 'PICKPOCKET', '🥷', steals, `${first.stats.stl} STL`));
     }
 
-    const blocks = leaders(players, (player) => player.stats.blk);
+    const blocks = leaders(eligible, (player) => player.stats.blk);
     if (blocks.length) {
       const first = blocks[0];
       awards.push(makeAward('rim_protector', 'RIM PROTECTOR', '🛡️', blocks, `${first.stats.blk} BLK`));
