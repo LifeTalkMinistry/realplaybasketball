@@ -106,6 +106,34 @@
     document.head.appendChild(style);
   }
 
+  function reconcileDirectoryRows(root, entries) {
+    // Keep the same player/badge nodes across loading, success, finally and
+    // focus refreshes. Rebuild only a player whose displayed values changed.
+    const existing = new Map([...root.querySelectorAll('.rp-world-player-row')]
+      .map((row) => [String(row.dataset.worldPlayerId || ''), row]));
+    const retained = new Set();
+    let template = null;
+
+    for (const entry of entries) {
+      let row = existing.get(entry.id) || null;
+      if (retained.has(row)) row = null;
+      if (!row || row.__rpDirectoryMarkup !== entry.markup) {
+        if (!template) template = document.createElement('template');
+        template.innerHTML = entry.markup.trim();
+        const fresh = template.content.firstElementChild;
+        if (!fresh) continue;
+        fresh.__rpDirectoryMarkup = entry.markup;
+        if (row) row.replaceWith(fresh);
+        else root.appendChild(fresh);
+        row = fresh;
+      }
+      retained.add(row);
+    }
+    [...root.children].forEach((node) => {
+      if (!retained.has(node)) node.remove();
+    });
+  }
+
   function renderPlayers() {
     // Tune-Up / League scope owns the shared player list until that scope closes.
     // In particular, refreshPlayers() renders in its finally block after the
@@ -114,20 +142,28 @@
     const root = worldPanel?.querySelector('[data-world-player-list]');
     const count = worldPanel?.querySelector('[data-world-player-count]');
     if (!root) return;
-    if (count) count.textContent = `${players.length}${hasMorePlayers ? '+' : ''} PLAYER${players.length === 1 && !hasMorePlayers ? '' : 'S'}`;
+    if (count) {
+      const nextCount = `${players.length}${hasMorePlayers ? '+' : ''} PLAYER${players.length === 1 && !hasMorePlayers ? '' : 'S'}`;
+      if (count.textContent !== nextCount) count.textContent = nextCount;
+    }
     const more = worldPanel?.querySelector('[data-world-player-more]');
     if (more) {
       more.hidden = !hasMorePlayers;
       more.disabled = loadingPlayers;
-      more.textContent = loadingPlayers && hasMorePlayers ? 'LOADING...' : 'LOAD MORE PLAYERS';
+      const moreLabel = loadingPlayers && hasMorePlayers ? 'LOADING...' : 'LOAD MORE PLAYERS';
+      if (more.textContent !== moreLabel) more.textContent = moreLabel;
     }
 
     if (!players.length) {
-      root.innerHTML = '<div class="rp-world-player-empty">NO REAL PLAY PLAYER PROFILES YET.</div>';
+      if (root.children.length !== 1 || !root.firstElementChild?.classList.contains('rp-world-player-empty')) {
+        root.innerHTML = '<div class="rp-world-player-empty">NO REAL PLAY PLAYER PROFILES YET.</div>';
+      }
       return;
     }
 
-    root.innerHTML = players.map((player) => {
+    const entries = players.map((player) => ({
+      id: String(player.userId ?? ''),
+      markup: (() => {
       const jersey = player.playerNumber === null || player.playerNumber === undefined
         ? '#—'
         : `#${Number(player.playerNumber)}`;
@@ -158,13 +194,15 @@
           <span class="rp-world-player-name"><strong>${esc(player.playerName || 'REAL PLAY PLAYER')}</strong><b>${esc(jersey)}</b></span>
           <span class="rp-world-player-metrics">${rating}${winRate}</span>
         </button>`;
-    }).join('');
+      })(),
+    }));
+    reconcileDirectoryRows(root, entries);
   }
 
   function setPlayersStatus(message = '', type = '') {
     const node = worldPanel?.querySelector('[data-world-player-status]');
     if (!node) return;
-    node.textContent = message;
+    if (node.textContent !== message) node.textContent = message;
     node.classList.toggle('error', type === 'error');
   }
 
