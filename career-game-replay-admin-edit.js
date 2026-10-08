@@ -51,6 +51,7 @@
     return {
       active: true,
       sessionId: Number(context.session.id),
+      session: context.session ? { ...context.session } : null,
       recording: context.recording ? { ...context.recording, durationMs: effectiveMediaDurationMs() || context.recording.durationMs || null } : null,
       players: Array.isArray(context.players) ? context.players : [],
       events: draftEvents,
