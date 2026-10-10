@@ -1315,27 +1315,21 @@
   const CURRENT_WORLD_TEAMS = Object.freeze(Object.keys(WORLD_CLUB_ART));
 
   function worldResultTitle(metadata = {}) {
+    const competition = competitionInfo({ metadata }).key;
     const seasonGame = Number(metadata.seasonGameNumber ?? metadata.season_game_number);
-    const context = String(metadata.competitionContext ?? metadata.competition_context ?? '').trim().toLowerCase();
     const openRank = Number(metadata.openRankNumber ?? metadata.open_rank_number);
-    if (Number.isSafeInteger(openRank) && openRank > 0) {
+    if (competition === 'open-rank' && Number.isSafeInteger(openRank) && openRank > 0) {
       return `OPEN RANK #${String(openRank).padStart(3, '0')}`;
     }
-
-    if (Number.isSafeInteger(seasonGame) && seasonGame > 0) {
-      const label = context === 'league' ? 'LEAGUE' : 'TUNE UP';
+    if (competition !== 'open-rank' && Number.isSafeInteger(seasonGame) && seasonGame > 0) {
+      const label = competition === 'league' ? 'LEAGUE' : 'TUNE UP';
       return `${label} #${String(seasonGame).padStart(2, '0')}`;
     }
-
     return String(
-      metadata.resultDisplayTitle
-      ?? metadata.result_display_title
-      ?? metadata.sessionTitle
-      ?? metadata.session_title
-      ?? 'GAME RESULT'
+      metadata.resultDisplayTitle ?? metadata.result_display_title
+      ?? metadata.sessionTitle ?? metadata.session_title ?? 'GAME RESULT'
     ).trim().toUpperCase();
   }
-
   function worldTeamLogo(name, side) {
     const cleanName = String(name || '').trim().toUpperCase();
     const src = WORLD_CLUB_ART[cleanName];
@@ -1744,60 +1738,37 @@
   function competitionInfo(update, card) {
     const metadata = update?.metadata || {};
     const context = String(
-      metadata.competitionContext
-      ?? metadata.competition_context
-      ?? metadata.mode
-      ?? ''
+      metadata.competitionContext ?? metadata.competition_context ?? metadata.mode ?? ''
     ).trim().toLowerCase();
-    const explicitTitle = String(
-      metadata.resultDisplayTitle
-      ?? metadata.result_display_title
-      ?? metadata.sessionTitle
-      ?? metadata.session_title
-      ?? update?.title
-      ?? ''
-    ).trim().toLowerCase();
-    const renderedTitle = String(card?.querySelector?.('.rp-world-scorecard-head strong')?.textContent || '').trim().toLowerCase();
     const west = String(metadata.westTeamName ?? metadata.west_team_name ?? '').trim().toUpperCase();
     const east = String(metadata.eastTeamName ?? metadata.east_team_name ?? '').trim().toUpperCase();
-    const openRankNumber = Number(metadata.openRankNumber ?? metadata.open_rank_number);
-    const seasonGameNumber = Number(metadata.seasonGameNumber ?? metadata.season_game_number);
-    const hasOpenRankNumber = Number.isSafeInteger(openRankNumber) && openRankNumber > 0;
-    const hasSeasonGameNumber = Number.isSafeInteger(seasonGameNumber) && seasonGameNumber > 0;
+    const hasClub = Boolean(WORLD_CLUB_ART[west] || WORLD_CLUB_ART[east]);
+    const isEastWest = west === 'WEST' && east === 'EAST';
+    const title = String(
+      metadata.resultDisplayTitle ?? metadata.result_display_title
+      ?? metadata.sessionTitle ?? metadata.session_title ?? update?.title ?? ''
+    ).toLowerCase();
+    const seasonGame = Number(metadata.seasonGameNumber ?? metadata.season_game_number);
+    const openRank = Number(metadata.openRankNumber ?? metadata.open_rank_number);
 
-    // Trust game-specific metadata first. Legacy Open Rank games can carry
-    // season-like fields; they must not be reclassified as Tune Up.
-    if (/open[\s_-]?rank(?:ing)?/.test(context) || hasOpenRankNumber) {
-      return { key: 'open-rank', label: 'OPEN RANKING' };
-    }
-    if (/tune[\s_-]?up/.test(context)) {
+    // Permanent clubs and temporary East/West sides are distinct competition
+    // identities. The legacy openRankNumber can exist on both types of games.
+    if (isEastWest) return { key: 'open-rank', label: 'OPEN RANKING' };
+    if (/tune[\s_-]?up/.test(context) || /tune[\s_-]?up/.test(title)) {
       return { key: 'tune-up', label: 'TUNE UP' };
     }
-    if (/^league$/.test(context)) {
+    if (/^league$/.test(context) || /\bleague\b/.test(title)) {
       return { key: 'league', label: 'LEAGUE' };
     }
-
-    // Use the actual result headline, never all the card's body text:
-    // commentary or descriptions may mention another competition.
-    const headline = [explicitTitle, renderedTitle].filter(Boolean).join(' ');
-    if (/open[\s_-]?rank(?:ing)?|east\s+vs\s+west/.test(headline)) {
+    if (hasClub) return { key: 'tune-up', label: 'TUNE UP' };
+    if (/open[\s_-]?rank(?:ing)?/.test(context) || /open[\s_-]?rank(?:ing)?/.test(title)) {
       return { key: 'open-rank', label: 'OPEN RANKING' };
     }
-    if (/tune[\s_-]?up/.test(headline)) {
+    if (Number.isSafeInteger(seasonGame) && seasonGame > 0) {
       return { key: 'tune-up', label: 'TUNE UP' };
     }
-    if (/league/.test(headline)) {
-      return { key: 'league', label: 'LEAGUE' };
-    }
-
-    // The temporary WEST/EAST matchup represents Open Ranking unless an
-    // explicit season game establishes a different competitive context.
-    if (!hasSeasonGameNumber && west === 'WEST' && east === 'EAST') {
+    if (Number.isSafeInteger(openRank) && openRank > 0) {
       return { key: 'open-rank', label: 'OPEN RANKING' };
-    }
-    if (hasSeasonGameNumber) return { key: 'tune-up', label: 'TUNE UP' };
-    if (WORLD_CLUB_ART[west] || WORLD_CLUB_ART[east]) {
-      return { key: 'league', label: 'LEAGUE' };
     }
     return { key: 'open-rank', label: 'OPEN RANKING' };
   }
@@ -1806,6 +1777,15 @@
     const metadata = update?.metadata || {};
     const competition = competitionInfo(update, card);
     if (competition.key === 'open-rank') return { key: 'all-games', label: 'ALL GAMES' };
+    if (competition.key === 'tune-up') {
+      const raw = Number(metadata.tuneUpSeasonNumber ?? metadata.tune_up_season_number
+        ?? metadata.seasonNumber ?? metadata.season_number);
+      const label = String(metadata.seasonLabel ?? metadata.season_label
+        ?? metadata.seasonName ?? metadata.season_name ?? '').toUpperCase();
+      const match = label.match(/(?:SEASON|S)\s*#?\s*(\d+)/);
+      const number = Number.isSafeInteger(raw) && raw > 0 ? raw : Number(match?.[1] || 1);
+      return { key: `tune-up-s${number}`, label: `SEASON ${number}` };
+    }
 
     const explicit = String(
       metadata.seasonLabel
