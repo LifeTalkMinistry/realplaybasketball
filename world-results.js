@@ -50,6 +50,11 @@
       .rp-updates.rp-world-results-entry .rp-updates-status{
         margin-top:0!important;
       }
+      /* Keep the World results layer measurable while another category's
+         game records are still being fetched from subsequent pages. */
+      .rp-updates.rp-world-results-entry [data-updates-feed]{
+        min-height:32px;
+      }
 
       .rp-world-results-controls{
         display:none;
@@ -2000,8 +2005,13 @@
     // Results are server-paginated before the client-side competition filter.
     // If the first page belongs to a different competition, keep loading
     // until a matching game is present or the available results are exhausted.
-    // Do not display a false "no official games" message while searching.
-    empty?.classList.toggle('show', resultCards.length > 0 && visibleCount === 0 && !needsAnotherPage);
+    // Do not declare the category empty while later result pages are pending.
+    if (empty) {
+      empty.textContent = needsAnotherPage
+        ? 'LOOKING FOR GAMES IN THIS COMPETITION...'
+        : 'NO OFFICIAL GAMES MATCH THESE FILTERS YET.';
+      empty.classList.toggle('show', visibleCount === 0);
+    }
     if (needsAnotherPage) {
       const offset = state.nextOffset;
       if (offset !== null && offset !== lastCategoryAutoFetchOffset) {
