@@ -192,8 +192,10 @@
       rootReady: (root) => root.classList.contains('open')
         && root.classList.contains('rp-world-results-entry')
         && document.body.classList.contains('rp-updates-open'),
-      dataReady: (layer, detail) => Number(detail?.loaded || 0) <= 0
-        || Boolean(layer.querySelector('.rp-update-result:not([hidden])')),
+      // A successful result batch can contain no cards from the selected
+      // competition. WORLD owns category filtering and subsequent paging;
+      // the route must not reject an otherwise ready feed for that reason.
+      dataReady: () => true,
     },
     stats: {
       root: '[data-rp-competition-hub]',
