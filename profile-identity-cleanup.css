@@ -1,4 +1,4 @@
-/* Profile identity cleanup: keep only the actual jersey number and player name,
+/* Profile identity cleanup: keep only the official Rank and player name,
    then present them as one centered identity lockup. */
 .rp-profile-number > small,
 .rp-profile-name > small,
@@ -135,7 +135,7 @@
 }
 
 /* The earlier profile-intro experiment dynamically inserts a third identity
-   child. The current compact identity is jersey + name only, so keep that
+   child. The current compact identity is rank + name only, so keep that
    experimental surface from briefly appearing during profile rerenders. */
 .rp-profile-player > .rp-profile-intro,
 .rp-profile-actions > .rp-profile-manage-intro{
@@ -167,7 +167,7 @@
    for two headline values, but it must not dominate half the row or create a
    large dead zone between 7-6 and 54%. */
 .rp-profile-rating-row{
-  grid-template-columns:minmax(0,1fr) minmax(0,.9fr) minmax(0,1.35fr)!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.45fr)!important;
   gap:7px!important;
   overflow:hidden!important;
 }
@@ -227,7 +227,7 @@
 
 @media(max-width:340px){
   .rp-profile-rating-row{
-    grid-template-columns:minmax(0,.96fr) minmax(0,.82fr) minmax(0,1.42fr)!important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1.45fr)!important;
     gap:6px!important;
   }
 
@@ -284,17 +284,8 @@
   --rp-profile-badge-scale:1!important;
 }
 
-/*
-  The rank explainer belongs in the interactive player profile, but not in the
-  shared hero artwork. profile-share.js marks the authoritative hero with this
-  capture target only while html2canvas is rendering the PNG, so the normal
-  profile keeps the info button visible and usable.
-*/
-.rp-profile .rp-profile-hero[data-rp-profile-share-capture-target] .rp-rank-info,
-.rp-profile .rp-profile-hero[data-rp-profile-share-capture-target] [data-rp-rank-info]{
-  display:none!important;
-}
-
+/* Keep the official rank text visible in profile-share captures.
+   The clickable button is the displayed rank itself, not a separate info icon. */
 
 /* ME PROGRESSIVE PLACEHOLDER v224
    This is not a loading screen. It reserves the mature ME geometry locally
