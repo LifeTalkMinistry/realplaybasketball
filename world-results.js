@@ -921,7 +921,11 @@
     // the first usable frame, not the entire result history.
     const criticalCards = () => [...feed.querySelectorAll('.rp-update-result')]
       .filter((card) => !card.hidden);
-    const requiredFirstCard = Math.max(0, Number(expected) || 0) > 0;
+    // Data can load successfully while the selected competition is absent
+    // from the first server page. Visibility is a FILTER outcome, not an
+    // indicator of failed loading.
+    const requiredFirstCard = Math.max(0, Number(expected) || 0) > 0
+      && criticalCards().length > 0;
 
     const started = performance.now();
     let firstCard = criticalCards()[0] || null;
@@ -1032,6 +1036,9 @@
     const loadingLabel = isResults ? 'LOADING GAME RESULTS...' : 'LOADING LATEST FROM REAL PLAY...';
     const sequence = ++viewLoadSequence;
     const loadingStartedAt = performance.now();
+    // A reopened World feed starts a fresh server pagination cursor.
+    lastCategoryAutoFetchOffset = null;
+    categoryAutoFetchCount = 0;
     // The loader is now readiness-driven. Keep only a tiny anti-flash floor;
     // never hold a finished first layer just to display the loader longer.
     const minimumLoadingMs = 120;
