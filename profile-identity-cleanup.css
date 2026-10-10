@@ -163,13 +163,14 @@
   line-height:1.05;
 }
 
-/* Keep OVR, Rank and Record/Win Rate balanced. RECORD still gets enough room
-   for two headline values, but it must not dominate half the row or create a
-   large dead zone between 7-6 and 54%. */
-.rp-profile-rating-row{
-  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+/* The hero has two outer tiles: OVR and a paired RECORD / WIN RATE tile.
+   Its second tile needs twice the width for two equal internal values. */
+.rp-profile[data-rp-profile] .rp-profile-hero > .rp-profile-rating-row,
+.rp-profile.rp-public-player-profile .rp-profile-hero > .rp-profile-rating-row{
+  grid-template-columns:minmax(0,1fr) minmax(0,2fr)!important;
   gap:7px!important;
-  overflow:hidden!important;
+  min-width:0!important;
+  width:auto!important;
 }
 
 .rp-profile-rating-row > div{
@@ -180,7 +181,8 @@
 
 .rp-profile-record{
   min-width:0!important;
-  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
   grid-template-rows:auto auto auto!important;
   column-gap:6px!important;
   align-items:end!important;
@@ -226,8 +228,9 @@
 }
 
 @media(max-width:340px){
-  .rp-profile-rating-row{
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  .rp-profile[data-rp-profile] .rp-profile-hero > .rp-profile-rating-row,
+  .rp-profile.rp-public-player-profile .rp-profile-hero > .rp-profile-rating-row{
+    grid-template-columns:minmax(0,1fr) minmax(0,2fr)!important;
     gap:6px!important;
   }
 
