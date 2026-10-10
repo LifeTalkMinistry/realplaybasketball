@@ -229,6 +229,10 @@
       .rp-competition-world-scope-info:focus-visible,
       .rp-competition-world-scope-back:focus-visible{outline:2px solid #5bdfff;outline-offset:2px}
             @media(min-width:640px){.rp-competition-card-grid{grid-template-columns:1fr 1fr}.rp-competition-card:first-child{grid-column:1/-1}.rp-scope-filter{flex-basis:105px}}
+      @media(min-width:640px){
+        [data-rp-competition-view="hub"] .rp-competition-card-grid{grid-template-columns:1fr}
+        [data-rp-competition-view="hub"] .rp-competition-card:first-child{grid-column:auto}
+      }
       @media(max-width:390px){.rp-competition-shell{padding-inline:12px}.rp-competition-card{min-height:126px;padding:17px}.rp-competition-card-copy strong{font-size:1.28rem}.rp-scope-filter{min-width:68px;font-size:.39rem}}
       @media(prefers-reduced-transparency:reduce){.rp-competition-hub::before{opacity:.22}}
       @media(prefers-reduced-motion:reduce){.rp-competition-card{transition:none}}
