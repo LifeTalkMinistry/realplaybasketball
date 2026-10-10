@@ -287,6 +287,63 @@
           font-size:1.02rem!important;
         }
       }
+      /* Distinct competitive identities without turning menu rows into cards. */
+      [data-rp-competition-view="hub"] .rp-competition-card.rankings{
+        --rp-stats-accent:#56dcff;
+        --rp-stats-tint:rgba(86,220,255,.075);
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card.openrank{
+        --rp-stats-accent:#77aaff;
+        --rp-stats-tint:rgba(119,170,255,.075);
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card.tuneup{
+        --rp-stats-accent:#ff718b;
+        --rp-stats-tint:rgba(255,113,139,.075);
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card.league{
+        --rp-stats-accent:#f2c86b;
+        --rp-stats-tint:rgba(242,200,107,.075);
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card .rp-stats-menu-icon{
+        color:var(--rp-stats-accent)!important;
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card .rp-competition-card-copy strong{
+        color:var(--rp-stats-accent)!important;
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card:hover,
+      [data-rp-competition-view="hub"] .rp-competition-card:focus-visible{
+        background:var(--rp-stats-tint)!important;
+      }
+      /* Branded editorial heading: precision type and a very thin accent rule. */
+      .rp-competition-hub[data-rp-competition-current-view="hub"] .rp-competition-topbar{
+        margin-bottom:24px;
+        padding-bottom:20px;
+      }
+      .rp-competition-hub[data-rp-competition-current-view="hub"] .rp-competition-heading{
+        position:relative;
+        padding:4px 0 9px;
+      }
+      .rp-competition-hub[data-rp-competition-current-view="hub"] .rp-competition-heading strong{
+        display:block;
+        font-family:Impact,'Arial Narrow',Arial,sans-serif;
+        font-size:clamp(1.38rem,5.7vw,1.85rem)!important;
+        font-style:italic;
+        font-weight:950;
+        letter-spacing:.055em;
+        line-height:1.15;
+        color:#f6fbff;
+        text-shadow:0 1px 12px rgba(120,205,255,.10);
+      }
+      .rp-competition-hub[data-rp-competition-current-view="hub"] .rp-competition-heading::after{
+        content:'';
+        display:block;
+        width:80px;
+        height:2px;
+        margin:12px auto 0;
+        border-radius:2px;
+        background:linear-gradient(90deg,transparent 0%,#45d5ff 32%,#f15b73 70%,transparent 100%);
+        opacity:.82;
+      }
       @media(prefers-reduced-transparency:reduce){.rp-competition-hub::before{opacity:.22}}
       @media(prefers-reduced-motion:reduce){.rp-competition-card{transition:none}}
     `;
