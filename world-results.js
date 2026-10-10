@@ -2142,6 +2142,17 @@
   }
 
   function openAuthoritativeResults() {
+    // STATS may request the dedicated Open Ranking game history.
+    const requested = window.__realPlayWorldRequestedCompetition;
+    if (requested === 'open-rank') {
+      selectedCompetition = 'open-rank';
+      selectedDateRange = 'all';
+      selectedSeason = 'all-games';
+      selectedTeam = 'all';
+      lastCategoryAutoFetchOffset = null;
+      categoryAutoFetchCount = 0;
+    }
+    delete window.__realPlayWorldRequestedCompetition;
     // Core navigation owns the loading shell. This feature only prepares the
     // real WORLD page and announces when that page is actually paint-ready.
     removeLegacyWorldResults();
