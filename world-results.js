@@ -1749,10 +1749,10 @@
 
     // Trust game-specific metadata first. Legacy Open Rank games can carry
     // season-like fields; they must not be reclassified as Tune Up.
-    if (/open[\\s_-]?rank(?:ing)?/.test(context) || hasOpenRankNumber) {
+    if (/open[\s_-]?rank(?:ing)?/.test(context) || hasOpenRankNumber) {
       return { key: 'open-rank', label: 'OPEN RANKING' };
     }
-    if (/tune[\\s_-]?up/.test(context)) {
+    if (/tune[\s_-]?up/.test(context)) {
       return { key: 'tune-up', label: 'TUNE UP' };
     }
     if (/^league$/.test(context)) {
@@ -1762,10 +1762,10 @@
     // Use the actual result headline, never all the card's body text:
     // commentary or descriptions may mention another competition.
     const headline = [explicitTitle, renderedTitle].filter(Boolean).join(' ');
-    if (/open[\\s_-]?rank(?:ing)?|east\\s+vs\\s+west/.test(headline)) {
+    if (/open[\s_-]?rank(?:ing)?|east\s+vs\s+west/.test(headline)) {
       return { key: 'open-rank', label: 'OPEN RANKING' };
     }
-    if (/tune[\\s_-]?up/.test(headline)) {
+    if (/tune[\s_-]?up/.test(headline)) {
       return { key: 'tune-up', label: 'TUNE UP' };
     }
     if (/league/.test(headline)) {
