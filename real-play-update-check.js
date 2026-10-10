@@ -22,6 +22,8 @@
     }
     return (hash >>> 0).toString(36);
   };
+  // Capture only the initial HTML assets, before other scripts add dynamic tags.
+  const currentSignature = getSignature(document);
   const checkLatest = async () => {
     try {
       const checkUrl = new URL('index.html', document.baseURI);
@@ -31,7 +33,6 @@
       const html = await response.text();
       if (!html.includes('data-rp-deploy=')) return;
       const latest = new DOMParser().parseFromString(html, 'text/html');
-      const currentSignature = getSignature(document);
       const latestSignature = getSignature(latest);
       if (currentSignature === latestSignature) return;
       const version = shortHash(latestSignature);
