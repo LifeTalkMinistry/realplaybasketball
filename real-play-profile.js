@@ -52,7 +52,7 @@
   }
 
   function applyOfficialRankDisplay(fallbackCaption = '') {
-    const rankNode = panel?.querySelector('.rp-profile-number.rp-profile-rank');
+    const rankNode = panel?.querySelector('.rp-profile-number.rp-profile-identity-rank');
     const trigger = rankNode?.querySelector('[data-rp-rank-info]');
     if (!rankNode || !trigger) return;
 
