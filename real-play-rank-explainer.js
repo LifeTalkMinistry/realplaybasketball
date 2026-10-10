@@ -139,7 +139,7 @@
   }
 
   function displayedRank(profile) {
-    const text = String(profile?.querySelector('.rp-profile-number.rp-profile-rank strong')?.textContent || '').replace('#', '').trim();
+    const text = String(profile?.querySelector('.rp-profile-number.rp-profile-identity-rank strong')?.textContent || '').replace('#', '').trim();
     return numeric(text, null);
   }
 
