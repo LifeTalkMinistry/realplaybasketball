@@ -19,6 +19,8 @@
   let metadataLoading = false;
   let resultTotal = 0;
   let viewLoadSequence = 0;
+  let lastCategoryAutoFetchOffset = null;
+  let categoryAutoFetchCount = 0;
   const teamMvpReplayCache = new Map();
   const teamMvpReplayRequests = new Map();
 
@@ -1682,12 +1684,16 @@
       controls.querySelector('[data-rp-world-competition]')?.addEventListener('change', (event) => {
         selectedCompetition = event.currentTarget.value || 'tune-up';
         selectedSeason = '';
+        lastCategoryAutoFetchOffset = null;
+        categoryAutoFetchCount = 0;
         selectedTeam = 'all';
         rebuildContextOptions();
         applyWorldFilters();
       });
       controls.querySelector('[data-rp-world-season]')?.addEventListener('change', (event) => {
         selectedSeason = event.currentTarget.value || '';
+        lastCategoryAutoFetchOffset = null;
+        categoryAutoFetchCount = 0;
         selectedTeam = 'all';
         rebuildContextOptions();
         applyWorldFilters();
@@ -1980,7 +1986,26 @@
     });
 
     const empty = panel.querySelector('[data-rp-world-results-empty]');
-    empty?.classList.toggle('show', resultCards.length > 0 && visibleCount === 0);
+    const state = window.RealPlayUpdates?.progressiveState?.();
+    const needsAnotherPage = visibleCount === 0 && state?.hasMore
+      && state.category === 'result' && categoryAutoFetchCount < 40;
+
+    // Results are server-paginated before the client-side competition filter.
+    // If the first page belongs to a different competition, keep loading
+    // until a matching game is present or the available results are exhausted.
+    // Do not display a false "no official games" message while searching.
+    empty?.classList.toggle('show', resultCards.length > 0 && visibleCount === 0 && !needsAnotherPage);
+    if (needsAnotherPage) {
+      const offset = state.nextOffset;
+      if (offset !== null && offset !== lastCategoryAutoFetchOffset) {
+        lastCategoryAutoFetchOffset = offset;
+        categoryAutoFetchCount += 1;
+        window.setTimeout(() => {
+          if (!panel.isConnected || !panel.classList.contains('rp-world-results-entry')) return;
+          window.RealPlayUpdates?.loadMore?.();
+        }, 80);
+      }
+    }
   }
 
   function openAuthoritativeResults() {
