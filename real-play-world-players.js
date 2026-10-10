@@ -469,9 +469,9 @@
     }
 
     const stats = player?.careerStats || {};
-    const jersey = jerseyLabel(player);
     const rating = player?.ovr === null || player?.ovr === undefined ? null : Number(player.ovr);
-    const playerRank = player?.rank === null || player?.rank === undefined ? null : Number(player.rank);
+    const parsedRank = Number(player?.rank);
+    const playerRank = player?.rank !== null && player?.rank !== undefined && Number.isSafeInteger(parsedRank) && parsedRank > 0 ? parsedRank : null;
     const games = number(pick(stats.games, stats.gamesPlayed));
     const wins = number(stats.wins);
     const losses = number(stats.losses);
@@ -487,12 +487,11 @@
         <div class="rp-profile-hero-glow" aria-hidden="true"></div>
         <div class="rp-profile-identity-line"><span>REAL PLAY PLAYER</span><b>${esc(passLabel)}</b></div>
         <div class="rp-profile-player">
-          <div class="rp-profile-number"><small>PLAYER</small><strong>${esc(jersey)}</strong></div>
+          <div class="rp-profile-number rp-profile-rank"><small>RANK</small><strong><button type="button" class="rp-rank-trigger" data-rp-rank-info aria-label="Explain this player\'s official rank">${playerRank === null ? '#—' : `#${playerRank}`}</button></strong></div>
           <div class="rp-profile-name"><small>REAL PLAY PROFILE</small><h1>${esc(player?.playerName || 'REAL PLAY PLAYER')}</h1><p>LESS SCREEN. REAL POINTS.</p></div>
         </div>
         <div class="rp-profile-rating-row">
           <div class="rp-profile-ovr"><span>OVR</span><strong>${rating === null ? '—' : rating}</strong><small>${rating === null ? 'UNRANKED' : 'BETA RATING'}</small></div>
-          <div class="rp-profile-rank"><span>RANK</span><strong>${playerRank === null ? '—' : `#${playerRank}`}</strong><small>REAL PLAY</small></div>
           <div class="rp-profile-record"><span>RECORD</span><strong>${wins}-${losses}</strong><small>${games} GAME${games === 1 ? '' : 'S'}</small></div>
         </div>
       </section>
