@@ -17,21 +17,14 @@
   let playerCursor = null;
   let hasMorePlayers = false;
 
-  // Jersey numbers are monthly assignments; unassigned players keep their
-  // canonical public ID rather than receiving an invented jersey number.
-  const identity = (player) => {
-    const jersey = player?.playerNumber;
-    if (jersey !== null && jersey !== undefined && jersey !== ''
-        && Number.isInteger(Number(jersey)) && Number(jersey) >= 0 && Number(jersey) <= 99) {
-      return { label: `#${Number(jersey)}`, publicId: false };
-    }
-    const rawId = String(player?.publicPlayerId || '').trim();
-    const id = /^RP-\d+$/i.test(rawId) ? rawId.toUpperCase() : (() => {
-      const canonical = Number(player?.playerId);
-      return Number.isSafeInteger(canonical) && canonical > 0
-        ? `RP-${String(canonical).padStart(5, '0')}` : '';
-    })();
-    return id ? { label: `ID ${id}`, publicId: true } : { label: '#—', publicId: false };
+  // Only a verified current monthly jersey assignment may be shown as a
+  // jersey number. Permanent public identity IDs are never jersey numbers.
+  const jerseyLabel = (player) => {
+    const value = player?.playerNumber;
+    if (value === null || value === undefined || value === '') return '#—';
+    const number = Number(value);
+    return Number.isInteger(number) && number >= 0 && number <= 99
+      ? `#${number}` : '#—';
   };
 
   const esc = (value) => String(value ?? '')
@@ -181,7 +174,7 @@
     const entries = players.map((player) => ({
       id: String(player.userId ?? ''),
       markup: (() => {
-      const jersey = identity(player).label;
+      const jersey = jerseyLabel(player);
       const rating = player.ovr === null || player.ovr === undefined
         ? '<span class="rp-world-player-ovr unranked">UNRANKED</span>'
         : `<span class="rp-world-player-ovr">${esc(player.ovr)} <small>OVR</small></span>`;
@@ -476,7 +469,7 @@
     }
 
     const stats = player?.careerStats || {};
-    const playerIdentity = identity(player);
+    const jersey = jerseyLabel(player);
     const rating = player?.ovr === null || player?.ovr === undefined ? null : Number(player.ovr);
     const playerRank = player?.rank === null || player?.rank === undefined ? null : Number(player.rank);
     const games = number(pick(stats.games, stats.gamesPlayed));
@@ -494,7 +487,7 @@
         <div class="rp-profile-hero-glow" aria-hidden="true"></div>
         <div class="rp-profile-identity-line"><span>REAL PLAY PLAYER</span><b>${esc(passLabel)}</b></div>
         <div class="rp-profile-player">
-          <div class="rp-profile-number${playerIdentity.publicId ? ' rp-profile-public-id' : ''}"><small>PLAYER</small><strong>${esc(playerIdentity.label)}</strong></div>
+          <div class="rp-profile-number"><small>PLAYER</small><strong>${esc(jersey)}</strong></div>
           <div class="rp-profile-name"><small>REAL PLAY PROFILE</small><h1>${esc(player?.playerName || 'REAL PLAY PLAYER')}</h1><p>LESS SCREEN. REAL POINTS.</p></div>
         </div>
         <div class="rp-profile-rating-row">
