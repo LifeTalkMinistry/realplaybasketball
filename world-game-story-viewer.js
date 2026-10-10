@@ -7,7 +7,7 @@
     script.onerror = reject;
     document.head.appendChild(script);
   });
-  load('world-game-story-viewer-core-v12.js?v=20261007-game-title-divider-v17')
+  load('world-game-story-viewer-core-v12.js?v=20261010-safe-story-art-layout-v18')
     .then(() => load('world-game-story-editor.js?v=20261007-story-view-backend-v4'))
     .catch((error) => console.error('[Real Play] Game story viewer failed to load.', error));
 })();
