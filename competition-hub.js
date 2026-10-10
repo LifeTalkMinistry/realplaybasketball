@@ -314,6 +314,27 @@
       [data-rp-competition-view="hub"] .rp-competition-card:focus-visible{
         background:var(--rp-stats-tint)!important;
       }
+      /* Separate premium containers for each section, retaining icon + title only. */
+      [data-rp-competition-view="hub"] .rp-competition-card-grid{
+        gap:12px!important;
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card{
+        box-sizing:border-box;
+        border:1px solid color-mix(in srgb,var(--rp-stats-accent) 27%,transparent)!important;
+        border-radius:15px!important;
+        background:linear-gradient(110deg,rgba(9,20,32,.88),rgba(4,8,16,.90))!important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 4px 18px rgba(0,0,0,.12)!important;
+        overflow:hidden!important;
+        transition:border-color .18s ease,background .18s ease,transform .18s ease;
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card:hover,
+      [data-rp-competition-view="hub"] .rp-competition-card:focus-visible{
+        border-color:var(--rp-stats-accent)!important;
+        background:linear-gradient(110deg,var(--rp-stats-tint),rgba(5,11,21,.96))!important;
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card:active{
+        transform:scale(.992)!important;
+      }
       /* Branded editorial heading: precision type and a very thin accent rule. */
       .rp-competition-hub[data-rp-competition-current-view="hub"] .rp-competition-topbar{
         /* The hub header belongs to the page, not a separate sticky black slab. */
