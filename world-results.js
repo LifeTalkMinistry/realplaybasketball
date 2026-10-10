@@ -1303,14 +1303,14 @@
   function worldResultTitle(metadata = {}) {
     const seasonGame = Number(metadata.seasonGameNumber ?? metadata.season_game_number);
     const context = String(metadata.competitionContext ?? metadata.competition_context ?? '').trim().toLowerCase();
-    if (Number.isSafeInteger(seasonGame) && seasonGame > 0) {
-      const label = context === 'league' ? 'LEAGUE' : 'TUNE UP';
-      return `${label} #${String(seasonGame).padStart(2, '0')}`;
-    }
-
     const openRank = Number(metadata.openRankNumber ?? metadata.open_rank_number);
     if (Number.isSafeInteger(openRank) && openRank > 0) {
       return `OPEN RANK #${String(openRank).padStart(3, '0')}`;
+    }
+
+    if (Number.isSafeInteger(seasonGame) && seasonGame > 0) {
+      const label = context === 'league' ? 'LEAGUE' : 'TUNE UP';
+      return `${label} #${String(seasonGame).padStart(2, '0')}`;
     }
 
     return String(
@@ -1731,41 +1731,57 @@
       ?? metadata.mode
       ?? ''
     ).trim().toLowerCase();
-    const title = String(worldResultTitle(metadata) || '').toLowerCase();
-    const text = [
-      context,
-      title,
-      update?.title,
-      update?.body,
-      metadata.sessionTitle,
-      metadata.session_title,
-      card?.textContent,
-    ].filter(Boolean).join(' ').toLowerCase();
+    const explicitTitle = String(
+      metadata.resultDisplayTitle
+      ?? metadata.result_display_title
+      ?? metadata.sessionTitle
+      ?? metadata.session_title
+      ?? update?.title
+      ?? ''
+    ).trim().toLowerCase();
+    const renderedTitle = String(card?.querySelector?.('.rp-world-scorecard-head strong')?.textContent || '').trim().toLowerCase();
+    const west = String(metadata.westTeamName ?? metadata.west_team_name ?? '').trim().toUpperCase();
+    const east = String(metadata.eastTeamName ?? metadata.east_team_name ?? '').trim().toUpperCase();
+    const openRankNumber = Number(metadata.openRankNumber ?? metadata.open_rank_number);
+    const seasonGameNumber = Number(metadata.seasonGameNumber ?? metadata.season_game_number);
+    const hasOpenRankNumber = Number.isSafeInteger(openRankNumber) && openRankNumber > 0;
+    const hasSeasonGameNumber = Number.isSafeInteger(seasonGameNumber) && seasonGameNumber > 0;
 
-    // Explicit game identity is stronger evidence than incidental text in
-    // a combined card (which may mention another competition).
-    const officialTitle = [title, update?.title, metadata.sessionTitle, metadata.session_title]
-      .filter(Boolean).join(' ').toLowerCase();
-    if (/open[\s-]?rank(?:ing)?|east\s+vs\s+west/.test(context + ' ' + officialTitle)) {
+    // Trust game-specific metadata first. Legacy Open Rank games can carry
+    // season-like fields; they must not be reclassified as Tune Up.
+    if (/open[\\s_-]?rank(?:ing)?/.test(context) || hasOpenRankNumber) {
       return { key: 'open-rank', label: 'OPEN RANKING' };
     }
-    if (/tune[\s-]?up/.test(context + ' ' + officialTitle)) {
+    if (/tune[\\s_-]?up/.test(context)) {
       return { key: 'tune-up', label: 'TUNE UP' };
     }
-    if (/open[\s-]?rank(?:ing)?|east\s+vs\s+west/.test(text)) {
-      return { key: 'open-rank', label: 'OPEN RANKING' };
-    }
-    if (/tune[\s-]?up/.test(text)) {
-      return { key: 'tune-up', label: 'TUNE UP' };
-    }
-    if (/league|beta\s+season|season\s*\d+/.test(text)) {
+    if (/^league$/.test(context)) {
       return { key: 'league', label: 'LEAGUE' };
     }
 
-    const west = String(metadata.westTeamName || metadata.west_team_name || '').trim().toUpperCase();
-    const east = String(metadata.eastTeamName || metadata.east_team_name || '').trim().toUpperCase();
-    if (WORLD_CLUB_ART[west] || WORLD_CLUB_ART[east]) return { key: 'league', label: 'LEAGUE' };
-    return { key: 'league', label: 'LEAGUE' };
+    // Use the actual result headline, never all the card's body text:
+    // commentary or descriptions may mention another competition.
+    const headline = [explicitTitle, renderedTitle].filter(Boolean).join(' ');
+    if (/open[\\s_-]?rank(?:ing)?|east\\s+vs\\s+west/.test(headline)) {
+      return { key: 'open-rank', label: 'OPEN RANKING' };
+    }
+    if (/tune[\\s_-]?up/.test(headline)) {
+      return { key: 'tune-up', label: 'TUNE UP' };
+    }
+    if (/league/.test(headline)) {
+      return { key: 'league', label: 'LEAGUE' };
+    }
+
+    // The temporary WEST/EAST matchup represents Open Ranking unless an
+    // explicit season game establishes a different competitive context.
+    if (!hasSeasonGameNumber && west === 'WEST' && east === 'EAST') {
+      return { key: 'open-rank', label: 'OPEN RANKING' };
+    }
+    if (hasSeasonGameNumber) return { key: 'tune-up', label: 'TUNE UP' };
+    if (WORLD_CLUB_ART[west] || WORLD_CLUB_ART[east]) {
+      return { key: 'league', label: 'LEAGUE' };
+    }
+    return { key: 'open-rank', label: 'OPEN RANKING' };
   }
 
   function seasonInfo(update, card) {
