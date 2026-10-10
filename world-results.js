@@ -11,7 +11,7 @@
   let resultMetadata = new Map();
   let selectedWeek = 'all';
   let selectedType = 'all';
-  let selectedCompetition = 'league';
+  let selectedCompetition = 'tune-up';
   let selectedSeason = 'tune-up-s1';
   let selectedTeam = 'all';
   let selectedView = 'feed';
@@ -1664,12 +1664,13 @@
         <div class="rp-world-context-picker" aria-label="Competition filters">
           <div class="rp-world-context-main">
             <select class="rp-world-context-select" data-rp-world-competition aria-label="Competition">
-              <option value="league">LEAGUE</option>
               <option value="open-rank">OPEN RANKING</option>
+              <option value="tune-up">TUNE UP</option>
+              <option value="league">LEAGUE</option>
             </select>
             <span class="rp-world-context-dot" aria-hidden="true">·</span>
             <select class="rp-world-context-select" data-rp-world-season aria-label="Season">
-              <option value="tune-up-s1">TUNE UP S1</option>
+              <option value="tune-up-s1">SEASON 1</option>
             </select>
             <span class="rp-world-context-chevron" aria-hidden="true">⌄</span>
           </div>
@@ -1678,7 +1679,7 @@
       feed.parentElement?.insertBefore(controls, feed);
 
       controls.querySelector('[data-rp-world-competition]')?.addEventListener('change', (event) => {
-        selectedCompetition = event.currentTarget.value || 'league';
+        selectedCompetition = event.currentTarget.value || 'tune-up';
         selectedSeason = '';
         selectedTeam = 'all';
         rebuildContextOptions();
@@ -1740,10 +1741,16 @@
       card?.textContent,
     ].filter(Boolean).join(' ').toLowerCase();
 
+    // Tune Up is a distinct competition category, not a League season.
+    // Check it before the broader League test because older records may
+    // contain both "league" and "tune up" in their description.
+    if (/tune[\s-]?up/.test(text)) {
+      return { key: 'tune-up', label: 'TUNE UP' };
+    }
     if (/open[\s-]?rank(?:ing)?|east\s+vs\s+west/.test(text)) {
       return { key: 'open-rank', label: 'OPEN RANKING' };
     }
-    if (/league|tune[\s-]?up|beta\s+season|season\s*\d+/.test(text)) {
+    if (/league|beta\s+season|season\s*\d+/.test(text)) {
       return { key: 'league', label: 'LEAGUE' };
     }
 
@@ -1756,7 +1763,7 @@
   function seasonInfo(update, card) {
     const metadata = update?.metadata || {};
     const competition = competitionInfo(update, card);
-    if (competition.key === 'open-rank') return { key: 'open-ranking', label: 'OPEN RANKING' };
+    if (competition.key === 'open-rank') return { key: 'all-games', label: 'ALL GAMES' };
 
     const explicit = String(
       metadata.seasonLabel
@@ -1782,7 +1789,7 @@
       const number = Number.isSafeInteger(tuneNumber) && tuneNumber > 0
         ? tuneNumber
         : Math.max(1, Number(tuneMatch[1] || 1));
-      return { key: `tune-up-s${number}`, label: `TUNE UP S${number}` };
+      return { key: `tune-up-s${number}`, label: `SEASON ${number}` };
     }
 
     if (/\bBETA\b/.test(text)) return { key: 'beta-season', label: 'BETA SEASON' };
@@ -1830,15 +1837,13 @@
       };
     });
 
-    const competitions = new Map();
-    rows.forEach((row) => competitions.set(row.competition.key, row.competition.label));
-    if (!competitions.size) {
-      competitions.set('league', 'LEAGUE');
-      competitions.set('open-rank', 'OPEN RANKING');
-    }
-    if (!competitions.has(selectedCompetition)) {
-      selectedCompetition = competitions.has('league') ? 'league' : [...competitions.keys()][0];
-    }
+    // Show all three categories even if one has no published results yet.
+    const competitions = new Map([
+      ['open-rank', 'OPEN RANKING'],
+      ['tune-up', 'TUNE UP'],
+      ['league', 'LEAGUE'],
+    ]);
+    if (!competitions.has(selectedCompetition)) selectedCompetition = 'tune-up';
     competitionSelect.innerHTML = [...competitions]
       .map(([key, label]) => `<option value="${esc(key)}">${esc(label)}</option>`)
       .join('');
@@ -1847,7 +1852,12 @@
     const scoped = rows.filter((row) => row.competition.key === selectedCompetition);
     const seasons = new Map();
     scoped.forEach((row) => seasons.set(row.season.key, row.season.label));
-    if (!seasons.size) seasons.set('season', 'SEASON');
+    // Only offer real recorded seasons. An empty category shows an
+    // explanatory option instead of fabricating a League season.
+    if (!seasons.size) {
+      seasons.set(selectedCompetition === 'open-rank' ? 'all-games' : 'no-season',
+        selectedCompetition === 'open-rank' ? 'ALL GAMES' : 'NO SEASON YET');
+    }
     if (!selectedSeason || !seasons.has(selectedSeason)) {
       selectedSeason = seasons.has('tune-up-s1') ? 'tune-up-s1' : [...seasons.keys()][0];
     }
