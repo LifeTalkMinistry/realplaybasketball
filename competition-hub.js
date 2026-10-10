@@ -812,7 +812,7 @@
     }
 
     if (config.error) {
-      list.innerHTML = '<div class="rp-competition-scope-empty-row" data-rp-competition-scope-empty><div><strong>COULD NOT LOAD TUNE-UP STATS.</strong><p>' + esc(config.error) + '</p></div></div>';
+      list.innerHTML = '<div class="rp-competition-scope-empty-row" data-rp-competition-scope-empty><div><strong>COULD NOT LOAD COMPETITION STATS.</strong><p>' + esc(config.error) + '</p></div></div>';
       return;
     }
 
@@ -1002,7 +1002,19 @@
   }
 
   function openOpenRanking() {
-    showPanelView('open-rank');
+    // Reuse the exact Player Rankings screen and filters. The backend
+    // calculates fresh ratings exclusively from verified East/West pickup
+    // games, independent of Tune Up and League evidence.
+    openScopedRanking({
+      id: 'open-ranking-pickup',
+      title: 'OPEN RANKING',
+      kicker: 'OPEN RANKING · PLAYER RANKING',
+      copy: 'Verified East vs West pickup games only. Tune Up and League games are excluded.',
+      emptyTitle: 'NO VERIFIED OPEN RANKING GAMES YET.',
+      emptyCopy: 'Verified pickup games will populate this independent leaderboard.',
+      competitionContext: 'pickup',
+      parent: 'hub',
+    });
   }
 
   function openOpenRankHistory() {
