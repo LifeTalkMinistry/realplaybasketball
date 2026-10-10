@@ -112,61 +112,81 @@
           inset 0 0 0 1px rgba(65,214,255,.16),
           0 5px 16px rgba(0,0,0,.18);
       }
+      /* Competition and season are separate native dropdown controls. */
       .rp-world-context-picker{
         width:min(100%,360px);
         margin:0 auto;
-        padding:4px;
-        border:1px solid rgba(255,255,255,.075);
+        padding:0;
+        border:0;
         border-radius:13px;
-        background:rgba(4,9,16,.86);
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.02);
+        background:transparent;
+        box-shadow:none;
       }
       .rp-world-context-main{
-        min-height:44px;
         display:grid;
-        grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto;
-        align-items:center;
-        column-gap:12px;
-        padding:0 12px;
-        border-radius:9px;
-        background:
-          linear-gradient(100deg,rgba(14,145,205,.20),rgba(6,13,22,.88) 54%,rgba(164,30,48,.16));
-        box-shadow:inset 0 0 0 1px rgba(65,214,255,.16),0 5px 16px rgba(0,0,0,.18);
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+        align-items:stretch;
+        gap:12px;
+        min-height:46px;
+        padding:0;
+        border-radius:0;
+        background:none;
+        box-shadow:none;
       }
-      .rp-world-context-main .rp-world-context-dot{
-        color:#718096;
-        font-size:.68rem;
-        font-weight:950;
+      .rp-world-context-main .rp-world-context-dot,
+      .rp-world-context-chevron{
+        display:none;
       }
       .rp-world-context-select{
+        display:block;
         width:100%;
         min-width:0;
         max-width:none;
-        border:0;
+        height:46px;
+        padding:0 24px 0 8px;
+        border:1px solid rgba(70,200,245,.28);
+        border-radius:12px;
         outline:0;
         appearance:none;
         -webkit-appearance:none;
         color:#f7fbff;
-        background:transparent;
+        background-color:#071321;
+        background-image:
+          linear-gradient(45deg,transparent 50%,#71dfff 50%),
+          linear-gradient(135deg,#71dfff 50%,transparent 50%),
+          linear-gradient(145deg,rgba(10,91,127,.38),rgba(5,14,25,.96) 65%,rgba(76,14,33,.30));
+        background-position:
+          calc(100% - 16px) 21px,
+          calc(100% - 11px) 21px,
+          center;
+        background-size:5px 5px,5px 5px,100% 100%;
+        background-repeat:no-repeat;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 6px 18px rgba(0,0,0,.22);
         font-family:var(--rp-display,Arial,sans-serif);
         font-size:.62rem;
         font-style:italic;
         font-weight:950;
-        letter-spacing:.075em;
+        letter-spacing:.055em;
         text-align:center;
+        text-align-last:center;
         text-transform:uppercase;
         cursor:pointer;
+        transition:border-color .16s ease,box-shadow .16s ease,filter .16s ease;
+      }
+      .rp-world-context-select:hover{
+        border-color:rgba(90,219,255,.58);
+        filter:brightness(1.14);
+      }
+      .rp-world-context-select:focus-visible{
+        outline:2px solid #60dbff;
+        outline-offset:2px;
+      }
+      .rp-world-context-select:active{
+        filter:brightness(1.25);
       }
       .rp-world-context-select option{
         color:#f7fbff;
         background:#07101a;
-      }
-      .rp-world-context-chevron{
-        color:#7e91a8;
-        font-size:.78rem;
-        line-height:1;
-        transform:translateY(-1px);
-        pointer-events:none;
       }
       .rp-world-team-filter{
         width:min(100%,360px);
