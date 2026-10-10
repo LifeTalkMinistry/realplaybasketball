@@ -52,25 +52,12 @@
   }
 
   function applyOfficialRankDisplay(fallbackCaption = '') {
-    const rankNode = panel?.querySelector('.rp-profile-rank');
-    const strong = rankNode?.querySelector('strong');
-    const small = rankNode?.querySelector('small');
-    if (!rankNode || !strong) return;
+    const rankNode = panel?.querySelector('.rp-profile-number.rp-profile-rank');
+    const trigger = rankNode?.querySelector('[data-rp-rank-info]');
+    if (!rankNode || !trigger) return;
 
     const rank = canonicalOfficialRank();
-    strong.textContent = rank === null ? '—' : `#${rank}`;
-
-    if (small) {
-      if (rank !== null) {
-        small.textContent = 'OFFICIAL RANK';
-      } else if (officialRankState.status === 'resolved') {
-        small.textContent = fallbackCaption && fallbackCaption !== 'OFFICIAL RANK'
-          ? fallbackCaption
-          : 'UNRANKED';
-      } else if (fallbackCaption) {
-        small.textContent = fallbackCaption;
-      }
-    }
+    trigger.textContent = rank === null ? '#—' : `#${rank}`;
 
     rankNode.dataset.rpCanonicalRank = rank !== null
       ? String(rank)
@@ -458,7 +445,6 @@
 
     const stats = career();
     const name = playerName();
-    const jersey = playerNumber();
     const rating = ovr();
     const playerRank = canonicalOfficialRank();
     const club = team();
@@ -525,12 +511,11 @@
           <b>${passHolder ? `PASS HOLDER - TOKEN: ${tokenCount}` : supportTier ? esc(supportTier.toUpperCase()) : 'BETA SEASON'}</b>
         </div>
         <div class="rp-profile-player">
-          <div class="rp-profile-number"><small>PLAYER</small><strong>${jersey === null ? '#—' : `#${jersey}`}</strong></div>
+          <div class="rp-profile-number rp-profile-rank"><small>RANK</small><strong><button type="button" class="rp-rank-trigger" data-rp-rank-info aria-label="Explain this player\'s official rank">${playerRank === null ? '#—' : `#${playerRank}`}</button></strong></div>
           <div class="rp-profile-name"><small>MY REAL PLAY PROFILE</small><h1>${esc(name)}</h1><p>${club ? `${esc(club)} · ` : ''}LESS SCREEN. REAL POINTS.</p></div>
         </div>
         <div class="rp-profile-rating-row">
           <div class="rp-profile-ovr"><span>OVR</span><strong>${rating === null ? '—' : rating}</strong><small>${esc(ovrCaption)}</small></div>
-          <div class="rp-profile-rank"><span>RANK</span><strong>${playerRank === null ? '—' : `#${playerRank}`}</strong><small>${esc(rankCaption)}</small></div>
           <div class="rp-profile-record"><span>RECORD</span><strong>${wins}-${losses}</strong><small>${games} GAME${games === 1 ? '' : 'S'}</small></div>
         </div>
       </section>
