@@ -367,8 +367,8 @@
     if (!root) return;
     const stats = player?.careerStats || {};
     const rating = player?.ovr === null || player?.ovr === undefined ? null : Number(player.ovr);
-    const rank = player?.rank === null || player?.rank === undefined ? null : Number(player.rank);
-    const jersey = jerseyLabel(player);
+    const parsedRank = Number(player?.rank);
+    const rank = player?.rank !== null && player?.rank !== undefined && Number.isSafeInteger(parsedRank) && parsedRank > 0 ? parsedRank : null;
     const games = number(pick(stats.games, stats.gamesPlayed));
     const wins = number(stats.wins);
     const losses = number(stats.losses);
@@ -379,8 +379,8 @@
       <section class="rp-profile-hero">
         <div class="rp-profile-hero-glow" aria-hidden="true"></div>
         <div class="rp-profile-identity-line"><span>REAL PLAY PLAYER</span><b>${esc(passLabel)}</b></div>
-        <div class="rp-profile-player"><div class="rp-profile-number"><small>PLAYER</small><strong>${esc(jersey)}</strong></div><div class="rp-profile-name"><small>PUBLIC PROFILE</small><h1>${esc(player?.playerName || 'REAL PLAY PLAYER')}</h1><p>LESS SCREEN. REAL POINTS.</p></div></div>
-        <div class="rp-profile-rating-row"><div class="rp-profile-ovr"><span>OVR</span><strong>${rating === null ? '—' : rating}</strong><small>${rating === null ? 'UNRANKED' : 'BETA RATING'}</small></div><div class="rp-profile-rank"><span>RANK</span><strong>${rank === null ? '—' : `#${rank}`}</strong><small>REAL PLAY</small></div><div class="rp-profile-record"><span>RECORD</span><strong>${wins}-${losses}</strong><small>${games} GAME${games === 1 ? '' : 'S'}</small></div></div>
+        <div class="rp-profile-player"><div class="rp-profile-number rp-profile-rank"><small>RANK</small><strong><button type="button" class="rp-rank-trigger" data-rp-rank-info aria-label="Explain this player\'s official rank">${rank === null ? '#—' : `#${rank}`}</button></strong></div><div class="rp-profile-name"><small>PUBLIC PROFILE</small><h1>${esc(player?.playerName || 'REAL PLAY PLAYER')}</h1><p>LESS SCREEN. REAL POINTS.</p></div></div>
+        <div class="rp-profile-rating-row"><div class="rp-profile-ovr"><span>OVR</span><strong>${rating === null ? '—' : rating}</strong><small>${rating === null ? 'UNRANKED' : 'BETA RATING'}</small></div><div class="rp-profile-record"><span>RECORD</span><strong>${wins}-${losses}</strong><small>${games} GAME${games === 1 ? '' : 'S'}</small></div></div>
       </section>
       <section class="rp-profile-section"><div class="rp-profile-section-head"><div><small>CAREER NUMBERS</small><h2>THE COURT KEEPS THE RECEIPTS.</h2></div><span>OFFICIAL GAMES ONLY</span></div><div class="rp-profile-stat-grid"><article><strong>${number(pick(stats.pts, stats.points))}</strong><span>PTS</span></article><article><strong>${number(pick(stats.ast, stats.assists))}</strong><span>AST</span></article><article><strong>${number(pick(stats.reb, stats.rebounds))}</strong><span>REB</span></article><article><strong>${number(pick(stats.to, stats.tov, stats.turnovers))}</strong><span>TO</span></article></div></section>
       <section class="rp-profile-section rp-profile-history"><div class="rp-profile-section-head"><div><small>RECENT HISTORY</small><h2>RECENT REAL PLAY.</h2></div><span>FINALIZED GAMES</span></div>${recent.length ? recent.map((game) => {
