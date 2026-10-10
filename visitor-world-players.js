@@ -4,6 +4,23 @@
 
   const API_BASE_URL = 'https://api.clarapmc.com';
   const PROFILE_ART_REGISTRY_URL = 'assets/profile-art/registry.json';
+  // Jersey numbers are monthly assignments; unassigned players keep their
+  // canonical public ID rather than receiving an invented jersey number.
+  const identity = (player) => {
+    const jersey = player?.playerNumber;
+    if (jersey !== null && jersey !== undefined && jersey !== ''
+        && Number.isInteger(Number(jersey)) && Number(jersey) >= 0 && Number(jersey) <= 99) {
+      return { label: `#${Number(jersey)}`, publicId: false };
+    }
+    const rawId = String(player?.publicPlayerId || '').trim();
+    const id = /^RP-\\d+$/i.test(rawId) ? rawId.toUpperCase() : (() => {
+      const canonical = Number(player?.playerId);
+      return Number.isSafeInteger(canonical) && canonical > 0
+        ? `RP-${String(canonical).padStart(5, '0')}` : '';
+    })();
+    return id ? { label: `ID ${id}`, publicId: true } : { label: '#—', publicId: false };
+  };
+
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -147,7 +164,7 @@
     const entries = visitorPlayers.map((player) => ({
       id: String(player.playerId || player.userId || ''),
       markup: (() => {
-      const jersey = player.playerNumber === null || player.playerNumber === undefined ? '#—' : `#${Number(player.playerNumber)}`;
+      const jersey = identity(player).label;
       const rating = player.ovr === null || player.ovr === undefined
         ? '<span class="rp-world-player-ovr unranked">UNRANKED</span>'
         : `<span class="rp-world-player-ovr">${esc(player.ovr)} <small>OVR</small></span>`;
@@ -358,7 +375,7 @@
     const stats = player?.careerStats || {};
     const rating = player?.ovr === null || player?.ovr === undefined ? null : Number(player.ovr);
     const rank = player?.rank === null || player?.rank === undefined ? null : Number(player.rank);
-    const jersey = player?.playerNumber === null || player?.playerNumber === undefined ? null : Number(player.playerNumber);
+    const playerIdentity = identity(player);
     const games = number(pick(stats.games, stats.gamesPlayed));
     const wins = number(stats.wins);
     const losses = number(stats.losses);
@@ -369,7 +386,7 @@
       <section class="rp-profile-hero">
         <div class="rp-profile-hero-glow" aria-hidden="true"></div>
         <div class="rp-profile-identity-line"><span>REAL PLAY PLAYER</span><b>${esc(passLabel)}</b></div>
-        <div class="rp-profile-player"><div class="rp-profile-number"><small>PLAYER</small><strong>${jersey === null ? '#—' : `#${jersey}`}</strong></div><div class="rp-profile-name"><small>PUBLIC PROFILE</small><h1>${esc(player?.playerName || 'REAL PLAY PLAYER')}</h1><p>LESS SCREEN. REAL POINTS.</p></div></div>
+        <div class="rp-profile-player"><div class="rp-profile-number${playerIdentity.publicId ? ' rp-profile-public-id' : ''}"><small>PLAYER</small><strong>${esc(playerIdentity.label)}</strong></div><div class="rp-profile-name"><small>PUBLIC PROFILE</small><h1>${esc(player?.playerName || 'REAL PLAY PLAYER')}</h1><p>LESS SCREEN. REAL POINTS.</p></div></div>
         <div class="rp-profile-rating-row"><div class="rp-profile-ovr"><span>OVR</span><strong>${rating === null ? '—' : rating}</strong><small>${rating === null ? 'UNRANKED' : 'BETA RATING'}</small></div><div class="rp-profile-rank"><span>RANK</span><strong>${rank === null ? '—' : `#${rank}`}</strong><small>REAL PLAY</small></div><div class="rp-profile-record"><span>RECORD</span><strong>${wins}-${losses}</strong><small>${games} GAME${games === 1 ? '' : 'S'}</small></div></div>
       </section>
       <section class="rp-profile-section"><div class="rp-profile-section-head"><div><small>CAREER NUMBERS</small><h2>THE COURT KEEPS THE RECEIPTS.</h2></div><span>OFFICIAL GAMES ONLY</span></div><div class="rp-profile-stat-grid"><article><strong>${number(pick(stats.pts, stats.points))}</strong><span>PTS</span></article><article><strong>${number(pick(stats.ast, stats.assists))}</strong><span>AST</span></article><article><strong>${number(pick(stats.reb, stats.rebounds))}</strong><span>REB</span></article><article><strong>${number(pick(stats.to, stats.tov, stats.turnovers))}</strong><span>TO</span></article></div></section>
