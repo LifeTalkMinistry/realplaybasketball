@@ -875,3 +875,27 @@
     padding-inline:0!important;
   }
 }
+
+/* Official jersey and permanent public player ID are separate identifiers.
+   Fit the canonical fallback in the narrow number slot without colliding
+   with player names. */
+.rp-profile .rp-profile-hero .rp-profile-number.rp-profile-public-id{
+  flex:0 1 auto!important;
+  max-width:43%!important;
+  min-width:0!important;
+}
+.rp-profile .rp-profile-hero .rp-profile-number.rp-profile-public-id > strong{
+  display:block!important;
+  font-family:Arial,sans-serif!important;
+  font-size:clamp(.57rem,2.3vw,.76rem)!important;
+  font-weight:900!important;
+  font-style:normal!important;
+  letter-spacing:-.015em!important;
+  line-height:1.15!important;
+  overflow-wrap:anywhere!important;
+  white-space:normal!important;
+}
+.rp-profile .rp-profile-hero .rp-profile-number.rp-profile-public-id + .rp-profile-name{
+  flex:1 1 0!important;
+  min-width:0!important;
+}
