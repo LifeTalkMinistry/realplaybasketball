@@ -256,6 +256,37 @@
         [data-rp-competition-view="hub"] .rp-competition-card{min-height:54px!important;padding:12px 14px!important}
         [data-rp-competition-view="hub"] .rp-competition-card-copy strong{font-size:.84rem!important}
       }
+      /* Taller, roomier Stats menu; retain the minimal icon + title language. */
+      [data-rp-competition-view="hub"] .rp-competition-card-grid{
+        min-height:clamp(350px,55dvh,500px)!important;
+        gap:8px!important;
+        margin-top:14px!important;
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card{
+        flex:1 1 0!important;
+        min-height:76px!important;
+        padding:20px 20px!important;
+        gap:19px!important;
+      }
+      [data-rp-competition-view="hub"] .rp-stats-menu-icon{
+        width:25px!important;height:25px!important;flex-basis:25px!important;
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card-copy strong{
+        font-size:1.06rem!important;
+        letter-spacing:.015em!important;
+      }
+      [data-rp-competition-view="hub"] .rp-competition-heading strong{
+        font-size:1.32rem!important;
+        white-space:normal!important;
+      }
+      @media(max-width:390px){
+        [data-rp-competition-view="hub"] .rp-competition-card{
+          min-height:76px!important;padding:18px 16px!important;
+        }
+        [data-rp-competition-view="hub"] .rp-competition-card-copy strong{
+          font-size:1.02rem!important;
+        }
+      }
       @media(prefers-reduced-transparency:reduce){.rp-competition-hub::before{opacity:.22}}
       @media(prefers-reduced-motion:reduce){.rp-competition-card{transition:none}}
     `;
@@ -385,7 +416,7 @@
     });
     const title = panel.querySelector('[data-rp-competition-title]');
     const back = panel.querySelector('[data-rp-competition-back]');
-    if (title) title.textContent = name === 'hub' ? 'STATS' : name === 'league' ? 'LEAGUE SEASONS' : name === 'open-rank' ? 'OPEN RANKING' : 'RANKINGS';
+    if (title) title.textContent = name === 'hub' ? 'REAL PLAY STATS' : name === 'league' ? 'LEAGUE SEASONS' : name === 'open-rank' ? 'OPEN RANKING' : 'RANKINGS';
     if (back) back.hidden = name === 'hub';
     panel.dataset.rpCompetitionCurrentView = name;
   }
