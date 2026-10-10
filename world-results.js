@@ -167,7 +167,7 @@
       }
       .rp-world-team-filter{
         width:min(100%,360px);
-        margin:8px auto 0;
+        margin:20px auto 0;
         padding:3px 22px 3px 3px;
         display:flex;
         gap:4px;
