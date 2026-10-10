@@ -205,6 +205,7 @@
         border-radius:12px;
         background:rgba(4,9,16,.76);
       }
+      .rp-world-team-filter[hidden]{display:none!important}
       .rp-world-team-filter::-webkit-scrollbar{display:none}
       .rp-world-team-chip{
         width:64px;
@@ -1865,6 +1866,15 @@
       .map(([key, label]) => `<option value="${esc(key)}">${esc(label)}</option>`)
       .join('');
     seasonSelect.value = selectedSeason;
+
+    // Open Ranking uses temporary East/West sides, not permanent club filters.
+    // Hide the entire row and clear any previous club selection.
+    teamFilter.hidden = selectedCompetition === 'open-rank';
+    if (teamFilter.hidden) {
+      selectedTeam = 'all';
+      teamFilter.replaceChildren();
+      return;
+    }
 
     const teams = new Set(CURRENT_WORLD_TEAMS);
     scoped
