@@ -3,6 +3,12 @@
 
   const body = document.body;
   body.classList.add('rp-lobby-active');
+  // Keep the old static Career/Stats page out of layout immediately.
+  const legacyMain = document.getElementById('main');
+  if (legacyMain) {
+    legacyMain.hidden = true;
+    legacyMain.dataset.rpLegacyHidden = 'true';
+  }
 
   const app = document.createElement('div');
   app.className = 'rp-app';
