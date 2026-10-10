@@ -78,6 +78,19 @@
       .rp-story-loading{margin:auto;color:#63ddff;font:950 .66rem/1.6 Arial,sans-serif;letter-spacing:.15em;text-align:center}
       @media(max-width:380px){.rp-story-slide{padding-left:18px;padding-right:18px}.rp-story-body{font-size:.78rem}.rp-story-stats{gap:5px}.rp-story-stat{padding:8px 4px}.rp-story-game-winner{width:min(68vw,250px);height:min(31vh,250px)}}
       @media(max-height:700px){.rp-story-game-winner{top:84px;width:min(58vw,220px);height:min(27vh,220px)}.rp-story-team-hero{top:88px;width:min(52vw,205px);height:min(24vh,205px)}.rp-story-player-art-frame{top:78px;width:min(76vw,304px);height:min(34vh,264px);border-radius:20px}.rp-story-player-art-frame.rp-story-profile-art{width:min(79vw,316px);height:min(36vh,280px)}.rp-story-game-bg img{top:47%;width:min(154vw,760px);opacity:.90;filter:blur(2px) brightness(.46) contrast(1.08) saturate(.92)}.rp-story-slide.rp-story-branded-slide::after{top:48%;width:min(118vw,580px);height:min(76vw,360px);filter:blur(64px)}.rp-story-game-matchup{top:60px;height:min(53vh,360px)}.rp-story-matchup-hero img{width:min(47vw,188px);max-height:84%}.rp-story-matchup-team.is-winner .rp-story-matchup-hero img{width:min(51vw,202px);max-height:88%}}
+      /* Keep the result headline below its hero artwork on every viewport. */
+      .rp-story-slide:has(> .rp-story-game-winner),
+      .rp-story-slide:has(> .rp-story-team-hero){--rp-story-safe-art-top:clamp(86px,12vh,112px);--rp-story-safe-art-height:clamp(120px,25vh,208px)}
+      .rp-story-slide:has(> .rp-story-game-winner) > .rp-story-game-winner,
+      .rp-story-slide:has(> .rp-story-team-hero) > .rp-story-team-hero{top:var(--rp-story-safe-art-top);height:var(--rp-story-safe-art-height);width:min(64vw,230px)}
+      .rp-story-slide:has(> .rp-story-game-winner) > .rp-story-content,
+      .rp-story-slide:has(> .rp-story-team-hero) > .rp-story-content{position:absolute;top:calc(var(--rp-story-safe-art-top) + var(--rp-story-safe-art-height) + 12px);bottom:calc(26px + env(safe-area-inset-bottom));left:22px;right:22px;width:auto;max-height:none;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;justify-content:flex-start;padding:2px 0 12px;box-sizing:border-box}
+      .rp-story-slide:has(> .rp-story-game-winner) .rp-story-headline,
+      .rp-story-slide:has(> .rp-story-team-hero) .rp-story-headline{font-size:clamp(1.5rem,7.5vw,2.7rem);line-height:1.02;overflow-wrap:anywhere;flex-shrink:0}
+      .rp-story-slide:has(> .rp-story-game-winner) .rp-story-score,
+      .rp-story-slide:has(> .rp-story-team-hero) .rp-story-score{flex-shrink:0}
+      @media(max-height:700px){.rp-story-slide:has(> .rp-story-game-winner),.rp-story-slide:has(> .rp-story-team-hero){--rp-story-safe-art-top:78px;--rp-story-safe-art-height:clamp(112px,23vh,154px)}}
+      @media(max-width:380px){.rp-story-slide:has(> .rp-story-game-winner) > .rp-story-content,.rp-story-slide:has(> .rp-story-team-hero) > .rp-story-content{left:18px;right:18px}}
       @media(prefers-reduced-motion:reduce){.rp-story-track{transition:none}}
     `;
     document.head.appendChild(style);
