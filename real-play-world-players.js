@@ -487,7 +487,7 @@
         <div class="rp-profile-hero-glow" aria-hidden="true"></div>
         <div class="rp-profile-identity-line"><span>REAL PLAY PLAYER</span><b>${esc(passLabel)}</b></div>
         <div class="rp-profile-player">
-          <div class="rp-profile-number rp-profile-rank"><small>RANK</small><strong><button type="button" class="rp-rank-trigger" data-rp-rank-info aria-label="Explain this player\'s official rank">${playerRank === null ? '#—' : `#${playerRank}`}</button></strong></div>
+          <div class="rp-profile-number rp-profile-identity-rank"><small>RANK</small><strong><button type="button" class="rp-rank-trigger" data-rp-rank-info aria-label="Explain this player\'s official rank">${playerRank === null ? '#—' : `#${playerRank}`}</button></strong></div>
           <div class="rp-profile-name"><small>REAL PLAY PROFILE</small><h1>${esc(player?.playerName || 'REAL PLAY PLAYER')}</h1><p>LESS SCREEN. REAL POINTS.</p></div>
         </div>
         <div class="rp-profile-rating-row">
