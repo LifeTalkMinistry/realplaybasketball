@@ -234,6 +234,28 @@
         [data-rp-competition-view="hub"] .rp-competition-card:first-child{grid-column:auto}
       }
       @media(max-width:390px){.rp-competition-shell{padding-inline:12px}.rp-competition-card{min-height:126px;padding:17px}.rp-competition-card-copy strong{font-size:1.28rem}.rp-scope-filter{min-width:68px;font-size:.39rem}}
+      /* Flat STATS menu: icon + title only. */
+      [data-rp-competition-view="hub"] .rp-competition-card-grid{display:flex!important;flex-direction:column!important;gap:2px!important;width:100%;padding:0!important;margin:4px 0 0!important}
+      [data-rp-competition-view="hub"] .rp-competition-card{
+        display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:15px!important;
+        width:100%;min-height:54px!important;padding:12px 14px!important;margin:0!important;
+        border:0!important;border-radius:8px!important;background:transparent!important;
+        box-shadow:none!important;text-align:left;cursor:pointer;overflow:visible;
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card::before,
+      [data-rp-competition-view="hub"] .rp-competition-card-arrow{display:none!important}
+      [data-rp-competition-view="hub"] .rp-stats-menu-icon{display:block;width:19px;height:19px;flex:0 0 19px;color:#b6c2d1}
+      [data-rp-competition-view="hub"] .rp-competition-card-copy{display:block!important;flex:1;min-width:0}
+      [data-rp-competition-view="hub"] .rp-competition-card-copy strong{
+        display:block;font:800 .84rem/1.25 Arial,sans-serif!important;font-style:normal!important;letter-spacing:.005em!important;color:#f0f3f8
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card:hover{background:rgba(120,163,194,.08)!important}
+      [data-rp-competition-view="hub"] .rp-competition-card:active{background:rgba(120,163,194,.14)!important;transform:none}
+      [data-rp-competition-view="hub"] .rp-competition-card:first-child{grid-column:auto!important}
+      @media(max-width:390px){
+        [data-rp-competition-view="hub"] .rp-competition-card{min-height:54px!important;padding:12px 14px!important}
+        [data-rp-competition-view="hub"] .rp-competition-card-copy strong{font-size:.84rem!important}
+      }
       @media(prefers-reduced-transparency:reduce){.rp-competition-hub::before{opacity:.22}}
       @media(prefers-reduced-motion:reduce){.rp-competition-card{transition:none}}
     `;
@@ -294,21 +316,12 @@
             <h1>STATS.</h1>
             <p>Follow your overall Real Play standing, enter Tune-Up competition, or open an official League season.</p>
           </div>
-          <div class="rp-competition-card-grid">
-            <button class="rp-competition-card rankings" type="button" data-rp-competition-action="player-rankings">
-              <span class="rp-competition-card-copy"><small>OVERALL · CAREER</small><strong>PLAYER RANKINGS</strong><p>Your overall Real Play rank, OVR and verified career performance.</p></span><span class="rp-competition-card-arrow">→</span>
-            </button>
-            <button class="rp-competition-card openrank" type="button" data-rp-competition-action="open-ranking">
-              <span class="rp-competition-card-copy"><small>PICKUP · EAST VS WEST</small><strong>OPEN RANKING</strong><p>Verified pickup games, without fixed club teams.</p></span><span class="rp-competition-card-arrow">→</span>
-            </button>
-            <button class="rp-competition-card tuneup" type="button" data-rp-competition-action="tune-up">
-              <span class="rp-competition-card-copy"><small>PROGRAM RANKING</small><strong>TUNE-UP</strong><p>Ranking and player stats scoped only to the Tune-Up competition.</p></span><span class="rp-competition-card-arrow">→</span>
-            </button>
-            <button class="rp-competition-card league" type="button" data-rp-competition-action="league">
-              <span class="rp-competition-card-copy"><small>SEASON COMPETITION</small><strong>LEAGUE</strong><p>Choose a League season, then view its own rankings, teams, games and stats.</p></span><span class="rp-competition-card-arrow">→</span>
-            </button>
-          </div>
-          <p class="rp-competition-footnote">Player Rankings is the overall player layer. Tune-Up and League rankings belong only to the competition or season you opened.</p>
+          <nav class="rp-competition-card-grid" aria-label="Stats sections">
+            <button class="rp-competition-card rankings" type="button" data-rp-competition-action="player-rankings"><svg class="rp-stats-menu-icon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20v-6h4v6M10 20V9h4v11M16 20V4h4v16M3 20h18"/></svg><span class="rp-competition-card-copy"><strong>PLAYER RANKINGS</strong></span></button>
+            <button class="rp-competition-card openrank" type="button" data-rp-competition-action="open-ranking"><svg class="rp-stats-menu-icon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 11a3 3 0 0 0 0-6M17 14a5 5 0 0 1 4 5v1"/></svg><span class="rp-competition-card-copy"><strong>OPEN RANKING</strong></span></button>
+            <button class="rp-competition-card tuneup" type="button" data-rp-competition-action="tune-up"><svg class="rp-stats-menu-icon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 9 9l4 3-4 9 9-11-5-2 2-5Z"/></svg><span class="rp-competition-card-copy"><strong>TUNE UP</strong></span></button>
+            <button class="rp-competition-card league" type="button" data-rp-competition-action="league"><svg class="rp-stats-menu-icon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10v6a5 5 0 0 1-10 0V3ZM7 5H4v2a4 4 0 0 0 4 4M17 5h3v2a4 4 0 0 1-4 4M12 14v4M8 21h8M9 18h6"/></svg><span class="rp-competition-card-copy"><strong>LEAGUE</strong></span></button>
+          </nav>
         </section>
 
         <section class="rp-competition-view" data-rp-competition-view="open-rank" hidden>
