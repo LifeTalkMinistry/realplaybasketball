@@ -1742,14 +1742,21 @@
       card?.textContent,
     ].filter(Boolean).join(' ').toLowerCase();
 
-    // Tune Up is a distinct competition category, not a League season.
-    // Check it before the broader League test because older records may
-    // contain both "league" and "tune up" in their description.
-    if (/tune[\s-]?up/.test(text)) {
+    // Explicit game identity is stronger evidence than incidental text in
+    // a combined card (which may mention another competition).
+    const officialTitle = [title, update?.title, metadata.sessionTitle, metadata.session_title]
+      .filter(Boolean).join(' ').toLowerCase();
+    if (/open[\s-]?rank(?:ing)?|east\s+vs\s+west/.test(context + ' ' + officialTitle)) {
+      return { key: 'open-rank', label: 'OPEN RANKING' };
+    }
+    if (/tune[\s-]?up/.test(context + ' ' + officialTitle)) {
       return { key: 'tune-up', label: 'TUNE UP' };
     }
     if (/open[\s-]?rank(?:ing)?|east\s+vs\s+west/.test(text)) {
       return { key: 'open-rank', label: 'OPEN RANKING' };
+    }
+    if (/tune[\s-]?up/.test(text)) {
+      return { key: 'tune-up', label: 'TUNE UP' };
     }
     if (/league|beta\s+season|season\s*\d+/.test(text)) {
       return { key: 'league', label: 'LEAGUE' };
@@ -1941,9 +1948,11 @@
       const competition = competitionInfo(update, card).key;
       const season = seasonInfo(update, card).key;
       const teams = resultTeams(update);
+      // Open Ranking is an East/West game history, not a season-based club
+      // competition: 'ALL GAMES' must always show every Open Ranking result.
       const visible = competition === selectedCompetition
-        && season === selectedSeason
-        && (selectedTeam === 'all' || teams.includes(selectedTeam));
+        && (selectedCompetition === 'open-rank' || season === selectedSeason)
+        && (selectedCompetition === 'open-rank' || selectedTeam === 'all' || teams.includes(selectedTeam));
 
       card.hidden = !visible;
       if (visible) visibleCount += 1;
