@@ -510,7 +510,7 @@
           <b>${passHolder ? `PASS HOLDER - TOKEN: ${tokenCount}` : supportTier ? esc(supportTier.toUpperCase()) : 'BETA SEASON'}</b>
         </div>
         <div class="rp-profile-player">
-          <div class="rp-profile-number rp-profile-rank"><small>RANK</small><strong><button type="button" class="rp-rank-trigger" data-rp-rank-info aria-label="Explain this player\'s official rank">${playerRank === null ? '#—' : `#${playerRank}`}</button></strong></div>
+          <div class="rp-profile-number rp-profile-identity-rank"><small>RANK</small><strong><button type="button" class="rp-rank-trigger" data-rp-rank-info aria-label="Explain this player\'s official rank">${playerRank === null ? '#—' : `#${playerRank}`}</button></strong></div>
           <div class="rp-profile-name"><small>MY REAL PLAY PROFILE</small><h1>${esc(name)}</h1><p>${club ? `${esc(club)} · ` : ''}LESS SCREEN. REAL POINTS.</p></div>
         </div>
         <div class="rp-profile-rating-row">
