@@ -28,6 +28,9 @@
     style.dataset.rpRankExplainerStyles = 'true';
     style.textContent = `
       .rp-profile-rank{position:relative}
+      .rp-rank-trigger{display:inline-block;border:0;padding:0;margin:0;color:inherit;background:transparent;font:inherit;font-style:inherit;line-height:inherit;letter-spacing:inherit;cursor:pointer;text-align:inherit}
+      .rp-rank-trigger:hover{color:#a6efff}
+      .rp-rank-trigger:focus-visible{outline:2px solid #72e6ff;outline-offset:5px;border-radius:3px}
       .rp-rank-info{
         position:absolute;top:8px;right:8px;z-index:4;width:22px;height:22px;display:grid;place-items:center;padding:0;
         border:1px solid rgba(86,218,255,.28);border-radius:50%;color:#65dcff;background:rgba(16,92,132,.14);
@@ -136,7 +139,7 @@
   }
 
   function displayedRank(profile) {
-    const text = String(profile?.querySelector('.rp-profile-rank strong')?.textContent || '').replace('#', '').trim();
+    const text = String(profile?.querySelector('.rp-profile-number.rp-profile-rank strong')?.textContent || '').replace('#', '').trim();
     return numeric(text, null);
   }
 
@@ -350,34 +353,9 @@
       <p class="rp-rank-note">MVP and other recognition badges remain separate achievements. They do not directly assign official rank.</p>`;
   }
 
-  function mountIcons() {
-    document.querySelectorAll('.rp-profile .rp-profile-rank').forEach((card) => {
-      if (card.querySelector('[data-rp-rank-info]')) return;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'rp-rank-info';
-      button.dataset.rpRankInfo = 'true';
-      button.textContent = 'i';
-      button.setAttribute('aria-label', 'Why this official rank?');
-      button.setAttribute('title', 'Why this rank?');
-      card.appendChild(button);
-    });
-  }
-
-  function scheduleMount() {
-    if (scheduled) return;
-    scheduled = true;
-    requestAnimationFrame(() => {
-      scheduled = false;
-      mountIcons();
-    });
-  }
-
+  // Each profile renderer now owns the actual clickable rank trigger.
+  // Keep the existing explainer modal and its delegated click handler.
   installStyles();
-  scheduleMount();
-
-  const observer = new MutationObserver(scheduleMount);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
 
   document.addEventListener('click', (event) => {
     const button = event.target.closest('[data-rp-rank-info]');
