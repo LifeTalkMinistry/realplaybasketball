@@ -69,7 +69,38 @@
       .rp-competition-intro small{display:block;color:#5d7187;font:900 .54rem/1.2 Arial,sans-serif;letter-spacing:.16em}
       .rp-competition-intro h1{margin:7px 0 8px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:clamp(2rem,9vw,3.25rem);font-style:italic;font-weight:950;line-height:.95;letter-spacing:.02em}
       .rp-competition-intro p{max-width:560px;margin:0;color:#8ea1b6;font:700 .72rem/1.55 Arial,sans-serif}
-      .rp-competition-card-grid{display:grid;gap:14px}
+      .rp-competition-card-grid{display:grid;gap:8px}
+      /* STATS is a compact competition directory, not a stack of promo cards. */
+      [data-rp-competition-view="hub"] .rp-competition-card-grid{margin-top:8px!important;padding:8px 0}
+      [data-rp-competition-view="hub"] .rp-competition-card{
+        min-height:68px;display:flex;align-items:center;gap:13px;padding:12px 15px;
+        border:1px solid rgba(125,171,209,.09);border-radius:12px;
+        background:linear-gradient(100deg,rgba(8,17,29,.94),rgba(3,7,13,.92));
+        box-shadow:none;
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card::before{
+        content:'';width:3px;height:27px;flex:0 0 3px;border-radius:5px;
+        background:rgb(var(--rp-competition-accent));opacity:.75;
+      }
+      [data-rp-competition-view="hub"] .rp-competition-card-copy{flex:1;min-width:0}
+      [data-rp-competition-view="hub"] .rp-competition-card-copy small{margin:0 0 4px;font-size:.41rem;letter-spacing:.13em}
+      [data-rp-competition-view="hub"] .rp-competition-card-copy strong{font-size:1.13rem;letter-spacing:.04em}
+      [data-rp-competition-view="hub"] .rp-competition-card-copy p{margin:4px 0 0;font-size:.57rem;line-height:1.35}
+      [data-rp-competition-view="hub"] .rp-competition-card-arrow{
+        width:28px;height:28px;border:0;border-radius:8px;
+        font-size:.92rem;background:transparent;
+      }
+      .rp-competition-card.openrank{--rp-competition-accent:93,178,255}
+      .rp-openrank-detail{display:grid;gap:12px;margin-top:7px;padding:20px 17px;
+        border:1px solid rgba(93,178,255,.18);border-radius:17px;
+        background:linear-gradient(145deg,rgba(8,23,38,.96),rgba(3,8,17,.94));}
+      .rp-openrank-detail small{color:#5db2ff;font:900 .47rem Arial,sans-serif;letter-spacing:.14em}
+      .rp-openrank-detail h2{margin:0;color:#f3f9ff;font:italic 950 1.55rem Impact,'Arial Narrow',Arial,sans-serif}
+      .rp-openrank-detail p{margin:0;color:#96aabd;font:650 .72rem/1.6 Arial,sans-serif}
+      .rp-openrank-history{min-height:44px;border:1px solid rgba(87,214,255,.34);
+        border-radius:11px;background:linear-gradient(110deg,rgba(15,95,136,.55),rgba(4,29,45,.94));
+        color:#eafaff;font:950 .7rem Arial,sans-serif;letter-spacing:.07em;cursor:pointer}
+      .rp-openrank-history:focus-visible{outline:2px solid #64ddff;outline-offset:2px}
       .rp-competition-card{
         --rp-competition-accent:85,223,255;
         position:relative;width:100%;min-height:136px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:18px;padding:22px;
@@ -263,6 +294,9 @@
             <button class="rp-competition-card rankings" type="button" data-rp-competition-action="player-rankings">
               <span class="rp-competition-card-copy"><small>OVERALL · CAREER</small><strong>PLAYER RANKINGS</strong><p>Your overall Real Play rank, OVR and verified career performance.</p></span><span class="rp-competition-card-arrow">→</span>
             </button>
+            <button class="rp-competition-card openrank" type="button" data-rp-competition-action="open-ranking">
+              <span class="rp-competition-card-copy"><small>PICKUP · EAST VS WEST</small><strong>OPEN RANKING</strong><p>Verified pickup games, without fixed club teams.</p></span><span class="rp-competition-card-arrow">→</span>
+            </button>
             <button class="rp-competition-card tuneup" type="button" data-rp-competition-action="tune-up">
               <span class="rp-competition-card-copy"><small>PROGRAM RANKING</small><strong>TUNE-UP</strong><p>Ranking and player stats scoped only to the Tune-Up competition.</p></span><span class="rp-competition-card-arrow">→</span>
             </button>
@@ -271,6 +305,16 @@
             </button>
           </div>
           <p class="rp-competition-footnote">Player Rankings is the overall player layer. Tune-Up and League rankings belong only to the competition or season you opened.</p>
+        </section>
+
+        <section class="rp-competition-view" data-rp-competition-view="open-rank" hidden>
+          <div class="rp-openrank-detail">
+            <small>ANY SESSION · ANY AVAILABLE PLAYERS</small>
+            <h2>OPEN RANKING</h2>
+            <p>Official East vs West pickup games stand apart from Tune Up and League. No permanent club assignment is required.</p>
+            <button class="rp-openrank-history" type="button" data-rp-openrank-history>VIEW VERIFIED GAMES →</button>
+            <p>Dedicated pickup-player rankings will require separate verified Open Ranking statistics. Tune Up rankings are not reused here.</p>
+          </div>
         </section>
 
         <section class="rp-competition-view" data-rp-competition-view="league" hidden>
@@ -294,6 +338,8 @@
     panel.querySelector('[data-rp-competition-back]')?.addEventListener('click', goBack);
     panel.querySelector('[data-rp-competition-action="player-rankings"]')?.addEventListener('click', openPlayerRankings);
     panel.querySelector('[data-rp-competition-action="tune-up"]')?.addEventListener('click', openTuneUp);
+    panel.querySelector('[data-rp-competition-action="open-ranking"]')?.addEventListener('click', openOpenRanking);
+    panel.querySelector('[data-rp-openrank-history]')?.addEventListener('click', openOpenRankHistory);
     panel.querySelector('[data-rp-competition-action="league"]')?.addEventListener('click', openLeague);
     panel.querySelectorAll('[data-rp-league-season]').forEach((button) => {
       button.addEventListener('click', () => openLeagueSeason(button.dataset.rpLeagueSeason));
@@ -322,7 +368,7 @@
     });
     const title = panel.querySelector('[data-rp-competition-title]');
     const back = panel.querySelector('[data-rp-competition-back]');
-    if (title) title.textContent = name === 'hub' ? 'STATS' : name === 'league' ? 'LEAGUE SEASONS' : 'RANKINGS';
+    if (title) title.textContent = name === 'hub' ? 'STATS' : name === 'league' ? 'LEAGUE SEASONS' : name === 'open-rank' ? 'OPEN RANKING' : 'RANKINGS';
     if (back) back.hidden = name === 'hub';
     panel.dataset.rpCompetitionCurrentView = name;
   }
@@ -819,6 +865,19 @@
     showPanelView(parent);
   }
 
+  function openOpenRanking() {
+    showPanelView('open-rank');
+  }
+
+  function openOpenRankHistory() {
+    // The World history already has authoritative East vs West result
+    // classification. Request it through the core route rather than
+    // presenting Tune Up's open_ranking backend scope as pickup rankings.
+    window.__realPlayWorldRequestedCompetition = 'open-rank';
+    close();
+    window.RealPlaySimpleNavigation?.world?.();
+  }
+
   function openTuneUp() {
     openScopedRanking({
       id: 'tune-up',
@@ -920,6 +979,7 @@
     close,
     openPlayerRankings,
     openTuneUp,
+    openOpenRanking,
     openLeague,
     openLeagueSeason,
   };
