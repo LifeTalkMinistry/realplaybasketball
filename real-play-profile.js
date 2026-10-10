@@ -407,8 +407,7 @@
         </div>
         <div class="rp-profile-rating-row">
           <div class="rp-profile-ovr"><span>OVR</span><strong>—</strong><small>PLAYER DATA</small></div>
-          <div class="rp-profile-rank"><span>RANK</span><strong>—</strong><small>PLAYER DATA</small></div>
-          <div class="rp-profile-record"><span>RECORD</span><strong>—</strong><small>PLAYER DATA</small></div>
+                    <div class="rp-profile-record"><span>RECORD</span><strong>—</strong><small>PLAYER DATA</small></div>
         </div>
       </section>
       <section class="rp-profile-section rp-profile-pending-section" aria-hidden="true">
