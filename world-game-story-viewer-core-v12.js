@@ -104,13 +104,17 @@
       }
       .rp-story-team-slide .rp-story-team-hero{
         position:relative;top:auto;left:auto;transform:none;
+        display:flex;align-items:center;justify-content:center;
         width:min(66vw,250px);
-        height:clamp(120px,26dvh,230px);
-        flex:0 0 auto;
-        margin: auto auto clamp(16px,2.5dvh,24px);
+        height:clamp(120px,25dvh,220px);
+        min-width:0;min-height:0;
+        flex:0 0 auto;overflow:hidden;
+        margin:clamp(14px,3dvh,32px) auto clamp(18px,3dvh,28px);
       }
       .rp-story-team-slide .rp-story-team-hero img{
-        display:block;width:100%;height:100%;object-fit:contain;
+        display:block;width:100%;height:100%;min-width:0;min-height:0;
+        max-width:100%;max-height:100%;object-fit:contain;
+        flex:0 0 auto;
       }
       .rp-story-team-slide .rp-story-headline{
         width:100%;max-width:470px;
