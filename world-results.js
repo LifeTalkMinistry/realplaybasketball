@@ -13,6 +13,9 @@
   let selectedType = 'all';
   let selectedCompetition = 'tune-up';
   let selectedSeason = 'tune-up-s1';
+  let selectedDateRange = 'all';
+  let customDateFrom = '';
+  let customDateTo = '';
   let selectedTeam = 'all';
   let selectedView = 'feed';
   let feedObserver = null;
@@ -213,6 +216,39 @@
         background:rgba(4,9,16,.76);
       }
       .rp-world-team-filter[hidden]{display:none!important}
+      .rp-world-date-custom[hidden]{display:none!important}
+      .rp-world-date-custom{
+        width:min(100%,360px);
+        margin:10px auto 0;
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+      }
+      .rp-world-date-custom label{
+        display:grid;
+        gap:6px;
+        color:#8ba6bc;
+        font:800 .54rem Arial,sans-serif;
+        letter-spacing:.07em;
+        text-transform:uppercase;
+      }
+      .rp-world-date-custom input{
+        box-sizing:border-box;
+        width:100%;
+        min-width:0;
+        min-height:40px;
+        padding:8px;
+        border:1px solid rgba(70,200,245,.28);
+        border-radius:10px;
+        color-scheme:dark;
+        color:#fff;
+        background:#071827;
+        font:700 .72rem Arial,sans-serif;
+      }
+      .rp-world-date-custom input:focus-visible{
+        outline:2px solid #60dbff;
+        outline-offset:2px;
+      }
       .rp-world-team-filter::-webkit-scrollbar{display:none}
       .rp-world-team-chip{
         width:64px;
@@ -1684,12 +1720,17 @@
             <span class="rp-world-context-chevron" aria-hidden="true">⌄</span>
           </div>
         </div>
+        <div class="rp-world-date-custom" data-rp-world-date-custom hidden>
+          <label>From<input type="date" data-rp-world-date-from aria-label="Start game date"></label>
+          <label>To<input type="date" data-rp-world-date-to aria-label="End game date"></label>
+        </div>
         <div class="rp-world-team-filter" data-rp-world-team-filter aria-label="Team filter"></div>`;
       feed.parentElement?.insertBefore(controls, feed);
 
       controls.querySelector('[data-rp-world-competition]')?.addEventListener('change', (event) => {
         selectedCompetition = event.currentTarget.value || 'tune-up';
         selectedSeason = '';
+        selectedDateRange = 'all';
         lastCategoryAutoFetchOffset = null;
         categoryAutoFetchCount = 0;
         selectedTeam = 'all';
@@ -1697,13 +1738,28 @@
         applyWorldFilters();
       });
       controls.querySelector('[data-rp-world-season]')?.addEventListener('change', (event) => {
-        selectedSeason = event.currentTarget.value || '';
+        if (selectedCompetition === 'open-rank') {
+          selectedDateRange = event.currentTarget.value || 'all';
+        } else {
+          selectedSeason = event.currentTarget.value || '';
+        }
         lastCategoryAutoFetchOffset = null;
         categoryAutoFetchCount = 0;
         selectedTeam = 'all';
         rebuildContextOptions();
         applyWorldFilters();
       });
+      const fromInput = controls.querySelector('[data-rp-world-date-from]');
+      const toInput = controls.querySelector('[data-rp-world-date-to]');
+      for (const input of [fromInput, toInput]) {
+        input?.addEventListener('change', () => {
+          customDateFrom = fromInput.value;
+          customDateTo = toInput.value;
+          lastCategoryAutoFetchOffset = null;
+          categoryAutoFetchCount = 0;
+          applyWorldFilters();
+        });
+      }
       const teamFilter = controls.querySelector('[data-rp-world-team-filter]');
       installTeamFilterSwipe(teamFilter);
       teamFilter?.addEventListener('click', (event) => {
@@ -1830,6 +1886,43 @@
     return { key: 'season', label: 'SEASON' };
   }
 
+  // Resolve a game's actual played date in Philippine local time. Only
+  // fall back to publication time for legacy records missing game dates.
+  function gameDateKey(update = {}) {
+    const m = update?.metadata || {};
+    const value = m.gameDate ?? m.game_date ?? m.playedAt ?? m.played_at
+      ?? m.gameAt ?? m.game_at ?? m.sessionDate ?? m.session_date
+      ?? m.sessionAt ?? m.session_at ?? m.eventAt ?? m.event_at
+      ?? update?.event_at ?? update?.eventAt
+      ?? update?.published_at ?? update?.publishedAt;
+    if (!value) return '';
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    const parsed = Date.parse(value);
+    if (!Number.isFinite(parsed)) return '';
+    const local = new Date(parsed + MANILA_OFFSET_MS);
+    return local.toISOString().slice(0, 10);
+  }
+
+  function manilaTodayKey() {
+    return new Date(Date.now() + MANILA_OFFSET_MS).toISOString().slice(0, 10);
+  }
+
+  function matchesDateRange(update) {
+    if (selectedDateRange === 'all') return true;
+    const key = gameDateKey(update);
+    if (!key) return false;
+    if (selectedDateRange === 'custom') {
+      if (!customDateFrom || !customDateTo || customDateFrom > customDateTo) return false;
+      return key >= customDateFrom && key <= customDateTo;
+    }
+    const days = Number(selectedDateRange);
+    if (![7, 30, 90].includes(days)) return true;
+    const today = manilaTodayKey();
+    const lower = new Date(Date.parse(today + 'T00:00:00Z') - (days - 1) * 86400000)
+      .toISOString().slice(0, 10);
+    return key >= lower && key <= today;
+  }
+
   function resultTeams(update = {}) {
     const metadata = update?.metadata || {};
     return [
@@ -1874,6 +1967,33 @@
     const scoped = rows.filter((row) => row.competition.key === selectedCompetition);
     const seasons = new Map();
     scoped.forEach((row) => seasons.set(row.season.key, row.season.label));
+    const customPanel = panel.querySelector('[data-rp-world-date-custom]');
+    if (customPanel) {
+      customPanel.hidden = selectedCompetition !== 'open-rank' || selectedDateRange !== 'custom';
+      const from = customPanel.querySelector('[data-rp-world-date-from]');
+      const to = customPanel.querySelector('[data-rp-world-date-to]');
+      if (from && from.value !== customDateFrom) from.value = customDateFrom;
+      if (to && to.value !== customDateTo) to.value = customDateTo;
+    }
+    if (selectedCompetition === 'open-rank') {
+      const dateOptions = [
+        ['all', 'ALL TIME'],
+        ['7', 'LAST 7 DAYS'],
+        ['30', 'LAST 30 DAYS'],
+        ['90', 'LAST 90 DAYS'],
+        ['custom', 'CUSTOM RANGE'],
+      ];
+      seasonSelect.setAttribute('aria-label', 'Game date range');
+      seasonSelect.innerHTML = dateOptions
+        .map(([key, label]) => `<option value="${key}">${label}</option>`).join('');
+      seasonSelect.value = selectedDateRange;
+      selectedSeason = 'all-games';
+      selectedTeam = 'all';
+      teamFilter.hidden = true;
+      teamFilter.replaceChildren();
+      return;
+    }
+    seasonSelect.setAttribute('aria-label', 'Season');
     // Only offer real recorded seasons. An empty category shows an
     // explanatory option instead of fabricating a League season.
     if (!seasons.size) {
@@ -1965,6 +2085,7 @@
       // Open Ranking is an East/West game history, not a season-based club
       // competition: 'ALL GAMES' must always show every Open Ranking result.
       const visible = competition === selectedCompetition
+        && (selectedCompetition !== 'open-rank' || matchesDateRange(update))
         && (selectedCompetition === 'open-rank' || season === selectedSeason)
         && (selectedCompetition === 'open-rank' || selectedTeam === 'all' || teams.includes(selectedTeam));
 
@@ -1979,17 +2100,22 @@
 
     const empty = panel.querySelector('[data-rp-world-results-empty]');
     const state = window.RealPlayUpdates?.progressiveState?.();
-    const needsAnotherPage = visibleCount === 0 && state?.hasMore
-      && state.category === 'result' && categoryAutoFetchCount < 40;
+    const searchingRange = selectedCompetition === 'open-rank' && selectedDateRange !== 'all'
+      && (selectedDateRange !== 'custom' || (customDateFrom && customDateTo && customDateFrom <= customDateTo));
+    const needsAnotherPage = state?.hasMore && state.category === 'result'
+      && categoryAutoFetchCount < 40 && (visibleCount === 0 || searchingRange);
 
     // Results are server-paginated before the client-side competition filter.
     // If the first page belongs to a different competition, keep loading
     // until a matching game is present or the available results are exhausted.
     // Do not declare the category empty while later result pages are pending.
     if (empty) {
-      empty.textContent = needsAnotherPage
-        ? 'LOOKING FOR GAMES IN THIS COMPETITION...'
-        : 'NO OFFICIAL GAMES MATCH THESE FILTERS YET.';
+      empty.textContent = selectedCompetition === 'open-rank' && selectedDateRange === 'custom'
+        && (!customDateFrom || !customDateTo || customDateFrom > customDateTo)
+        ? 'SELECT A VALID START AND END DATE.'
+        : needsAnotherPage
+          ? 'LOOKING FOR GAMES IN THIS DATE RANGE...'
+          : 'NO OFFICIAL GAMES MATCH THESE FILTERS YET.';
       empty.classList.toggle('show', visibleCount === 0);
     }
     if (needsAnotherPage) {
