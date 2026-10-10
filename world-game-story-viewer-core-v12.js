@@ -91,6 +91,45 @@
       .rp-story-slide:has(> .rp-story-team-hero) .rp-story-score{flex-shrink:0}
       @media(max-height:700px){.rp-story-slide:has(> .rp-story-game-winner),.rp-story-slide:has(> .rp-story-team-hero){--rp-story-safe-art-top:78px;--rp-story-safe-art-height:clamp(112px,23vh,154px)}}
       @media(max-width:380px){.rp-story-slide:has(> .rp-story-game-winner) > .rp-story-content,.rp-story-slide:has(> .rp-story-team-hero) > .rp-story-content{left:18px;right:18px}}
+      /* Team stories use a single natural vertical flow: logo -> headline -> narrative.
+         Do not independently position the logo and copy; that overlaps on real phones. */
+      .rp-story-slide.rp-story-team-slide > .rp-story-content{
+        position:absolute;top:clamp(84px,11dvh,112px);
+        bottom:calc(24px + env(safe-area-inset-bottom));
+        left:22px;right:22px;width:auto;min-height:0;
+        overflow-y:auto;overscroll-behavior:contain;
+        scrollbar-width:thin;box-sizing:border-box;
+        padding:0 0 12px;justify-content:flex-start;
+        -webkit-text-size-adjust:100%;text-size-adjust:100%;
+      }
+      .rp-story-team-slide .rp-story-team-hero{
+        position:relative;top:auto;left:auto;transform:none;
+        width:min(66vw,250px);
+        height:clamp(120px,26dvh,230px);
+        flex:0 0 auto;
+        margin: auto auto clamp(16px,2.5dvh,24px);
+      }
+      .rp-story-team-slide .rp-story-team-hero img{
+        display:block;width:100%;height:100%;object-fit:contain;
+      }
+      .rp-story-team-slide .rp-story-headline{
+        width:100%;max-width:470px;
+        flex:0 0 auto;
+        font-size:clamp(1.3rem,6.6vw,1.95rem);
+        line-height:1.04;overflow-wrap:anywhere;
+      }
+      .rp-story-team-slide .rp-story-body{
+        flex:0 0 auto;
+        margin:clamp(14px,2dvh,20px) auto auto;
+        padding-bottom:6px;
+      }
+      @media(max-height:700px){
+        .rp-story-slide.rp-story-team-slide > .rp-story-content{top:76px}
+        .rp-story-team-slide .rp-story-team-hero{height:clamp(108px,22dvh,160px)}
+      }
+      @media(max-width:380px){
+        .rp-story-slide.rp-story-team-slide > .rp-story-content{left:18px;right:18px}
+      }
       @media(prefers-reduced-motion:reduce){.rp-story-track{transition:none}}
     `;
     document.head.appendChild(style);
@@ -461,7 +500,8 @@
     const slideRgb = slide.type === 'game' ? topRgb : clubRgb;
     const brandStyle = (slide.type === 'game' || brandLogo) ? ` style="--rp-story-club-rgb:${slideRgb}"` : '';
 
-    return `<article class="rp-story-slide${gameClass}${brandedClass}" data-rp-story-slide${brandStyle}>${gameMatchup}${brandBackground}${art}${teamHero}<div class="rp-story-content">${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
+    const teamClass = slide.type === 'team' ? ' rp-story-team-slide' : '';
+    return `<article class="rp-story-slide${gameClass}${brandedClass}${teamClass}" data-rp-story-slide${brandStyle}>${gameMatchup}${brandBackground}${art}<div class="rp-story-content">${teamHero}${kicker}<h2 class="rp-story-headline">${esc(slide.headline)}</h2>${score}<p class="rp-story-body">${esc(slide.body)}</p>${stats}</div></article>`;
   }
 
   function buildDeck(game, rawPlayers) {
