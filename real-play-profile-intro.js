@@ -137,15 +137,13 @@
       profile?.player_name || profile?.name || visibleName
     );
 
-    const visibleNumber = panel?.querySelector('.rp-profile-number strong')?.textContent;
     const jerseyNumber = firstJerseyNumber(
       source?.playerNumber,
       source?.player_number,
       source?.currentNumber?.number,
       source?.current_number?.number,
       profile?.playerNumber,
-      profile?.player_number,
-      visibleNumber
+      profile?.player_number
     );
 
     return { playerId, playerName, jerseyNumber };
