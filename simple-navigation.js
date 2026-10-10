@@ -231,8 +231,20 @@
       rootReady: (root) => root.classList.contains('open')
         && root.getAttribute('aria-hidden') !== 'true',
       layerReady: (layer) => !layer.hidden,
-      dataReady: (layer, detail) => Number(detail?.count || 0) <= 0
-        || Boolean(layer.querySelector('[data-world-player-id]')),
+      dataReady: (layer, detail, root) => {
+        // Competition Stats reuses the Players canvas but owns its list.
+        // A valid empty result or recoverable API error has no player-id rows.
+        // Both are renderable states; don't replace them with PAGE NOT READY.
+        if (root?.dataset?.rpCompetitionPresentation === 'scoped') {
+          return Boolean(layer.querySelector('[data-rp-competition-world-scope-header]'))
+            && Boolean(
+              layer.querySelector('[data-rp-competition-scope-row]')
+              || layer.querySelector('[data-rp-competition-scope-empty]')
+            );
+        }
+        return Number(detail?.count || 0) <= 0
+          || Boolean(layer.querySelector('[data-world-player-id]'));
+      },
     },
     chats: {
       root: '[data-rp-world]',
