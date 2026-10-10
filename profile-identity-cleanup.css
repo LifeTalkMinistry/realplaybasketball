@@ -175,8 +175,9 @@
 
 .rp-profile-rating-row > div{
   min-width:0!important;
+  min-height:56px!important;
   overflow:hidden!important;
-  padding-inline:10px!important;
+  padding:6px 8px!important;
 }
 
 .rp-profile-record{
