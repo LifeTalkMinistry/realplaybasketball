@@ -118,8 +118,8 @@
   gap:10px;
 }
 .rp-profile-rating-row>div{
-  min-height:92px;
-  padding:13px;
+  min-height:66px;
+  padding:8px;
   border-color:rgba(201,206,214,.10);
   border-radius:16px;
   background:linear-gradient(160deg,rgba(7,12,20,.90),rgba(3,6,11,.94));
