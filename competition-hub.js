@@ -316,8 +316,18 @@
       }
       /* Branded editorial heading: precision type and a very thin accent rule. */
       .rp-competition-hub[data-rp-competition-current-view="hub"] .rp-competition-topbar{
-        margin-bottom:24px;
-        padding-bottom:20px;
+        /* The hub header belongs to the page, not a separate sticky black slab. */
+        position:relative;
+        top:auto;
+        z-index:1;
+        margin:0 0 24px;
+        padding:14px 0 16px;
+        background:none;
+        backdrop-filter:none;
+        -webkit-backdrop-filter:none;
+        box-shadow:none;
+        border:0;
+        border-radius:0;
       }
       .rp-competition-hub[data-rp-competition-current-view="hub"] .rp-competition-heading{
         position:relative;
