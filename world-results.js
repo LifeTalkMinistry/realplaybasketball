@@ -2100,10 +2100,17 @@
 
     const empty = panel.querySelector('[data-rp-world-results-empty]');
     const state = window.RealPlayUpdates?.progressiveState?.();
-    const searchingRange = selectedCompetition === 'open-rank' && selectedDateRange !== 'all'
-      && (selectedDateRange !== 'custom' || (customDateFrom && customDateTo && customDateFrom <= customDateTo));
-    const needsAnotherPage = state?.hasMore && state.category === 'result'
-      && categoryAutoFetchCount < 40 && (visibleCount === 0 || searchingRange);
+    const validCustomRange = selectedDateRange !== 'custom'
+      || Boolean(customDateFrom && customDateTo && customDateFrom <= customDateTo);
+    const isOpenRankDateSearch = selectedCompetition === 'open-rank' && validCustomRange;
+    // Server pages contain a mixture of Open Ranking and club results. Fill
+    // the initial visible page with three matching games, not merely one.
+    // For bounded ranges, continue through all pages so older matching
+    // records aren't incorrectly excluded by the server's pagination.
+    const searchingRange = isOpenRankDateSearch && selectedDateRange !== 'all';
+    const needsAnotherPage = Boolean(state?.hasMore && state.category === 'result'
+      && categoryAutoFetchCount < 120
+      && (visibleCount < 3 || searchingRange));
 
     // Results are server-paginated before the client-side competition filter.
     // If the first page belongs to a different competition, keep loading
@@ -2125,8 +2132,11 @@
         categoryAutoFetchCount += 1;
         window.setTimeout(() => {
           if (!panel.isConnected || !panel.classList.contains('rp-world-results-entry')) return;
-          window.RealPlayUpdates?.loadMore?.();
-        }, 80);
+          const current = window.RealPlayUpdates?.progressiveState?.();
+          if (current?.hasMore && current.category === 'result') {
+            window.RealPlayUpdates?.loadMore?.();
+          }
+        }, 120);
       }
     }
   }
