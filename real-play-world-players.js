@@ -26,7 +26,7 @@
       return { label: `#${Number(jersey)}`, publicId: false };
     }
     const rawId = String(player?.publicPlayerId || '').trim();
-    const id = /^RP-\\d+$/i.test(rawId) ? rawId.toUpperCase() : (() => {
+    const id = /^RP-\d+$/i.test(rawId) ? rawId.toUpperCase() : (() => {
       const canonical = Number(player?.playerId);
       return Number.isSafeInteger(canonical) && canonical > 0
         ? `RP-${String(canonical).padStart(5, '0')}` : '';
