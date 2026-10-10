@@ -167,7 +167,7 @@
    for two headline values, but it must not dominate half the row or create a
    large dead zone between 7-6 and 54%. */
 .rp-profile-rating-row{
-  grid-template-columns:minmax(0,1fr) minmax(0,1.45fr)!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
   gap:7px!important;
   overflow:hidden!important;
 }
@@ -227,7 +227,7 @@
 
 @media(max-width:340px){
   .rp-profile-rating-row{
-    grid-template-columns:minmax(0,1fr) minmax(0,1.45fr)!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
     gap:6px!important;
   }
 
