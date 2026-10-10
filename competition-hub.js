@@ -726,7 +726,13 @@
     }
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const error = new Error(data?.message || data?.error || 'Could not load competition stats.');
+      const isPickupUnsupported = config.competitionContext === 'pickup' && response.status === 400;
+      // Never fall back to Tune-Up's shared legacy context. It would leak
+      // club game performance into independent Open Ranking statistics.
+      const message = isPickupUnsupported
+        ? 'Open Ranking stats are temporarily unavailable: the live API rejected the pickup competition scope. Please retry after the backend update is deployed.'
+        : (data?.message || data?.error || 'Could not load competition stats.');
+      const error = new Error(message);
       error.status = response.status;
       throw error;
     }
