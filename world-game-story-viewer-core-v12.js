@@ -426,7 +426,7 @@
       : slide.type === 'team' && !brandLogo ? `<div class="rp-story-team-mark" aria-hidden="true">${esc(slide.teamName)}</div>` : '';
 
     const score = slide.type === 'game' ? `<div class="rp-story-score"><b>${game.westScore}</b><span>${esc(game.westName)} · ${esc(game.eastName)}</span><b>${game.eastScore}</b></div>` : '';
-    const kicker = slide.type === 'player' || slide.type === 'game'
+    const kicker = slide.type === 'team' ? '' : slide.type === 'player' || slide.type === 'game'
       ? ''
       : `<span class="rp-story-kicker">${esc(slide.kicker)}</span>`;
 
