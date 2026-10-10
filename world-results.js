@@ -123,10 +123,11 @@
       }
       .rp-world-context-main{
         min-height:44px;
-        display:flex;
+        display:grid;
+        grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto;
         align-items:center;
-        justify-content:center;
-        gap:7px;
+        column-gap:12px;
+        padding:0 12px;
         border-radius:9px;
         background:
           linear-gradient(100deg,rgba(14,145,205,.20),rgba(6,13,22,.88) 54%,rgba(164,30,48,.16));
@@ -138,7 +139,9 @@
         font-weight:950;
       }
       .rp-world-context-select{
-        max-width:145px;
+        width:100%;
+        min-width:0;
+        max-width:none;
         border:0;
         outline:0;
         appearance:none;
@@ -167,7 +170,7 @@
       }
       .rp-world-team-filter{
         width:min(100%,360px);
-        margin:20px auto 0;
+        margin:8px auto 0;
         padding:3px 22px 3px 3px;
         display:flex;
         gap:4px;
