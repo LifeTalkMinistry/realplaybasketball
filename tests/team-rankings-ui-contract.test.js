@@ -15,7 +15,9 @@ test('team component is lazy loaded after existing Stats feature', () => {
   assert.match(navigation, /loadFeatureScript\(\s*'competition-team-rankings.js'/);
   assert.match(hub, /RealPlayTeamRankings\?\.attach/);
   assert.match(hub, /RealPlayTeamRankings\?\.reset/);
-  assert.match(source, /PLAYERS<\/button>.*TEAMS<\/button>/);
+  assert.match(source, /data-mode="teams" aria-selected="true">TEAM<\/button>.*data-mode="players" aria-selected="false">PLAYERS<\/button>/);
+  assert.match(source, /const state = \{ world, config, switcher, host, mode: 'teams'/);
+  assert.match(source, /setMode\(state, 'teams'\)/);
 });
 test('team view hides players without rebuilding player list or changing scroll', () => {
   assert.match(source, /data-rp-competition-team-view="teams"/);
@@ -65,4 +67,48 @@ test('Team ordering remains official rank even when win rates or names differ', 
   assert.deepEqual(Array.from(sortedRows(teams), x => x.teamId),
     ['conquerors', 'valiant', 'chosen']);
   assert.equal(teams[0].teamId, 'chosen', 'input team records remain untouched');
+});
+
+test('TEAM defaults to visible standings and PLAYERS restores the original leaderboard', () => {
+  const start = source.indexOf('  function setMode(state, mode) {');
+  const end = source.indexOf('  function makeRow(team) {', start);
+  assert.ok(start >= 0 && end > start, 'standings switcher function exists');
+
+  const teamTab = {
+    dataset: { mode: 'teams' },
+    attributes: {},
+    setAttribute(key, value) { this.attributes[key] = value; },
+  };
+  const playersTab = {
+    dataset: { mode: 'players' },
+    attributes: {},
+    setAttribute(key, value) { this.attributes[key] = value; },
+  };
+  const state = {
+    mode: 'teams',
+    world: { dataset: {} },
+    host: { hidden: true },
+    switcher: { querySelectorAll: () => [teamTab, playersTab] },
+    loaded: true,
+  };
+  let renders = 0;
+  const setMode = vm.runInNewContext(
+    source.slice(start, end) + '\nsetMode', {
+      render: () => { renders += 1; },
+      load: () => { throw Error('Loaded tabs must not reload on switch'); },
+    }
+  );
+  setMode(state, 'teams');
+  assert.equal(state.world.dataset.rpCompetitionTeamView, 'teams');
+  assert.equal(state.host.hidden, false);
+  assert.equal(teamTab.attributes['aria-selected'], 'true');
+  assert.equal(playersTab.attributes['aria-selected'], 'false');
+
+  setMode(state, 'players');
+  assert.equal(state.world.dataset.rpCompetitionTeamView, 'players');
+  assert.equal(state.host.hidden, true);
+  assert.equal(teamTab.attributes['aria-selected'], 'false');
+  assert.equal(playersTab.attributes['aria-selected'], 'true');
+  assert.equal(renders, 1);
+  assert.match(source, /data-world-player-sort/);
 });

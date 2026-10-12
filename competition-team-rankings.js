@@ -214,7 +214,7 @@
       switcher.className = 'rp-competition-team-toggle';
       switcher.setAttribute('role', 'tablist');
       switcher.setAttribute('aria-label', 'Competition leaderboard type');
-      switcher.innerHTML = '<button type="button" role="tab" data-mode="players" aria-selected="true">PLAYERS</button><button type="button" role="tab" data-mode="teams" aria-selected="false">TEAMS</button>';
+      switcher.innerHTML = '<button type="button" role="tab" data-mode="teams" aria-selected="true">TEAM</button><button type="button" role="tab" data-mode="players" aria-selected="false">PLAYERS</button>';
       const host = document.createElement('section');
       host.className = 'rp-team-standings';
       host.hidden = true;
@@ -222,7 +222,7 @@
       host.innerHTML = '<div class="rp-team-standings-list" data-rp-team-list></div>';
       header.appendChild(switcher);
       directory.insertBefore(host, controls.nextSibling);
-      const state = { world, config, switcher, host, mode: 'players',
+      const state = { world, config, switcher, host, mode: 'teams',
         rows: [], loaded: false, loading: false, error: '',
         lastSignature: '', serial: 0, seasonKey: String(config.competitionSeasonId || '') };
       active = state;
@@ -230,7 +230,7 @@
         const button = event.target.closest('button[data-mode]');
         if (button && active === state) setMode(state, button.dataset.mode);
       });
-      setMode(state, 'players');
+      setMode(state, 'teams');
     }
     const seasonKey = String(config.competitionSeasonId || '');
     if (active.seasonKey !== seasonKey) {
