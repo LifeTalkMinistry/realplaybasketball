@@ -134,6 +134,8 @@
       return;
     }
     list.classList.remove('rp-team-standings-message');
+    // Remove a loading or empty text node once, but retain all real team rows.
+    if (!list.querySelector('[data-team-id]')) list.textContent = '';
     const ordered = sortedRows(state.rows, state.filter);
     const identifiers = new Set(ordered.map(item => String(item.teamId)));
     list.querySelectorAll('[data-team-id]').forEach(node => {
@@ -150,7 +152,7 @@
         row = next;
       }
       const record = `${team.wins}W–${team.losses}L`;
-      const rate = `${number(team.winRate).toFixed(1).replace(/\\.0$/,'')}% WR`;
+      const rate = `${number(team.winRate).toFixed(1).replace(/\.0$/,'')}% WR`;
       const recordNode = row.querySelector('[data-record]');
       const rateNode = row.querySelector('[data-win-rate]');
       if (recordNode.textContent !== record) recordNode.textContent = record;
