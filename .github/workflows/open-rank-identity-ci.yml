@@ -99,3 +99,9 @@ jobs:
           node --check competition-hub.js
           node --check tests/tune-up-season-picker.test.js
           node --test tests/tune-up-season-picker.test.js
+
+      - name: Test full-label team record layout and preserved row nodes
+        run: |
+          node --check competition-team-rankings.js
+          node --check tests/team-rankings-readable-record.test.js
+          node --test tests/team-rankings-ui-contract.test.js tests/team-rankings-readable-record.test.js
