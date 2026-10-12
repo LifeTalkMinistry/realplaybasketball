@@ -31,6 +31,8 @@
   let playerPresentation = '';
   let scopedRanking = null;
   let scopedRequestId = 0;
+  let tuneUpSeasonsRequestId = 0;
+  let tuneUpSeasons = null;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -129,6 +131,17 @@
       .rp-season-card strong{display:block;margin-top:5px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.2rem;font-style:italic;letter-spacing:.03em}
       .rp-season-card span{color:#748399;font:900 .48rem/1 Arial,sans-serif;letter-spacing:.08em}
       .rp-season-card b{display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(181,152,255,.2);border-radius:50%;color:#b9a3ff;background:rgba(44,31,80,.28)}
+      [data-rp-competition-view="tune-up-seasons"] .rp-season-card{border-color:rgba(80,205,244,.21);cursor:pointer}
+      [data-rp-competition-view="tune-up-seasons"] .rp-season-card small{color:#58dcff}
+      [data-rp-competition-view="tune-up-seasons"] .rp-season-card b{border-color:rgba(72,216,255,.23);color:#72dcff;background:rgba(21,96,124,.14)}
+      [data-rp-competition-view="tune-up-seasons"] .rp-season-card:hover{border-color:rgba(86,219,255,.52)}
+      .rp-tune-up-seasons-empty{padding:32px 14px;color:#88a9bc;text-align:center;font:750 .72rem/1.6 Arial,sans-serif}
+      .rp-competition-scope-season-trigger{display:grid;justify-items:center;gap:3px;width:100%;min-width:0;padding:3px 4px;border:0;border-radius:9px;background:transparent;color:inherit;cursor:pointer}
+      .rp-competition-scope-season-trigger:not(:disabled):focus-visible{outline:2px solid #5bdfff;outline-offset:2px}
+      .rp-competition-scope-season-trigger:not(:disabled):active{background:rgba(79,207,242,.09)}
+      .rp-competition-scope-season-trigger:disabled{cursor:default}
+      .rp-competition-scope-season-trigger [data-rp-competition-scope-season-label]{color:#79c7e1;letter-spacing:.10em}
+      .rp-competition-scope-season-trigger [data-rp-competition-scope-season-label][hidden]{display:none!important}
       .rp-scope-wrap{display:grid;gap:12px}
       .rp-scope-context{padding:5px 3px 2px}
       .rp-scope-context small{display:block;color:#5edfff;font:950 .48rem/1 Arial,sans-serif;letter-spacing:.15em}
@@ -453,6 +466,10 @@
           </div>
         </section>
 
+        <section class="rp-competition-view" data-rp-competition-view="tune-up-seasons" hidden>
+          <div class="rp-season-list" data-rp-tune-up-season-list aria-label="Select Tune-Up season"></div>
+        </section>
+
         <section class="rp-competition-view" data-rp-competition-view="league" hidden>
           <div class="rp-season-list">
             <button class="rp-season-card" type="button" data-rp-league-season="1"><span><small>LEAGUE SEASON</small><strong>SEASON 1</strong><span>UPCOMING</span></span><b>→</b></button>
@@ -474,6 +491,13 @@
     panel.querySelector('[data-rp-competition-back]')?.addEventListener('click', goBack);
     panel.querySelector('[data-rp-competition-action="player-rankings"]')?.addEventListener('click', openPlayerRankings);
     panel.querySelector('[data-rp-competition-action="tune-up"]')?.addEventListener('click', openTuneUp);
+    panel.querySelector('[data-rp-tune-up-season-list]')?.addEventListener('click', (event) => {
+      const button = event.target.closest?.('[data-rp-tune-up-season-id]');
+      if (!button) return;
+      const id = Number(button.dataset.rpTuneUpSeasonId);
+      const season = tuneUpSeasons?.find((item) => item.id === id);
+      if (season) selectTuneUpSeason(season);
+    });
     panel.querySelector('[data-rp-competition-action="open-ranking"]')?.addEventListener('click', openOpenRanking);
     panel.querySelector('[data-rp-openrank-history]')?.addEventListener('click', openOpenRankHistory);
     panel.querySelector('[data-rp-competition-action="league"]')?.addEventListener('click', openLeague);
@@ -504,7 +528,7 @@
     });
     const title = panel.querySelector('[data-rp-competition-title]');
     const back = panel.querySelector('[data-rp-competition-back]');
-    if (title) title.textContent = name === 'hub' ? 'REAL PLAY STATS' : name === 'league' ? 'LEAGUE SEASONS' : name === 'open-rank' ? 'OPEN RANKING' : 'RANKINGS';
+    if (title) title.textContent = name === 'hub' ? 'REAL PLAY STATS' : name === 'league' ? 'LEAGUE SEASONS' : name === 'open-rank' ? 'OPEN RANKING' : name === 'tune-up-seasons' ? 'TUNE-UP SEASONS' : 'RANKINGS';
     if (back) back.hidden = name === 'hub';
     panel.dataset.rpCompetitionCurrentView = name;
   }
@@ -918,8 +942,11 @@
         <div class="rp-competition-scope-topbar">
           <button class="rp-competition-world-scope-info" type="button" data-rp-competition-world-scope-info aria-label="Open OVR simulator and calculation guide" title="How OVR works">i</button>
           <div class="rp-competition-scope-title-wrap">
-            <strong data-rp-competition-scope-top-title></strong>
-            <span data-rp-competition-scope-player-count>0 PLAYERS</span>
+            <button class="rp-competition-scope-season-trigger" type="button" data-rp-competition-scope-season-trigger
+              aria-label="Choose Tune-Up season">
+              <strong data-rp-competition-scope-top-title></strong>
+              <span data-rp-competition-scope-season-label hidden></span>
+            </button>
           </div>
           <button class="rp-competition-world-scope-back" type="button" data-rp-competition-world-scope-back aria-label="Back">←</button>
         </div>`;
@@ -930,20 +957,24 @@
         window.location.href = 'ovr-simulator.html';
       });
       header.querySelector('[data-rp-competition-world-scope-back]')?.addEventListener('click', returnFromScopedRanking);
+      header.querySelector('[data-rp-competition-scope-season-trigger]')?.addEventListener('click', () => {
+        if (scopedRanking?.id !== 'tune-up') return;
+        clearPlayerPresentation();
+        try { window.RealPlayWorld?.close?.(); } catch (_error) {}
+        openTuneUp();
+      });
     }
 
     const topTitle = header.querySelector('[data-rp-competition-scope-top-title]');
-    const playerCount = header.querySelector('[data-rp-competition-scope-player-count]');
     if (topTitle && topTitle.textContent !== config.title) topTitle.textContent = config.title;
-    if (playerCount) {
-      let countText = 'LOADING';
-      if (!config.loading) {
-        const count = Number.isFinite(Number(config.playerCount))
-          ? Math.max(0, Math.trunc(Number(config.playerCount)))
-          : (Array.isArray(config.players) ? config.players.length : 0);
-        countText = count + ' PLAYER' + (count === 1 ? '' : 'S');
-      }
-      if (playerCount.textContent !== countText) playerCount.textContent = countText;
+    const seasonTrigger = header.querySelector('[data-rp-competition-scope-season-trigger]');
+    const seasonLabel = header.querySelector('[data-rp-competition-scope-season-label]');
+    const isTuneUp = config.id === 'tune-up';
+    if (seasonTrigger && seasonTrigger.disabled !== !isTuneUp) seasonTrigger.disabled = !isTuneUp;
+    if (seasonLabel) {
+      const label = isTuneUp ? 'SEASON ' + config.seasonNumber + ' ▾' : '';
+      if (seasonLabel.textContent !== label) seasonLabel.textContent = label;
+      if (seasonLabel.hidden !== !isTuneUp) seasonLabel.hidden = !isTuneUp;
     }
 
     renderScopedCompetitionRows(list, config);
@@ -1007,10 +1038,12 @@
   }
 
   function returnFromScopedRanking() {
-    const parent = scopedRanking?.parent === 'league' ? 'league' : 'hub';
+    const parent = scopedRanking?.parent === 'league' ? 'league'
+      : scopedRanking?.parent === 'tune-up-seasons' ? 'tune-up-seasons' : 'hub';
     clearPlayerPresentation();
     try { window.RealPlayWorld?.close?.(); } catch (_error) {}
     showPanelView(parent);
+    if (parent === 'tune-up-seasons') loadTuneUpSeasons();
   }
 
   function openOpenRanking() {
@@ -1038,16 +1071,72 @@
     window.RealPlaySimpleNavigation?.world?.();
   }
 
+  function seasonChoicesMarkup(seasons) {
+    if (!seasons.length) {
+      return '<div class="rp-tune-up-seasons-empty">NO TUNE-UP SEASONS HAVE BEEN CONFIGURED YET.</div>';
+    }
+    return seasons.map((season) => `
+      <button class="rp-season-card" type="button" data-rp-tune-up-season-id="${season.id}">
+        <span><small>TUNE-UP SEASON</small><strong>SEASON ${season.seasonNumber}</strong></span><b aria-hidden="true">→</b>
+      </button>`).join('');
+  }
+
+  function renderTuneUpSeasonChoices(markup) {
+    const list = panel?.querySelector('[data-rp-tune-up-season-list]');
+    if (list && list.innerHTML !== markup) list.innerHTML = markup;
+  }
+
+  async function loadTuneUpSeasons() {
+    const requestId = ++tuneUpSeasonsRequestId;
+    if (tuneUpSeasons) renderTuneUpSeasonChoices(seasonChoicesMarkup(tuneUpSeasons));
+    else renderTuneUpSeasonChoices('<div class="rp-tune-up-seasons-empty">LOADING SEASONS...</div>');
+    try {
+      const token = scopedToken();
+      if (!token) throw new Error('Log in to choose a Tune-Up season.');
+      const response = await fetch(`${API_BASE_URL}/api/real-play/competition/seasons?context=open_ranking`, {
+        method: 'GET',
+        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) throw new Error(data.message || 'Unable to load Tune-Up seasons.');
+      if (requestId !== tuneUpSeasonsRequestId || panel?.dataset?.rpCompetitionCurrentView !== 'tune-up-seasons') return;
+      // Season number is a display label; the persistent database ID is used
+      // for requests. Never assume SEASON 1 has ID 1.
+      tuneUpSeasons = (Array.isArray(data.seasons) ? data.seasons : [])
+        .filter((season) => season.competitionContext === 'open_ranking'
+          && Number.isSafeInteger(Number(season.id)) && Number(season.id) > 0
+          && Number.isSafeInteger(Number(season.seasonNumber)) && Number(season.seasonNumber) > 0)
+        .map((season) => ({ id: Number(season.id), seasonNumber: Number(season.seasonNumber) }))
+        .sort((a, b) => b.seasonNumber - a.seasonNumber || b.id - a.id);
+      renderTuneUpSeasonChoices(seasonChoicesMarkup(tuneUpSeasons));
+    } catch (error) {
+      if (requestId !== tuneUpSeasonsRequestId || panel?.dataset?.rpCompetitionCurrentView !== 'tune-up-seasons') return;
+      if (!tuneUpSeasons) renderTuneUpSeasonChoices(
+        '<div class="rp-tune-up-seasons-empty">' + esc(error.message || 'Unable to load seasons.') + '</div>'
+      );
+    }
+  }
+
   function openTuneUp() {
+    showPanelView('tune-up-seasons');
+    loadTuneUpSeasons();
+  }
+
+  function selectTuneUpSeason(season) {
+    if (!season || !Number.isSafeInteger(season.id) || !Number.isSafeInteger(season.seasonNumber)) return;
+    tuneUpSeasonsRequestId += 1;
     openScopedRanking({
       id: 'tune-up',
       title: 'TUNE-UP',
-      kicker: 'TUNE-UP · PLAYER RANKING',
-      copy: 'Every ranking and statistic on this page belongs only to the Tune-Up competition.',
+      seasonNumber: season.seasonNumber,
+      kicker: 'TUNE-UP · SEASON ' + season.seasonNumber + ' · PLAYER RANKING',
+      copy: 'Verified competition statistics for Tune-Up Season ' + season.seasonNumber + ' only.',
       emptyTitle: 'NO TUNE-UP RESULTS YET.',
-      emptyCopy: 'Tune-Up rankings and stats will appear here when verified Tune-Up games begin.',
+      emptyCopy: 'Verified games for this Tune-Up season will appear here.',
       competitionContext: 'open_ranking',
-      parent: 'hub',
+      competitionSeasonId: season.id,
+      parent: 'tune-up-seasons',
     });
   }
 
