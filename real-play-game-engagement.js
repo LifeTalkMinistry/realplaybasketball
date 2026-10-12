@@ -66,6 +66,8 @@
       if (!response.ok) throw new Error('Counters unavailable');
       const data = await response.json();
       ids.forEach((id) => {
+        // A new view may have been accepted while this older GET was pending.
+        if (Number(loadedAt.get(id)) > now) return;
         const values = data?.counts?.[String(id)] || { videoViews: 0, storyViews: 0 };
         cache.set(id, values);
         paint(id, values);
@@ -94,7 +96,8 @@
     attempts.set(key, Date.now() + 12000);
     inflight.add(key);
     try {
-      const authorization = window.localStorage.getItem(TOKEN_KEY);
+      let authorization = null;
+      try { authorization = window.localStorage.getItem(TOKEN_KEY); } catch (_) {}
       const body = JSON.stringify({ type, visitorId: visitorId(), watchedSeconds: seconds });
       const send = (token) => fetch(`${API}/games/${id}/views`, {
         method: 'POST',
