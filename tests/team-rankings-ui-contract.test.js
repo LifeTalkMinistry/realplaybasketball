@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'competition-team-rankings.js'), 'utf8');
@@ -46,4 +47,22 @@ test('team evidence refresh does not recreate unchanged rows', () => {
   assert.match(source, /if \(lossesNode\.textContent !== losses\)/);
   assert.match(source, /if \(rateNode\.textContent !== rate\)/);
   assert.match(source, /cache: 'no-store'/);
+});
+
+test('Team ordering remains official rank even when win rates or names differ', () => {
+  const begin = source.indexOf('  function sortedRows(rows) {');
+  const end = source.indexOf('  const signature = rows =>', begin);
+  assert.ok(begin >= 0 && end > begin);
+  const sortedRows = vm.runInNewContext(
+    source.slice(begin, end) + '\n sortedRows',
+    { Number, String }
+  );
+  const teams = [
+    { teamId: 'chosen', rank: 4, wins: 0, winRate: 100, name: 'CHOSEN' },
+    { teamId: 'conquerors', rank: 1, wins: 3, winRate: 75, name: 'CONQUERORS' },
+    { teamId: 'valiant', rank: 2, wins: 3, winRate: 60, name: 'VALIANT' },
+  ];
+  assert.deepEqual(Array.from(sortedRows(teams), x => x.teamId),
+    ['conquerors', 'valiant', 'chosen']);
+  assert.equal(teams[0].teamId, 'chosen', 'input team records remain untouched');
 });
