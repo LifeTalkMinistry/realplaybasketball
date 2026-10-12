@@ -12,9 +12,7 @@
   const inflight = new Set();
   const number = new Intl.NumberFormat('en');
   let flushTimer = null;
-  let videoSessionId = 0;
-  let videoMs = 0;
-  let videoTick = 0;
+  const videoSources = new Map();
   let storySessionId = 0;
   let storyTimer = null;
   let storyActiveAt = 0;
@@ -87,7 +85,7 @@
   }
 
   async function postView(id, type, seconds) {
-    const key = `${type}:${id}`;
+    const key = `${type === 'highlight' ? 'video' : type}:${id}`;
     if (counted.has(key) || inflight.has(key)) return;
     if (Date.now() < Number(attempts.get(key) || 0)) return;
     attempts.set(key, Date.now() + 12000);
@@ -123,28 +121,32 @@
     }
   }
 
-  // Invoked by the actual replay player while its media state is PLAYING.
-  // Measure elapsed wall time rather than seek position (skipping is not a view).
-  function videoActivity(rawId, playing) {
+  // Only active playback counts. Source-specific timers share a single backend video key.
+  function videoActivity(rawId, playing, source = 'full') {
     const id = validId(rawId);
-    if (id !== videoSessionId) {
-      videoSessionId = id;
-      videoMs = 0;
-      videoTick = 0;
+    const mode = source === 'highlight' ? 'highlight' : 'full';
+    if (!id) { videoSources.delete(mode); return; }
+    let state = videoSources.get(mode);
+    if (!state || state.id !== id) {
+      state = { id, playedMs: 0, lastTick: 0 };
+      videoSources.set(mode, state);
     }
-    if (!id || counted.has(`video:${id}`) || !playing || document.visibilityState === 'hidden') {
-      videoTick = 0;
+    if (counted.has(`video:${id}`) || !playing || document.visibilityState === 'hidden') {
+      state.lastTick = 0;
       return;
     }
     const now = performance.now();
-    if (videoTick) {
-      const delta = now - videoTick;
-      if (delta > 0 && delta < 2000) videoMs += delta;
+    if (state.lastTick) {
+      const delta = now - state.lastTick;
+      if (delta > 0 && delta < 2000) state.playedMs += delta;
     }
-    videoTick = now;
-    if (videoMs >= 10000) postView(id, 'video', Math.max(10, videoMs / 1000));
+    state.lastTick = now;
+    const minimum = mode === 'highlight' ? 3000 : 10000;
+    if (state.playedMs >= minimum) {
+      postView(id, mode === 'highlight' ? 'highlight' : 'video',
+        Math.max(minimum / 1000, state.playedMs / 1000));
+    }
   }
-
   function stopStoryTimer() {
     if (storyTimer) clearTimeout(storyTimer);
     storyTimer = null;
@@ -175,7 +177,7 @@
   }
 
   document.addEventListener('visibilitychange', () => {
-    videoTick = 0;
+    videoSources.forEach((state) => { state.lastTick = 0; });
     if (storySessionId) resumeStoryTimer();
   });
 
