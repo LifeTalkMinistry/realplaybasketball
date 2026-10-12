@@ -21,7 +21,7 @@ function setupRows() {
         nodes,
         set innerHTML(value) {
           this.markup = value;
-          for (const key of ['[data-wins]', '[data-losses]', '[data-win-rate]']) {
+          for (const key of ['[data-wins]', '[data-losses]']) {
             let text = '';
             nodes.set(key, {
               get textContent() { return text; },
@@ -81,12 +81,12 @@ function setupRows() {
   return { ...functions, list, host, writes: () => changes };
 }
 
-test('record has separately spaced and fully spelled-out wins and losses', () => {
+test('record shows only separate Wins and Losses without Win Rate', () => {
   const { makeRow } = setupRows();
   const row = makeRow({ teamId: 'valiant', clubId: 'valiant', rank: 1, name: 'VALIANT' });
   assert.match(row.innerHTML, /data-result="wins".*<small>WINS<\/small>/s);
   assert.match(row.innerHTML, /data-result="losses".*<small>LOSSES<\/small>/s);
-  assert.match(row.innerHTML, /WIN RATE <b data-win-rate>/);
+  assert.doesNotMatch(row.innerHTML, /WIN RATE|data-win-rate/);
   assert.doesNotMatch(row.innerHTML, /\d+W[–-]\d+L|% WR/);
   assert.match(source, /\.rp-team-standings-record-grid\{[^}]*gap:8px/);
   assert.match(source, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
@@ -107,7 +107,7 @@ test('verified wins and losses render separately and unchanged refreshes preserv
   const original = view.list.children[0];
   assert.equal(original.querySelector('[data-wins]').textContent, '3');
   assert.equal(original.querySelector('[data-losses]').textContent, '1');
-  assert.equal(original.querySelector('[data-win-rate]').textContent, '75%');
+  assert.equal(original.querySelector('[data-win-rate]'), null, 'Win Rate is not rendered');
   const writes = view.writes();
   view.render(state);
   assert.strictEqual(view.list.children[0], original);
@@ -118,5 +118,5 @@ test('verified wins and losses render separately and unchanged refreshes preserv
   assert.strictEqual(view.list.children[0], original, 'updated scores do not replace logo nodes');
   assert.equal(original.querySelector('[data-wins]').textContent, '4');
   assert.equal(original.querySelector('[data-losses]').textContent, '2');
-  assert.equal(original.querySelector('[data-win-rate]').textContent, '66.7%');
+  assert.equal(original.querySelector('[data-win-rate]'), null, 'Win Rate stays hidden after score correction');
 });

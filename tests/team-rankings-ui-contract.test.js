@@ -47,7 +47,7 @@ test('team evidence refresh does not recreate unchanged rows', () => {
   assert.match(source, /nextSignature !== state\.lastSignature/);
   assert.match(source, /if \(winsNode\.textContent !== wins\)/);
   assert.match(source, /if \(lossesNode\.textContent !== losses\)/);
-  assert.match(source, /if \(rateNode\.textContent !== rate\)/);
+  assert.doesNotMatch(source, /data-win-rate|rp-team-standings-win-rate|rateNode/);
   assert.match(source, /cache: 'no-store'/);
 });
 
