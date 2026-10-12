@@ -17,6 +17,8 @@ function setupRows() {
       const nodes = new Map();
       const row = {
         dataset: {},
+        attributes: {},
+        setAttribute(key, value) { this.attributes[key] = value; },
         markup: '',
         nodes,
         set innerHTML(value) {
