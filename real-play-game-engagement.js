@@ -40,14 +40,11 @@
 
   function paint(id, values) {
     const video = Math.max(0, Number(values?.videoViews || 0));
-    const story = Math.max(0, Number(values?.storyViews || 0));
     document.querySelectorAll('[data-rp-game-view-counts]').forEach((el) => {
       if (Number(el.dataset.rpGameViewCounts) !== id) return;
       const videoNode = el.querySelector('[data-rp-video-view-count]');
-      const storyNode = el.querySelector('[data-rp-story-view-count]');
       if (videoNode) videoNode.textContent = number.format(video);
-      if (storyNode) storyNode.textContent = number.format(story);
-      el.setAttribute('aria-label', `${number.format(video)} video viewers, ${number.format(story)} Game Story viewers`);
+      el.setAttribute('aria-label', `${number.format(video)} video views`);
     });
   }
 
