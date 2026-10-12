@@ -277,6 +277,7 @@
   }
 
   function destroyPlayback() {
+    window.RealPlayGameEngagement?.videoActivity?.(0, false);
     if (ticker) {
       clearInterval(ticker);
       ticker = null;
@@ -715,6 +716,9 @@
     const nextDuration = durationMs();
     if (nextDuration > 0) lastDurationMs = nextDuration;
     lastPlaying = isPlaying();
+    window.RealPlayGameEngagement?.videoActivity?.(
+      replay?.game?.sessionId ?? viewer?.dataset?.rpCareerReplayActiveSession, lastPlaying
+    );
     if (directVideo) lastMuted = Boolean(directVideo.muted);
 
     const seek = viewer.querySelector('[data-rp-career-replay-seek]');
