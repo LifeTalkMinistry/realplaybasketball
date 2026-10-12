@@ -14,19 +14,17 @@
     steadfast: 'assets/3v3/clubs/steadfast-logo.png',
     warriors: 'assets/3v3/clubs/warriors-logo.png',
   });
-  const MODES = ['WINS', 'WIN RATE', 'POINT DIFFERENTIAL', 'TEAM NAME'];
   const esc = value => String(value ?? '').replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;').replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const logoFor = team => ART[team?.clubId] || null;
-  function sortedRows(rows, key) {
-    const list = [...rows];
-    if (key === 'WIN RATE') list.sort((a, b) => number(b.winRate) - number(a.winRate) || a.rank - b.rank);
-    else if (key === 'POINT DIFFERENTIAL') list.sort((a, b) => number(b.pointDiff) - number(a.pointDiff) || a.rank - b.rank);
-    else if (key === 'TEAM NAME') list.sort((a, b) => a.name.localeCompare(b.name) || a.rank - b.rank);
-    else list.sort((a, b) => a.rank - b.rank);
-    return list;
+  // Rank is determined by verified wins and tie-breakers on the backend.
+  // The teams view intentionally has no alternate filters or sort modes.
+  function sortedRows(rows) {
+    return [...rows].sort((a, b) =>
+      Number(a.rank) - Number(b.rank)
+      || String(a.teamId).localeCompare(String(b.teamId)));
   }
   const signature = rows => JSON.stringify(rows.map(row => [
     row.teamId, row.name, row.rank, row.wins, row.losses,
@@ -45,16 +43,12 @@
       .rp-competition-team-toggle{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin:12px 0 4px;padding:3px;border:1px solid rgba(84,219,255,.21);border-radius:11px;background:rgba(4,12,21,.85)}
       .rp-competition-team-toggle button{border:0;border-radius:8px;padding:11px 12px;background:transparent;color:#7e99ae;font:900 .7rem Arial,sans-serif;letter-spacing:.13em;cursor:pointer;transition:background .14s,color .14s}
       .rp-competition-team-toggle button[aria-selected="true"]{background:linear-gradient(125deg,#39c9ee,#168eb8);color:#03131e;box-shadow:0 2px 13px rgba(51,211,255,.17)}
-      .rp-competition-team-toggle button:focus-visible,.rp-team-standings-filters button:focus-visible{outline:2px solid #79e7ff;outline-offset:2px}
+      .rp-competition-team-toggle button:focus-visible{outline:2px solid #79e7ff;outline-offset:2px}
       .rp-world[data-rp-competition-team-view="teams"] [data-world-player-sort],
       .rp-world[data-rp-competition-team-view="teams"] [data-world-player-list],
       .rp-world[data-rp-competition-team-view="teams"] [data-world-player-more]{display:none!important}
       .rp-team-standings[hidden]{display:none!important}
       .rp-team-standings{display:grid;gap:10px;min-width:0;padding-top:10px}
-      .rp-team-standings-filters{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:1px 0 4px;touch-action:pan-x}
-      .rp-team-standings-filters::-webkit-scrollbar{display:none}
-      .rp-team-standings-filters button{flex:0 0 auto;white-space:nowrap;border:1px solid rgba(97,196,232,.21);border-radius:7px;background:rgba(11,21,35,.7);color:#9aafbe;padding:9px 10px;font:900 .58rem Arial,sans-serif;letter-spacing:.035em;cursor:pointer}
-      .rp-team-standings-filters button[aria-pressed="true"]{border-color:#5adfff;background:rgba(40,174,213,.2);color:#9defff}
       .rp-team-standings-list{display:grid;gap:8px;min-width:0}
       .rp-team-standings-row{--team-glow:80,181,220;display:grid;grid-template-columns:27px 50px minmax(0,1fr) 126px;gap:8px;align-items:center;box-sizing:border-box;min-height:98px;padding:11px 10px;border:1px solid rgba(var(--team-glow),.20);border-radius:13px;background:linear-gradient(105deg,rgba(var(--team-glow),.095),rgba(4,12,23,.97) 40%,rgba(5,12,22,.97));contain:layout style}
       .rp-team-standings-row[data-rank="1"]{border-color:rgba(90,223,255,.5);box-shadow:inset 3px 0 0 #5adfff,0 3px 17px rgba(26,140,180,.08)}
@@ -134,8 +128,6 @@
       list.classList.add('rp-team-standings-message');
       return;
     }
-    state.host.querySelectorAll('[data-rp-team-filter]').forEach(button =>
-      button.setAttribute('aria-pressed', String(button.dataset.rpTeamFilter === state.filter)));
     if (state.error) {
       if (list.textContent !== state.error) list.textContent = state.error;
       list.classList.add('rp-team-standings-message');
@@ -149,7 +141,7 @@
     list.classList.remove('rp-team-standings-message');
     // Remove a loading or empty text node once, but retain all real team rows.
     if (!list.querySelector('[data-team-id]')) list.textContent = '';
-    const ordered = sortedRows(state.rows, state.filter);
+    const ordered = sortedRows(state.rows);
     const identifiers = new Set(ordered.map(item => String(item.teamId)));
     list.querySelectorAll('[data-team-id]').forEach(node => {
       if (!identifiers.has(node.dataset.teamId)) node.remove();
@@ -227,25 +219,16 @@
       host.className = 'rp-team-standings';
       host.hidden = true;
       host.setAttribute('aria-label', 'Official competition team rankings');
-      host.innerHTML = `<div class="rp-team-standings-filters" role="group" aria-label="Sort team statistics">${MODES.map((mode, i) =>
-        `<button type="button" data-rp-team-filter="${mode}" aria-pressed="${i === 0}">${mode}</button>`).join('')}</div><div class="rp-team-standings-list" data-rp-team-list></div>`;
+      host.innerHTML = '<div class="rp-team-standings-list" data-rp-team-list></div>';
       header.appendChild(switcher);
       directory.insertBefore(host, controls.nextSibling);
       const state = { world, config, switcher, host, mode: 'players',
-        filter: 'WINS', rows: [], loaded: false, loading: false, error: '',
+        rows: [], loaded: false, loading: false, error: '',
         lastSignature: '', serial: 0, seasonKey: String(config.competitionSeasonId || '') };
       active = state;
       switcher.addEventListener('click', event => {
         const button = event.target.closest('button[data-mode]');
         if (button && active === state) setMode(state, button.dataset.mode);
-      });
-      host.addEventListener('click', event => {
-        const button = event.target.closest('button[data-rp-team-filter]');
-        if (!button || active !== state) return;
-        const next = button.dataset.rpTeamFilter;
-        if (next === state.filter) return;
-        state.filter = next;
-        render(state);
       });
       setMode(state, 'players');
     }
