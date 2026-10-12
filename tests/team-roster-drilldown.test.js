@@ -10,12 +10,17 @@ function harness(fetcher) {
   const begin = source.indexOf('  function closeRoster(state, restoreFocus = false) {');
   const end = source.indexOf('  function setMode(state, mode) {', begin);
   assert.ok(begin >= 0 && end > begin, 'Roster implementation is present');
+  const card = {
+    dataset: { teamId: 'conquerors' },
+    focus({ preventScroll }) {
+      assert.equal(preventScroll, true);
+      list.focused = true;
+    },
+  };
   const list = {
     hidden: false,
-    children: [],
-    querySelectorAll: () => [{ dataset: { teamId: 'conquerors' }, focus({ preventScroll }) {
-      assert.equal(preventScroll, true); list.focused = true;
-    }}],
+    children: [card],
+    querySelectorAll: () => [card],
   };
   const title = { textContent: '' };
   let rosterWrites = 0;
