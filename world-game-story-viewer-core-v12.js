@@ -49,6 +49,7 @@
       .rp-story-game-winner-fallback{width:100%;height:100%;display:grid;place-items:center;border:1px solid rgba(80,220,255,.16);border-radius:50%;background:radial-gradient(circle,rgba(34,136,184,.18),rgba(2,6,11,0) 68%);color:rgba(255,255,255,.16);font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:4.8rem;font-style:italic}
       .rp-story-score{display:flex;justify-content:center;align-items:center;gap:12px;margin:18px auto 2px;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-style:italic;text-align:center}.rp-story-score b{font-size:2.8rem}.rp-story-score span{color:#718293;font-size:.9rem}
       .rp-story-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:18px auto 0;width:100%;max-width:430px}.rp-story-stat{padding:10px 7px;border:1px solid rgba(80,220,255,.10);border-radius:11px;background:rgba(7,20,32,.7);text-align:center}.rp-story-stat b{display:block;font-family:Impact,'Arial Narrow',Arial,sans-serif;font-size:1.45rem;font-style:italic}.rp-story-stat small{display:block;margin-top:2px;color:#6edfff;font:900 .44rem/1 Arial,sans-serif;letter-spacing:.08em}
+      .rp-story-dnp{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;max-width:430px;min-height:100px;margin:18px auto 0;padding:18px 12px;box-sizing:border-box;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(7,20,32,.78);text-align:center}.rp-story-dnp strong{font:950 clamp(1.5rem,7vw,2rem)/1 Impact,'Arial Narrow',Arial,sans-serif;font-style:italic;letter-spacing:.06em;color:#fff}.rp-story-dnp small{font:900 .65rem/1.3 Arial,sans-serif;color:#87a8bb;letter-spacing:.13em}
       .rp-story-player-art-frame{position:absolute;z-index:2;top:96px;left:50%;width:min(86vw,372px);height:min(42vh,344px);transform:translateX(-50%);overflow:hidden;border:1px solid rgba(var(--rp-story-club-rgb),.24);border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(4,9,15,.72));box-shadow:0 20px 42px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.055);pointer-events:none;isolation:isolate}
       .rp-story-player-art-frame::before{content:'';position:absolute;z-index:0;inset:0;background:radial-gradient(circle at 78% 18%,rgba(var(--rp-story-club-rgb),.11),transparent 42%);pointer-events:none}
       .rp-story-player-art-frame.rp-story-profile-art{width:min(88vw,382px);height:min(44vh,360px)}
@@ -324,6 +325,7 @@
       name: String(raw.playerName ?? raw.player_name ?? raw.name ?? 'REAL PLAY PLAYER').trim(),
       number: raw.jerseyNumber ?? raw.playerNumber ?? raw.player_number ?? null,
       team: String(raw.team || '').toLowerCase(),
+      didNotPlay: raw.didNotPlay === true || raw.did_not_play === true,
       pts: n(raw.points ?? raw.pts), ast: n(raw.assists ?? raw.ast), reb: n(raw.rebounds ?? raw.reb),
       stl: n(raw.steals ?? raw.stl), blk: n(raw.blocks ?? raw.blk), to: n(raw.turnovers ?? raw.tov), fouls: n(raw.fouls ?? raw.foul),
       made, missed, attempts, fg: attempts ? Math.round((made / attempts) * 100) : null,
@@ -359,6 +361,15 @@
   }
 
   function playerCopy(p, won, teamName, opponentName) {
+    if (p.didNotPlay) {
+      return {
+        grade: 'DNP',
+        headline: clampWords(won
+          ? `${p.name} did not play as ${teamName} secured the win.`
+          : `${p.name} did not play in ${teamName}'s game against ${opponentName}.`, 18),
+        body: `${p.name} did not enter the game. No individual performance was recorded.`,
+      };
+    }
     const grade = playerGrade(p);
     const strength = strongest(p);
     const statBits = [];
@@ -453,7 +464,9 @@
     const brandName = brandSide === 'west' ? game.westName : brandSide === 'east' ? game.eastName : '';
     const clubRgb = clubAccentRgb(brandName);
 
-    const stats = slide.player ? `<div class="rp-story-stats">${statGrid(slide.player).map(([k,v])=>`<div class="rp-story-stat"><b>${esc(v)}</b><small>${esc(k)}</small></div>`).join('')}</div>` : '';
+    const stats = slide.player?.didNotPlay
+      ? '<div class="rp-story-dnp" role="status"><strong>DNP</strong><small>DID NOT PLAY</small></div>'
+      : slide.player ? `<div class="rp-story-stats">${statGrid(slide.player).map(([k,v])=>`<div class="rp-story-stat"><b>${esc(v)}</b><small>${esc(k)}</small></div>`).join('')}</div>` : '';
     const artClass = slide.player?.artSource && slide.player.artSource !== 'game' ? ' rp-story-profile-art' : '';
     const isProfileArt = Boolean(artClass);
     const artPanX = isProfileArt ? Math.max(-45, Math.min(45, Number(slide.player?.storyViewPanX || 0))) : 0;
@@ -517,7 +530,7 @@
     const gameStory = gameCopy(game);
     slides.push({type:'game',kicker:game.title,headline:gameStory.headline,body:gameStory.body});
     [first,second].forEach(side => {
-      const teamPlayers = players.filter(p=>p.team===side).sort((a,b)=>b.impact-a.impact);
+      const teamPlayers = players.filter(p=>p.team===side).sort((a,b)=>Number(a.didNotPlay)-Number(b.didNotPlay) || b.impact-a.impact);
       const name = side === 'west' ? game.westName : game.eastName;
       const opponent = side === 'west' ? game.eastName : game.westName;
       const won = winner === side;
