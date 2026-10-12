@@ -137,7 +137,7 @@ test('click/refocus rendering does not reset leaderboard scroll or mutate the he
   assert.equal(world.scrollTop, 280);
   assert.equal(scrollWrites, 2);
   assert.equal(titleWrites, 1);
-  assert.equal(countWrites, 1);
+  assert.equal(countWrites, 0, 'scoped header must not update the removed player count');
   assert.equal(rowRenderCalls, 2);
   assert.equal(more.hidden, true);
 });
