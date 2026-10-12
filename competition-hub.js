@@ -573,6 +573,7 @@
   }
 
   function clearPlayerPresentation() {
+    window.RealPlayTeamRankings?.reset?.();
     if (playerDecorationTimer) {
       window.clearTimeout(playerDecorationTimer);
       playerDecorationTimer = null;
@@ -946,6 +947,9 @@
     }
 
     renderScopedCompetitionRows(list, config);
+    // Segmented competition tabs reuse the same World directory without
+    // disturbing the player rows, player filters, or scroll position.
+    window.RealPlayTeamRankings?.attach?.({ world, directory, header, controls, config });
 
     const more = playersView.querySelector('[data-world-player-more]');
     if (more) more.hidden = true;
