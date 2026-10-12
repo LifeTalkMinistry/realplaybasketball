@@ -108,7 +108,7 @@
     const row = document.createElement('article');
     row.className = 'rp-team-standings-row';
     row.dataset.teamId = team.teamId;
-    row.dataset.rank = team.rank;
+    row.dataset.rank = String(team.rank);
     row.dataset.club = team.clubId || '';
     const image = logoFor(team);
     row.innerHTML = `<span class="rp-team-standings-rank">#${esc(team.rank)}</span>
