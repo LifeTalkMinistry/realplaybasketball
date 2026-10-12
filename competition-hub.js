@@ -1120,7 +1120,7 @@
 
   function openTuneUp() {
     showPanelView('tune-up-seasons');
-    loadTuneUpSeasons();
+    return loadTuneUpSeasons();
   }
 
   function selectTuneUpSeason(season) {
