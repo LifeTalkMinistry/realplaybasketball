@@ -676,6 +676,7 @@
   }
 
   function destroyMedia() {
+    window.RealPlayGameEngagement?.videoActivity?.(activeSessionId, false, 'highlight');
     if (ticker) {
       window.clearInterval(ticker);
       ticker = null;
@@ -796,10 +797,26 @@
   function startTicker() {
     if (ticker) return;
     ticker = window.setInterval(() => {
-      if (!viewer?.classList.contains('open') || !mediaReady || !playing) return;
+      if (!viewer?.classList.contains('open') || !mediaReady) return;
       const item = highlights[activeIndex];
       if (!item) return;
-      if (currentMs() >= Math.max(item.start + 400, item.end - 70)) showEnd();
+      // Count genuine playback, not a button click, paused/buffering player,
+      // or the YouTube/direct source seeking outside the selected highlight.
+      const youtubeState = youtubePlayer?.getPlayerState?.();
+      const mediaPlaying = directVideo
+        ? (!directVideo.paused && !directVideo.ended)
+        : Boolean(youtubePlayer && (
+          youtubeState === window.YT?.PlayerState?.PLAYING ||
+          (youtubeState === undefined && playing)
+        ));
+      const positionMs = currentMs();
+      const withinClip = positionMs >= Math.max(0, item.start - 300)
+        && positionMs <= item.end + 300;
+      window.RealPlayGameEngagement?.videoActivity?.(
+        activeSessionId, mediaPlaying && withinClip, 'highlight'
+      );
+      if (!mediaPlaying) return;
+      if (positionMs >= Math.max(item.start + 400, item.end - 70)) showEnd();
     }, TICK_MS);
   }
 
@@ -891,6 +908,7 @@
   }
 
   async function openViewer(card) {
+    window.RealPlayGameEngagement?.videoActivity?.(0, false, 'highlight');
     const context = contextFromCard(card);
     const root = ensureViewer();
     root.classList.add('open');
@@ -956,6 +974,7 @@
   function closeViewer() {
     ++loadToken;
     destroyMedia();
+    window.RealPlayGameEngagement?.videoActivity?.(0, false, 'highlight');
     replayData = null;
     allHighlights = [];
     highlights = [];
