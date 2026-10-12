@@ -570,11 +570,12 @@
     const slide = active.slides[active.index];
     active.viewer.querySelector('[data-rp-story-position]').textContent = `${slide.type === 'game' ? 'GAME' : slide.type === 'team' ? 'TEAM' : 'PLAYER'} · ${active.index+1}/${active.slides.length}`;
   }
-  function close(){ if(!active.viewer) return; active.viewer.hidden=true; document.body.classList.remove('rp-story-open'); active.slides=[]; }
+  function close(){ window.RealPlayGameEngagement?.storyClosed?.(); if(!active.viewer) return; active.viewer.hidden=true; document.body.classList.remove('rp-story-open'); active.slides=[]; }
   async function open(card) {
     injectStyles();
     const game = readGameFromCard(card);
     if (!game.sessionId) return;
+    window.RealPlayGameEngagement?.storyClosed?.();
     const viewer = ensureViewer();
     active.viewer = viewer;
     viewer.hidden = false;
@@ -592,7 +593,9 @@
       track.innerHTML = active.slides.map(s=>slideMarkup(s,game)).join('');
       viewer.querySelector('[data-rp-story-progress]').innerHTML = active.slides.map(()=>'<i></i>').join('');
       renderIndex(0);
+      window.RealPlayGameEngagement?.storyOpened?.(game.sessionId);
     } catch (error) {
+      window.RealPlayGameEngagement?.storyClosed?.();
       track.innerHTML = `<div class="rp-story-loading">STORY COULD NOT LOAD.<br><small>THE OFFICIAL GAME CARD IS STILL AVAILABLE.</small></div>`;
     }
   }
