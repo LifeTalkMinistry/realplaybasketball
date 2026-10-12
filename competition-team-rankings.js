@@ -97,14 +97,20 @@
     document.head.appendChild(element);
   }
 
-  function closeRoster(state) {
+  function closeRoster(state, restoreFocus = false) {
     if (!state?.rosterTeamId) return;
     state.rosterSerial++;
+    const lastTeamId = state.rosterTeamId;
     state.rosterTeamId = null;
     const list = state.host.querySelector('[data-rp-team-list]');
     const detail = state.host.querySelector('[data-rp-team-roster-detail]');
     if (list) list.hidden = false;
     if (detail) detail.hidden = true;
+    if (restoreFocus && list) {
+      const previousCard = [...list.querySelectorAll('[data-team-id]')]
+        .find(node => node.dataset.teamId === lastTeamId);
+      previousCard?.focus?.({ preventScroll: true });
+    }
   }
 
   function rosterMarkup(players) {
@@ -130,6 +136,7 @@
     const detail = state.host.querySelector('[data-rp-team-roster-detail]');
     const title = detail.querySelector('[data-rp-team-roster-title]');
     const roster = detail.querySelector('[data-rp-team-roster-list]');
+    roster.classList.remove('rp-team-roster-message');
     if (title.textContent !== team.name) title.textContent = team.name;
     roster.innerHTML = '<div class="rp-team-roster-message">LOADING ROSTER...</div>';
     list.hidden = true;
@@ -312,7 +319,7 @@
       });
       host.addEventListener('click', event => {
         if (event.target.closest('[data-rp-team-roster-back]')) {
-          closeRoster(state);
+          closeRoster(state, true);
           return;
         }
         const row = event.target.closest('.rp-team-standings-row');
