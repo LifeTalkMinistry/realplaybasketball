@@ -93,3 +93,9 @@ jobs:
           node --check competition-hub.js
           node --check simple-navigation.js
           node --test tests/team-rankings-ui-contract.test.js
+
+      - name: Test Tune-Up season-first selection and title navigation
+        run: |
+          node --check competition-hub.js
+          node --check tests/tune-up-season-picker.test.js
+          node --test tests/tune-up-season-picker.test.js
