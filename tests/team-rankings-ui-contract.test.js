@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'competition-team-rankings.js'), 'utf8');
@@ -23,11 +24,15 @@ test('team view hides players without rebuilding player list or changing scroll'
   assert.doesNotMatch(source, /scrollTop\s*=/);
   assert.match(originalPlayerTests, /scoped rows must survive/);
 });
-test('team filters keep official ranking authority', () => {
-  assert.match(source, /WINS.*WIN RATE.*POINT DIFFERENTIAL.*TEAM NAME/);
-  assert.match(source, /a\.rank - b\.rank/);
+test('Teams removes the filter strip and always uses official ranking order', () => {
+  assert.doesNotMatch(source, /data-rp-team-filter|rp-team-standings-filters|Sort team statistics/);
+  assert.doesNotMatch(source, /state\.filter|const MODES/);
+  assert.match(source, /Number\(a\.rank\) - Number\(b\.rank\)/);
+  assert.match(source, /sortedRows\(state\.rows\)/);
   assert.match(source, /team\.rank/);
   assert.doesNotMatch(source, /index \+ 1.*rank/);
+  assert.match(source, /host\.innerHTML = '<div class="rp-team-standings-list" data-rp-team-list><\/div>'/);
+  assert.match(source, /data-world-player-sort/);
 });
 test('logos link to the eight official team images, not generated replacements', () => {
   for (const club of ['lions','valiant','watchmen','conquerors','chosen','eagles','steadfast','warriors']) {
@@ -42,4 +47,22 @@ test('team evidence refresh does not recreate unchanged rows', () => {
   assert.match(source, /if \(lossesNode\.textContent !== losses\)/);
   assert.match(source, /if \(rateNode\.textContent !== rate\)/);
   assert.match(source, /cache: 'no-store'/);
+});
+
+test('Team ordering remains official rank even when win rates or names differ', () => {
+  const begin = source.indexOf('  function sortedRows(rows) {');
+  const end = source.indexOf('  const signature = rows =>', begin);
+  assert.ok(begin >= 0 && end > begin);
+  const sortedRows = vm.runInNewContext(
+    source.slice(begin, end) + '\n sortedRows',
+    { Number, String }
+  );
+  const teams = [
+    { teamId: 'chosen', rank: 4, wins: 0, winRate: 100, name: 'CHOSEN' },
+    { teamId: 'conquerors', rank: 1, wins: 3, winRate: 75, name: 'CONQUERORS' },
+    { teamId: 'valiant', rank: 2, wins: 3, winRate: 60, name: 'VALIANT' },
+  ];
+  assert.deepEqual(Array.from(sortedRows(teams), x => x.teamId),
+    ['conquerors', 'valiant', 'chosen']);
+  assert.equal(teams[0].teamId, 'chosen', 'input team records remain untouched');
 });
