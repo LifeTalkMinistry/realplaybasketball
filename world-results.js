@@ -629,9 +629,32 @@
         grid-template-columns:minmax(68px,1fr) minmax(112px,1.35fr) minmax(68px,1fr);
         align-items:center;
         gap:8px;
-        min-height:108px;
-        padding:13px 2px 11px;
+        position:relative;
+        min-height:122px;
+        padding:26px 2px 11px;
       }
+      /* Audience counters are centered over the score, never in a corner. */
+      .rp-world-scorecard-viewers{
+        position:absolute;
+        z-index:2;
+        top:3px;
+        left:50%;
+        transform:translateX(-50%);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:9px;
+        white-space:nowrap;
+        color:#a4b5c3;
+        font-family:Arial,sans-serif;
+        font-weight:850;
+        letter-spacing:.02em;
+      }
+      .rp-world-scorecard-view-item{display:inline-flex;align-items:center;gap:3px}
+      .rp-world-scorecard-view-item svg{width:11px;height:11px;flex:none;fill:none;stroke:#58ddff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+      .rp-world-scorecard-view-item b{color:#f2f8ff;font-size:.67rem;font-weight:950;font-variant-numeric:tabular-nums}
+      .rp-world-scorecard-view-item small{color:#8ba6b9;font-size:.47rem;font-weight:900;letter-spacing:.06em}
+      .rp-world-scorecard-view-dot{color:#42586a;font-size:.7rem}
       .rp-world-scorecard-team{
         display:grid;
         justify-items:center;
@@ -1564,6 +1587,17 @@
       </div>
 
       <div class="rp-world-scorecard-matchup">
+        <div class="rp-world-scorecard-viewers" data-rp-game-view-counts="${esc(metadata.sessionId ?? metadata.session_id ?? '')}" aria-label="Game audience views">
+          <span class="rp-world-scorecard-view-item" title="Unique video watchers">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m10 8 6 4-6 4z"></path></svg>
+            <b data-rp-video-view-count>—</b><small>WATCH</small>
+          </span>
+          <span class="rp-world-scorecard-view-dot" aria-hidden="true">·</span>
+          <span class="rp-world-scorecard-view-item" title="Unique Game Story readers">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-3.4-2-6.7-2.3-10-1.2v14c3.3-1.1 6.6-.8 10 1.2 3.4-2 6.7-2.3 10-1.2v-14C18.7 3.7 15.4 4 12 6z"></path><path d="M12 6v14"></path></svg>
+            <b data-rp-story-view-count>—</b><small>STORY</small>
+          </span>
+        </div>
         <div class="rp-world-scorecard-team">
           ${worldTeamLogo(westName, 'west')}
           <span>${esc(westName)}</span>
@@ -1612,6 +1646,7 @@
       button.textContent = open ? 'HIDE STORY' : 'READ STORY';
     });
 
+    window.RealPlayGameEngagement?.mountCard?.(card, metadata.sessionId ?? metadata.session_id);
     hydrateMissingWorldTeamMvps(card, metadata, westMvp, eastMvp);
 
     const label = card.querySelector('.rp-update-kind strong');
