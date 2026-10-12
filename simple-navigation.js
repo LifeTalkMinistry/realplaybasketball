@@ -424,6 +424,12 @@
     );
     if (!hubReady) return false;
 
+    const teamsReady = await loadFeatureScript(
+      'competition-team-rankings.js',
+      () => Boolean(window.RealPlayTeamRankings?.attach)
+    );
+    if (!teamsReady) return false;
+
     // STATS has two presentation layers on top of the raw hub. Both must be
     // installed before the universal loader is allowed to hand off:
     // 1) compact content cleanup, 2) top-level navigation authority.
