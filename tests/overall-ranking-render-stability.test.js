@@ -92,7 +92,10 @@ function setup(source, helper, renderer) {
       return null;
     },
   };
-  const code = slice(source, `  function ${helper}(`, `  function ${renderer}(`)
+  // Mirror the actual verified jersey-label helper used by both renderers.
+  // The isolated VM extracts renderer code, so include its dependency too.
+  const code = slice(source, '  const jerseyLabel = (player) => {', '  const esc = ')
+    + slice(source, `  function ${helper}(`, `  function ${renderer}(`)
     + slice(source, `  function ${renderer}(`, helper === 'reconcileDirectoryRows'
       ? '  function setPlayersStatus(' : '  async function loadPlayers(');
   const common = {
