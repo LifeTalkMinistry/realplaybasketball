@@ -86,3 +86,10 @@ jobs:
           node --check competition-hub.js
           node --check tests/overall-ranking-render-stability.test.js
           node --test tests/overall-ranking-render-stability.test.js
+
+      - name: Test premium Team Rankings view and existing player isolation
+        run: |
+          node --check competition-team-rankings.js
+          node --check competition-hub.js
+          node --check simple-navigation.js
+          node --test tests/team-rankings-ui-contract.test.js
