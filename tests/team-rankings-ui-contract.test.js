@@ -23,11 +23,15 @@ test('team view hides players without rebuilding player list or changing scroll'
   assert.doesNotMatch(source, /scrollTop\s*=/);
   assert.match(originalPlayerTests, /scoped rows must survive/);
 });
-test('team filters keep official ranking authority', () => {
-  assert.match(source, /WINS.*WIN RATE.*POINT DIFFERENTIAL.*TEAM NAME/);
-  assert.match(source, /a\.rank - b\.rank/);
+test('Teams removes the filter strip and always uses official ranking order', () => {
+  assert.doesNotMatch(source, /data-rp-team-filter|rp-team-standings-filters|Sort team statistics/);
+  assert.doesNotMatch(source, /state\.filter|const MODES/);
+  assert.match(source, /Number\(a\.rank\) - Number\(b\.rank\)/);
+  assert.match(source, /sortedRows\(state\.rows\)/);
   assert.match(source, /team\.rank/);
   assert.doesNotMatch(source, /index \+ 1.*rank/);
+  assert.match(source, /host\.innerHTML = '<div class="rp-team-standings-list" data-rp-team-list><\/div>'/);
+  assert.match(source, /data-world-player-sort/);
 });
 test('logos link to the eight official team images, not generated replacements', () => {
   for (const club of ['lions','valiant','watchmen','conquerors','chosen','eagles','steadfast','warriors']) {
