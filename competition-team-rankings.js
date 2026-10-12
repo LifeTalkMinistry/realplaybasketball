@@ -51,6 +51,21 @@
       .rp-team-standings{display:grid;gap:10px;min-width:0;padding-top:10px}
       .rp-team-standings-list{display:grid;gap:8px;min-width:0}
       .rp-team-standings-row{--team-glow:80,181,220;display:grid;grid-template-columns:27px 50px minmax(0,1fr) 126px;gap:8px;align-items:center;box-sizing:border-box;min-height:88px;padding:11px 10px;border:1px solid rgba(var(--team-glow),.20);border-radius:13px;background:linear-gradient(105deg,rgba(var(--team-glow),.095),rgba(4,12,23,.97) 40%,rgba(5,12,22,.97));contain:layout style}
+      .rp-team-standings-row{cursor:pointer}
+      .rp-team-standings-row:focus-visible{outline:2px solid #74e5ff;outline-offset:2px}
+      .rp-team-standings-row:active{border-color:rgba(90,223,255,.6)}
+      .rp-team-standings-list[hidden],.rp-team-standings-detail[hidden]{display:none!important}
+      .rp-team-standings-detail{display:grid;gap:12px;min-width:0;padding:2px 0 0}
+      .rp-team-roster-header{display:grid;grid-template-columns:36px minmax(0,1fr) 36px;gap:7px;align-items:center;margin:0 2px 2px}
+      .rp-team-roster-back{width:36px;height:36px;display:grid;place-items:center;border:1px solid rgba(90,211,239,.23);border-radius:10px;background:#071523;color:#b8ecff;font:900 1rem Arial,sans-serif;cursor:pointer}
+      .rp-team-roster-back:focus-visible{outline:2px solid #74e5ff;outline-offset:2px}
+      .rp-team-roster-title{margin:0;min-width:0;text-align:center;overflow-wrap:anywhere;font:italic 950 1.05rem Impact,'Arial Narrow',Arial,sans-serif;letter-spacing:.045em;color:#eaf8ff}
+      .rp-team-roster-list{display:grid;gap:5px;min-width:0}
+      .rp-team-roster-player{display:grid;grid-template-columns:66px minmax(0,1fr);gap:11px;align-items:center;min-height:47px;padding:8px 12px;box-sizing:border-box;border:1px solid rgba(74,145,186,.14);border-radius:10px;background:rgba(5,14,26,.76)}
+      .rp-team-roster-player-rank{font:italic 950 .79rem Impact,'Arial Narrow',Arial,sans-serif;color:#6fdcff;white-space:nowrap}
+      .rp-team-roster-player-rank[data-unranked="true"]{font:850 .55rem Arial,sans-serif;color:#7e93a7}
+      .rp-team-roster-player-name{min-width:0;overflow-wrap:anywhere;font:900 .77rem/1.3 Arial,sans-serif;color:#edf7ff}
+      .rp-team-roster-message{text-align:center;padding:34px 12px;color:#819bad;font:800 .7rem/1.45 Arial,sans-serif}
       .rp-team-standings-row[data-rank="1"]{border-color:rgba(90,223,255,.5);box-shadow:inset 3px 0 0 #5adfff,0 3px 17px rgba(26,140,180,.08)}
       .rp-team-standings-row[data-rank="2"]{border-color:rgba(164,194,226,.35)}
       .rp-team-standings-row[data-rank="3"]{border-color:rgba(193,151,108,.31)}
@@ -82,12 +97,80 @@
     document.head.appendChild(element);
   }
 
+  function closeRoster(state, restoreFocus = false) {
+    if (!state?.rosterTeamId) return;
+    state.rosterSerial++;
+    const lastTeamId = state.rosterTeamId;
+    state.rosterTeamId = null;
+    const list = state.host.querySelector('[data-rp-team-list]');
+    const detail = state.host.querySelector('[data-rp-team-roster-detail]');
+    if (list) list.hidden = false;
+    if (detail) detail.hidden = true;
+    if (restoreFocus && list) {
+      const previousCard = [...list.querySelectorAll('[data-team-id]')]
+        .find(node => node.dataset.teamId === lastTeamId);
+      previousCard?.focus?.({ preventScroll: true });
+    }
+  }
+
+  function rosterMarkup(players) {
+    if (!Array.isArray(players) || !players.length) {
+      return '<div class="rp-team-roster-message">NO VERIFIED ROSTER PLAYERS YET.</div>';
+    }
+    return players.map(player => {
+      const rank = Number(player.rank);
+      const ranked = Number.isSafeInteger(rank) && rank > 0;
+      return `<div class="rp-team-roster-player">
+        <span class="rp-team-roster-player-rank" data-unranked="${!ranked}">${ranked ? '#' + rank : 'UNRANKED'}</span>
+        <span class="rp-team-roster-player-name">${esc(player.playerName)}</span>
+      </div>`;
+    }).join('');
+  }
+
+  async function openRoster(state, teamId) {
+    const team = state.rows.find(item => String(item.teamId) === String(teamId));
+    if (!team || state.mode !== 'teams') return;
+    state.rosterTeamId = String(teamId);
+    const serial = ++state.rosterSerial;
+    const list = state.host.querySelector('[data-rp-team-list]');
+    const detail = state.host.querySelector('[data-rp-team-roster-detail]');
+    const title = detail.querySelector('[data-rp-team-roster-title]');
+    const roster = detail.querySelector('[data-rp-team-roster-list]');
+    roster.classList.remove('rp-team-roster-message');
+    if (title.textContent !== team.name) title.textContent = team.name;
+    roster.innerHTML = '<div class="rp-team-roster-message">LOADING ROSTER...</div>';
+    list.hidden = true;
+    detail.hidden = false;
+    try {
+      const token = localStorage.getItem('real_play_access_token') || '';
+      if (!token) throw new Error('Log in to view the team roster.');
+      const params = new URLSearchParams({
+        context: state.config.competitionContext,
+        season_id: String(state.config.competitionSeasonId),
+        team_id: String(teamId),
+      });
+      const response = await fetch(`${API}/api/real-play/competition/team-roster?${params}`, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload.ok) throw new Error(payload.message || 'Unable to load roster.');
+      if (active !== state || serial !== state.rosterSerial || state.rosterTeamId !== String(teamId)) return;
+      roster.innerHTML = rosterMarkup(payload.players);
+    } catch (error) {
+      if (active !== state || serial !== state.rosterSerial || state.rosterTeamId !== String(teamId)) return;
+      roster.textContent = error.message || 'Unable to load roster.';
+      roster.classList.add('rp-team-roster-message');
+    }
+  }
+
   function setMode(state, mode) {
     state.mode = mode;
     state.switcher.querySelectorAll('button').forEach(button => {
       button.setAttribute('aria-selected', String(button.dataset.mode === mode));
     });
     const teamsVisible = mode === 'teams';
+    if (!teamsVisible) closeRoster(state);
     state.world.dataset.rpCompetitionTeamView = mode;
     state.host.hidden = !teamsVisible;
     if (teamsVisible) {
@@ -99,6 +182,9 @@
   function makeRow(team) {
     const row = document.createElement('article');
     row.className = 'rp-team-standings-row';
+    row.setAttribute('role', 'button');
+    row.tabIndex = 0;
+    row.setAttribute('aria-label', 'View ' + String(team.name || 'team') + ' roster');
     row.dataset.teamId = team.teamId;
     row.dataset.rank = String(team.rank);
     row.dataset.club = team.clubId || '';
@@ -213,21 +299,44 @@
       host.className = 'rp-team-standings';
       host.hidden = true;
       host.setAttribute('aria-label', 'Official competition team rankings');
-      host.innerHTML = '<div class="rp-team-standings-list" data-rp-team-list></div>';
+      host.innerHTML = `<div class="rp-team-standings-list" data-rp-team-list></div>
+        <section class="rp-team-standings-detail" data-rp-team-roster-detail hidden aria-label="Verified team roster">
+          <div class="rp-team-roster-header">
+            <button type="button" class="rp-team-roster-back" data-rp-team-roster-back aria-label="Back to team standings">←</button>
+            <h2 class="rp-team-roster-title" data-rp-team-roster-title></h2>
+          </div>
+          <div class="rp-team-roster-list" data-rp-team-roster-list></div>
+        </section>`;
       header.appendChild(switcher);
       directory.insertBefore(host, controls.nextSibling);
       const state = { world, config, switcher, host, mode: 'teams',
         rows: [], loaded: false, loading: false, error: '',
-        lastSignature: '', serial: 0, seasonKey: String(config.competitionSeasonId || '') };
+        lastSignature: '', serial: 0, rosterSerial: 0, rosterTeamId: null, seasonKey: String(config.competitionSeasonId || '') };
       active = state;
       switcher.addEventListener('click', event => {
         const button = event.target.closest('button[data-mode]');
         if (button && active === state) setMode(state, button.dataset.mode);
       });
+      host.addEventListener('click', event => {
+        if (event.target.closest('[data-rp-team-roster-back]')) {
+          closeRoster(state, true);
+          return;
+        }
+        const row = event.target.closest('.rp-team-standings-row');
+        if (row && active === state) openRoster(state, row.dataset.teamId);
+      });
+      host.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const row = event.target.closest?.('.rp-team-standings-row');
+        if (!row || active !== state) return;
+        event.preventDefault();
+        openRoster(state, row.dataset.teamId);
+      });
       setMode(state, 'teams');
     }
     const seasonKey = String(config.competitionSeasonId || '');
     if (active.seasonKey !== seasonKey) {
+      closeRoster(active);
       active.seasonKey = seasonKey;
       active.loaded = false;
       active.lastSignature = '';
@@ -238,6 +347,7 @@
   function reset() {
     if (!active) return;
     active.serial++;
+    active.rosterSerial++;
     delete active.world.dataset.rpCompetitionTeamView;
     active.switcher.remove();
     active.host.remove();

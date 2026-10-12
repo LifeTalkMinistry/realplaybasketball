@@ -33,7 +33,9 @@ test('Teams removes the filter strip and always uses official ranking order', ()
   assert.match(source, /sortedRows\(state\.rows\)/);
   assert.match(source, /team\.rank/);
   assert.doesNotMatch(source, /index \+ 1.*rank/);
-  assert.match(source, /host\.innerHTML = '<div class="rp-team-standings-list" data-rp-team-list><\/div>'/);
+  assert.match(source, /host\.innerHTML = `<div class="rp-team-standings-list" data-rp-team-list><\/div>/);
+  assert.match(source, /data-rp-team-roster-detail hidden/);
+  assert.match(source, /data-rp-team-roster-back/);
   assert.match(source, /data-world-player-sort/);
 });
 test('logos link to the eight official team images, not generated replacements', () => {
@@ -95,6 +97,7 @@ test('TEAM defaults to visible standings and PLAYERS restores the original leade
   const setMode = vm.runInNewContext(
     source.slice(start, end) + '\nsetMode', {
       render: () => { renders += 1; },
+      closeRoster: () => {},
       load: () => { throw Error('Loaded tabs must not reload on switch'); },
     }
   );
