@@ -97,6 +97,7 @@ test('TEAM defaults to visible standings and PLAYERS restores the original leade
   const setMode = vm.runInNewContext(
     source.slice(start, end) + '\nsetMode', {
       render: () => { renders += 1; },
+      closeRoster: () => {},
       load: () => { throw Error('Loaded tabs must not reload on switch'); },
     }
   );
