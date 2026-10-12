@@ -14,7 +14,7 @@
     steadfast: 'assets/3v3/clubs/steadfast-logo.png',
     warriors: 'assets/3v3/clubs/warriors-logo.png',
   });
-  const MODES = ['WINS', 'WIN RATE', 'POINT DIFF', 'TEAM NAME'];
+  const MODES = ['WINS', 'WIN RATE', 'POINT DIFFERENTIAL', 'TEAM NAME'];
   const esc = value => String(value ?? '').replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;').replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
@@ -23,7 +23,7 @@
   function sortedRows(rows, key) {
     const list = [...rows];
     if (key === 'WIN RATE') list.sort((a, b) => number(b.winRate) - number(a.winRate) || a.rank - b.rank);
-    else if (key === 'POINT DIFF') list.sort((a, b) => number(b.pointDiff) - number(a.pointDiff) || a.rank - b.rank);
+    else if (key === 'POINT DIFFERENTIAL') list.sort((a, b) => number(b.pointDiff) - number(a.pointDiff) || a.rank - b.rank);
     else if (key === 'TEAM NAME') list.sort((a, b) => a.name.localeCompare(b.name) || a.rank - b.rank);
     else list.sort((a, b) => a.rank - b.rank);
     return list;
@@ -56,7 +56,7 @@
       .rp-team-standings-filters button{flex:0 0 auto;white-space:nowrap;border:1px solid rgba(97,196,232,.21);border-radius:7px;background:rgba(11,21,35,.7);color:#9aafbe;padding:9px 10px;font:900 .58rem Arial,sans-serif;letter-spacing:.035em;cursor:pointer}
       .rp-team-standings-filters button[aria-pressed="true"]{border-color:#5adfff;background:rgba(40,174,213,.2);color:#9defff}
       .rp-team-standings-list{display:grid;gap:8px;min-width:0}
-      .rp-team-standings-row{--team-glow:80,181,220;display:grid;grid-template-columns:30px 53px minmax(0,1fr) auto;gap:9px;align-items:center;box-sizing:border-box;min-height:87px;padding:11px 12px;border:1px solid rgba(var(--team-glow),.20);border-radius:13px;background:linear-gradient(105deg,rgba(var(--team-glow),.095),rgba(4,12,23,.97) 40%,rgba(5,12,22,.97));contain:layout style}
+      .rp-team-standings-row{--team-glow:80,181,220;display:grid;grid-template-columns:27px 50px minmax(0,1fr) 126px;gap:8px;align-items:center;box-sizing:border-box;min-height:98px;padding:11px 10px;border:1px solid rgba(var(--team-glow),.20);border-radius:13px;background:linear-gradient(105deg,rgba(var(--team-glow),.095),rgba(4,12,23,.97) 40%,rgba(5,12,22,.97));contain:layout style}
       .rp-team-standings-row[data-rank="1"]{border-color:rgba(90,223,255,.5);box-shadow:inset 3px 0 0 #5adfff,0 3px 17px rgba(26,140,180,.08)}
       .rp-team-standings-row[data-rank="2"]{border-color:rgba(164,194,226,.35)}
       .rp-team-standings-row[data-rank="3"]{border-color:rgba(193,151,108,.31)}
@@ -69,15 +69,22 @@
       .rp-team-standings-row[data-club="steadfast"]{--team-glow:95,191,160}
       .rp-team-standings-row[data-club="warriors"]{--team-glow:183,131,224}
       .rp-team-standings-rank{font:italic 950 1rem Impact,'Arial Narrow',Arial,sans-serif;color:#c0d7e7}
-      .rp-team-standings-logo{width:53px;height:53px;display:grid;place-items:center;flex-shrink:0}
+      .rp-team-standings-logo{width:50px;height:50px;display:grid;place-items:center;flex-shrink:0}
       .rp-team-standings-logo img{width:100%;height:100%;object-fit:contain;display:block}
       .rp-team-standings-logo b{display:grid;place-items:center;width:45px;height:45px;border-radius:50%;border:1px solid rgba(99,212,245,.4);background:rgba(30,66,86,.35);font:950 1.1rem Arial;color:#b6e8ff}
       .rp-team-standings-name{min-width:0;overflow-wrap:anywhere;color:#f2f8ff;font:italic 950 clamp(.82rem,3.4vw,1.03rem)/1.2 Impact,'Arial Narrow',Arial,sans-serif;letter-spacing:.035em}
-      .rp-team-standings-record{text-align:right;min-width:74px}
-      .rp-team-standings-record strong{display:block;white-space:nowrap;font:950 .81rem Arial,sans-serif;color:#f6fbff}
-      .rp-team-standings-record small{display:block;margin-top:6px;white-space:nowrap;font:800 .59rem Arial,sans-serif;color:#74d7ef}
+      .rp-team-standings-record{display:grid;gap:7px;min-width:0;width:126px;justify-self:end;text-align:center}
+      .rp-team-standings-record-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0}
+      .rp-team-standings-stat{display:grid;justify-items:center;align-content:center;gap:4px;min-width:0;min-height:49px;padding:5px 2px;border:1px solid rgba(109,181,216,.14);border-radius:9px;background:rgba(5,14,26,.7)}
+      .rp-team-standings-stat strong{color:#ebf7ff;font:950 1.06rem/1 Arial,sans-serif;font-variant-numeric:tabular-nums}
+      .rp-team-standings-stat small{color:#7398af;font:850 .53rem/1 Arial,sans-serif;letter-spacing:.045em}
+      .rp-team-standings-stat[data-result="wins"] strong{color:#8ce9ff}
+      .rp-team-standings-stat[data-result="losses"] strong{color:#e8bbba}
+      .rp-team-standings-win-rate{color:#8da9bd;white-space:nowrap;font:800 .56rem/1 Arial,sans-serif;letter-spacing:.015em}
+      .rp-team-standings-win-rate b{color:#b9e6f2;font-weight:950;font-variant-numeric:tabular-nums}
       .rp-team-standings-message{padding:35px 12px;text-align:center;color:#8499aa;font:800 .7rem/1.5 Arial,sans-serif}
-      @media(max-width:390px){.rp-team-standings-row{grid-template-columns:26px 45px minmax(0,1fr) auto;gap:7px;min-height:76px;padding:9px 8px}.rp-team-standings-logo{width:45px;height:45px}.rp-team-standings-record{min-width:69px}.rp-team-standings-record strong{font-size:.74rem}.rp-team-standings-name{font-size:.85rem}}
+      @media(max-width:390px){.rp-team-standings-row{grid-template-columns:24px 43px minmax(0,1fr) 110px;gap:6px;min-height:96px;padding:9px 8px}.rp-team-standings-logo{width:43px;height:43px}.rp-team-standings-record{width:110px;gap:6px}.rp-team-standings-record-grid{gap:6px}.rp-team-standings-stat{min-height:44px}.rp-team-standings-stat small{font-size:.49rem}.rp-team-standings-name{font-size:.82rem}}
+      @media(max-width:340px){.rp-team-standings-row{grid-template-columns:22px 39px minmax(0,1fr) 104px;gap:5px;padding:8px 6px}.rp-team-standings-logo{width:39px;height:39px}.rp-team-standings-record{width:104px}.rp-team-standings-record-grid{gap:5px}.rp-team-standings-name{font-size:.76rem}}
       @media(prefers-reduced-motion:reduce){.rp-competition-team-toggle button{transition:none}}
     `;
     document.head.appendChild(element);
@@ -109,7 +116,13 @@
         ? `<img src="${esc(image)}" alt="${esc(team.name)} team logo" loading="lazy" decoding="async">`
         : `<b aria-label="Team logo unavailable">${esc(String(team.name).charAt(0))}</b>`}</span>
       <strong class="rp-team-standings-name">${esc(team.name)}</strong>
-      <span class="rp-team-standings-record"><strong data-record></strong><small data-win-rate></small></span>`;
+      <span class="rp-team-standings-record" aria-label="Team win and loss record">
+        <span class="rp-team-standings-record-grid">
+          <span class="rp-team-standings-stat" data-result="wins"><strong data-wins></strong><small>WINS</small></span>
+          <span class="rp-team-standings-stat" data-result="losses"><strong data-losses></strong><small>LOSSES</small></span>
+        </span>
+        <small class="rp-team-standings-win-rate">WIN RATE <b data-win-rate></b></small>
+      </span>`;
     return row;
   }
 
@@ -151,11 +164,14 @@
         row.replaceWith(next);
         row = next;
       }
-      const record = `${team.wins}W–${team.losses}L`;
-      const rate = `${number(team.winRate).toFixed(1).replace(/\.0$/,'')}% WR`;
-      const recordNode = row.querySelector('[data-record]');
+      const wins = String(number(team.wins));
+      const losses = String(number(team.losses));
+      const rate = `${number(team.winRate).toFixed(1).replace(/\.0$/,'')}%`;
+      const winsNode = row.querySelector('[data-wins]');
+      const lossesNode = row.querySelector('[data-losses]');
       const rateNode = row.querySelector('[data-win-rate]');
-      if (recordNode.textContent !== record) recordNode.textContent = record;
+      if (winsNode.textContent !== wins) winsNode.textContent = wins;
+      if (lossesNode.textContent !== losses) lossesNode.textContent = losses;
       if (rateNode.textContent !== rate) rateNode.textContent = rate;
       if (list.children[index] !== row) list.insertBefore(row, list.children[index] || null);
     });
