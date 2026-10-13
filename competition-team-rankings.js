@@ -38,10 +38,13 @@
       const memberCount = state && Number.isSafeInteger(Number(state.memberCount))
         ? Math.max(0, Number(state.memberCount)) : null;
       const verifiedGames = Number(record?.gamesPlayed) || 0;
-      const rosterStatus = !state || capacity === null || memberCount === null ? 'unknown'
+      // Official finalized Tune-Up games take precedence over temporary 4v4
+      // signup holds. A team already competing must never appear unclaimed or
+      // incomplete because an unrelated formation roster is empty or expired.
+      const rosterStatus = verifiedGames > 0 ? 'active'
+        : !state || capacity === null || memberCount === null ? 'unknown'
         : state.status === 'available' ? 'unclaimed'
-        : memberCount < capacity ? 'needs-players'
-        : verifiedGames > 0 ? 'active' : 'ready';
+        : memberCount < capacity ? 'needs-players' : 'ready';
       return { ...club, ...(record || {}), rank: record?.rank ?? null,
         wins: record?.wins ?? 0, losses: record?.losses ?? 0, gamesPlayed: verifiedGames,
         rosterStatus, memberCount, rosterCapacity: capacity };
