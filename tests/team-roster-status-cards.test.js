@@ -39,6 +39,30 @@ test('all eight official teams are shown without fabricating game ranks', () => 
   assert.equal(original[0].rosterStatus, undefined, 'backend results must not be mutated');
 });
 
+test('verified Season 1 teams never turn gray because 4v4 signup is incomplete', () => {
+  const official = [
+    { teamId: 'valiant', clubId: 'valiant', name: 'VALIANT', rank: 2, wins: 3, losses: 2, gamesPlayed: 5 },
+    { teamId: 'watchmen', clubId: 'watchmen', name: 'WATCHMEN', rank: 4, wins: 1, losses: 2, gamesPlayed: 3 },
+    { teamId: 'chosen', clubId: 'chosen', name: 'CHOSEN', rank: 5, wins: 0, losses: 2, gamesPlayed: 2 },
+    { teamId: 'lions', clubId: 'lions', name: 'LIONS', rank: 3, wins: 2, losses: 1, gamesPlayed: 3 },
+  ];
+  const currentSignup = [
+    { club: 'valiant', status: 'held', memberCount: 2, capacity: 6 },
+    { club: 'watchmen', status: 'available', memberCount: 0, capacity: 6 },
+    { club: 'chosen', status: 'held', memberCount: 1, capacity: 6 },
+    // lions has no signup row at all: it still has verified season games
+  ];
+  const merged = combineRows(official, currentSignup);
+  const teams = Object.fromEntries(Array.from(merged, team => [team.teamId, team]));
+  for (const id of ['valiant', 'watchmen', 'chosen', 'lions']) {
+    assert.equal(teams[id].rosterStatus, 'active', id + ' should retain full color');
+  }
+  assert.equal(teams.chosen.wins, 0, 'a loss-only team remains active');
+  assert.equal(teams.chosen.losses, 2);
+  assert.equal(teams.valiant.rank, 2, 'verified season rank survives signup differences');
+  assert.equal(teams.eagles.rosterStatus, 'unknown', 'other clubs are not fabricated');
+});
+
 test('a roster fetch failure never invents claimed or unclaimed ownership', () => {
   const merged = combineRows([], null);
   assert.equal(merged.length, 8);
