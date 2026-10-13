@@ -45,5 +45,5 @@ test('admin sees explicit status choices; displayed names stay escaped', () => {
   assert.match(html, /value="borrowed"/);
   assert.match(html, /&lt;Player&gt;/);
   assert.doesNotMatch(html, /<Player>/);
-  assert.match(source, /team-roster\\/classification/);
+  assert.ok(source.includes('/api/real-play/competition/team-roster/classification'));
 });
