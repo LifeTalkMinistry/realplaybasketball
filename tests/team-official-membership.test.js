@@ -27,11 +27,11 @@ test('borrowed appearances are separate from approved official roster members', 
   assert.doesNotMatch(html, /data-rp-roster-classify/, 'public viewer cannot edit rosters');
 });
 
-test('new game appearances do not become official members until approved', () => {
+test('historical appearances never create official membership without Team Code', () => {
   const html = rosterMarkup([
     { identityKey: 'manual:32', playerName: 'Temporary Player', rank: null },
   ]);
-  assert.match(html, /NO OFFICIAL MEMBERS CONFIRMED YET/);
+  assert.match(html, /NO PLAYERS JOINED THROUGH TEAM CODE YET/);
   assert.match(html, /GAME APPEARANCES · UNVERIFIED/);
   assert.doesNotMatch(html, /BORROWED PLAYERS/, 'only admin may label as borrowed');
 });
@@ -41,9 +41,22 @@ test('admin sees explicit status choices; displayed names stay escaped', () => {
     { identityKey: 'manual:22', playerName: '<Player>', rank: null, rosterStatus: 'unverified' },
   ], true);
   assert.match(html, /data-rp-roster-classify/);
-  assert.match(html, /value="official"/);
+  assert.doesNotMatch(html, /value="official"/, 'only Team Code establishes membership');
   assert.match(html, /value="borrowed"/);
   assert.match(html, /&lt;Player&gt;/);
   assert.doesNotMatch(html, /<Player>/);
   assert.ok(source.includes('/api/real-play/competition/team-roster/classification'));
+});
+
+test('joined Team Code members are locked to official status, not editable borrowed players', () => {
+  const html = rosterMarkup([
+    { identityKey: 'user:12', playerName: 'Valiant Member', rank: null,
+      rosterStatus: 'official', membershipSource: 'team_code' },
+    { identityKey: 'user:13', playerName: 'Borrowed Appearance', rank: 9,
+      rosterStatus: 'borrowed', membershipSource: 'game_appearance' },
+  ], true);
+  const official = html.slice(html.indexOf('Valiant Member'), html.indexOf('BORROWED PLAYERS'));
+  assert.match(official, /JOINED ✓/);
+  assert.doesNotMatch(official, /data-rp-roster-classify/, 'admin cannot demote Team Code membership via a side table');
+  assert.match(html, /data-rp-roster-classify/, 'admin may still tag nonmembers as borrowed');
 });
