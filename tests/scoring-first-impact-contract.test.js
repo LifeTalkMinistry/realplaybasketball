@@ -23,11 +23,11 @@ test('replay and admin recaps both use Real Play scoring-first game impact v1', 
     assert.match(replay, new RegExp(`num\\(player\\?\\.${stat}\\) \\* ${escape(weight)}\\)`));
     assert.match(admin, new RegExp(`st\\.${stat} \\* ${escape(weight)}\\)`));
   }
-  assert.match(replay, /shots\\.misses \\* 0\\.15/);
-  assert.match(admin, /s\\.misses \\* 0\\.15/);
-  assert.match(replay, /const score = num\\(player\\?\\.pts\\)/);
-  assert.match(admin, /const score = st\\.pts/);
-  assert.doesNotMatch(replay, /0\\.5 per missed shot, 1\\.5 per turnover/);
+  assert.match(replay, /shots\.misses \* 0\.15/);
+  assert.match(admin, /s\.misses \* 0\.15/);
+  assert.match(replay, /const score = num\(player\?\.pts\)/);
+  assert.match(admin, /const score = st\.pts/);
+  assert.doesNotMatch(replay, /0\.5 per missed shot, 1\.5 per turnover/);
 });
 
 test('new impact assets receive a fresh browser cache version', () => {
