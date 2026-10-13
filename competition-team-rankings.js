@@ -97,6 +97,17 @@
       .rp-team-roster-player-rank{font:italic 950 .79rem Impact,'Arial Narrow',Arial,sans-serif;color:#6fdcff;white-space:nowrap}
       .rp-team-roster-player-rank[data-unranked="true"]{font:850 .55rem Arial,sans-serif;color:#7e93a7}
       .rp-team-roster-player-name{min-width:0;overflow-wrap:anywhere;font:900 .77rem/1.3 Arial,sans-serif;color:#edf7ff}
+      .rp-team-roster-section{display:grid;gap:6px;padding-bottom:12px;border-bottom:1px solid rgba(103,132,162,.16)}
+      .rp-team-roster-section-title{display:flex;justify-content:space-between;align-items:center;margin:7px 2px;color:#ebf4ff;font:850 .64rem Arial,sans-serif;letter-spacing:.1em}
+      .rp-team-roster-section-title span{color:#79cde7;font-variant-numeric:tabular-nums}
+      .rp-team-roster-section[data-roster-section="borrowed"] .rp-team-roster-section-title{color:#aab7c8}
+      .rp-team-roster-section[data-roster-section="borrowed"] .rp-team-roster-player-name{color:#b6c2d0}
+      .rp-team-roster-section[data-roster-section="unverified"] .rp-team-roster-player-name{color:#a4b2c4}
+      .rp-team-roster-section-empty{padding:9px 12px;margin:0;color:#889bb0;font:700 .63rem/1.5 Arial,sans-serif}
+      .rp-team-roster-player:has(.rp-team-roster-editor-label){grid-template-columns:50px minmax(0,1fr) 96px;gap:7px}
+      .rp-team-roster-editor-label{display:grid;gap:3px;color:#829eb0;font:800 .46rem Arial,sans-serif;letter-spacing:.07em}
+      .rp-team-roster-editor-label select{width:100%;padding:7px 2px;border:1px solid rgba(113,177,216,.25);border-radius:6px;background:#0b1b2c;color:#d4e7f5;font:800 .56rem Arial,sans-serif}
+      .rp-team-roster-feedback{min-height:1em;margin:0;padding:0 4px;color:#93cde4;font:750 .6rem/1.4 Arial,sans-serif}
       .rp-team-roster-message{text-align:center;padding:34px 12px;color:#819bad;font:800 .7rem/1.45 Arial,sans-serif}
       .rp-team-standings-row[data-rank="1"]{border-color:rgba(90,223,255,.5);box-shadow:inset 3px 0 0 #5adfff,0 3px 17px rgba(26,140,180,.08)}
       .rp-team-standings-row[data-rank="2"]{border-color:rgba(164,194,226,.35)}
@@ -156,20 +167,39 @@
     }
   }
 
-  function rosterMarkup(players) {
+  function rosterMarkup(players, canManageRoster = false) {
     if (!Array.isArray(players) || !players.length) {
-      return '<div class="rp-team-roster-message">NO VERIFIED ROSTER PLAYERS YET.</div>';
+      return '<div class="rp-team-roster-message">NO VERIFIED GAME APPEARANCES YET.</div>';
     }
-    return players.map(player => {
+    const sections = [
+      { status: 'official', title: 'OFFICIAL ROSTER', empty: 'NO OFFICIAL MEMBERS CONFIRMED YET.' },
+      { status: 'borrowed', title: 'BORROWED PLAYERS', empty: '' },
+      { status: 'unverified', title: 'GAME APPEARANCES · UNVERIFIED', empty: '' },
+    ];
+    const renderPlayer = player => {
       const rank = Number(player.rank);
       const ranked = Number.isSafeInteger(rank) && rank > 0;
-      return `<div class="rp-team-roster-player">
+      const status = ['official','borrowed'].includes(player.rosterStatus) ? player.rosterStatus : 'unverified';
+      const select = canManageRoster ? `<label class="rp-team-roster-editor-label">TEAM STATUS
+        <select data-rp-roster-classify data-identity-key="${esc(player.identityKey)}" data-current-status="${status}" aria-label="Membership of ${esc(player.playerName)}">
+          <option value="unverified" ${status === 'unverified' ? 'selected' : ''}>UNVERIFIED</option>
+          <option value="official" ${status === 'official' ? 'selected' : ''}>OFFICIAL</option>
+          <option value="borrowed" ${status === 'borrowed' ? 'selected' : ''}>BORROWED</option>
+        </select></label>` : '';
+      return `<div class="rp-team-roster-player" data-status="${status}">
         <span class="rp-team-roster-player-rank" data-unranked="${!ranked}">${ranked ? '#' + rank : 'UNRANKED'}</span>
-        <span class="rp-team-roster-player-name">${esc(player.playerName)}</span>
-      </div>`;
+        <span class="rp-team-roster-player-name">${esc(player.playerName)}</span>${select}</div>`;
+    };
+    return sections.map(section => {
+      const group = players.filter(player => (['official','borrowed'].includes(player.rosterStatus)
+        ? player.rosterStatus : 'unverified') === section.status);
+      if (!group.length && section.status !== 'official') return '';
+      return `<section class="rp-team-roster-section" data-roster-section="${section.status}">
+        <h3 class="rp-team-roster-section-title">${section.title} <span>${group.length}</span></h3>
+        ${group.length ? group.map(renderPlayer).join('')
+          : `<p class="rp-team-roster-section-empty">${section.empty}</p>`}</section>`;
     }).join('');
   }
-
   async function openRoster(state, teamId) {
     const team = state.rows.find(item => String(item.teamId) === String(teamId));
     if (!team || state.mode !== 'teams') return;
@@ -199,7 +229,9 @@
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || !payload.ok) throw new Error(payload.message || 'Unable to load roster.');
       if (active !== state || serial !== state.rosterSerial || state.rosterTeamId !== String(teamId)) return;
-      roster.innerHTML = rosterMarkup(payload.players);
+      roster.innerHTML = rosterMarkup(payload.players, Boolean(payload.canManageRoster));
+      const status = detail.querySelector('[data-rp-team-roster-status]');
+      if (status) status.textContent = payload.canManageRoster ? 'ADMIN: Confirm each official member or borrowed player.' : '';
     } catch (error) {
       if (active !== state || serial !== state.rosterSerial || state.rosterTeamId !== String(teamId)) return;
       roster.textContent = error.message || 'Unable to load roster.';
@@ -207,6 +239,44 @@
     }
   }
 
+  async function updateRosterClassification(state, select) {
+    if (state.rosterUpdating || !state.rosterTeamId) return;
+    const identityKey = select.dataset.identityKey;
+    const previous = select.dataset.currentStatus;
+    const classification = select.value;
+    if (!identityKey || classification === previous) return;
+    const teamId = state.rosterTeamId;
+    const serial = ++state.rosterSerial;
+    const detail = state.host.querySelector('[data-rp-team-roster-detail]');
+    const status = detail.querySelector('[data-rp-team-roster-status]');
+    state.rosterUpdating = true;
+    select.disabled = true;
+    if (status) status.textContent = 'UPDATING TEAM CLASSIFICATION…';
+    try {
+      const token = localStorage.getItem('real_play_access_token') || '';
+      if (!token) throw new Error('Log in with your Real Play admin account.');
+      const response = await fetch(`${API}/api/real-play/competition/team-roster/classification`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          context: state.config.competitionContext,
+          seasonId: state.config.competitionSeasonId, teamId, identityKey, classification,
+        }), cache: 'no-store',
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload.ok) throw new Error(payload.message || payload.error || 'Unable to update roster.');
+      if (active !== state || serial !== state.rosterSerial || state.rosterTeamId !== teamId) return;
+      detail.querySelector('[data-rp-team-roster-list]').innerHTML = rosterMarkup(payload.players, true);
+      if (status) status.textContent = 'ROSTER CLASSIFICATION SAVED.';
+    } catch (error) {
+      if (active !== state || serial !== state.rosterSerial || state.rosterTeamId !== teamId) return;
+      select.value = previous;
+      select.disabled = false;
+      if (status) status.textContent = error.message || 'Unable to update roster.';
+    } finally {
+      state.rosterUpdating = false;
+    }
+  }
   function setMode(state, mode) {
     state.mode = mode;
     state.switcher.querySelectorAll('button').forEach(button => {
@@ -375,6 +445,7 @@
             <h2 class="rp-team-roster-title" data-rp-team-roster-title></h2>
           </div>
           <div class="rp-team-roster-list" data-rp-team-roster-list></div>
+          <p class="rp-team-roster-feedback" data-rp-team-roster-status aria-live="polite"></p>
         </section>`;
       header.appendChild(switcher);
       directory.insertBefore(host, controls.nextSibling);
@@ -393,6 +464,10 @@
         }
         const row = event.target.closest('.rp-team-standings-row');
         if (row && active === state) openRoster(state, row.dataset.teamId);
+      });
+      host.addEventListener('change', event => {
+        const select = event.target.closest?.('select[data-rp-roster-classify]');
+        if (select && active === state) updateRosterClassification(state, select);
       });
       host.addEventListener('keydown', event => {
         if (event.key !== 'Enter' && event.key !== ' ') return;
