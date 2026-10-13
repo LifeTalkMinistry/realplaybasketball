@@ -19,20 +19,49 @@
     .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const logoFor = team => ART[team?.clubId] || null;
-  // Rank is determined by verified wins and tie-breakers on the backend.
-  // The teams view intentionally has no alternate filters or sort modes.
+  // A club is a real team identity even before it has a verified game.
+  // Only the competition endpoint may supply an official standings rank.
+  const CLUB_CATALOG = Object.freeze(Object.keys(ART).map(teamId =>
+    Object.freeze({ teamId, clubId: teamId, name: teamId.toUpperCase() })));
+
+  function combineRows(verifiedRows, rosterStates) {
+    const official = new Map((Array.isArray(verifiedRows) ? verifiedRows : [])
+      .map(team => [String(team.teamId), team]));
+    const formation = new Map((Array.isArray(rosterStates) ? rosterStates : [])
+      .filter(team => team && ART[team.club])
+      .map(team => [String(team.club), team]));
+    return CLUB_CATALOG.map(club => {
+      const record = official.get(club.teamId) || null;
+      const state = formation.get(club.teamId) || null;
+      const capacity = state && Number.isSafeInteger(Number(state.capacity)) && Number(state.capacity) > 0
+        ? Number(state.capacity) : null;
+      const memberCount = state && Number.isSafeInteger(Number(state.memberCount))
+        ? Math.max(0, Number(state.memberCount)) : null;
+      const verifiedGames = Number(record?.gamesPlayed) || 0;
+      const rosterStatus = !state || capacity === null || memberCount === null ? 'unknown'
+        : state.status === 'available' ? 'unclaimed'
+        : memberCount < capacity ? 'needs-players'
+        : verifiedGames > 0 ? 'active' : 'ready';
+      return { ...club, ...(record || {}), rank: record?.rank ?? null,
+        wins: record?.wins ?? 0, losses: record?.losses ?? 0, gamesPlayed: verifiedGames,
+        rosterStatus, memberCount, rosterCapacity: capacity };
+    });
+  }
+
   function sortedRows(rows) {
     return [...rows].sort((a, b) =>
-      Number(a.rank) - Number(b.rank)
+      (a.rank == null ? 1 : 0) - (b.rank == null ? 1 : 0)
+      || (a.rank != null && b.rank != null ? Number(a.rank) - Number(b.rank) : 0)
       || String(a.teamId).localeCompare(String(b.teamId)));
   }
   const signature = rows => JSON.stringify(rows.map(row => [
     row.teamId, row.name, row.rank, row.wins, row.losses,
-    row.gamesPlayed, row.winRate, row.pointDiff, row.pointsFor, row.pointsAgainst
+    row.gamesPlayed, row.winRate, row.pointDiff, row.pointsFor, row.pointsAgainst,
+    row.rosterStatus, row.memberCount, row.rosterCapacity
   ]));
 
   // Export pure logic for Node regression tests without a browser.
-  if (typeof module !== 'undefined') module.exports = { sortedRows, logoFor, signature, ART };
+  if (typeof module !== 'undefined') module.exports = { sortedRows, logoFor, signature, combineRows, CLUB_CATALOG, ART };
 
   let active = null;
   function ensureStyle() {
@@ -89,6 +118,17 @@
       .rp-team-standings-stat small{color:#7398af;font:850 .53rem/1 Arial,sans-serif;letter-spacing:.045em}
       .rp-team-standings-stat[data-result="wins"] strong{color:#8ce9ff}
       .rp-team-standings-stat[data-result="losses"] strong{color:#e8bbba}
+      .rp-team-standings-identity{display:grid;gap:5px;min-width:0;align-content:center}
+      .rp-team-standings-status{font:850 .52rem/1.28 Arial,sans-serif;letter-spacing:.08em;color:#cad2df;overflow-wrap:anywhere}
+      .rp-team-standings-row[data-roster-status="needs-players"],.rp-team-standings-row[data-roster-status="unclaimed"]{--team-glow:148,159,175!important;border-color:rgba(170,181,199,.28)!important;background:linear-gradient(114deg,rgba(152,164,184,.115),rgba(13,20,31,.97) 41%,rgba(7,11,20,.98))!important;box-shadow:inset 0 1px 0 rgba(244,249,255,.065),0 7px 22px rgba(0,0,0,.20)!important}
+      .rp-team-standings-row[data-roster-status="needs-players"] .rp-team-standings-logo img,.rp-team-standings-row[data-roster-status="unclaimed"] .rp-team-standings-logo img{filter:grayscale(1) brightness(.78) contrast(1.17)}
+      .rp-team-standings-row[data-roster-status="needs-players"] .rp-team-standings-name,.rp-team-standings-row[data-roster-status="unclaimed"] .rp-team-standings-name{color:#c7d0de}
+      .rp-team-standings-row[data-roster-status="needs-players"] .rp-team-standings-stat strong,.rp-team-standings-row[data-roster-status="unclaimed"] .rp-team-standings-stat strong{color:#bbc7d6}
+      .rp-team-standings-row[data-roster-status="unknown"] .rp-team-standings-status{color:#8394a9}
+      .rp-team-standings-roster-meter{display:grid;justify-items:center;align-content:center;gap:5px;min-height:49px;padding:6px 4px;border:1px solid rgba(157,175,196,.19);border-radius:9px;background:linear-gradient(150deg,rgba(36,47,63,.59),rgba(7,15,27,.75))}
+      .rp-team-standings-roster-meter strong{font:900 .94rem/1 Arial,sans-serif;color:#d5dee8;font-variant-numeric:tabular-nums}
+      .rp-team-standings-roster-meter small{font:850 .52rem/1 Arial,sans-serif;letter-spacing:.07em;color:#91a1b3}
+      .rp-team-standings-row[data-roster-status="ready"] .rp-team-standings-status{color:#8ce9ff}
       .rp-team-standings-message{padding:35px 12px;text-align:center;color:#8499aa;font:800 .7rem/1.5 Arial,sans-serif}
       @media(max-width:390px){.rp-team-standings-row{grid-template-columns:24px 43px minmax(0,1fr) 110px;gap:6px;min-height:84px;padding:9px 8px}.rp-team-standings-logo{width:43px;height:43px}.rp-team-standings-record{width:110px;gap:6px}.rp-team-standings-record-grid{gap:6px}.rp-team-standings-stat{min-height:44px}.rp-team-standings-stat small{font-size:.49rem}.rp-team-standings-name{font-size:.82rem}}
       @media(max-width:340px){.rp-team-standings-row{grid-template-columns:22px 39px minmax(0,1fr) 104px;gap:5px;padding:8px 6px}.rp-team-standings-logo{width:39px;height:39px}.rp-team-standings-record{width:104px}.rp-team-standings-record-grid{gap:5px}.rp-team-standings-name{font-size:.76rem}}
@@ -186,23 +226,36 @@
     row.tabIndex = 0;
     row.setAttribute('aria-label', 'View ' + String(team.name || 'team') + ' roster');
     row.dataset.teamId = team.teamId;
-    row.dataset.rank = String(team.rank);
+    row.dataset.rank = String(team.rank ?? '');
     row.dataset.club = team.clubId || '';
+    row.dataset.rosterStatus = team.rosterStatus || 'unknown';
+    row.dataset.rosterSize = `${team.memberCount ?? 'unknown'}/${team.rosterCapacity ?? 'unknown'}`;
+    const hasRank = Number.isSafeInteger(Number(team.rank)) && Number(team.rank) > 0;
     const image = logoFor(team);
-    row.innerHTML = `<span class="rp-team-standings-rank">#${esc(team.rank)}</span>
+    const statusLabel = {
+      'unclaimed': 'UNCLAIMED',
+      'needs-players': 'NEEDS PLAYERS',
+      'ready': 'READY TO PLAY',
+      'unknown': 'ROSTER UNAVAILABLE',
+    }[team.rosterStatus] || '';
+    const record = hasRank
+      ? `<span class="rp-team-standings-record-grid">
+          <span class="rp-team-standings-stat" data-result="wins"><strong data-wins></strong><small>WINS</small></span>
+          <span class="rp-team-standings-stat" data-result="losses"><strong data-losses></strong><small>LOSSES</small></span>
+        </span>`
+      : `<span class="rp-team-standings-roster-meter" aria-label="Roster occupancy">
+          <strong>${team.memberCount === null || team.rosterCapacity === null ? '—' : esc(team.memberCount + '/' + team.rosterCapacity)}</strong>
+          <small>PLAYERS</small>
+        </span>`;
+    row.innerHTML = `<span class="rp-team-standings-rank">${hasRank ? '#' + esc(team.rank) : '—'}</span>
       <span class="rp-team-standings-logo">${image
         ? `<img src="${esc(image)}" alt="${esc(team.name)} team logo" loading="lazy" decoding="async">`
         : `<b aria-label="Team logo unavailable">${esc(String(team.name).charAt(0))}</b>`}</span>
-      <strong class="rp-team-standings-name">${esc(team.name)}</strong>
-      <span class="rp-team-standings-record" aria-label="Team win and loss record">
-        <span class="rp-team-standings-record-grid">
-          <span class="rp-team-standings-stat" data-result="wins"><strong data-wins></strong><small>WINS</small></span>
-          <span class="rp-team-standings-stat" data-result="losses"><strong data-losses></strong><small>LOSSES</small></span>
-        </span>
-      </span>`;
+      <span class="rp-team-standings-identity"><strong class="rp-team-standings-name">${esc(team.name)}</strong>
+        ${statusLabel ? `<small class="rp-team-standings-status">${statusLabel}</small>` : ''}</span>
+      <span class="rp-team-standings-record" aria-label="${hasRank ? 'Team win and loss record' : 'Team roster occupancy'}">${record}</span>`;
     return row;
   }
-
   function render(state) {
     if (!state.host || state.mode !== 'teams') return;
     const list = state.host.querySelector('[data-rp-team-list]');
@@ -217,7 +270,7 @@
       return;
     }
     if (!state.rows.length) {
-      if (list.textContent !== 'NO VERIFIED TEAM RESULTS YET.') list.textContent = 'NO VERIFIED TEAM RESULTS YET.';
+      if (list.textContent !== 'NO TEAM INFORMATION AVAILABLE.') list.textContent = 'NO TEAM INFORMATION AVAILABLE.';
       list.classList.add('rp-team-standings-message');
       return;
     }
@@ -233,7 +286,9 @@
     ordered.forEach((team, index) => {
       let row = [...list.children].find(node => node.dataset.teamId === String(team.teamId));
       if (!row) row = makeRow(team);
-      if (row.dataset.rank !== String(team.rank) || row.dataset.club !== String(team.clubId || '')) {
+      if (row.dataset.rank !== String(team.rank ?? '') || row.dataset.club !== String(team.clubId || '')
+        || row.dataset.rosterStatus !== String(team.rosterStatus || 'unknown')
+        || row.dataset.rosterSize !== `${team.memberCount ?? 'unknown'}/${team.rosterCapacity ?? 'unknown'}`) {
         // A team's official rank or identity changed; update only its row.
         const next = makeRow(team);
         row.replaceWith(next);
@@ -243,8 +298,12 @@
       const losses = String(number(team.losses));
       const winsNode = row.querySelector('[data-wins]');
       const lossesNode = row.querySelector('[data-losses]');
-      if (winsNode.textContent !== wins) winsNode.textContent = wins;
-      if (lossesNode.textContent !== losses) lossesNode.textContent = losses;
+      if (winsNode) {
+        if (winsNode.textContent !== wins) winsNode.textContent = wins;
+      }
+      if (lossesNode) {
+        if (lossesNode.textContent !== losses) lossesNode.textContent = losses;
+      }
       if (list.children[index] !== row) list.insertBefore(row, list.children[index] || null);
     });
   }
@@ -258,14 +317,21 @@
     try {
       const token = localStorage.getItem('real_play_access_token') || '';
       if (!token) throw new Error('Log in to view verified team standings.');
-      const response = await fetch(`${API}/api/real-play/competition/team-standings?${params}`, {
-        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-        cache: 'no-store',
-      });
-      const payload = await response.json();
+      const [response, formationResponse] = await Promise.all([
+        fetch(`${API}/api/real-play/competition/team-standings?${params}`, {
+          headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        }),
+        fetch(`${API}/api/real-play/4v4/public`, {
+          headers: { Accept: 'application/json' }, cache: 'no-store',
+        }).catch(() => null),
+      ]);
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok || !payload.ok) throw new Error(payload.message || 'Team standings are unavailable.');
+      const formation = formationResponse?.ok
+        ? await formationResponse.json().catch(() => ({})) : {};
       if (active !== state || serial !== state.serial) return;
-      const next = Array.isArray(payload.teams) ? payload.teams : [];
+      const next = combineRows(payload.teams, formation.ok ? formation.teamStates : null);
       const nextSignature = signature(next);
       if (nextSignature !== state.lastSignature) {
         state.rows = next;
