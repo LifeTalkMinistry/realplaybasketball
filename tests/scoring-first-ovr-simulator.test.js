@@ -7,12 +7,15 @@ const path = require('node:path');
 
 const simulator = fs.readFileSync(path.join(__dirname, '..', 'ovr-simulator.html'), 'utf8');
 
-test('OVR simulator presents statistical impact as the 85% anchor', () => {
-  assert.match(simulator, /V6 · SCORING FIRST/);
-  assert.match(simulator, /statistical:\s*\['Scoring-First Statistical Impact', '85%'/);
-  assert.match(simulator, /competitive:\s*\['Competitive Result Context', '15%'/);
+test('OVR simulator shows 100% individual event performance and no team-win bonus', () => {
+  assert.match(simulator, /V7 · INDIVIDUAL IMPACT/);
+  assert.match(simulator, /statistical:\s*\['Scoring-First Individual Impact', '100%'/);
+  assert.doesNotMatch(simulator, /competitive:\s*\[/);
   assert.doesNotMatch(simulator, /75% team scoring contribution \+ 25% shooting efficiency/);
   assert.match(simulator, /id="gameImpact"/);
+  assert.match(simulator, /TEAM RESULT DOES NOT AFFECT OVR/);
+  assert.doesNotMatch(simulator, /name="teamOvr"/);
+  assert.doesNotMatch(simulator, /name="opponentOvr"/);
 });
 
 test('OVR simulator includes foul penalties and team fouls', () => {
