@@ -101,10 +101,10 @@
     <header class="topbar">
       <button class="back" type="button" id="backButton" aria-label="Back to Players">←</button>
       <div class="heading"><strong>OVR SIMULATOR</strong><span>REAL PLAY BASKETBALL</span></div>
-      <div class="version">V7 · INDIVIDUAL IMPACT</div>
+      <div class="version">V8 · OWN OPPORTUNITIES</div>
     </header>
 
-    <div class="notice"><b>SIMULATION ONLY.</b> Individual scoring-first impact determines Game Rating and OVR. Team wins or losses never add or subtract individual OVR points. Nothing here changes any actual player, game or stat.</div>
+    <div class="notice"><b>SIMULATION ONLY.</b> Scoring-first performance is compared with a fixed reference for the ruleset and player format. Your teammates' stats, team wins/losses, and number of career games do not give extra performance points.</div>
 
     <section class="result-card" id="resultCard" aria-live="polite">
       <div class="result-top">
@@ -118,9 +118,9 @@
         </div>
       </div>
       <div class="share">
-        <div><b id="actualShare">—</b><span>TEAM SCORING FROM PLAYER</span></div>
-        <div><b id="equalShare">—</b><span>EQUAL SHARE FOR FORMAT</span></div>
-        <div><b id="shareMultiple">—</b><span>VS EQUAL SCORING SHARE</span></div>
+        <div><b id="shotAccuracy">—</b><span>YOUR SHOOTING %</span></div>
+        <div><b id="shotAttempts">—</b><span>YOUR SHOT ATTEMPTS</span></div>
+        <div><b id="referenceImpact">—</b><span>FIXED FORMAT REFERENCE</span></div>
       </div>
       <div class="ovr-impact">
         <div class="line"><strong>GAME STAT IMPACT</strong><b id="gameImpact">—</b></div>
@@ -174,24 +174,7 @@
         </div>
       </section>
 
-      <details class="section" open>
-        <summary><strong class="details-title">TEAM CONTEXT</strong><span>REQUIRED FOR FAIR COMPARISON ▾</span></summary>
-        <div class="details-body">
-          <p class="help">These are your <b>whole-team totals</b>, including the player above. Real Play compares a player's contribution with the team and game around them.</p>
-          <div class="grid three">
-            <label>Team AST<input name="teamAssists" type="number" min="0" value="5" inputmode="numeric"></label>
-            <label>Team REB<input name="teamRebounds" type="number" min="0" value="9" inputmode="numeric"></label>
-            <label>Team STL<input name="teamSteals" type="number" min="0" value="3" inputmode="numeric"></label>
-            <label>Team BLK<input name="teamBlocks" type="number" min="0" value="1" inputmode="numeric"></label>
-            <label>Team TO<input name="teamTurnovers" type="number" min="0" value="4" inputmode="numeric"></label>
-            <label>Team FOUL<input name="teamFouls" type="number" min="0" value="0" inputmode="numeric"></label>
-            <label>Team Made<input name="teamMadeShots" type="number" min="0" value="8" inputmode="numeric"></label>
-            <label>Team Missed<input name="teamMissedShots" type="number" min="0" value="8" inputmode="numeric"></label>
-            <label>Opp. Made<input name="opponentMadeShots" type="number" min="0" value="7" inputmode="numeric"></label>
-            <label>Opp. Missed<input name="opponentMissedShots" type="number" min="0" value="9" inputmode="numeric"></label>
-          </div>
-        </div>
-      </details>
+      <p class="help">No teammate or opponent stats are needed. Your individual impact is compared with the same published reference for everyone in this format.</p>
 
       <section class="section">
         <div class="section-head"><strong>OVR SCENARIO</strong><span>OPTIONAL RATING MOVEMENT</span></div>
@@ -206,12 +189,12 @@
     <section class="section">
       <div class="section-head"><strong>HOW THE GAME RATING FORMED</strong><span>1.00× = NEUTRAL</span></div>
       <div class="components" id="components">
-        <div class="component"><div><strong>Waiting for calculation…</strong><small>100% scoring-first individual stats, normalized by team opportunities; no win/loss bonus.</small></div></div>
+        <div class="component"><div><strong>Waiting for calculation…</strong><small>100% personal impact versus a fixed format reference; team stats never change the rating.</small></div></div>
       </div>
     </section>
 
     <div class="error" id="errorBox" hidden></div>
-    <p class="foot"><b>Game Rating</b> measures this game. <b>OVR</b> is the system's current estimate of demonstrated player level across verified evidence. Established-player movement is confidence-aware.</p>
+    <p class="foot"><b>Game Rating</b> compares your weighted game stats to a fixed reference based on the locked Race To target and team size. Shooting % is calculated from your own attempts, while missed shots are already penalized by the shared impact formula. <b>Career OVR</b> accumulates your own game ratings with confidence, not total games or teammate performance.</p>
   </main>
 
   <script>
@@ -227,7 +210,7 @@
       let controller = null;
 
       const labels = {
-        statistical: ['Scoring-First Individual Impact', '100%', 'PTS +1/+2 · AST +0.70 · REB +0.40 · STL +0.80 · BLK +0.60 · TO −0.80 · MISS −0.15 · FOUL −0.15, normalized by teammate opportunities'],
+        statistical: ['Scoring-First Personal Impact', '100%', 'PTS +1/+2 · AST +0.70 · REB +0.40 · STL +0.80 · BLK +0.60 · TO −0.80 · MISS −0.15 · FOUL −0.15, compared with a fixed ruleset and format reference'],
       };
 
       function value(name) {
@@ -253,14 +236,7 @@
             steals: num('steals'), blocks: num('blocks'), turnovers: num('turnovers'), fouls: num('fouls'),
             madeShots: num('madeShots'), missedShots: num('missedShots'),
           },
-          teamTotals: {
-            assists: num('teamAssists'), rebounds: num('teamRebounds'),
-            steals: num('teamSteals'), blocks: num('teamBlocks'), turnovers: num('teamTurnovers'), fouls: num('teamFouls'),
-            madeShots: num('teamMadeShots'), missedShots: num('teamMissedShots'),
-          },
-          opponent: {
-            madeShots: num('opponentMadeShots'), missedShots: num('opponentMissedShots'),
-          },
+
         };
       }
 
@@ -312,9 +288,9 @@
         setText('gameImpact', Number(data.gameImpact ?? 0).toFixed(2));
         setText('gameResult', data.result || '—');
         setText('evidenceText', `EVIDENCE ${Math.round(Number(data.evidenceWeight || 0) * 100)}% · TEAM RESULT DOES NOT AFFECT OVR`);
-        setText('actualShare', `${data.scoringShare?.actualPercent ?? 0}%`);
-        setText('equalShare', `${data.scoringShare?.equalSharePercent ?? 0}%`);
-        setText('shareMultiple', `${data.scoringShare?.multipleOfEqualShare ?? 0}×`);
+        setText('shotAccuracy', data.shootingPct === null ? '—' : `${data.shootingPct}%`);
+        setText('shotAttempts', data.shotAttempts ?? 0);
+        setText('referenceImpact', Number(data.referenceImpact ?? 0).toFixed(2));
         renderOvr(data.ovrPreview);
         renderComponents(data);
         errorBox.hidden = true;
