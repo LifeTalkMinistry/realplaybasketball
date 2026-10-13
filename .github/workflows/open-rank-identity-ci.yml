@@ -112,3 +112,5 @@ jobs:
           node --check competition-team-rankings.js
           node --check tests/team-roster-drilldown.test.js
           node --test tests/team-roster-drilldown.test.js
+          node --check tests/team-official-membership.test.js
+          node --test tests/team-official-membership.test.js
