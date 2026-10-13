@@ -105,6 +105,7 @@
       .rp-team-roster-section[data-roster-section="unverified"] .rp-team-roster-player-name{color:#a4b2c4}
       .rp-team-roster-section-empty{padding:9px 12px;margin:0;color:#889bb0;font:700 .63rem/1.5 Arial,sans-serif}
       .rp-team-roster-player:has(.rp-team-roster-editor-label){grid-template-columns:50px minmax(0,1fr) 96px;gap:7px}
+      .rp-team-roster-joined-badge{justify-self:end;padding:5px 7px;border:1px solid rgba(83,223,179,.22);border-radius:5px;background:rgba(46,153,123,.07);color:#8ae8c5;font:850 .52rem Arial,sans-serif;white-space:nowrap}
       .rp-team-roster-editor-label{display:grid;gap:3px;color:#829eb0;font:800 .46rem Arial,sans-serif;letter-spacing:.07em}
       .rp-team-roster-editor-label select{width:100%;padding:7px 2px;border:1px solid rgba(113,177,216,.25);border-radius:6px;background:#0b1b2c;color:#d4e7f5;font:800 .56rem Arial,sans-serif}
       .rp-team-roster-feedback{min-height:1em;margin:0;padding:0 4px;color:#93cde4;font:750 .6rem/1.4 Arial,sans-serif}
@@ -169,10 +170,10 @@
 
   function rosterMarkup(players, canManageRoster = false) {
     if (!Array.isArray(players) || !players.length) {
-      return '<div class="rp-team-roster-message">NO VERIFIED GAME APPEARANCES YET.</div>';
+      return '<div class="rp-team-roster-message">NO TEAM CODE MEMBERS OR VERIFIED GAME APPEARANCES YET.</div>';
     }
     const sections = [
-      { status: 'official', title: 'OFFICIAL ROSTER', empty: 'NO OFFICIAL MEMBERS CONFIRMED YET.' },
+      { status: 'official', title: 'OFFICIAL ROSTER · TEAM CODE', empty: 'NO PLAYERS JOINED THROUGH TEAM CODE YET.' },
       { status: 'borrowed', title: 'BORROWED PLAYERS', empty: '' },
       { status: 'unverified', title: 'GAME APPEARANCES · UNVERIFIED', empty: '' },
     ];
@@ -180,10 +181,11 @@
       const rank = Number(player.rank);
       const ranked = Number.isSafeInteger(rank) && rank > 0;
       const status = ['official','borrowed'].includes(player.rosterStatus) ? player.rosterStatus : 'unverified';
-      const select = canManageRoster ? `<label class="rp-team-roster-editor-label">TEAM STATUS
-        <select data-rp-roster-classify data-identity-key="${esc(player.identityKey)}" data-current-status="${status}" aria-label="Membership of ${esc(player.playerName)}">
+      const select = status === 'official'
+        ? '<span class="rp-team-roster-joined-badge">JOINED ✓</span>'
+        : canManageRoster ? `<label class="rp-team-roster-editor-label">APPEARANCE
+        <select data-rp-roster-classify data-identity-key="${esc(player.identityKey)}" data-current-status="${status}" aria-label="Appearance of ${esc(player.playerName)}">
           <option value="unverified" ${status === 'unverified' ? 'selected' : ''}>UNVERIFIED</option>
-          <option value="official" ${status === 'official' ? 'selected' : ''}>OFFICIAL</option>
           <option value="borrowed" ${status === 'borrowed' ? 'selected' : ''}>BORROWED</option>
         </select></label>` : '';
       return `<div class="rp-team-roster-player" data-status="${status}">
@@ -231,7 +233,11 @@
       if (active !== state || serial !== state.rosterSerial || state.rosterTeamId !== String(teamId)) return;
       roster.innerHTML = rosterMarkup(payload.players, Boolean(payload.canManageRoster));
       const status = detail.querySelector('[data-rp-team-roster-status]');
-      if (status) status.textContent = payload.canManageRoster ? 'ADMIN: Confirm each official member or borrowed player.' : '';
+      if (status) status.textContent = payload.membershipAuthority === 'historical_unverified'
+        ? 'HISTORICAL SEASON · CURRENT TEAM CODE DOES NOT CONFIRM PAST MEMBERSHIP.'
+        : payload.canManageRoster
+          ? 'OFFICIAL MEMBERS SYNC FROM HOME · MARK BORROWED APPEARANCES BELOW.'
+          : '';
     } catch (error) {
       if (active !== state || serial !== state.rosterSerial || state.rosterTeamId !== String(teamId)) return;
       roster.textContent = error.message || 'Unable to load roster.';
@@ -267,7 +273,7 @@
       if (!response.ok || !payload.ok) throw new Error(payload.message || payload.error || 'Unable to update roster.');
       if (active !== state || serial !== state.rosterSerial || state.rosterTeamId !== teamId) return;
       detail.querySelector('[data-rp-team-roster-list]').innerHTML = rosterMarkup(payload.players, true);
-      if (status) status.textContent = 'ROSTER CLASSIFICATION SAVED.';
+      if (status) status.textContent = 'APPEARANCE STATUS SAVED.';
     } catch (error) {
       if (active !== state || serial !== state.rosterSerial || state.rosterTeamId !== teamId) return;
       select.value = previous;
