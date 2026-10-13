@@ -101,7 +101,7 @@
     <header class="topbar">
       <button class="back" type="button" id="backButton" aria-label="Back to Players">←</button>
       <div class="heading"><strong>OVR SIMULATOR</strong><span>REAL PLAY BASKETBALL</span></div>
-      <div class="version">V4</div>
+      <div class="version">V6 · SCORING FIRST</div>
     </header>
 
     <div class="notice"><b>SIMULATION ONLY.</b> Change the numbers below to see how Real Play evaluates a game. Nothing here changes any real player, game, stat, or OVR.</div>
@@ -123,6 +123,7 @@
         <div><b id="shareMultiple">—</b><span>VS EQUAL SCORING SHARE</span></div>
       </div>
       <div class="ovr-impact">
+        <div class="line"><strong>GAME STAT IMPACT</strong><b id="gameImpact">—</b></div>
         <div class="line"><strong>OVR IMPACT</strong><b id="ovrImpact">—</b></div>
         <p id="ovrMessage">Enter a valid simulation to see OVR impact.</p>
       </div>
@@ -168,6 +169,7 @@
           <label>STL<input name="steals" type="number" min="0" value="2" inputmode="numeric"></label>
           <label>BLK<input name="blocks" type="number" min="0" value="0" inputmode="numeric"></label>
           <label>TO<input name="turnovers" type="number" min="0" value="1" inputmode="numeric"></label>
+          <label>FOUL<input name="fouls" type="number" min="0" value="0" inputmode="numeric"></label>
           <label>Made Shots<input name="madeShots" type="number" min="0" value="4" inputmode="numeric"></label>
           <label>Missed Shots<input name="missedShots" type="number" min="0" value="2" inputmode="numeric"></label>
         </div>
@@ -183,6 +185,7 @@
             <label>Team STL<input name="teamSteals" type="number" min="0" value="3" inputmode="numeric"></label>
             <label>Team BLK<input name="teamBlocks" type="number" min="0" value="1" inputmode="numeric"></label>
             <label>Team TO<input name="teamTurnovers" type="number" min="0" value="4" inputmode="numeric"></label>
+            <label>Team FOUL<input name="teamFouls" type="number" min="0" value="0" inputmode="numeric"></label>
             <label>Team Made<input name="teamMadeShots" type="number" min="0" value="8" inputmode="numeric"></label>
             <label>Team Missed<input name="teamMissedShots" type="number" min="0" value="8" inputmode="numeric"></label>
             <label>Opp. Made<input name="opponentMadeShots" type="number" min="0" value="7" inputmode="numeric"></label>
@@ -204,7 +207,7 @@
     <section class="section">
       <div class="section-head"><strong>HOW THE GAME RATING FORMED</strong><span>1.00× = NEUTRAL</span></div>
       <div class="components" id="components">
-        <div class="component"><div><strong>Waiting for calculation…</strong><small>The live V4 engine will return the six OVR components.</small></div></div>
+        <div class="component"><div><strong>Waiting for calculation…</strong><small>Verified scoring-first event impact (85%) + game result context (15%).</small></div></div>
       </div>
     </section>
 
@@ -225,12 +228,8 @@
       let controller = null;
 
       const labels = {
-        scoring: ['Scoring', '30%', '75% team scoring contribution + 25% shooting efficiency'],
-        playmaking: ['Playmaking', '20%', 'Assists relative to team playmaking activity'],
-        rebounding: ['Rebounding', '15%', 'Rebounds relative to team rebounding activity'],
-        defense: ['Defense', '15%', '67% steal activity + 33% block activity'],
-        ballSecurity: ['Ball Security', '10%', 'Turnovers compared with the team turnover level'],
-        competitive: ['Competitive Result', '10%', 'Win/loss compared with pre-game expected result'],
+        statistical: ['Scoring-First Statistical Impact', '85%', 'PTS +1/+2 · AST +0.70 · REB +0.40 · STL +0.80 · BLK +0.60 · TO −0.80 · MISS −0.15 · FOUL −0.15, normalized by teammate impact'],
+        competitive: ['Competitive Result Context', '15%', 'Result compared with pre-game expected win, with format/evidence controls'],
       };
 
       function value(name) {
@@ -255,12 +254,12 @@
           currentOvr: value('currentOvr') === '' ? null : num('currentOvr'),
           player: {
             points: num('points'), assists: num('assists'), rebounds: num('rebounds'),
-            steals: num('steals'), blocks: num('blocks'), turnovers: num('turnovers'),
+            steals: num('steals'), blocks: num('blocks'), turnovers: num('turnovers'), fouls: num('fouls'),
             madeShots: num('madeShots'), missedShots: num('missedShots'),
           },
           teamTotals: {
             assists: num('teamAssists'), rebounds: num('teamRebounds'),
-            steals: num('teamSteals'), blocks: num('teamBlocks'), turnovers: num('teamTurnovers'),
+            steals: num('teamSteals'), blocks: num('teamBlocks'), turnovers: num('teamTurnovers'), fouls: num('teamFouls'),
             madeShots: num('teamMadeShots'), missedShots: num('teamMissedShots'),
           },
           opponent: {
@@ -314,6 +313,7 @@
 
       function render(data) {
         setText('gameRating', data.gameRating ?? '—');
+        setText('gameImpact', Number(data.gameImpact ?? 0).toFixed(2));
         setText('gameResult', data.result || '—');
         setText('evidenceText', `EVIDENCE ${Math.round(Number(data.evidenceWeight || 0) * 100)}% · EXPECTED WIN ${data.expectedWinPercent}%`);
         setText('actualShare', `${data.scoringShare?.actualPercent ?? 0}%`);
