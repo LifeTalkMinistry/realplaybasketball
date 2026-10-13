@@ -101,10 +101,10 @@
     <header class="topbar">
       <button class="back" type="button" id="backButton" aria-label="Back to Players">←</button>
       <div class="heading"><strong>OVR SIMULATOR</strong><span>REAL PLAY BASKETBALL</span></div>
-      <div class="version">V6 · SCORING FIRST</div>
+      <div class="version">V7 · INDIVIDUAL IMPACT</div>
     </header>
 
-    <div class="notice"><b>SIMULATION ONLY.</b> Change the numbers below to see how Real Play evaluates a game. Nothing here changes any real player, game, stat, or OVR.</div>
+    <div class="notice"><b>SIMULATION ONLY.</b> Individual scoring-first impact determines Game Rating and OVR. Team wins or losses never add or subtract individual OVR points. Nothing here changes any actual player, game or stat.</div>
 
     <section class="result-card" id="resultCard" aria-live="polite">
       <div class="result-top">
@@ -155,8 +155,7 @@
           </label>
           <label>Your Team Score<input name="teamScore" type="number" min="0" max="99" value="15" inputmode="numeric"></label>
           <label>Opponent Score<input name="opponentScore" type="number" min="0" max="99" value="12" inputmode="numeric"></label>
-          <label>Team Pre-Game OVR<input name="teamOvr" type="number" min="40" max="99" value="70" inputmode="numeric"></label>
-          <label>Opponent Pre-Game OVR<input name="opponentOvr" type="number" min="40" max="99" value="70" inputmode="numeric"></label>
+
         </div>
       </section>
 
@@ -207,7 +206,7 @@
     <section class="section">
       <div class="section-head"><strong>HOW THE GAME RATING FORMED</strong><span>1.00× = NEUTRAL</span></div>
       <div class="components" id="components">
-        <div class="component"><div><strong>Waiting for calculation…</strong><small>Verified scoring-first event impact (85%) + game result context (15%).</small></div></div>
+        <div class="component"><div><strong>Waiting for calculation…</strong><small>100% scoring-first individual stats, normalized by team opportunities; no win/loss bonus.</small></div></div>
       </div>
     </section>
 
@@ -228,8 +227,7 @@
       let controller = null;
 
       const labels = {
-        statistical: ['Scoring-First Statistical Impact', '85%', 'PTS +1/+2 · AST +0.70 · REB +0.40 · STL +0.80 · BLK +0.60 · TO −0.80 · MISS −0.15 · FOUL −0.15, normalized by teammate impact'],
-        competitive: ['Competitive Result Context', '15%', 'Result compared with pre-game expected win, with format/evidence controls'],
+        statistical: ['Scoring-First Individual Impact', '100%', 'PTS +1/+2 · AST +0.70 · REB +0.40 · STL +0.80 · BLK +0.60 · TO −0.80 · MISS −0.15 · FOUL −0.15, normalized by teammate opportunities'],
       };
 
       function value(name) {
@@ -248,8 +246,6 @@
           targetScore: num('targetScore', 15),
           teamScore: num('teamScore'),
           opponentScore: num('opponentScore'),
-          teamOvr: num('teamOvr', 70),
-          opponentOvr: num('opponentOvr', 70),
           gamesPlayed: num('gamesPlayed'),
           currentOvr: value('currentOvr') === '' ? null : num('currentOvr'),
           player: {
@@ -315,7 +311,7 @@
         setText('gameRating', data.gameRating ?? '—');
         setText('gameImpact', Number(data.gameImpact ?? 0).toFixed(2));
         setText('gameResult', data.result || '—');
-        setText('evidenceText', `EVIDENCE ${Math.round(Number(data.evidenceWeight || 0) * 100)}% · EXPECTED WIN ${data.expectedWinPercent}%`);
+        setText('evidenceText', `EVIDENCE ${Math.round(Number(data.evidenceWeight || 0) * 100)}% · TEAM RESULT DOES NOT AFFECT OVR`);
         setText('actualShare', `${data.scoringShare?.actualPercent ?? 0}%`);
         setText('equalShare', `${data.scoringShare?.equalSharePercent ?? 0}%`);
         setText('shareMultiple', `${data.scoringShare?.multipleOfEqualShare ?? 0}×`);
