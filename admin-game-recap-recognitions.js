@@ -94,13 +94,13 @@
     const s = player.shooting;
     const st = player.stats;
     const score = st.pts
-      + (st.reb * 1.2)
-      + (st.ast * 1.5)
-      + (st.stl * 2)
-      + (st.blk * 2)
-      - (st.tov * 1.5)
-      - (s.misses * 0.5)
-      - (st.foul * 0.25);
+      + (st.reb * 0.4)
+      + (st.ast * 0.7)
+      + (st.stl * 0.8)
+      + (st.blk * 0.6)
+      - (st.tov * 0.8)
+      - (s.misses * 0.15)
+      - (st.foul * 0.15);
     return Math.round(score * 100) / 100;
   }
 
