@@ -101,10 +101,10 @@
     <header class="topbar">
       <button class="back" type="button" id="backButton" aria-label="Back to Players">←</button>
       <div class="heading"><strong>OVR SIMULATOR</strong><span>REAL PLAY BASKETBALL</span></div>
-      <div class="version">V8 · OWN OPPORTUNITIES</div>
+      <div class="version">V9 · CAREER AVERAGES</div>
     </header>
 
-    <div class="notice"><b>SIMULATION ONLY.</b> Scoring-first performance is compared with a fixed reference for the ruleset and player format. Your teammates' stats, team wins/losses, and number of career games do not give extra performance points.</div>
+    <div class="notice"><b>SIMULATION ONLY.</b> Your OVR comes directly from your own career-average game impact. Each verified game has equal weight. Team records, teammates, formats, confidence, and game order never change the OVR calculation.</div>
 
     <section class="result-card" id="resultCard" aria-live="polite">
       <div class="result-top">
@@ -120,7 +120,7 @@
       <div class="share">
         <div><b id="shotAccuracy">—</b><span>YOUR SHOOTING %</span></div>
         <div><b id="shotAttempts">—</b><span>YOUR SHOT ATTEMPTS</span></div>
-        <div><b id="referenceImpact">—</b><span>FIXED FORMAT REFERENCE</span></div>
+        <div><b id="referenceImpact">—</b><span>CAREER IMPACT BASELINE</span></div>
       </div>
       <div class="ovr-impact">
         <div class="line"><strong>GAME STAT IMPACT</strong><b id="gameImpact">—</b></div>
@@ -131,7 +131,7 @@
 
     <form id="simulatorForm">
       <section class="section">
-        <div class="section-head"><strong>GAME CONTEXT</strong><span>FORMAT CHANGES THE BASELINE</span></div>
+        <div class="section-head"><strong>GAME RECORD</strong><span>FORMAT DOES NOT CHANGE THE IMPACT WEIGHTS</span></div>
         <div class="grid">
           <label>Format
             <select name="playersPerSide">
@@ -174,27 +174,28 @@
         </div>
       </section>
 
-      <p class="help">No teammate or opponent stats are needed. Your individual impact is compared with the same published reference for everyone in this format.</p>
+      <p class="help">No teammate or opponent stats are needed. The same scoring-first weights apply to everyone, and all of your own games contribute equally to your career average.</p>
 
       <section class="section">
         <div class="section-head"><strong>OVR SCENARIO</strong><span>OPTIONAL RATING MOVEMENT</span></div>
-        <p class="help">Use 0 games to simulate a player's first game. For an established player, enter at least 5 games plus the current OVR.</p>
+        <p class="help">Use 0 games for your first game. For an exact established-player update enter games played, current OVR and your unrounded career-average impact. Current OVR alone produces an approximation.</p>
         <div class="grid">
           <label>Games Already Played<input name="gamesPlayed" type="number" min="0" max="999" value="0" inputmode="numeric"></label>
           <label>Current OVR<input name="currentOvr" type="number" min="40" max="99" placeholder="e.g. 85" inputmode="numeric"></label>
+          <label>Prior Career Avg Impact (optional)<input name="careerAverageImpact" type="number" step="0.01" placeholder="e.g. 3.20" inputmode="decimal"></label>
         </div>
       </section>
     </form>
 
     <section class="section">
-      <div class="section-head"><strong>HOW THE GAME RATING FORMED</strong><span>1.00× = NEUTRAL</span></div>
+      <div class="section-head"><strong>HOW THE GAME RATING FORMED</strong><span>2.00 IMPACT = 70 OVR</span></div>
       <div class="components" id="components">
-        <div class="component"><div><strong>Waiting for calculation…</strong><small>100% personal impact versus a fixed format reference; team stats never change the rating.</small></div></div>
+        <div class="component"><div><strong>Waiting for calculation…</strong><small>Every game uses exactly the same personal event weights. Career OVR = clamp(70 + (average game impact − 2) × 5, 40, 99).</small></div></div>
       </div>
     </section>
 
     <div class="error" id="errorBox" hidden></div>
-    <p class="foot"><b>Game Rating</b> compares your weighted game stats to a fixed reference based on the locked Race To target and team size. Shooting % is calculated from your own attempts, while missed shots are already penalized by the shared impact formula. <b>Career OVR</b> accumulates your own game ratings with confidence, not total games or teammate performance.</p>
+    <p class="foot"><b>Career OVR</b> = 70 + (average individual game impact − 2) × 5, limited to 40–99. Every verified game contributes equally; no extra confidence, format, recency or win/loss adjustment. Your missed shots and turnovers are deducted using the universal event weights.</p>
   </main>
 
   <script>
@@ -210,7 +211,7 @@
       let controller = null;
 
       const labels = {
-        statistical: ['Scoring-First Personal Impact', '100%', 'PTS +1/+2 · AST +0.70 · REB +0.40 · STL +0.80 · BLK +0.60 · TO −0.80 · MISS −0.15 · FOUL −0.15, compared with a fixed ruleset and format reference'],
+        statistical: ['Scoring-First Personal Impact', '100%', 'PTS +1/+2 · AST +0.70 · REB +0.40 · STL +0.80 · BLK +0.60 · TO −0.80 · MISS −0.15 · FOUL −0.15. Every player uses the same 2.00 career-impact baseline'],
       };
 
       function value(name) {
@@ -231,6 +232,7 @@
           opponentScore: num('opponentScore'),
           gamesPlayed: num('gamesPlayed'),
           currentOvr: value('currentOvr') === '' ? null : num('currentOvr'),
+          careerAverageImpact: value('careerAverageImpact') === '' ? null : num('careerAverageImpact'),
           player: {
             points: num('points'), assists: num('assists'), rebounds: num('rebounds'),
             steals: num('steals'), blocks: num('blocks'), turnovers: num('turnovers'), fouls: num('fouls'),
@@ -287,7 +289,7 @@
         setText('gameRating', data.gameRating ?? '—');
         setText('gameImpact', Number(data.gameImpact ?? 0).toFixed(2));
         setText('gameResult', data.result || '—');
-        setText('evidenceText', `EVIDENCE ${Math.round(Number(data.evidenceWeight || 0) * 100)}% · TEAM RESULT DOES NOT AFFECT OVR`);
+        setText('evidenceText', 'EQUAL WEIGHT PER VERIFIED GAME · TEAM RESULT DOES NOT AFFECT OVR');
         setText('shotAccuracy', data.shootingPct === null ? '—' : `${data.shootingPct}%`);
         setText('shotAttempts', data.shotAttempts ?? 0);
         setText('referenceImpact', Number(data.referenceImpact ?? 0).toFixed(2));

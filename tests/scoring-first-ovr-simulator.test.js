@@ -7,8 +7,8 @@ const path = require('node:path');
 
 const simulator = fs.readFileSync(path.join(__dirname, '..', 'ovr-simulator.html'), 'utf8');
 
-test('OVR simulator uses universal scoring-first, personal opportunities V8', () => {
-  assert.match(simulator, /V8 · OWN OPPORTUNITIES/);
+test('OVR simulator uses universal scoring-first personal career averages V9', () => {
+  assert.match(simulator, /V9 · CAREER AVERAGES/);
   assert.match(simulator, /statistical:\s*\['Scoring-First Personal Impact', '100%'/);
   assert.doesNotMatch(simulator, /competitive:\s*\[/);
   assert.doesNotMatch(simulator, /normalized by teammate opportunities/);
@@ -30,4 +30,6 @@ test('OVR simulator records all personal events but requires no teammate totals'
   assert.doesNotMatch(simulator, /teamTotals: \{/);
   assert.match(simulator, /data\.shootingPct/);
   assert.match(simulator, /data\.referenceImpact/);
+  assert.match(simulator, /careerAverageImpact/);
+  assert.match(simulator, /average game impact/);
 });
