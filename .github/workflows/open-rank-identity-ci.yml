@@ -104,7 +104,8 @@ jobs:
         run: |
           node --check competition-team-rankings.js
           node --check tests/team-rankings-readable-record.test.js
-          node --test tests/team-rankings-ui-contract.test.js tests/team-rankings-readable-record.test.js
+          node --check tests/team-roster-status-cards.test.js
+          node --test tests/team-rankings-ui-contract.test.js tests/team-rankings-readable-record.test.js tests/team-roster-status-cards.test.js
 
       - name: Check season team roster drill-down, keyboard and stale response safety
         run: |
